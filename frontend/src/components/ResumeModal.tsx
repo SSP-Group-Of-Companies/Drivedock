@@ -28,9 +28,11 @@ export default function ResumeModal({ isOpen, onClose }: ResumeModalProps) {
       } else {
         setStatus("error");
       }
-    } catch (err) {
+    } catch  {
       setStatus("error");
     }
+
+
 
   };
 

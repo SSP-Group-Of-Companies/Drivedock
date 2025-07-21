@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
-import { ShieldCheck } from "lucide-react"; 
+// import Link from "next/link";
+// import { ShieldCheck } from "lucide-react"; 
 
 export default function Navbar() {
   return (
