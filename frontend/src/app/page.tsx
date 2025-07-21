@@ -1,12 +1,25 @@
 // Public Home Page — DriveDock
-// Entry point for driver onboarding (to be replaced with form wizard)
+// Entry point for driver onboarding
+
+import Navbar from "@/components/Navbar";
+import WelcomeSection from "@/components/WelcomeSection";
+import FeatureCards from "@/components/FeatureCards";
+import ProcessSteps from "@/components/ProcessSteps";
+import Footer from "@/components/Footer";
 
 export default function Home() {
   return (
-    <main className="min-h-screen flex items-center justify-center">
-      <h1 className="text-2xl font-semibold text-center">
-        Welcome to DriveDock – SSP Truck Line Onboarding
-      </h1>
-    </main>
+    <>
+      <Navbar />
+      <main className="min-h-screen sm:min-h-[100vh] flex flex-col items-center justify-between overflow-hidden">
+        <WelcomeSection />
+        <FeatureCards />
+        {/* Show cards only on md and up */}
+        <div className="hidden md:block w-full">
+           <ProcessSteps />
+        </div>
+      </main>
+      <Footer />
+    </>
   );
 }
