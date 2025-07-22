@@ -86,5 +86,16 @@
 
   "navbar": {
     "logoAlt": "SSP Logo"
+  },
+  
+  "company": {
+  "heading": "Join Our Family of Companies",
+  "subheading": "Choose the company where you want to build your driving career",
+  "applyNow": "Apply Now",
+  "selectType": "Select Application Type",
+  "selectTypeDesc": "Please choose the type of position you are applying for:",
+  "flatbed": "Flatbed",
+  "dropdeck": "Dry Van",
+  "cancel": "Cancel"
   }
 }

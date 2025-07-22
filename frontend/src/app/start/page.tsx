@@ -10,6 +10,7 @@ import { useLanguageStore } from "@/hooks/useLanguageStore";
 import { ArrowRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import Footer from "@/components/Footer";
+import WatermarkBackground from "@/components/WatermarkBackground";
 
 export default function StartPage() {
   return (
@@ -43,15 +44,15 @@ function StartPageContent() {
   };
 
   return (
-    <>
+    <div className="flex flex-col min-h-screen">
       <Navbar />
-      <main className="min-h-screen px-4 py-10 flex flex-col items-center justify-start bg-blue-50 text-gray-800">
+      <main className="relative flex-1 flex flex-col items-center justify-start px-4 py-10 bg-blue-50 text-gray-800">
+        <WatermarkBackground />
         {/* Page Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold">{t("start.heading")}</h1>
           <p className="text-sm text-gray-600">{t("start.subheading")}</p>
         </div>
-
         {/* Language Selector */}
         <div className="w-full max-w-lg mb-6 relative">
           <label className="block text-sm font-semibold mb-2">
@@ -59,17 +60,14 @@ function StartPageContent() {
           </label>
           <LanguageSelector />
         </div>
-
         {/* Consent Card */}
         <div className="w-full max-w-lg bg-white p-6 rounded-xl shadow-md">
           <h2 className="text-lg font-semibold mb-1">{t("start.beforeYouBegin")}</h2>
           <p className="text-sm text-gray-600 mb-4">
             {t("start.readAndAgree")}
           </p>
-
           <ConsentChecklist />
           <ConsentCheckbox agreed={agreed} setAgreed={setAgreed} />
-
           {/* Continue Button */}
           <button
             onClick={handleContinue}
@@ -80,7 +78,6 @@ function StartPageContent() {
           >
             {t("start.continue")} <ArrowRight size={16} />
           </button>
-
           {/* Estimated time */}
           <p className="mt-2 text-center text-xs text-gray-500">
             {t("start.estimatedTime")}
@@ -88,6 +85,6 @@ function StartPageContent() {
         </div>
       </main>
       <Footer />
-    </>
+    </div>
   );
 }

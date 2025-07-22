@@ -6,12 +6,14 @@ import WelcomeSection from "@/components/WelcomeSection";
 import FeatureCards from "@/components/FeatureCards";
 import ProcessSteps from "@/components/ProcessSteps";
 import Footer from "@/components/Footer";
+import WatermarkBackground from "@/components/WatermarkBackground";
 
 export default function Home() {
   return (
     <>
       <Navbar />
       <main className="min-h-screen sm:min-h-[100vh] flex flex-col items-center justify-between overflow-hidden">
+        <WatermarkBackground />
         <WelcomeSection />
         <FeatureCards />
         {/* Show cards only on md and up */}

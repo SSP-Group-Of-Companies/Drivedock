@@ -86,5 +86,17 @@
 
   "navbar": {
     "logoAlt": "Logo SSP"
-  }
+  },
+
+  "company": {
+  "heading": "Rejoignez notre groupe d'entreprises",
+  "subheading": "Choisissez l’entreprise dans laquelle vous souhaitez bâtir votre carrière de conducteur",
+  "applyNow": "Postuler maintenant",
+  "selectType": "Sélectionnez le type de candidature",
+  "selectTypeDesc": "Veuillez choisir le type de poste pour lequel vous postulez :",
+  "flatbed": "Plateforme",
+  "dropdeck": "Fourgon sec",
+  "cancel": "Annuler"
+}
+
 }
