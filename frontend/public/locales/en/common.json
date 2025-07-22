@@ -1,0 +1,90 @@
+{
+  "start": {
+    "heading": "Start Your Application",
+    "subheading": "Begin your journey with SSP Group of Companies",
+    "languageLabel": "🌐 Select Language",
+    "selectLanguage": "Select Language",
+    "beforeYouBegin": "Before You Begin",
+    "readAndAgree": "Please read and agree to the following:",
+    "continue": "Continue to Application",
+    "estimatedTime": "Estimated time: 15–20 minutes",
+    "agreeToTerms": "I agree to the terms above",
+
+    "checklist": {
+      "accurateInfo": "All information provided must be accurate and truthful",
+      "digitalProcess": "You understand this is a digital application process",
+      "consentChecks": "You consent to background and driving record checks",
+      "termsAgreement": "You agree to SSP Group of Companies terms and conditions"
+    },
+
+    "termsModal": {
+      "title": "Terms & Conditions",
+      "intro": "By continuing, you agree that:",
+      "items": {
+        "subcontractor": "You are applying as a subcontractor, not an employee",
+        "truthfulInfo": "All information you submit is true and accurate",
+        "backgroundChecks": "You consent to background checks and driving record verification",
+        "companyRules": {
+          "title": "You understand and agree to company rules on:",
+          "drugPolicy": "Drug & Alcohol policies",
+          "dashCam": "Dash cam recording in vehicles",
+          "safetyRules": "Speeding, accident reporting, and phone use",
+          "seals": "Trailer seals and cross-border inspections"
+        },
+        "discipline": "Disciplinary action may include fines, suspension, or termination",
+        "laws": "You are responsible for following Canadian and US trucking laws"
+      },
+      "cancel": "Cancel",
+      "agree": "I Agree"
+    }
+  },
+
+  "features": {
+    "steps": {
+      "title": "6-Step Process",
+      "description": "Complete all required hiring documents through our guided 6-stage form wizard"
+    },
+    "language": {
+      "title": "Multi-language",
+      "description": "Available in English, Punjabi, and French to serve all drivers comfortably"
+    },
+    "security": {
+      "title": "Secure & Safe",
+      "description": "Your information is protected with enterprise-grade security and encryption"
+    }
+  },
+
+  "steps": {
+    "title": "Application Process",
+    "personal": "Personal Information",
+    "employment": "Employment History",
+    "driving": "Driving Record",
+    "medical": "Medical Information",
+    "references": "References",
+    "review": "Final Review"
+  },
+
+  "resume": {
+    "title": "Resume Your Application",
+    "description": "Enter your SIN to continue your onboarding from where you stopped.",
+    "placeholder": "999-888-777",
+    "success": "Match found! Redirecting...",
+    "error": "No application found for that SIN.",
+    "cancel": "Cancel",
+    "continue": "Continue"
+  },
+
+  "welcome": {
+    "heading": "Join the Road with SSP",
+    "description": "Your digital onboarding platform for joining SSP Truck Line. Complete your hiring documents quickly and securely."
+  },
+
+  "footer": {
+    "rights": "All rights reserved.",
+    "tagline": "DriveDock – Digital Driver Onboarding Platform"
+  },
+
+  "navbar": {
+    "logoAlt": "SSP Logo"
+  }
+}

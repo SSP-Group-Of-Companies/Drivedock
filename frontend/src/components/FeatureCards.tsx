@@ -1,25 +1,26 @@
-import {
-  FileText,
-  Languages,
-  ShieldCheck,
-} from "lucide-react";
+"use client";
+
+import { FileText, Languages, ShieldCheck } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function FeatureCards() {
+  const { t } = useTranslation("common");
+
   const features = [
     {
       icon: <FileText className="w-6 h-6 text-blue-700" />,
-      title: "6-Step Process",
-      description: "Complete all required hiring documents through our guided 6-stage form wizard",
+      title: t("features.steps.title"),
+      description: t("features.steps.description"),
     },
     {
       icon: <Languages className="w-6 h-6 text-blue-700" />,
-      title: "Multi-language",
-      description: "Available in English, Punjabi, and French to serve all drivers comfortably",
+      title: t("features.language.title"),
+      description: t("features.language.description"),
     },
     {
       icon: <ShieldCheck className="w-6 h-6 text-blue-700" />,
-      title: "Secure & Safe",
-      description: "Your information is protected with enterprise-grade security and encryption",
+      title: t("features.security.title"),
+      description: t("features.security.description"),
     },
   ];
 

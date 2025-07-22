@@ -1,20 +1,26 @@
+"use client";
+
+import { useTranslation } from "react-i18next";
+
 export default function ProcessSteps() {
+  const { t } = useTranslation("common");
+
   const steps = [
-    "Personal Information",
-    "Employment History",
-    "Driving Record",
-    "Medical Information",
-    "References",
-    "Final Review",
+    t("steps.personal"),
+    t("steps.employment"),
+    t("steps.driving"),
+    t("steps.medical"),
+    t("steps.references"),
+    t("steps.review")
   ];
 
   return (
     <section className="w-full px-4 py-12 sm:py-16">
       <div className="max-w-6xl mx-auto text-center">
         <div className="rounded-xl bg-white shadow p-6 sm:p-8">
-            <h2 className="text-xl font-semibold text-blue-800 mb-6">
-          Application Process
-        </h2>
+          <h2 className="text-xl font-semibold text-blue-800 mb-6">
+            {t("steps.title")}
+          </h2>
 
           <div className="flex flex-wrap justify-center gap-x-8 gap-y-6">
             {steps.map((label, idx) => (

@@ -1,1 +1,68 @@
 @import "tailwindcss";
+
+@keyframes rotate-ssp {
+  100% {
+    transform: rotate(1turn);
+  }
+}
+
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+.ssp-animated-ring {
+  position: relative;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.ssp-animated-ring::before {
+  content: '';
+  position: absolute;
+  z-index: -2;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background-repeat: no-repeat;
+  background-size: 50% 50%;
+  background-position: 0 0, 100% 0, 100% 100%, 0 100%;
+  background-image:
+    linear-gradient(#005baa, #005baa),
+    linear-gradient(#005baa, #005baa),
+    linear-gradient(#e30613, #e30613),
+    linear-gradient(#e30613, #e30613);
+  animation:
+    rotate-ssp 2.5s linear forwards,
+    fade-out 0.4s ease-out 2.2s forwards;
+}
+
+.ssp-animated-ring::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: 6px;
+  left: 6px;
+  width: calc(100% - 12px);
+  height: calc(100% - 12px);
+  background: white;
+  border-radius: 10px;
+  animation: fade-out 0.4s ease-out 2.2s forwards;
+}
+
+/* Flags Setup */
+@layer components {
+  .bg-flag-fr {
+    background: linear-gradient(to right, #0055A4 33%, #ffffff 33%, #ffffff 66%, #EF4135 66%);
+  }
+
+  .bg-flag-us {
+    background: linear-gradient(to right, #3C3B6E 33%, #ffffff 33%, #ffffff 66%, #B22234 66%);
+  }
+
+  .bg-flag-in {
+    background: linear-gradient(to right, #FF9933 33%, #ffffff 33%, #ffffff 66%, #138808 66%);
+  }
+}

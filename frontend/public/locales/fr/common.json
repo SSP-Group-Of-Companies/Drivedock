@@ -1,0 +1,90 @@
+{
+  "start": {
+    "heading": "Commencez votre candidature",
+    "subheading": "Commencez votre parcours avec SSP Group of Companies",
+    "languageLabel": "🌐 Sélectionnez la langue",
+    "selectLanguage": "Sélectionnez la langue",
+    "beforeYouBegin": "Avant de commencer",
+    "readAndAgree": "Veuillez lire et accepter ce qui suit :",
+    "continue": "Continuer vers la candidature",
+    "estimatedTime": "Temps estimé : 15 à 20 minutes",
+    "agreeToTerms": "J'accepte les conditions ci-dessus",
+
+    "checklist": {
+      "accurateInfo": "Toutes les informations fournies doivent être exactes et véridiques",
+      "digitalProcess": "Vous comprenez qu'il s'agit d'un processus de candidature numérique",
+      "consentChecks": "Vous consentez aux vérifications des antécédents et du dossier de conduite",
+      "termsAgreement": "Vous acceptez les conditions générales du SSP Group of Companies"
+    },
+
+    "termsModal": {
+      "title": "Conditions générales",
+      "intro": "En continuant, vous acceptez que :",
+      "items": {
+        "subcontractor": "Vous postulez en tant que sous-traitant, et non en tant qu'employé",
+        "truthfulInfo": "Toutes les informations que vous soumettez sont vraies et exactes",
+        "backgroundChecks": "Vous consentez aux vérifications des antécédents et du dossier de conduite",
+        "companyRules": {
+          "title": "Vous comprenez et acceptez les règles de l'entreprise concernant :",
+          "drugPolicy": "Les politiques sur la drogue et l'alcool",
+          "dashCam": "L'enregistrement par caméra embarquée dans les véhicules",
+          "safetyRules": "La vitesse, les rapports d'accidents et l'utilisation du téléphone",
+          "seals": "Les scellés de remorque et les inspections transfrontalières"
+        },
+        "discipline": "Les mesures disciplinaires peuvent inclure des amendes, des suspensions ou une résiliation",
+        "laws": "Vous êtes responsable de respecter les lois canadiennes et américaines sur le transport"
+      },
+      "cancel": "Annuler",
+      "agree": "J'accepte"
+    }
+  },
+
+  "features": {
+    "steps": {
+      "title": "Processus en 6 étapes",
+      "description": "Remplissez tous les documents d'embauche requis via notre assistant en 6 étapes"
+    },
+    "language": {
+      "title": "Multilingue",
+      "description": "Disponible en anglais, pendjabi et français pour servir tous les conducteurs"
+    },
+    "security": {
+      "title": "Sécurisé & Fiable",
+      "description": "Vos informations sont protégées par un chiffrement de niveau entreprise"
+    }
+  },
+
+  "steps": {
+    "title": "Processus de candidature",
+    "personal": "Informations personnelles",
+    "employment": "Historique d’emploi",
+    "driving": "Dossier de conduite",
+    "medical": "Informations médicales",
+    "references": "Références",
+    "review": "Revue finale"
+  },
+
+  "resume": {
+    "title": "Reprendre votre candidature",
+    "description": "Saisissez votre NAS pour reprendre votre processus là où vous vous êtes arrêté.",
+    "placeholder": "999-888-777",
+    "success": "Correspondance trouvée ! Redirection...",
+    "error": "Aucune candidature trouvée pour ce NAS.",
+    "cancel": "Annuler",
+    "continue": "Continuer"
+  },
+
+  "welcome": {
+    "heading": "Rejoignez la route avec SSP",
+    "description": "Votre plateforme numérique pour rejoindre SSP Truck Line. Remplissez vos documents d'embauche rapidement et en toute sécurité."
+  },
+
+  "footer": {
+    "rights": "Tous droits réservés.",
+    "tagline": "DriveDock – Plateforme numérique d'intégration des conducteurs"
+  },
+
+  "navbar": {
+    "logoAlt": "Logo SSP"
+  }
+}
