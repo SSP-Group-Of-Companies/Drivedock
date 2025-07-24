@@ -27,17 +27,17 @@ export interface IApplicationForm {
   completedPages: number[];
 
   page1: IApplicationFormPage1;
-  page2: Record<string, any>;
-  page3: Record<string, any>;
-  page4: Record<string, any>;
-  page5: Record<string, any>;
-  page6: Record<string, any>;
-  page7: Record<string, any>;
-  page8: Record<string, any>;
-  page9: Record<string, any>;
-  page10: Record<string, any>;
-  page11: Record<string, any>;
-  page12: Record<string, any>;
+  page2: Record<string, string>;
+  page3: Record<string, string>;
+  page4: Record<string, string>;
+  page5: Record<string, string>;
+  page6: Record<string, string>;
+  page7: Record<string, string>;
+  page8: Record<string, string>;
+  page9: Record<string, string>;
+  page10: Record<string, string>;
+  page11: Record<string, string>;
+  page12: Record<string, string>;
 
   createdAt: Date;
   updatedAt: Date;
