@@ -1,4 +1,4 @@
-import mongoose, { Schema, model } from "mongoose";
+import mongoose, { Schema } from "mongoose";
 import PreQualifications from "../models/Prequalifications";
 import { IOnboardingTrackerDoc } from "@/types/onboardingTracker.type";
 import ApplicationForm from "../models/applicationForm";
