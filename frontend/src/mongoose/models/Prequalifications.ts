@@ -1,9 +1,9 @@
 
-import mongoose, { model, Model, models } from "mongoose";
+import { model, models } from "mongoose";
 import PreQualificationsSchema from "../schemas/preQualificationsSchema";
 import { IPreQualificationsDoc } from "@/types/preQualifications.types";
 
-export const PreQualifications: Model<IPreQualificationsDoc> =
+export const PreQualifications =
   models.PreQualifications || model<IPreQualificationsDoc>('PreQualifications', PreQualificationsSchema);
 
 export default PreQualifications;
