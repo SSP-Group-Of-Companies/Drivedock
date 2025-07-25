@@ -1,8 +1,8 @@
 import { IApplicationFormDoc } from "@/types/applicationForm.types";
-import { model, models } from "mongoose";
+import { Model, model, models } from "mongoose";
 import applicationFormSchema from "../schemas/applicationForm/applicationFormSchema";
 
-const ApplicationForm =  models.ApplicationForm || model<IApplicationFormDoc>(
+const ApplicationForm : Model<IApplicationFormDoc> =  models.ApplicationForm || model<IApplicationFormDoc>(
     "ApplicationForm",
     applicationFormSchema
   );

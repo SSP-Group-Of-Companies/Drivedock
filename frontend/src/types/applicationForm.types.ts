@@ -2,29 +2,54 @@ import { Document } from "mongoose";
 
 // Page 1 structure from scanned form
 export interface IApplicationFormPage1 {
+  // Personal
   firstName: string;
   lastName: string;
-  email: string;
-  phone: string;
-  address: string;
-  city: string;
-  province: string;
-  postalCode: string;
-  sin: string;
+  sin?: string;
+  sinEncrypted: string;
   dob: string; // Format: YYYY-MM-DD
-  gender: string;
-  maritalStatus: string;
-  numberOfDependents: number;
+  phoneHome: string;
+  phoneCell: string;
+  canProvideProofOfAge: boolean;
+  email: string;
   emergencyContactName: string;
   emergencyContactPhone: string;
-  emergencyContactRelationship: string;
+
+  // Place of Birth
+  birthCity: string;
+  birthCountry: string;
+  birthStateOrProvince: string;
+
+  // License
+  currentLicense: {
+    licenseNumber: string;
+    licenseStateOrProvince: string;
+    licenseType: string;
+    licenseExpiry: string; // Format: YYYY-MM-DD
+  };
+  previousLicenses: Array<{
+    licenseNumber: string;
+    licenseStateOrProvince: string;
+    licenseType: string;
+    licenseExpiry: string; // Format: YYYY-MM-DD
+  }>;
+
+  // Address (Current & Previous)
+  addresses: Array<{
+    address: string;
+    city: string;
+    stateOrProvince: string;
+    postalCode: string;
+    from: string; // Format: YYYY-MM-DD
+    to: string;   // Format: YYYY-MM-DD
+  }>;
 }
 
 // Placeholder structure for the other 11 pages (to be filled later)
 export interface IApplicationForm {
-  sin: number;
-  currentPage: number;
-  completedPages: number[];
+  currentStep: number;
+  completedStep: number;
+  completed: boolean;
 
   page1: IApplicationFormPage1;
   page2: Record<string, string>;

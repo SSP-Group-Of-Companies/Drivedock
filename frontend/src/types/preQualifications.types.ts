@@ -38,6 +38,8 @@ export enum EDriverType {
   
     // Confirmation
     infoAnsweredTruthfully: boolean;
+    completed: boolean;
+    flatbedExperience: boolean; 
   }
   
   export interface IPreQualificationsDoc extends IPreQualifications, Document {};

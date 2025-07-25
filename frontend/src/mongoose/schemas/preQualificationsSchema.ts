@@ -7,6 +7,11 @@ import {
 import { Schema } from "mongoose";
 
 const PreQualificationsSchema: Schema<IPreQualificationsDoc> = new Schema({
+  completed: {
+    type: Boolean,
+    required: [true, "completed is required"]
+  },
+
   over23Local: { type: Boolean, required: [true, "over23Local is required"] },
   over25CrossBorder: {
     type: Boolean,
@@ -81,6 +86,7 @@ const PreQualificationsSchema: Schema<IPreQualificationsDoc> = new Schema({
     type: Boolean,
     required: [true, "infoAnsweredTruthfully is required"],
   },
+
 });
 
 export default PreQualificationsSchema;

@@ -1,28 +1,37 @@
 import { Document, ObjectId } from "mongoose";
 
 export interface IOnboardingTracker {
-    sin: string;
-    resumeExpiresAt: Date;
-  
-    status: {
-      currentStep: number;           // e.g., 1 to 7
-      currentPage: number;           // page number within current step
-      stepsCompleted: number[];      // list of completed steps (e.g., [1, 2, 3, 4])
-      completed: boolean;            // whether application is fully completed
-    };
-  
-    forms: {
-      preQualification?: ObjectId;
-      driverApplication?: ObjectId;
-      consents?: ObjectId;
-      carrierEdge?: ObjectId;
-      driveTest?: ObjectId;
-      drugTest?: ObjectId;
-      flatbedTraining?: ObjectId;
-    };
-  
-    createdAt: Date;
-    updatedAt: Date;
-  }
+  // Encrypted and hashed SIN
+  sinHash: string;
+  sinEncrypted: string;
 
-  export interface IOnboardingTrackerDoc extends IOnboardingTracker, Document {};
+  // Derived virtual field (not stored in DB)
+  sin?: string;
+
+  resumeExpiresAt: Date;
+
+  status: {
+    currentStep: number;
+    completedStep: number;
+    completed: boolean;
+  };
+
+  forms: {
+    preQualification?: ObjectId;
+    driverApplication?: ObjectId;
+    consents?: ObjectId;
+    carrierEdge?: ObjectId;
+    driveTest?: ObjectId;
+    drugTest?: ObjectId;
+    flatbedTraining?: ObjectId;
+  };
+
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// Extends Mongoose's Document
+export interface IOnboardingTrackerDoc extends IOnboardingTracker, Document {
+  // Virtual getter
+  sin?: string;
+}
