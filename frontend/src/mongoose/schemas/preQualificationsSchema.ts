@@ -7,45 +7,19 @@ import {
 import { Schema } from "mongoose";
 
 const PreQualificationsSchema: Schema<IPreQualificationsDoc> = new Schema({
-  completed: {
-    type: Boolean,
-    required: [true, "completed is required"]
-  },
+  completed: { type: Boolean, required: true },
 
-  over23Local: { type: Boolean, required: [true, "over23Local is required"] },
-  over25CrossBorder: {
-    type: Boolean,
-    required: [true, "over25CrossBorder is required"],
-  },
-  canDriveManual: {
-    type: Boolean,
-    required: [true, "canDriveManual is required"],
-  },
-  experienceDrivingTractorTrailer: {
-    type: Boolean,
-    required: [true, "experienceDrivingTractorTrailer is required"],
-  },
-  faultAccidentIn3Years: {
-    type: Boolean,
-    required: [true, "faultAccidentIn3Years is required"],
-  },
-  zeroPointsOnAbstract: {
-    type: Boolean,
-    required: [true, "zeroPointsOnAbstract is required"],
-  },
-  noUnpardonedCriminalRecord: {
-    type: Boolean,
-    required: [true, "noUnpardonedCriminalRecord is required"],
-  },
-  legalRightToWorkCanada: {
-    type: Boolean,
-    required: [true, "legalRightToWorkCanada is required"],
-  },
-  canCrossBorderUSA: {
-    type: Boolean,
-    required: [true, "canCrossBorderUSA is required"],
-  },
-  hasFASTCard: { type: Boolean, required: [true, "hasFASTCard is required"] },
+  over23Local: { type: Boolean, required: true },
+  over25CrossBorder: { type: Boolean, required: true },
+  canDriveManual: { type: Boolean, required: true },
+  experienceDrivingTractorTrailer: { type: Boolean, required: true },
+  faultAccidentIn3Years: { type: Boolean, required: true },
+  zeroPointsOnAbstract: { type: Boolean, required: true },
+  noUnpardonedCriminalRecord: { type: Boolean, required: true },
+  legalRightToWorkCanada: { type: Boolean, required: true },
+  canCrossBorderUSA: { type: Boolean, required: true },
+  hasFASTCard: { type: Boolean, required: true },
+
   driverType: {
     type: String,
     enum: {
@@ -53,7 +27,7 @@ const PreQualificationsSchema: Schema<IPreQualificationsDoc> = new Schema({
       message:
         "driverType must be one of: " + Object.values(EDriverType).join(", "),
     },
-    required: [true, "driverType is required"],
+    required: true,
   },
   haulPreference: {
     type: String,
@@ -63,7 +37,7 @@ const PreQualificationsSchema: Schema<IPreQualificationsDoc> = new Schema({
         "haulPreference must be one of: " +
         Object.values(EHaulPreference).join(", "),
     },
-    required: [true, "haulPreference is required"],
+    required: true,
   },
   teamStatus: {
     type: String,
@@ -72,21 +46,12 @@ const PreQualificationsSchema: Schema<IPreQualificationsDoc> = new Schema({
       message:
         "teamStatus must be one of: " + Object.values(ETeamStatus).join(", "),
     },
-    required: [true, "teamStatus is required"],
-  },
-  preferLocalDriving: {
-    type: Boolean,
-    required: [true, "preferLocalDriving is required"],
-  },
-  preferSwitching: {
-    type: Boolean,
-    required: [true, "preferSwitching is required"],
-  },
-  infoAnsweredTruthfully: {
-    type: Boolean,
-    required: [true, "infoAnsweredTruthfully is required"],
+    required: true,
   },
 
+  preferLocalDriving: { type: Boolean, required: true },
+  preferSwitching: { type: Boolean, required: true },
+  flatbedExperience: { type: Boolean, required: true },
 });
 
 export default PreQualificationsSchema;

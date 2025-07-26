@@ -1,4 +1,4 @@
-import { decryptString, encryptString } from "@/lib/utils/cryptoUtils";
+import { decryptString } from "@/lib/utils/cryptoUtils";
 import { IApplicationFormPage1 } from "@/types/applicationForm.types";
 import { Schema } from "mongoose";
 
@@ -49,19 +49,15 @@ export const applicationFormPage1Schema = new Schema<IApplicationFormPage1>(
   {
     _id: false,
     toJSON: { virtuals: true },
-    toObject: { virtuals: true }
+    toObject: { virtuals: true },
   }
 );
 
 // Virtual for sin (decrypted)
-applicationFormPage1Schema.virtual("sin")
-  .get(function (this: any) {
-    try {
-      return decryptString(this.sinEncrypted);
-    } catch {
-      return null;
-    }
-  })
-  .set(function (this: any, value: string) {
-    this.sinEncrypted = value ? encryptString(value) : undefined;
-  });
+applicationFormPage1Schema.virtual("sin").get(function (this) {
+  try {
+    return decryptString(this.sinEncrypted);
+  } catch {
+    return null;
+  }
+});

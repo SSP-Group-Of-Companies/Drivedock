@@ -1,17 +1,18 @@
 import { IApplicationFormDoc } from "@/types/applicationForm.types";
 import { Schema } from "mongoose";
 import { applicationFormPage1Schema } from "./applicationFormPage1Schema";
-import { decryptString, encryptString } from "@/lib/utils/cryptoUtils";
+import { applicationFormPage2Schema } from "./applicationFormPage2Schema";
+import { applicationFormPage3Schema } from "./applicationFormPage3Schema";
 
 const applicationFormSchema = new Schema<IApplicationFormDoc>(
   {
-    completed: {type: Boolean, required: true, default: false},
+    completed: { type: Boolean, required: true, default: false },
     currentStep: { type: Number, required: true, default: 1 },
     completedStep: { type: Number, required: true, default: 1 },
 
     page1: { type: applicationFormPage1Schema, required: true },
-    page2: { type: Schema.Types.Mixed, default: {} },
-    page3: { type: Schema.Types.Mixed, default: {} },
+    page2: { type: applicationFormPage2Schema, default: undefined },
+    page3: { type: applicationFormPage3Schema, default: undefined },
     page4: { type: Schema.Types.Mixed, default: {} },
     page5: { type: Schema.Types.Mixed, default: {} },
     page6: { type: Schema.Types.Mixed, default: {} },
@@ -26,6 +27,5 @@ const applicationFormSchema = new Schema<IApplicationFormDoc>(
     timestamps: true,
   }
 );
-
 
 export default applicationFormSchema;
