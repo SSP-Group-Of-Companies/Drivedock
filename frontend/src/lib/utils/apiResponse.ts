@@ -18,7 +18,7 @@ export function successResponse(
 export function errorResponse(
   status: number = 500,
   message: string = "An error occurred",
-  errors = {}
+  errors = {} 
 ) {
   return NextResponse.json(
     {
