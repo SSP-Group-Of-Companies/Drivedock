@@ -8,7 +8,7 @@ import {
   hashString,
 } from "@/lib/utils/cryptoUtils";
 import { uploadImageToS3, deleteS3Objects } from "@/lib/utils/s3Upload";
-import OnboardingTracker from "@/mongoose/models/onboardingTracker";
+import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 
 export const config = {
   api: { bodyParser: false },
