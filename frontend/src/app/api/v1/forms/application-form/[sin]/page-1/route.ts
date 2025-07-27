@@ -16,12 +16,12 @@ export const config = {
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { sin: string } }
+  { params }: { params: Promise<{ sin: string }> }
 ) {
   try {
     await connectDB();
 
-    const oldSin = params.sin;
+    const oldSin = (await params).sin;
     if (!oldSin || oldSin.length !== 9)
       return errorResponse(400, "Invalid SIN in URL");
 
