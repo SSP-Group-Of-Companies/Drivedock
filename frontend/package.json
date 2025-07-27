@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.850.0",
     "@headlessui/react": "^2.2.4",
     "crypto": "^1.0.1",
     "framer-motion": "^12.23.6",

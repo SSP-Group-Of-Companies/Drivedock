@@ -1,5 +1,8 @@
 import { decryptString } from "@/lib/utils/cryptoUtils";
-import { IApplicationFormPage1 } from "@/types/applicationForm.types";
+import {
+  ELicenseType,
+  IApplicationFormPage1,
+} from "@/types/applicationForm.types";
 import { Schema } from "mongoose";
 
 const addressSchema = new Schema(
@@ -14,12 +17,26 @@ const addressSchema = new Schema(
   { _id: false }
 );
 
+const photoSchema = new Schema(
+  {
+    url: { type: String, required: true },
+    s3Key: { type: String, required: true },
+  },
+  { _id: false }
+);
+
 const licenseSchema = new Schema(
   {
     licenseNumber: { type: String, required: true },
     licenseStateOrProvince: { type: String, required: true },
-    licenseType: { type: String, required: true },
+    licenseType: {
+      type: String,
+      enum: Object.values(ELicenseType),
+      required: true,
+    },
     licenseExpiry: { type: String, required: true },
+    licenseFrontPhoto: { type: photoSchema, required: true },
+    licenseBackPhoto: { type: photoSchema, required: true },
   },
   { _id: false }
 );
@@ -41,8 +58,7 @@ export const applicationFormPage1Schema = new Schema<IApplicationFormPage1>(
     birthCountry: { type: String, required: true },
     birthStateOrProvince: { type: String, required: true },
 
-    currentLicense: { type: licenseSchema, required: true },
-    previousLicenses: { type: [licenseSchema], required: true },
+    licenses: { type: [licenseSchema], required: true },
 
     addresses: { type: [addressSchema], required: true },
   },

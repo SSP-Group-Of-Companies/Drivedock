@@ -1,6 +1,38 @@
 import { Document } from "mongoose";
 
 // Page 1
+export enum ELicenseType {
+  G1 = "G1",
+  G2 = "G2",
+  G = "G",
+  M1 = "M1",
+  M2 = "M2",
+  M = "M",
+  D = "D",
+  A = "A",
+  A_R = "A_R",
+  B = "B",
+  C = "C",
+  E = "E",
+  F = "F",
+  AZ = "AZ",
+  Other = "Other",
+}
+
+export interface ILicensePhoto {
+  url: string;
+  s3Key: string;
+}
+
+export interface ILicenseEntry {
+  licenseNumber: string;
+  licenseStateOrProvince: string;
+  licenseType: ELicenseType;
+  licenseExpiry: string;
+  licenseFrontPhoto: ILicensePhoto;
+  licenseBackPhoto: ILicensePhoto;
+}
+
 export interface IApplicationFormPage1 {
   // Personal
   firstName: string;
@@ -20,21 +52,10 @@ export interface IApplicationFormPage1 {
   birthCountry: string;
   birthStateOrProvince: string;
 
-  // License
-  currentLicense: {
-    licenseNumber: string;
-    licenseStateOrProvince: string;
-    licenseType: string;
-    licenseExpiry: string; // Format: YYYY-MM-DD
-  };
-  previousLicenses: Array<{
-    licenseNumber: string;
-    licenseStateOrProvince: string;
-    licenseType: string;
-    licenseExpiry: string; // Format: YYYY-MM-DD
-  }>;
+  // Licenses
+  licenses: Array<ILicenseEntry>;
 
-  // Address (Current & Previous)
+  // Address
   addresses: Array<{
     address: string;
     city: string;

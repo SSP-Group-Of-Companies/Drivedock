@@ -62,7 +62,7 @@ const onboardingTrackerSchema = new Schema<IOnboardingTrackerDoc>(
 );
 
 //
-// ✅ VIRTUAL: decrypted SIN for output
+// VIRTUAL: decrypted SIN for output
 //
 onboardingTrackerSchema.virtual("sin").get(function () {
   try {
@@ -73,7 +73,7 @@ onboardingTrackerSchema.virtual("sin").get(function () {
 });
 
 //
-// ✅ Cascade delete forms on tracker deletion
+// Cascade delete forms on tracker deletion
 //
 onboardingTrackerSchema.post("findOneAndDelete", async function (doc) {
   if (!doc) return;
