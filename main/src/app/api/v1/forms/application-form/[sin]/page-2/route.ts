@@ -40,7 +40,6 @@ export function validateEmploymentHistory(employments: IEmploymentEntry[]): stri
 
     const next = sorted[i + 1];
     if (next) {
-      const nextFrom = new Date(next.from);
       const nextTo = new Date(next.to);
 
       // ❌ Overlap check: current.from must be >= next.to

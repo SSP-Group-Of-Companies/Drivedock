@@ -1,6 +1,7 @@
 import { decryptString } from "@/lib/utils/cryptoUtils";
 import {
   IApplicationFormPage1,
+  ILicenseEntry,
 } from "@/types/applicationForm.types";
 import { ELicenseType } from "@/types/shared.types";
 import { Schema } from "mongoose";
@@ -55,22 +56,20 @@ export const applicationFormPage1Schema = new Schema<IApplicationFormPage1>(
       type: [licenseSchema],
       required: true,
       validate: {
-        // first license must be AZ and have front and back photo
-        validator: function (licenses: any[]) {
+        validator: function (this: IApplicationFormPage1, licenses: ILicenseEntry[]): boolean {
           if (!licenses || licenses.length === 0) return false;
-    
+      
           const first = licenses[0];
-          const isFirstValid =
+          return (
             first.licenseType === "AZ" &&
-            first.licenseFrontPhoto?.url &&
-            first.licenseBackPhoto?.url &&
-            first.licenseBackPhoto?.url &&
-            first.licenseBackPhoto?.s3Key;
-    
-          return isFirstValid;
+            !!first.licenseFrontPhoto?.url &&
+            !!first.licenseBackPhoto?.url &&
+            !!first.licenseBackPhoto?.s3Key
+          );
         },
         message: "First license must be AZ and include both front and back photo.",
       },
+      
     },
     
 
