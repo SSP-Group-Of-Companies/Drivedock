@@ -28,8 +28,8 @@ const licenseSchema = new Schema(
       required: true,
     },
     licenseExpiry: { type: String, required: true },
-    licenseFrontPhoto: { type: photoSchema, required: true },
-    licenseBackPhoto: { type: photoSchema, required: true },
+    licenseFrontPhoto: { type: photoSchema },
+    licenseBackPhoto: { type: photoSchema },
   },
   { _id: false }
 );
@@ -51,7 +51,28 @@ export const applicationFormPage1Schema = new Schema<IApplicationFormPage1>(
     birthCountry: { type: String, required: true },
     birthStateOrProvince: { type: String, required: true },
 
-    licenses: { type: [licenseSchema], required: true },
+    licenses: {
+      type: [licenseSchema],
+      required: true,
+      validate: {
+        // first license must be AZ and have front and back photo
+        validator: function (licenses: any[]) {
+          if (!licenses || licenses.length === 0) return false;
+    
+          const first = licenses[0];
+          const isFirstValid =
+            first.licenseType === "AZ" &&
+            first.licenseFrontPhoto?.url &&
+            first.licenseBackPhoto?.url &&
+            first.licenseBackPhoto?.url &&
+            first.licenseBackPhoto?.s3Key;
+    
+          return isFirstValid;
+        },
+        message: "First license must be AZ and include both front and back photo.",
+      },
+    },
+    
 
     addresses: { type: [addressSchema], required: true },
   },
