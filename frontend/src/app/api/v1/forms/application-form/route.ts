@@ -47,7 +47,17 @@ export async function POST(req: Request) {
       return errorResponse(400, "Application with this SIN already exists.");
     }
 
-    const trackerId = crypto.randomUUID();
+    // Step 1: Create onboardingDoc first
+    onboardingDoc = await OnboardingTracker.create({
+      sinHash,
+      sinEncrypted: encryptString(sin),
+      resumeExpiresAt: new Date(Date.now() + Number(FORM_RESUME_EXPIRES_AT_IN_MILSEC)),
+      status: { currentStep: 1, completedStep: 0, completed: false },
+      forms: {},
+    });
+    const trackerId = onboardingDoc.id; // used for S3 folder
+
+    // Step 2: Process licenses
     const updatedLicenses = [];
 
     if (!Array.isArray(page1.licenses)) {
@@ -101,6 +111,7 @@ export async function POST(req: Request) {
       });
     }
 
+    // Step 3: Save ApplicationForm
     page1.sinEncrypted = encryptString(sin);
     delete page1.sin;
 
@@ -112,27 +123,19 @@ export async function POST(req: Request) {
     });
     await appFormDoc.save();
 
+    // Step 4: Save PreQualifications
     preQualDoc = await PreQualifications.create({
       ...prequalifications,
       completed: true,
     });
 
-    onboardingDoc = await OnboardingTracker.create({
-      sinHash,
-      sinEncrypted: encryptString(sin),
-      resumeExpiresAt: new Date(
-        Date.now() + Number(FORM_RESUME_EXPIRES_AT_IN_MILSEC)
-      ),
-      status: {
-        currentStep: 1,
-        completedStep: 1,
-        completed: false,
-      },
-      forms: {
-        preQualification: preQualDoc._id,
-        driverApplication: appFormDoc._id,
-      },
-    });
+    // Step 5: Update onboardingDoc
+    onboardingDoc.forms = {
+      preQualification: preQualDoc.id,
+      driverApplication: appFormDoc.id,
+    };
+    onboardingDoc.status.completedStep = 1;
+    await onboardingDoc.save();
 
     return successResponse(200, "Onboarding created successfully", {
       preQualifications: preQualDoc.toObject(),
@@ -140,19 +143,15 @@ export async function POST(req: Request) {
       onboardingTracker: onboardingDoc.toObject({ virtuals: true }),
     });
   } catch (error) {
+    // Cleanup
     if (uploadedKeys.length > 0) {
       await deleteS3Objects(uploadedKeys);
     }
-    if (onboardingDoc?._id)
-      await OnboardingTracker.findByIdAndDelete(onboardingDoc._id);
-    if (preQualDoc?._id)
-      await PreQualifications.findByIdAndDelete(preQualDoc._id);
-    if (appFormDoc?._id)
-      await ApplicationForm.findByIdAndDelete(appFormDoc._id);
+    if (onboardingDoc?._id) await OnboardingTracker.findByIdAndDelete(onboardingDoc._id);
+    if (preQualDoc?._id) await PreQualifications.findByIdAndDelete(preQualDoc._id);
+    if (appFormDoc?._id) await ApplicationForm.findByIdAndDelete(appFormDoc._id);
 
-    return errorResponse(
-      500,
-      error instanceof Error ? error.message : String(error)
-    );
+    console.error(error);
+    return errorResponse(500, error instanceof Error ? error.message : String(error));
   }
 }
