@@ -1,7 +1,5 @@
 "use client";
 
-import { useTranslation } from "react-i18next";
-
 export default function ApplicationFormPage2() {
 
   return (
