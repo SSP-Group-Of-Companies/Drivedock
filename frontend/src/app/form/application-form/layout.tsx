@@ -7,7 +7,7 @@ export default function ApplicationFormLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { t } = useTranslation("common");
+
 
   return (
     <div className="space-y-6">

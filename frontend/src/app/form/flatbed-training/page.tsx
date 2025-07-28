@@ -3,7 +3,7 @@
 import { useTranslation } from "react-i18next";
 
 export default function FlatbedTrainingPage() {
-  const { t } = useTranslation("common");
+
 
   return (
     <div className="space-y-6">

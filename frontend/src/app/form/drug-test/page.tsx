@@ -3,7 +3,6 @@
 import { useTranslation } from "react-i18next";
 
 export default function DrugTestPage() {
-  const { t } = useTranslation("common");
 
   return (
     <div className="space-y-6">
