@@ -37,7 +37,7 @@ export default function PreQualificationPage() {
   const watchAllFields = watch();
   const allAnswered = Object.values(watchAllFields).every((val) => val !== "");
 
-  const onSubmit = (data: any) => {
+  const onSubmit = (data: Record<string, string>) => {
     // Map form data to backend structure
     const mappedData = {
       over23Local: data.over23Local === "Yes",

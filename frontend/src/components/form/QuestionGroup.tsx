@@ -25,7 +25,6 @@ export default function QuestionGroup({
         <div className="inline-flex w-full sm:w-auto rounded-full border border-gray-300 overflow-hidden">
           {options.map((opt, idx) => {
             const isSelected = value === opt;
-            const isNo = opt === "form.no";
 
             return (
               <button

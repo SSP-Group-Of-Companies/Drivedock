@@ -8,12 +8,10 @@ import FormWizardNav from "@/components/form/FormWizardNav";
 import { usePathname } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
-import { useCompanySelection } from "@/hooks/useCompanySelection";
 
 export default function FormLayout({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation("common");
   const pathname = usePathname();
-  const { selectedCompany } = useCompanySelection();
 
   // Step detection (simple mapping)
   const getCurrentStep = (): number => {
@@ -28,7 +26,6 @@ export default function FormLayout({ children }: { children: React.ReactNode }) 
   };
 
   const currentStep = getCurrentStep();
-  const stepLabel = t(`wizard.step${currentStep}.label`);
 
   return (
     <>
