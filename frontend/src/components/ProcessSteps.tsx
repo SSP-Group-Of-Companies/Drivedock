@@ -1,9 +1,13 @@
 "use client";
 
 import { useTranslation } from "react-i18next";
+import useMounted from "@/hooks/useMounted";
 
 export default function ProcessSteps() {
+  const mounted = useMounted();
   const { t } = useTranslation("common");
+
+  if (!mounted) return null;
 
   const steps = [
     t("steps.personal"),

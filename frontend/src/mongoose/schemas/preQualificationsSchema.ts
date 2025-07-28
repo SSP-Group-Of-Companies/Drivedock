@@ -48,10 +48,18 @@ const PreQualificationsSchema: Schema<IPreQualificationsDoc> = new Schema({
     },
     required: true,
   },
-
-  preferLocalDriving: { type: Boolean, required: true },
-  preferSwitching: { type: Boolean, required: true },
-  flatbedExperience: { type: Boolean, required: true },
+  preferLocalDriving: {
+    type: Boolean,
+    required: [true, "preferLocalDriving is required"],
+  },
+  preferSwitching: {
+    type: Boolean,
+    required: [true, "preferSwitching is required"],
+  },
+  flatbedExperience: {
+    type: Boolean,
+    required: [true, "flatbedExperience is required"],
+  },
 });
 
 export default PreQualificationsSchema;

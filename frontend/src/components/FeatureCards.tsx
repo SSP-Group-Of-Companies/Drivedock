@@ -2,9 +2,13 @@
 
 import { FileText, Languages, ShieldCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import useMounted from "@/hooks/useMounted";
 
 export default function FeatureCards() {
+  const mounted = useMounted();
   const { t } = useTranslation("common");
+
+  if (!mounted) return null;
 
   const features = [
     {

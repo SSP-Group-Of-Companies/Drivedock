@@ -6,7 +6,7 @@ import { useLanguageStore } from "@/hooks/useLanguageStore";
 import { ChevronDown, Check } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import clsx from "clsx";
-import useMounted from "@/hooks/useMounted"; // ✅ Custom hook
+import useMounted from "@/hooks/useMounted"; //  Custom hook
 import { useTranslation } from "react-i18next";
 
 export default function LanguageSelector() {
