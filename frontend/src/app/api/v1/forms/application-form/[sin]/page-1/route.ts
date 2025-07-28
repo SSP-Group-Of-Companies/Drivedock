@@ -71,6 +71,13 @@ export async function PATCH(
       return errorResponse(400, "`licenses` must be an array");
     }
 
+    // First license must be AZ
+    const firstLicense = page1.licenses[0];
+    if (!firstLicense || firstLicense.licenseType !== "AZ") {
+      return errorResponse(400, "The first license must be of type AZ.");
+    }
+
+
     // Step 1: Validate file presence before uploading
     for (let i = 0; i < page1.licenses.length; i++) {
       const existing = existingLicenses[i];

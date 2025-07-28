@@ -64,6 +64,13 @@ export async function POST(req: Request) {
       return errorResponse(400, "`licenses` must be an array");
     }
 
+    // First license must be AZ
+    const firstLicense = page1.licenses[0];
+    if (!firstLicense || firstLicense.licenseType !== "AZ") {
+      return errorResponse(400, "The first license must be of type AZ.");
+    }
+
+
     for (let i = 0; i < page1.licenses.length; i++) {
       const input = page1.licenses[i];
       const frontFile = formData.get(`license_${i}_front`) as File;
