@@ -62,12 +62,16 @@ export interface IEmploymentEntry {
   reasonForLeaving: string;
   subjectToFMCSR: boolean; // Yes/No
   safetySensitiveFunction: boolean; // Yes/No
+
+   /**
+   * Optional explanation for a gap in employment **before** this job.
+   * Used if there is >1 month gap between the previous job's `to` and this job's `from`.
+   */
+   gapExplanationBefore?: string;
 }
 
 export interface IApplicationFormPage2 {
-  currentEmployment: IEmploymentEntry;
-  previousEmployments: IEmploymentEntry[]; // Can add multiple
-  employmentGapExplanation: string; // This is the single textbox
+  employments: IEmploymentEntry[]
 }
 
 // Page 3
