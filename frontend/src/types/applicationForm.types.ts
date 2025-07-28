@@ -1,36 +1,14 @@
 import { Document } from "mongoose";
+import { ELicenseType, IPhoto } from "./shared.types";
 
 // Page 1
-export enum ELicenseType {
-  G1 = "G1",
-  G2 = "G2",
-  G = "G",
-  M1 = "M1",
-  M2 = "M2",
-  M = "M",
-  D = "D",
-  A = "A",
-  A_R = "A_R",
-  B = "B",
-  C = "C",
-  E = "E",
-  F = "F",
-  AZ = "AZ",
-  Other = "Other",
-}
-
-export interface ILicensePhoto {
-  url: string;
-  s3Key: string;
-}
-
 export interface ILicenseEntry {
   licenseNumber: string;
   licenseStateOrProvince: string;
   licenseType: ELicenseType;
   licenseExpiry: string;
-  licenseFrontPhoto: ILicensePhoto;
-  licenseBackPhoto: ILicensePhoto;
+  licenseFrontPhoto: IPhoto;
+  licenseBackPhoto: IPhoto;
 }
 
 export interface IApplicationFormPage1 {
@@ -131,6 +109,35 @@ export interface IApplicationFormPage3 {
   canadianHoursOfService: ICanadianHoursOfService;
 }
 
+
+// Page 4
+export interface ICriminalRecordEntry {
+  offense: string;
+  dateOfSentence: string; // Format: YYYY-MM-DD
+  courtLocation: string;
+}
+
+export interface IApplicationFormPage4 {
+  // Criminal Record Table
+  criminalRecords: ICriminalRecordEntry[];
+
+  // Incorporate Details
+  employeeNumber: string;
+  businessNumber: string;
+  incorporatePhotos: IPhoto[];
+  bankingInfoPhotos: IPhoto[];
+
+  // Additional Info
+  deniedLicenseOrPermit: boolean;
+  suspendedOrRevoked: boolean;
+  suspensionNotes?: string;
+
+  testedPositiveOrRefused: boolean;
+  completedDOTRequirements: boolean;
+  hasAccidentalInsurance: boolean;
+}
+
+
 // Placeholder structure for the other 11 pages (to be filled later)
 export interface IApplicationForm {
   currentStep: number;
@@ -140,7 +147,7 @@ export interface IApplicationForm {
   page1: IApplicationFormPage1;
   page2: IApplicationFormPage2;
   page3: IApplicationFormPage3;
-  page4: Record<string, string>;
+  page4: IApplicationFormPage4;
   page5: Record<string, string>;
   page6: Record<string, string>;
   page7: Record<string, string>;

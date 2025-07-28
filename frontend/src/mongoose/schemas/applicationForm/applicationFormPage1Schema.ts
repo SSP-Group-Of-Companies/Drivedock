@@ -1,9 +1,10 @@
 import { decryptString } from "@/lib/utils/cryptoUtils";
 import {
-  ELicenseType,
   IApplicationFormPage1,
 } from "@/types/applicationForm.types";
+import { ELicenseType } from "@/types/shared.types";
 import { Schema } from "mongoose";
+import { photoSchema } from "../sharedSchemas";
 
 const addressSchema = new Schema(
   {
@@ -13,14 +14,6 @@ const addressSchema = new Schema(
     postalCode: { type: String, required: true },
     from: { type: String, required: true },
     to: { type: String, required: true },
-  },
-  { _id: false }
-);
-
-const photoSchema = new Schema(
-  {
-    url: { type: String, required: true },
-    s3Key: { type: String, required: true },
   },
   { _id: false }
 );
