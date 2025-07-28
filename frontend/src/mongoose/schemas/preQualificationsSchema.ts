@@ -77,9 +77,9 @@ const PreQualificationsSchema: Schema<IPreQualificationsDoc> = new Schema({
     type: Boolean,
     required: [true, "preferSwitching is required"],
   },
-  infoAnsweredTruthfully: {
+  flatbedExperience: {
     type: Boolean,
-    required: [true, "infoAnsweredTruthfully is required"],
+    required: [true, "flatbedExperience is required"],
   },
 });
 
