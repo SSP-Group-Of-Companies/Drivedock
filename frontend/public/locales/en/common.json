@@ -1,4 +1,93 @@
 {
+  "company": {
+    "heading": "Join Our Family of Companies",
+    "subheading": "Choose the company where you want to build your driving career",
+    "applyNow": "Apply Now",
+    "selectType": "Select Application Type",
+    "selectTypeDesc": "Please choose the type of position you are applying for:",
+    "flatbed": "Flatbed",
+    "dropdeck": "Dry Van",
+    "cancel": "Cancel"
+  },
+
+  "features": {
+    "language": {
+      "title": "Multi-language",
+      "description": "Available in English, Punjabi, and French to serve all drivers comfortably"
+    },
+    "security": {
+      "title": "Secure & Safe",
+      "description": "Your information is protected with enterprise-grade security and encryption"
+    },
+    "steps": {
+      "title": "6-Step Process",
+      "description": "Complete all required hiring documents through our guided 6-stage form wizard"
+    }
+  },
+
+  "flatbedPopup": {
+    "title": "Notice",
+    "yes": "Your flatbed skill level will be tested during the Drive Test.",
+    "no": "After your Drive Test, you will be enrolled in a 2-week flatbed training.",
+    "ok": "OK"
+  },
+
+  "footer": {
+    "rights": "All rights reserved.",
+    "tagline": "DriveDock – Digital Driver Onboarding Platform"
+  },
+
+  "form": {
+    "subtitle": "All information must be answered truthfully. Liability falls on the applicant.",
+    "categories": "Categories",
+    "next": "Next",
+    "step1": {
+      "title": "Pre-Qualification Form"
+    },
+    "step2": {
+      "title": "Driver Application Form"
+    },
+    "over23Local": "Are you over the age of 23 (for Local)?",
+    "over25CrossBorder": "Are you over the age of 25 (for Cross Border)?",
+    "canDriveManual": "Can you Drive Manual Transmission?",
+    "experienceDrivingTractorTrailer": "Do you have at least 2 year of verifiable Experience driving Tractor/Trailer?",
+    "faultAccidentIn3Years": "Do you have any at fault accident in the past 3 years?",
+    "zeroPointsOnAbstract": "Do you have more than 0 points on your driver’s abstract?",
+    "noUnpardonedCriminalRecord": "Do you have any criminal record for which pardon has not been granted?",
+    "legalRightToWorkCanada": "Do you have legal right to work in Canada?",
+    "canCrossBorderUSA": "Can you cross borders into USA?",
+    "hasFASTCard": "Do you have FAST card?",
+    "driverType": "Which Driver are you?",
+    "haulPreference": "Which do you prefer?",
+    "teamStatus": "Are you part of a Team or No?",
+    "preferLocalDriving": "Do you prefer driving local?",
+    "preferSwitching": "Do you prefer Switching?",
+    "flatbedExperience": "Do you have a flatbed experience?",
+    "yes": "Yes",
+    "no": "No",
+    "company": "Company",
+    "ownerOperator": "Owner Operator",
+    "ownerDriver": "Owner Driver",
+    "shortHaul": "Short Haul",
+    "longHaul": "Long Haul",
+    "team": "Team",
+    "single": "Single"
+  },
+
+  "navbar": {
+    "logoAlt": "SSP Logo"
+  },
+
+  "resume": {
+    "title": "Resume Your Application",
+    "description": "Enter your SIN to continue your onboarding from where you stopped.",
+    "placeholder": "999-888-777",
+    "success": "Match found! Redirecting...",
+    "error": "No application found for that SIN.",
+    "cancel": "Cancel",
+    "continue": "Continue"
+  },
+
   "start": {
     "heading": "Start Your Application",
     "subheading": "Begin your journey with SSP Group of Companies",
@@ -39,21 +128,6 @@
     }
   },
 
-  "features": {
-    "steps": {
-      "title": "6-Step Process",
-      "description": "Complete all required hiring documents through our guided 6-stage form wizard"
-    },
-    "language": {
-      "title": "Multi-language",
-      "description": "Available in English, Punjabi, and French to serve all drivers comfortably"
-    },
-    "security": {
-      "title": "Secure & Safe",
-      "description": "Your information is protected with enterprise-grade security and encryption"
-    }
-  },
-
   "steps": {
     "title": "Application Process",
     "personal": "Personal Information",
@@ -64,38 +138,38 @@
     "review": "Final Review"
   },
 
-  "resume": {
-    "title": "Resume Your Application",
-    "description": "Enter your SIN to continue your onboarding from where you stopped.",
-    "placeholder": "999-888-777",
-    "success": "Match found! Redirecting...",
-    "error": "No application found for that SIN.",
-    "cancel": "Cancel",
-    "continue": "Continue"
-  },
-
   "welcome": {
     "heading": "Join the Road with SSP",
     "description": "Your digital onboarding platform for joining SSP Truck Line. Complete your hiring documents quickly and securely."
   },
 
-  "footer": {
-    "rights": "All rights reserved.",
-    "tagline": "DriveDock – Digital Driver Onboarding Platform"
-  },
-
-  "navbar": {
-    "logoAlt": "SSP Logo"
-  },
-  
-  "company": {
-  "heading": "Join Our Family of Companies",
-  "subheading": "Choose the company where you want to build your driving career",
-  "applyNow": "Apply Now",
-  "selectType": "Select Application Type",
-  "selectTypeDesc": "Please choose the type of position you are applying for:",
-  "flatbed": "Flatbed",
-  "dropdeck": "Dry Van",
-  "cancel": "Cancel"
+  "wizard": {
+    "infoTitle": "What do the steps mean?",
+    "modalTitle": "Application Steps",
+    "close": "Close",
+    "step1": {
+      "label": "Step 1",
+      "desc": "Pre-Qualification"
+    },
+    "step2": {
+      "label": "Step 2",
+      "desc": "Driver Application Form"
+    },
+    "step3": {
+      "label": "Step 3",
+      "desc": "Policies and Consents"
+    },
+    "step4": {
+      "label": "Step 4",
+      "desc": "CarrierEdge Training"
+    },
+    "step5": {
+      "label": "Step 5",
+      "desc": "Drive Test"
+    },
+    "step6": {
+      "label": "Step 6",
+      "desc": "Drug Test"
+    }
   }
 }

@@ -1,0 +1,78 @@
+// constants/questions.ts
+
+export const preQualificationQuestions = [
+  { name: "over23Local",
+    label: "form.over23Local",
+    options: ["form.yes"],
+  },
+  { name: "over25CrossBorder",
+    label: "form.over25CrossBorder",
+    options: ["form.yes"],
+  },
+  { name: "canDriveManual",
+    label: "form.canDriveManual",
+    options: ["form.yes", "form.no"],
+  },
+  { name: "experienceDrivingTractorTrailer",
+    label: "form.experienceDrivingTractorTrailer",
+    options: ["form.yes"],
+  },
+  { name: "faultAccidentIn3Years",
+    label: "form.faultAccidentIn3Years",
+    options: ["form.yes", "form.no"],  
+  },
+  { name: "zeroPointsOnAbstract",
+    label: "form.zeroPointsOnAbstract",
+    options: ["form.yes", "form.no"],
+  },
+  { name: "noUnpardonedCriminalRecord",
+    label: "form.noUnpardonedCriminalRecord",
+    options: ["form.yes", "form.no"],   
+  },
+  { name: "legalRightToWorkCanada",
+    label: "form.legalRightToWorkCanada",
+    options: ["form.yes"],
+  },
+  { name: "canCrossBorderUSA",
+    label: "form.canCrossBorderUSA",
+    options: ["form.yes"],
+  },
+  { name: "hasFASTCard",
+    label: "form.hasFASTCard",
+    options: ["form.yes", "form.no"],
+  },
+];
+
+export const categoryQuestions = [
+  {
+    name: "driverType",
+    label: "form.driverType",
+    options: ["form.company", "form.ownerOperator", "form.ownerDriver"],
+  },
+  {
+    name: "haulPreference",
+    label: "form.haulPreference",
+    options: ["form.shortHaul", "form.longHaul"],
+  },
+  {
+    name: "teamStatus",
+    label: "form.teamStatus",
+    options: ["form.team", "form.single"],
+  },
+  {
+    name: "preferLocalDriving",
+    label: "form.preferLocalDriving",
+    options: ["form.yes", "form.no"],
+  },
+  {
+    name: "preferSwitching",
+    label: "form.preferSwitching",
+    options: ["form.yes", "form.no"],
+  },
+  {
+    name: "flatbedExperience",
+    label: "form.flatbedExperience",
+    options: ["form.yes", "form.no"],
+  },
+  // flatbedExperience is not in IPreQualifications, so we leave it out for backend mapping
+];

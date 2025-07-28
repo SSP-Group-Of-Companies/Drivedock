@@ -8,26 +8,30 @@ import Footer from "@/components/Footer";
 import { useState } from "react";
 import { Dialog } from "@headlessui/react";
 import WatermarkBackground from "@/components/WatermarkBackground";
+import { useCompanySelection } from "@/hooks/useCompanySelection"; 
 
 export default function CompanyPage() {
   const { t } = useTranslation("common");
   const router = useRouter();
   const [showModal, setShowModal] = useState(false);
-  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+  const [selectedCompany, setSelectedCompanyState] = useState<Company | null>(null);
+  const { setSelectedCompany } = useCompanySelection(); // STORE HOOK
 
   const handleApply = (company: Company) => {
-    router.push(`/start/apply?company=${company.id}`);
+    setSelectedCompany(company); // STORE COMPANY
+    router.push(`/form/pre-qualification`);
   };
 
   const handleSpecialApply = (company: Company) => {
-    setSelectedCompany(company);
+    setSelectedCompanyState(company);
     setShowModal(true);
   };
 
   const handleModalSelect = (type: string) => {
     setShowModal(false);
     if (selectedCompany) {
-      router.push(`/start/apply?company=${selectedCompany.id}&type=${type}`);
+      setSelectedCompany({ ...selectedCompany, type }); // STORE COMPANY WITH TYPE
+      router.push(`/form/pre-qualification`);
     }
   };
 
@@ -79,13 +83,13 @@ export default function CompanyPage() {
               <div className="flex flex-col gap-4">
                 <button
                   className="w-full py-3 rounded-lg font-semibold text-white bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 shadow hover:opacity-90 transition"
-                  onClick={() => handleModalSelect("flatbed")}
+                  onClick={() => handleModalSelect("Flatbed")}
                 >
                   {t("company.flatbed", "Flatbed")}
                 </button>
                 <button
                   className="w-full py-3 rounded-lg font-semibold text-white bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 shadow hover:opacity-90 transition"
-                  onClick={() => handleModalSelect("dropdeck")}
+                  onClick={() => handleModalSelect("Dry Van")}
                 >
                   {t("company.dropdeck", "Drop Deck")}
                 </button>
@@ -103,4 +107,4 @@ export default function CompanyPage() {
       <Footer />
     </div>
   );
-} 
+}

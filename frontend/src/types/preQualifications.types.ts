@@ -35,9 +35,7 @@ export enum EDriverType {
     teamStatus: ETeamStatus;
     preferLocalDriving: boolean;
     preferSwitching: boolean;
-  
-    // Confirmation
-    infoAnsweredTruthfully: boolean;
+    flatbedExperience: boolean;
   }
   
   export interface IPreQualificationsDoc extends IPreQualifications, Document {};

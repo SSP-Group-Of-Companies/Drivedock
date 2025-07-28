@@ -1,102 +1,153 @@
 {
-  "start": {
-    "heading": "Commencez votre candidature",
-    "subheading": "Commencez votre parcours avec SSP Group of Companies",
-    "languageLabel": "🌐 Sélectionnez la langue",
-    "selectLanguage": "Sélectionnez la langue",
-    "beforeYouBegin": "Avant de commencer",
-    "readAndAgree": "Veuillez lire et accepter ce qui suit :",
-    "continue": "Continuer vers la candidature",
-    "estimatedTime": "Temps estimé : 15 à 20 minutes",
-    "agreeToTerms": "J'accepte les conditions ci-dessus",
-
-    "checklist": {
-      "accurateInfo": "Toutes les informations fournies doivent être exactes et véridiques",
-      "digitalProcess": "Vous comprenez qu'il s'agit d'un processus de candidature numérique",
-      "consentChecks": "Vous consentez aux vérifications des antécédents et du dossier de conduite",
-      "termsAgreement": "Vous acceptez les conditions générales du SSP Group of Companies"
-    },
-
-    "termsModal": {
-      "title": "Conditions générales",
-      "intro": "En continuant, vous acceptez que :",
-      "items": {
-        "subcontractor": "Vous postulez en tant que sous-traitant, et non en tant qu'employé",
-        "truthfulInfo": "Toutes les informations que vous soumettez sont vraies et exactes",
-        "backgroundChecks": "Vous consentez aux vérifications des antécédents et du dossier de conduite",
-        "companyRules": {
-          "title": "Vous comprenez et acceptez les règles de l'entreprise concernant :",
-          "drugPolicy": "Les politiques sur la drogue et l'alcool",
-          "dashCam": "L'enregistrement par caméra embarquée dans les véhicules",
-          "safetyRules": "La vitesse, les rapports d'accidents et l'utilisation du téléphone",
-          "seals": "Les scellés de remorque et les inspections transfrontalières"
-        },
-        "discipline": "Les mesures disciplinaires peuvent inclure des amendes, des suspensions ou une résiliation",
-        "laws": "Vous êtes responsable de respecter les lois canadiennes et américaines sur le transport"
-      },
-      "cancel": "Annuler",
-      "agree": "J'accepte"
-    }
+  "company": {
+    "heading": "Rejoignez notre groupe de sociétés",
+    "subheading": "Choisissez la compagnie où vous souhaitez construire votre carrière de conducteur",
+    "applyNow": "Postuler maintenant",
+    "selectType": "Sélectionnez le type de candidature",
+    "selectTypeDesc": "Veuillez choisir le type de poste auquel vous postulez :",
+    "flatbed": "Plate‑forme (flatbed)",
+    "dropdeck": "Remorque sèche (Dry Van)",
+    "cancel": "Annuler"
   },
 
   "features": {
-    "steps": {
-      "title": "Processus en 6 étapes",
-      "description": "Remplissez tous les documents d'embauche requis via notre assistant en 6 étapes"
-    },
     "language": {
       "title": "Multilingue",
-      "description": "Disponible en anglais, pendjabi et français pour servir tous les conducteurs"
+      "description": "Disponible en anglais, punjabi et français pour servir tous les conducteurs confortablement"
     },
     "security": {
-      "title": "Sécurisé & Fiable",
-      "description": "Vos informations sont protégées par un chiffrement de niveau entreprise"
+      "title": "Sûr & sécurisé",
+      "description": "Vos informations sont protégées avec sécurité et chiffrement de niveau entreprise"
+    },
+    "steps": {
+      "title": "Processus en 6 étapes",
+      "description": "Complétez tous les documents nécessaires via notre assistant pas à pas en 6 étapes"
     }
   },
 
-  "steps": {
-    "title": "Processus de candidature",
-    "personal": "Informations personnelles",
-    "employment": "Historique d’emploi",
-    "driving": "Dossier de conduite",
-    "medical": "Informations médicales",
-    "references": "Références",
-    "review": "Revue finale"
-  },
-
-  "resume": {
-    "title": "Reprendre votre candidature",
-    "description": "Saisissez votre NAS pour reprendre votre processus là où vous vous êtes arrêté.",
-    "placeholder": "999-888-777",
-    "success": "Correspondance trouvée ! Redirection...",
-    "error": "Aucune candidature trouvée pour ce NAS.",
-    "cancel": "Annuler",
-    "continue": "Continuer"
-  },
-
-  "welcome": {
-    "heading": "Rejoignez la route avec SSP",
-    "description": "Votre plateforme numérique pour rejoindre SSP Truck Line. Remplissez vos documents d'embauche rapidement et en toute sécurité."
+  "flatbedPopup": {
+    "title": "Avis",
+    "yes": "Votre niveau de compétence flatbed sera évalué lors du test de conduite.",
+    "no": "Après le test de conduite, vous serez inscrit à une formation flatbed de 2 semaines.",
+    "ok": "OK"
   },
 
   "footer": {
     "rights": "Tous droits réservés.",
-    "tagline": "DriveDock – Plateforme numérique d'intégration des conducteurs"
+    "tagline": "DriveDock – Plateforme numérique d’accueil des conducteurs"
+  },
+
+  "form": {
+    "subtitle": "Toutes les informations doivent être répondues de manière honnête. La responsabilité incombe au candidat.",
+    "categories": "Catégories",
+    "next": "Suivant",
+    "step1": { "title": "Formulaire de Pré‑Qualification" },
+    "step2": { "title": "Formulaire de candidature conducteur" },
+    "over23Local": "Avez-vous plus de 23 ans (pour local) ?",
+    "over25CrossBorder": "Avez-vous plus de 25 ans (pour transfrontalier) ?",
+    "canDriveManual": "Savez-vous conduire une transmission manuelle ?",
+    "experienceDrivingTractorTrailer": "Avez-vous au moins 2 ans d'expérience vérifiable en conduite de tracteur/remorque ?",
+    "faultAccidentIn3Years": "Avez-vous eu un accident responsable au cours des 3 dernières années ?",
+    "zeroPointsOnAbstract": "Avez-vous plus de 0 point sur votre relevé de conducteur ?",
+    "noUnpardonedCriminalRecord": "Avez-vous un casier judiciaire pour lequel aucune réhabilitation n'a été accordée ?",
+    "legalRightToWorkCanada": "Avez-vous le droit légal de travailler au Canada ?",
+    "canCrossBorderUSA": "Pouvez-vous traverser la frontière vers les États-Unis ?",
+    "hasFASTCard": "Avez-vous une carte FAST ?",
+    "driverType": "Quel type de conducteur êtes-vous ?",
+    "haulPreference": "Que préférez-vous ?",
+    "teamStatus": "Faites-vous partie d'une équipe ou non ?",
+    "preferLocalDriving": "Préférez-vous conduire localement ?",
+    "preferSwitching": "Préférez-vous le switching ?",
+    "flatbedExperience": "Avez-vous de l'expérience en flatbed ?",
+    "yes": "Oui",
+    "no": "Non",
+    "company": "Société",
+    "ownerOperator": "Propriétaire exploitant",
+    "ownerDriver": "Propriétaire conducteur",
+    "shortHaul": "Courte distance",
+    "longHaul": "Longue distance",
+    "team": "Équipe",
+    "single": "Seul"
   },
 
   "navbar": {
     "logoAlt": "Logo SSP"
   },
 
-  "company": {
-  "heading": "Rejoignez notre groupe d'entreprises",
-  "subheading": "Choisissez l’entreprise dans laquelle vous souhaitez bâtir votre carrière de conducteur",
-  "applyNow": "Postuler maintenant",
-  "selectType": "Sélectionnez le type de candidature",
-  "selectTypeDesc": "Veuillez choisir le type de poste pour lequel vous postulez :",
-  "flatbed": "Plateforme",
-  "dropdeck": "Fourgon sec",
-  "cancel": "Annuler"
-}
+  "resume": {
+    "title": "Reprendre votre candidature",
+    "description": "Entrez votre NAS pour reprendre votre onboarding là où vous l’avez laissé.",
+    "placeholder": "999‑888‑777",
+    "success": "Correspondance trouvée ! Redirection…",
+    "error": "Aucune candidature trouvée pour ce NAS.",
+    "cancel": "Annuler",
+    "continue": "Continuer"
+  },
 
+  "start": {
+    "heading": "Commencez votre candidature",
+    "subheading": "Engagez votre parcours avec SSP Group of Companies",
+    "languageLabel": "🌐 Sélectionnez la langue",
+    "selectLanguage": "Sélectionner la langue",
+    "beforeYouBegin": "Avant de commencer",
+    "readAndAgree": "Veuillez lire et accepter ce qui suit :",
+    "continue": "Continuer vers la candidature",
+    "estimatedTime": "Durée estimée : 15–20 minutes",
+    "agreeToTerms": "J’accepte les termes ci-dessus",
+
+    "checklist": {
+      "accurateInfo": "Toutes les informations fournies doivent être exactes et véridiques",
+      "digitalProcess": "Vous comprenez qu’il s’agit d’un processus numérique",
+      "consentChecks": "Vous consentez aux vérifications d’antécédents et du dossier de conduite",
+      "termsAgreement": "Vous acceptez les termes et conditions de SSP Group of Companies"
+    },
+
+    "termsModal": {
+      "title": "Termes & Conditions",
+      "intro": "En continuant, vous acceptez que :",
+      "items": {
+        "subcontractor": "Vous postulez en tant que sous‑traitant, et non comme employé",
+        "truthfulInfo": "Toutes les informations soumises sont vraies et exactes",
+        "backgroundChecks": "Vous consentez aux vérifications d’antécédents et du dossier de conduite",
+        "companyRules": {
+          "title": "Vous comprenez et acceptez les règles de l’entreprise concernant :",
+          "drugPolicy": "Politique de drogue et consommation d’alcool",
+          "dashCam": "Enregistrement avec dashcam dans les véhicules",
+          "safetyRules": "Excès de vitesse, déclaration d’accident, usage du téléphone",
+          "seals": "Scellés de remorque et inspections transfrontalières"
+        },
+        "discipline": "Des mesures disciplinaires peuvent inclure amendes, suspension ou licenciement",
+        "laws": "Vous êtes responsable de respecter les lois canadiennes et américaines sur le transport routier"
+      },
+      "cancel": "Annuler",
+      "agree": "J’accepte"
+    }
+  },
+
+  "steps": {
+    "title": "Processus de candidature",
+    "personal": "Informations personnelles",
+    "employment": "Antécédents professionnels",
+    "driving": "Dossier de conduite",
+    "medical": "Informations médicales",
+    "references": "Références",
+    "review": "Révision finale"
+  },
+
+  "welcome": {
+    "heading": "Prenez la route avec SSP",
+    "description": "Votre plateforme d’onboarding numérique pour rejoindre SSP Truck Line. Complétez vos documents rapidement et en toute sécurité."
+  },
+
+  "wizard": {
+    "infoTitle": "Que signifient les étapes ?",
+    "modalTitle": "Étapes de la candidature",
+    "close": "Fermer",
+    "step1": { "label": "Étape 1", "desc": "Pré‑Qualification" },
+    "step2": { "label": "Étape 2", "desc": "Formulaire de candidature conducteur" },
+    "step3": { "label": "Étape 3", "desc": "Politiques et consentements" },
+    "step4": { "label": "Étape 4", "desc": "Formation CarrierEdge" },
+    "step5": { "label": "Étape 5", "desc": "Test de conduite" },
+    "step6": { "label": "Étape 6", "desc": "Test de dépistage" }
+  }
 }
