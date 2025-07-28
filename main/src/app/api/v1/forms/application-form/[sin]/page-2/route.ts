@@ -4,7 +4,7 @@ import connectDB from "@/lib/utils/connectDB";
 import ApplicationForm from "@/mongoose/models/applicationForm";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import { hashString } from "@/lib/utils/cryptoUtils";
-import { IApplicationFormPage2, IEmploymentEntry } from "@/types/applicationForm.types";
+import { IApplicationFormPage2 } from "@/types/applicationForm.types";
 import { validateEmploymentHistory } from "@/lib/utils/validateEmploymentHistory";
 
 
