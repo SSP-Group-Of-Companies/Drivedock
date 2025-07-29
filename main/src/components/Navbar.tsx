@@ -52,7 +52,9 @@ export default function Navbar() {
               >
                 <ArrowLeft size={18} />
               </motion.span>
-              <span className="hidden sm:inline">{t("navbar.back", "Back")}</span>
+              <span className="hidden sm:inline">
+                {t("navbar.back", "Back")}
+              </span>
             </button>
           )}
         </div>

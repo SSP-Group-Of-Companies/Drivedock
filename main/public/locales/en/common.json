@@ -45,7 +45,7 @@
       "title": "Pre-Qualification Form"
     },
     "step2": {
-      "title": "Driver Application Form"
+      "title": "Application Form"
     },
     "over23Local": "Are you over the age of 23 (for Local)?",
     "over25CrossBorder": "Are you over the age of 25 (for Cross Border)?",
@@ -71,7 +71,72 @@
     "shortHaul": "Short Haul",
     "longHaul": "Long Haul",
     "team": "Team",
-    "single": "Single"
+    "single": "Single",
+
+    "page1": {
+      "sections": {
+        "personal": "Personal Information",
+        "birth": "Place of Birth",
+        "license": "License Information",
+        "address": "Address History"
+      }
+    },
+    "fields": {
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "sin": "SIN (Social Insurance Number)",
+      "dob": "Date of Birth",
+      "canProvideProof": "Can you provide proof of age?",
+      "email": "Email Address",
+      "phoneHome": "Phone (Home)",
+      "phoneCell": "Phone (Cell)",
+      "emergencyContactName": "Emergency Contact Name",
+      "emergencyContactPhone": "Emergency Contact Phone",
+      "birthCity": "City of Birth",
+      "birthStateOrProvince": "State or Province",
+      "birthCountry": "Country of Birth",
+      "licenseNumber": "License Number",
+      "licenseProvince": "Province",
+      "licenseType": "License Type",
+      "licenseExpiry": "Expiry Date",
+      "licenseFrontPhoto": "Upload License Front Photo",
+      "licenseBackPhoto": "Upload License Back Photo",
+      "address": "Street Address",
+      "city": "City",
+      "stateOrProvince": "State or Province",
+      "postalCode": "Postal Code",
+      "from": "From Date",
+      "to": "To Date"
+    },
+    "actions": {
+      "addLicense": "Add Another License",
+      "removeLicense": "Remove License",
+      "addAddress": "Add Another Address",
+      "removeAddress": "Remove Address"
+    },
+    "placeholders": {
+      "firstName": "Enter your first name",
+      "lastName": "Enter your last name",
+      "phoneHome": "Enter your home phone number",
+      "phoneCell": "Enter your mobile phone number",
+      "email": "Enter your email address",
+      "emergencyContactName": "Enter emergency contact name",
+      "emergencyContactPhone": "Enter emergency contact phone",
+      "birthCity": "Enter city of birth",
+      "birthStateOrProvince": "Enter province or state of birth",
+      "birthCountry": "Enter country of birth",
+      "sin": "123-456-789",
+      "dob": "yyyy-mm-dd",
+      "select": "--Select--"
+    },
+    "errors": {
+      "minimum5Years": "You must provide at least 5 years of address history."
+    },
+    "continue": "Continue"
+  },
+  "common": {
+    "yes": "Yes",
+    "no": "No"
   },
 
   "navbar": {

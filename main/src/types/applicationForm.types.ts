@@ -46,7 +46,6 @@ export interface IApplicationFormPage1 {
 
 // Page 2
 export interface IEmploymentEntry {
-  employerName: string;
   supervisorName: string;
   address: string;
   postalCode: string;
@@ -109,7 +108,6 @@ export interface IApplicationFormPage3 {
   canadianHoursOfService: ICanadianHoursOfService;
 }
 
-
 // Page 4
 export interface ICriminalRecordEntry {
   offense: string;
@@ -136,7 +134,6 @@ export interface IApplicationFormPage4 {
   completedDOTRequirements: boolean;
   hasAccidentalInsurance: boolean;
 }
-
 
 // Placeholder structure for the other 11 pages (to be filled later)
 export interface IApplicationForm {
