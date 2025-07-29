@@ -68,7 +68,7 @@ export const PATCH = async (
 };
 
 export const GET = async (
-  req: Request,
+  _: Request,
   { params }: { params: Promise<{ sin: string }> }
 ) => {
   try {
