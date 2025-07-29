@@ -4,7 +4,7 @@ import connectDB from "@/lib/utils/connectDB";
 import { hashString } from "@/lib/utils/cryptoUtils";
 
 export const GET = async (
-  req: Request,
+  _: Request,
   { params }: { params: Promise<{ sin: string }> }
 ) => {
   try {
