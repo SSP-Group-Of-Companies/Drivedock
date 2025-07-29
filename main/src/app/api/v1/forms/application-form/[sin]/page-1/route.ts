@@ -194,7 +194,8 @@ export async function PATCH(
       {
         $set: {
           page1: { ...page1, licenses: updatedLicenses },
-          currentStep: 1,
+          currentStep: 2,
+          completedStep: 1,
           completed: false,
         },
       },
@@ -223,10 +224,6 @@ export async function PATCH(
       applicationForm: updatedForm.toObject({ virtuals: true }),
     });
   } catch (error) {
-    console.error("Upload error:", error);
-    return errorResponse(
-      500,
-      error instanceof Error ? error.message : "Internal server error"
-    );
+    return errorResponse(error);
   }
 }

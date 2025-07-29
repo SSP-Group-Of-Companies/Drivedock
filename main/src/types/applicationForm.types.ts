@@ -17,7 +17,7 @@ export interface IApplicationFormPage1 {
   lastName: string;
   sin?: string;
   sinEncrypted: string;
-  dob: string; // Format: YYYY-MM-DD
+  dob: string | Date; // Format: YYYY-MM-DD
   phoneHome: string;
   phoneCell: string;
   canProvideProofOfAge: boolean;
@@ -56,9 +56,9 @@ export interface IEmploymentEntry {
   phone2?: string;
   email: string;
   positionHeld: string;
-  from: string; // Format: YYYY-MM-DD
-  to: string; // Format: YYYY-MM-DD
-  salary: string;
+  from: string | Date; // Format: YYYY-MM-DD
+  to: string | Date; // Format: YYYY-MM-DD
+  salary: string | Date;
   reasonForLeaving: string;
   subjectToFMCSR: boolean; // Yes/No
   safetySensitiveFunction: boolean; // Yes/No
@@ -76,14 +76,14 @@ export interface IApplicationFormPage2 {
 
 // Page 3
 export interface IAccidentEntry {
-  date: string; // Format: YYYY-MM-DD
+  date: string | Date; // Format: YYYY-MM-DD
   natureOfAccident: string; // e.g., "Rear end", "Head-On", etc.
   fatalities: number;
   injuries: number;
 }
 
 export interface ITrafficConvictionEntry {
-  date: string; // Format: YYYY-MM-DD
+  date: string | Date; // Format: YYYY-MM-DD
   location: string;
   charge: string;
   penalty: string;
@@ -101,7 +101,7 @@ export interface ICanadianDailyHours {
 }
 
 export interface ICanadianHoursOfService {
-  dayOneDate: string; // Format: YYYY-MM-DD
+  dayOneDate: string | Date; // Format: YYYY-MM-DD
   dailyHours: ICanadianDailyHours[];
   totalHours?: number; // virtual
 }
@@ -117,9 +117,10 @@ export interface IApplicationFormPage3 {
 // Page 4
 export interface ICriminalRecordEntry {
   offense: string;
-  dateOfSentence: string; // Format: YYYY-MM-DD
+  dateOfSentence: string | Date; // Format: YYYY-MM-DD
   courtLocation: string;
 }
+
 
 export interface IApplicationFormPage4 {
   // Criminal Record Table
@@ -142,6 +143,31 @@ export interface IApplicationFormPage4 {
 }
 
 
+// page 5
+export interface ICompetencyQuestionOption {
+  id: string;       // e.g., 1, 2, 3 etc.
+  value: string;    // e.g., "30 km/h"
+}
+
+export interface ICompetencyQuestion {
+  questionId: string;
+  questionText: string;
+  options: ICompetencyQuestionOption[];
+  correctAnswerId: string;  // e.g., "a"
+}
+
+
+export interface ICompetencyAnswer {
+  questionId: string;
+  answerId: string;
+}
+
+export interface IApplicationFormPage5 {
+  answers: ICompetencyAnswer[];
+  score: number;
+}
+
+
 // Placeholder structure for the other 11 pages (to be filled later)
 export interface IApplicationForm {
   currentStep: number;
@@ -152,7 +178,7 @@ export interface IApplicationForm {
   page2: IApplicationFormPage2;
   page3: IApplicationFormPage3;
   page4: IApplicationFormPage4;
-  page5: Record<string, string>;
+  page5: IApplicationFormPage5;
   page6: Record<string, string>;
   page7: Record<string, string>;
   page8: Record<string, string>;

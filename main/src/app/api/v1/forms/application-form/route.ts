@@ -167,7 +167,7 @@ export async function POST(req: Request) {
 
     appFormDoc = new ApplicationForm({
       page1: { ...page1, licenses: updatedLicenses },
-      currentStep: 1,
+      currentStep: 2,
       completedStep: 1,
       completed: false,
     });
@@ -201,6 +201,6 @@ export async function POST(req: Request) {
     if (preQualDoc?._id) await PreQualifications.findByIdAndDelete(preQualDoc._id);
     if (appFormDoc?._id) await ApplicationForm.findByIdAndDelete(appFormDoc._id);
 
-    return errorResponse(500, error instanceof Error ? error.message : String(error));
+    return errorResponse(error);
   }
 }
