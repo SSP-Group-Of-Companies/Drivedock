@@ -34,6 +34,10 @@ const onboardingTrackerSchema = new Schema<IOnboardingTrackerDoc>(
         required: [true, "Completion status is required."],
       },
     },
+    companyId: {
+      type: String, 
+      required: [true, "Company Id is required"]
+    },
     forms: {
       preQualification: {
         type: mongoose.Schema.Types.ObjectId,

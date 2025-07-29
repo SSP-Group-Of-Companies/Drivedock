@@ -9,6 +9,7 @@ import { uploadImageToS3, deleteS3Objects } from "@/lib/utils/s3Upload";
 import { HydratedDocument } from "mongoose";
 import { IOnboardingTrackerDoc } from "@/types/onboardingTracker.type";
 import { hasRecentAddressCoverage } from "@/lib/utils/hasMinimumAddressDuration";
+import { COMPANIES } from "@/constants/companies";
 
 export const config = {
   api: { bodyParser: false },
@@ -26,9 +27,21 @@ export async function POST(req: Request) {
 
     const page1Raw = formData.get("applicationFormPage1") as string;
     const prequalRaw = formData.get("prequalifications") as string;
+    const companyId = formData.get("companyId") as string;
 
-    if (!page1Raw || !prequalRaw) {
-      return errorResponse(400, "Missing form fields");
+    if (!page1Raw) {
+      return errorResponse(400, "Missing applicationFormPage1");
+    }
+    if (!prequalRaw) {
+      return errorResponse(400, "Missing prequalifications");
+    }
+    if (!companyId) {
+      return errorResponse(400, "Missing companyId");
+    }
+    
+    const isValidCompanyId = COMPANIES.some(c => c.id === companyId);
+    if (!isValidCompanyId) {
+      return errorResponse(400, "invalid company id");
     }
 
     let page1, prequalifications;
@@ -62,6 +75,7 @@ export async function POST(req: Request) {
       resumeExpiresAt: new Date(Date.now() + Number(FORM_RESUME_EXPIRES_AT_IN_MILSEC)),
       status: { currentStep: 1, completedStep: 0, completed: false },
       forms: {},
+      companyId
     });
     const trackerId = onboardingDoc.id; // Use in S3 folder
 
