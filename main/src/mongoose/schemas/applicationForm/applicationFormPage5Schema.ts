@@ -21,7 +21,7 @@ export const applicationFormPage5Schema = new Schema<IApplicationFormPage5>(
       type: [competencyAnswerSchema],
       required: [true, "Answers array is required."],
       validate: {
-        validator: (v: any[]) => Array.isArray(v) && v.length > 0,
+        validator: (v: ICompetencyAnswer[]) => Array.isArray(v) && v.length > 0,
         message: "At least one competency answer must be provided.",
       },
     },

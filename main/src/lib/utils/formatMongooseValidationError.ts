@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-export default function formatMongooseValidationError(err: any): string {
+export default function formatMongooseValidationError(err: unknown): string {
   if (err instanceof mongoose.Error.ValidationError) {
     return Object.entries(err.errors)
       .map(([path, error]) => {

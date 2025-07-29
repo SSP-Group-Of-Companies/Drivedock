@@ -20,7 +20,7 @@ export function successResponse(
 export function errorResponse(
   statusOrError: number | unknown,
   msgOrError?: string | unknown,
-  extraErrors: Record<string, any> = {}
+  extraErrors: Record<string, unknown> = {}
 ) {
   let status = 500;
   let message = "An error occurred";
