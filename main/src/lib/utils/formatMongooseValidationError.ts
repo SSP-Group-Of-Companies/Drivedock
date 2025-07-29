@@ -5,7 +5,7 @@ export default function formatMongooseValidationError(err: unknown): string {
     return Object.entries(err.errors)
       .map(([path, error]) => {
         // For CastError: override message
-        if ((error as any).name === "CastError") {
+        if (error.name === "CastError") {
           return `Invalid format for '${path}': ${error.value}`;
         }
         return error.message;
