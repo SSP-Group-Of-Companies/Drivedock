@@ -5,7 +5,7 @@ import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import ApplicationForm from "@/mongoose/models/applicationForm";
 
 export const GET = async (
-  req: Request,
+  _: Request,
   { params }: { params: Promise<{ sin: string }> }
 ) => {
   try {
@@ -41,9 +41,6 @@ export const GET = async (
       applicationForm: appFormDoc.toObject({ virtuals: true }),
     });
   } catch (error) {
-    return errorResponse(
-      500,
-      error instanceof Error ? error.message : String(error)
-    );
+    return errorResponse(error);
   }
 };

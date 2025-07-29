@@ -4,31 +4,40 @@ import PreQualifications from "../models/Prequalifications";
 import ApplicationForm from "../models/applicationForm";
 import { decryptString } from "@/lib/utils/cryptoUtils";
 
-// Schema definition
 const onboardingTrackerSchema = new Schema<IOnboardingTrackerDoc>(
   {
     sinHash: {
       type: String,
-      required: true,
+      required: [true, "SIN hash is required."],
       unique: true,
       index: true,
     },
     sinEncrypted: {
       type: String,
-      required: true,
+      required: [true, "Encrypted SIN is required."],
     },
-
     resumeExpiresAt: {
       type: Date,
-      required: true,
+      required: [true, "Resume expiry date is required."],
     },
-
     status: {
-      currentStep: { type: Number, required: true },
-      completedStep: { type: Number, required: true },
-      completed: { type: Boolean, required: true },
+      currentStep: {
+        type: Number,
+        required: [true, "Current onboarding step is required."],
+      },
+      completedStep: {
+        type: Number,
+        required: [true, "Completed onboarding step is required."],
+      },
+      completed: {
+        type: Boolean,
+        required: [true, "Completion status is required."],
+      },
     },
-
+    companyId: {
+      type: String, 
+      required: [true, "Company Id is required"]
+    },
     forms: {
       preQualification: {
         type: mongoose.Schema.Types.ObjectId,
@@ -46,8 +55,14 @@ const onboardingTrackerSchema = new Schema<IOnboardingTrackerDoc>(
         type: mongoose.Schema.Types.ObjectId,
         ref: "CarrierEdgeStatus",
       },
-      driveTest: { type: mongoose.Schema.Types.ObjectId, ref: "DriveTest" },
-      drugTest: { type: mongoose.Schema.Types.ObjectId, ref: "DrugTest" },
+      driveTest: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "DriveTest",
+      },
+      drugTest: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "DrugTest",
+      },
       flatbedTraining: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "FlatbedTraining",

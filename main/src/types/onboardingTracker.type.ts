@@ -16,6 +16,10 @@ export interface IOnboardingTracker {
     completed: boolean;
   };
 
+  
+  // Selected company (e.g., 'ssp-ca', 'fellowstrans')
+  companyId: string;
+
   forms: {
     preQualification?: ObjectId;
     driverApplication?: ObjectId;

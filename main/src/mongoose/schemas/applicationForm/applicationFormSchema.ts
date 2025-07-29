@@ -3,25 +3,46 @@ import { Schema } from "mongoose";
 import { applicationFormPage1Schema } from "./applicationFormPage1Schema";
 import { applicationFormPage2Schema } from "./applicationFormPage2Schema";
 import { applicationFormPage3Schema } from "./applicationFormPage3Schema";
+import { applicationFormPage4Schema } from "./applicationFormPage4Schema";
+import { applicationFormPage5Schema } from "./applicationFormPage5Schema";
 
 const applicationFormSchema = new Schema<IApplicationFormDoc>(
   {
-    completed: { type: Boolean, required: true, default: false },
-    currentStep: { type: Number, required: true, default: 1 },
-    completedStep: { type: Number, required: true, default: 1 },
+    completed: {
+      type: Boolean,
+      required: [true, "Completed flag is required."],
+      default: false,
+    },
+    currentStep: {
+      type: Number,
+      required: [true, "Current step is required."],
+      default: 1,
+    },
+    completedStep: {
+      type: Number,
+      required: [true, "Completed step is required."],
+      default: 1,
+    },
 
-    page1: { type: applicationFormPage1Schema, required: true },
-    page2: { type: applicationFormPage2Schema, default: undefined },
-    page3: { type: applicationFormPage3Schema, default: undefined },
-    page4: { type: Schema.Types.Mixed, default: {} },
-    page5: { type: Schema.Types.Mixed, default: {} },
-    page6: { type: Schema.Types.Mixed, default: {} },
-    page7: { type: Schema.Types.Mixed, default: {} },
-    page8: { type: Schema.Types.Mixed, default: {} },
-    page9: { type: Schema.Types.Mixed, default: {} },
-    page10: { type: Schema.Types.Mixed, default: {} },
-    page11: { type: Schema.Types.Mixed, default: {} },
-    page12: { type: Schema.Types.Mixed, default: {} },
+    page1: {
+      type: applicationFormPage1Schema,
+      required: [true, "Page 1 data is required."],
+    },
+    page2: {
+      type: applicationFormPage2Schema,
+      default: undefined,
+    },
+    page3: {
+      type: applicationFormPage3Schema,
+      default: undefined,
+    },
+    page4: {
+      type: applicationFormPage4Schema,
+      default: undefined,
+    },
+
+    // Placeholder for future pages
+    page5: { type: applicationFormPage5Schema, default: undefined },
   },
   {
     timestamps: true,

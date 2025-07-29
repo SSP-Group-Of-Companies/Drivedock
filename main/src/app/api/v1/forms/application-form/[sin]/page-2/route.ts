@@ -4,6 +4,10 @@ import connectDB from "@/lib/utils/connectDB";
 import ApplicationForm from "@/mongoose/models/applicationForm";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import { hashString } from "@/lib/utils/cryptoUtils";
+import { IApplicationFormPage2 } from "@/types/applicationForm.types";
+import { validateEmploymentHistory } from "@/lib/utils/validateEmploymentHistory";
+
+
 
 export const PATCH = async (
   req: Request,
@@ -17,9 +21,13 @@ export const PATCH = async (
       return errorResponse(400, "Invalid SIN in URL");
 
     const sinHash = hashString(sin);
-    const body = await req.json();
+    const body = await req.json() as IApplicationFormPage2;
 
-    // Find tracker by hashed SIN
+    // Validate employment history logic
+    const validationError = validateEmploymentHistory(body.employments);
+    if (validationError) return errorResponse(400, validationError);
+
+    // Retrieve onboarding tracker
     const onboardingDoc = await OnboardingTracker.findOne({ sinHash });
     if (!onboardingDoc)
       return errorResponse(404, "OnboardingTracker not found");
@@ -30,14 +38,18 @@ export const PATCH = async (
     const appFormDoc = await ApplicationForm.findById(appFormId);
     if (!appFormDoc) return errorResponse(404, "ApplicationForm not found");
 
+    // check completed step
+    if (appFormDoc.completedStep < 1) return errorResponse(400, "please complete previous step first");
+
     // Update Page 2
     appFormDoc.page2 = body;
-    appFormDoc.currentStep = 2;
+    appFormDoc.currentStep = 3;
     if (appFormDoc.completedStep < 2) {
       appFormDoc.completedStep = 2;
     }
     await appFormDoc.save();
 
+    // Update onboarding tracker
     onboardingDoc.status.currentStep = 2;
     onboardingDoc.resumeExpiresAt = new Date(
       Date.now() + Number(FORM_RESUME_EXPIRES_AT_IN_MILSEC)
@@ -49,9 +61,6 @@ export const PATCH = async (
       applicationForm: appFormDoc.toObject({ virtuals: true }),
     });
   } catch (error) {
-    return errorResponse(
-      500,
-      error instanceof Error ? error.message : String(error)
-    );
+    return errorResponse(error);
   }
 };

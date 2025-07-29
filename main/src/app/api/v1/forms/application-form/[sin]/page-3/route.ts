@@ -29,8 +29,12 @@ export const PATCH = async (
     const appFormDoc = await ApplicationForm.findById(appFormId);
     if (!appFormDoc) return errorResponse(404, "ApplicationForm not found");
 
+        // check completed step
+        if (appFormDoc.completedStep < 2) return errorResponse(400, "please complete previous step first");
+
+    // update page 3
     appFormDoc.page3 = body;
-    appFormDoc.currentStep = 3;
+    appFormDoc.currentStep = 4;
     if (appFormDoc.completedStep < 3) {
       appFormDoc.completedStep = 3;
     }
@@ -47,9 +51,6 @@ export const PATCH = async (
       applicationForm: appFormDoc.toObject({ virtuals: true }),
     });
   } catch (error) {
-    return errorResponse(
-      500,
-      error instanceof Error ? error.message : String(error)
-    );
+    return errorResponse(error);
   }
 };

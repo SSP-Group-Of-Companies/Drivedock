@@ -11,17 +11,17 @@ import { Schema } from "mongoose";
 // Accident Entry Schema
 const accidentEntrySchema = new Schema<IAccidentEntry>(
   {
-    date: { type: String, required: true },
-    natureOfAccident: { type: String, required: true },
+    date: { type: Date, required: [true, "Accident date is required."] },
+    natureOfAccident: { type: String, required: [true, "Nature of accident is required."] },
     fatalities: {
       type: Number,
-      min: 0,
-      required: true,
+      min: [0, "Fatalities cannot be negative."],
+      required: [true, "Number of fatalities is required."],
     },
     injuries: {
       type: Number,
-      min: 0,
-      required: true,
+      min: [0, "Injuries cannot be negative."],
+      required: [true, "Number of injuries is required."],
     },
   },
   { _id: false }
@@ -30,10 +30,10 @@ const accidentEntrySchema = new Schema<IAccidentEntry>(
 // Conviction Entry Schema
 const convictionEntrySchema = new Schema<ITrafficConvictionEntry>(
   {
-    date: { type: String, required: true },
-    location: { type: String, required: true },
-    charge: { type: String, required: true },
-    penalty: { type: String, required: true },
+    date: { type: Date, required: [true, "Conviction date is required."] },
+    location: { type: String, required: [true, "Conviction location is required."] },
+    charge: { type: String, required: [true, "Charge is required."] },
+    penalty: { type: String, required: [true, "Penalty is required."] },
   },
   { _id: false }
 );
@@ -43,24 +43,24 @@ const educationSchema = new Schema<IEducation>(
   {
     gradeSchool: {
       type: Number,
-      min: 0,
-      max: 20,
+      min: [0, "Grade school years cannot be negative."],
+      max: [20, "Grade school years cannot exceed 20."],
       default: 0,
-      required: true,
+      required: [true, "Grade school years are required."],
     },
     college: {
       type: Number,
-      min: 0,
-      max: 10,
+      min: [0, "College years cannot be negative."],
+      max: [10, "College years cannot exceed 10."],
       default: 0,
-      required: true,
+      required: [true, "College years are required."],
     },
     postGraduate: {
       type: Number,
-      min: 0,
-      max: 10,
+      min: [0, "Postgraduate years cannot be negative."],
+      max: [10, "Postgraduate years cannot exceed 10."],
       default: 0,
-      required: true,
+      required: [true, "Postgraduate years are required."],
     },
   },
   { _id: false }
@@ -71,15 +71,15 @@ const dailyHoursSchema = new Schema<ICanadianDailyHours>(
   {
     day: {
       type: Number,
-      min: 1,
-      max: 14,
-      required: true,
+      min: [1, "Day number must be between 1 and 14."],
+      max: [14, "Day number must be between 1 and 14."],
+      required: [true, "Day number is required."],
     },
     hours: {
       type: Number,
-      min: 0,
-      max: 24,
-      required: true,
+      min: [0, "Hours cannot be negative."],
+      max: [24, "Hours cannot exceed 24 in a day."],
+      required: [true, "Hours for the day are required."],
     },
   },
   { _id: false }
@@ -88,14 +88,17 @@ const dailyHoursSchema = new Schema<ICanadianDailyHours>(
 // Canadian Hours of Service Schema
 const canadianHoursSchema = new Schema<ICanadianHoursOfService>(
   {
-    dayOneDate: { type: String, required: true },
+    dayOneDate: {
+      type: Date,
+      required: [true, "Start date for daily hours is required."],
+    },
     dailyHours: {
       type: [dailyHoursSchema],
+      required: [true, "Daily hours must be provided."],
       validate: {
-        validator: (v: ICanadianDailyHours[]) => v.length === 14,
-        message: "Exactly 14 days of hours must be provided",
+        validator: (v: ICanadianDailyHours[]) => Array.isArray(v) && v.length === 14,
+        message: "Exactly 14 days of hours must be provided.",
       },
-      required: true,
     },
   },
   { _id: false }
@@ -107,20 +110,20 @@ export const applicationFormPage3Schema = new Schema<IApplicationFormPage3>(
     accidentHistory: {
       type: [accidentEntrySchema],
       default: [],
-      required: true,
+      required: [true, "Accident history is required (can be empty)."],
     },
     trafficConvictions: {
       type: [convictionEntrySchema],
       default: [],
-      required: true,
+      required: [true, "Traffic convictions are required (can be empty)."],
     },
     education: {
       type: educationSchema,
-      required: true,
+      required: [true, "Education section is required."],
     },
     canadianHoursOfService: {
       type: canadianHoursSchema,
-      required: true,
+      required: [true, "Canadian Hours of Service section is required."],
     },
   },
   {
@@ -130,6 +133,7 @@ export const applicationFormPage3Schema = new Schema<IApplicationFormPage3>(
   }
 );
 
+// Virtual totalHours getter
 applicationFormPage3Schema
   .virtual("canadianHoursOfService.totalHours")
   .get(function (this) {

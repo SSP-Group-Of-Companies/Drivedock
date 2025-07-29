@@ -8,52 +8,76 @@ import { photoSchema } from "../sharedSchemas";
 
 const addressSchema = new Schema(
   {
-    address: { type: String, required: true },
-    city: { type: String, required: true },
-    stateOrProvince: { type: String, required: true },
-    postalCode: { type: String, required: true },
-    from: { type: String, required: true },
-    to: { type: String, required: true },
+    address: { type: String, required: [true, "Address is required."] },
+    city: { type: String, required: [true, "City is required."] },
+    stateOrProvince: { type: String, required: [true, "State or province is required."] },
+    postalCode: { type: String, required: [true, "Postal code is required."] },
+    from: { type: Date, required: [true, "Address 'from' date is required."] },
+    to: { type: Date, required: [true, "Address 'to' date is required."] },
   },
   { _id: false }
 );
 
 const licenseSchema = new Schema(
   {
-    licenseNumber: { type: String, required: true },
-    licenseStateOrProvince: { type: String, required: true },
+    licenseNumber: { type: String, required: [true, "License number is required."] },
+    licenseStateOrProvince: {
+      type: String,
+      required: [true, "License issuing province/state is required."],
+    },
     licenseType: {
       type: String,
-      enum: Object.values(ELicenseType),
-      required: true,
+      enum: {
+        values: Object.values(ELicenseType),
+        message: "License type must be one of the predefined categories.",
+      },
+      required: [true, "License type is required."],
     },
-    licenseExpiry: { type: String, required: true },
-    licenseFrontPhoto: { type: photoSchema, required: true },
-    licenseBackPhoto: { type: photoSchema, required: true },
+    licenseExpiry: { type: Date, required: [true, "License expiry date is required."] },
+    licenseFrontPhoto: { type: photoSchema },
+    licenseBackPhoto: { type: photoSchema },
   },
   { _id: false }
 );
 
 export const applicationFormPage1Schema = new Schema<IApplicationFormPage1>(
   {
-    firstName: { type: String, required: true },
-    lastName: { type: String, required: true },
-    sinEncrypted: { type: String, required: true },
-    dob: { type: String, required: true },
-    phoneHome: { type: String, required: true },
-    phoneCell: { type: String, required: true },
-    canProvideProofOfAge: { type: Boolean, required: true },
-    email: { type: String, required: true },
-    emergencyContactName: { type: String, required: true },
-    emergencyContactPhone: { type: String, required: true },
+    // Personal
+    firstName: { type: String, required: [true, "First name is required."] },
+    lastName: { type: String, required: [true, "Last name is required."] },
+    sinEncrypted: { type: String, required: [true, "Encrypted SIN is required."] },
+    dob: { type: Date, required: [true, "Date of birth is required."] },
+    phoneHome: { type: String, required: [true, "Home phone number is required."] },
+    phoneCell: { type: String, required: [true, "Cell phone number is required."] },
+    canProvideProofOfAge: { type: Boolean, required: [true, "Proof of age confirmation is required."] },
+    email: { type: String, required: [true, "Email address is required."] },
+    emergencyContactName: { type: String, required: [true, "Emergency contact name is required."] },
+    emergencyContactPhone: { type: String, required: [true, "Emergency contact phone number is required."] },
 
-    birthCity: { type: String, required: true },
-    birthCountry: { type: String, required: true },
-    birthStateOrProvince: { type: String, required: true },
+    // Birth
+    birthCity: { type: String, required: [true, "Birth city is required."] },
+    birthCountry: { type: String, required: [true, "Birth country is required."] },
+    birthStateOrProvince: { type: String, required: [true, "Birth province/state is required."] },
 
-    licenses: { type: [licenseSchema], required: true },
+    // Licenses
+    licenses: {
+      type: [licenseSchema],
+      required: [true, "At least one license entry is required."],
+      validate: {
+        validator: (val: unknown[]) => Array.isArray(val) && val.length > 0,
+        message: "At least one license entry is required.",
+      },
+    },
 
-    addresses: { type: [addressSchema], required: true },
+    // Address history
+    addresses: {
+      type: [addressSchema],
+      required: [true, "Address history is required."],
+      validate: {
+        validator: (val: unknown[]) => Array.isArray(val) && val.length > 0,
+        message: "At least one address is required.",
+      },
+    },
   },
   {
     _id: false,
@@ -61,6 +85,7 @@ export const applicationFormPage1Schema = new Schema<IApplicationFormPage1>(
     toObject: { virtuals: true },
   }
 );
+
 
 // Virtual for sin (decrypted)
 applicationFormPage1Schema.virtual("sin").get(function (this) {
