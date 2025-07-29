@@ -3,6 +3,7 @@ import { IOnboardingTrackerDoc } from "@/types/onboardingTracker.type";
 import PreQualifications from "../models/Prequalifications";
 import ApplicationForm from "../models/applicationForm";
 import { decryptString } from "@/lib/utils/cryptoUtils";
+import PoliciesConsents from "../models/PoliciesConsents";
 
 const onboardingTrackerSchema = new Schema<IOnboardingTrackerDoc>(
   {
@@ -35,36 +36,36 @@ const onboardingTrackerSchema = new Schema<IOnboardingTrackerDoc>(
       },
     },
     companyId: {
-      type: String, 
-      required: [true, "Company Id is required"]
+      type: String,
+      required: [true, "Company Id is required"],
     },
     forms: {
       preQualification: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: PreQualifications,
       },
       driverApplication: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: ApplicationForm,
       },
-      consents: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "PoliciesConsents",
+      policiesConsents: {
+        type: Schema.Types.ObjectId,
+        ref: PoliciesConsents,
       },
       carrierEdge: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: "CarrierEdgeStatus",
       },
       driveTest: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: "DriveTest",
       },
       drugTest: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: "DrugTest",
       },
       flatbedTraining: {
-        type: mongoose.Schema.Types.ObjectId,
+        type: Schema.Types.ObjectId,
         ref: "FlatbedTraining",
       },
     },

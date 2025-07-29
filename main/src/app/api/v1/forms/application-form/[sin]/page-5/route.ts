@@ -14,24 +14,32 @@ export const PATCH = async (
   try {
     await connectDB();
     const { sin } = await params;
-    if (!sin || sin.length !== 9) return errorResponse(400, "Invalid SIN in URL");
+    if (!sin || sin.length !== 9)
+      return errorResponse(400, "Invalid SIN in URL");
 
     const sinHash = hashString(sin);
     const body = (await req.json()) as IApplicationFormPage5;
 
     if (!Array.isArray(body.answers) || body.answers.length === 0) {
-      return errorResponse(400, "Answers array is required and must not be empty.");
+      return errorResponse(
+        400,
+        "Answers array is required and must not be empty."
+      );
     }
 
     for (const answer of body.answers) {
       if (!answer.questionId || !answer.answerId) {
-        return errorResponse(400, "Each answer must have a questionId and answerId.");
+        return errorResponse(
+          400,
+          "Each answer must have a questionId and answerId."
+        );
       }
     }
 
     // Validate onboarding link
     const onboardingDoc = await OnboardingTracker.findOne({ sinHash });
-    if (!onboardingDoc) return errorResponse(404, "OnboardingTracker not found");
+    if (!onboardingDoc)
+      return errorResponse(404, "OnboardingTracker not found");
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) return errorResponse(404, "ApplicationForm not linked");
@@ -44,31 +52,35 @@ export const PATCH = async (
       return errorResponse(400, "Please complete previous step first");
 
     if (appFormDoc.completedStep >= 5) {
-        return errorResponse(400, "cannot retake competency questions");
-      }
+      return errorResponse(400, "cannot retake competency questions");
+    }
 
     // validate answers data
     const totalQuestions = competencyQuestions.length;
-    const validQuestionIds = new Set(competencyQuestions.map(q => q.questionId));
-    const answeredIds = new Set(body.answers.map(a => a.questionId));
+    const validQuestionIds = new Set(
+      competencyQuestions.map((q) => q.questionId)
+    );
+    const answeredIds = new Set(body.answers.map((a) => a.questionId));
 
     if (answeredIds.size !== totalQuestions) {
-    return errorResponse(
+      return errorResponse(
         400,
         `All ${totalQuestions} questions must be answered. Received ${answeredIds.size}.`
-    );
+      );
     }
 
     for (const answer of body.answers) {
-    if (!validQuestionIds.has(answer.questionId)) {
+      if (!validQuestionIds.has(answer.questionId)) {
         return errorResponse(400, `Invalid questionId: ${answer.questionId}`);
+      }
     }
-    }
-      
+
     // Scoring logic
     let score = 0;
     for (const answer of body.answers) {
-      const q = competencyQuestions.find(q => q.questionId === answer.questionId);
+      const q = competencyQuestions.find(
+        (q) => q.questionId === answer.questionId
+      );
       if (q?.correctAnswerId === answer.answerId) score++;
     }
 
@@ -85,7 +97,10 @@ export const PATCH = async (
 
     // Update onboarding tracker steps
     onboardingDoc.status.currentStep = 3;
-    onboardingDoc.status.completedStep = 2;
+    onboardingDoc.status.completedStep = Math.max(
+      onboardingDoc.status.completedStep,
+      2
+    );
 
     onboardingDoc.resumeExpiresAt = new Date(
       Date.now() + Number(FORM_RESUME_EXPIRES_AT_IN_MILSEC)

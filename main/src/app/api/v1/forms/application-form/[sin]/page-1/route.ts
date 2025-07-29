@@ -58,12 +58,10 @@ export async function PATCH(
       return errorResponse(404, "OnboardingTracker not found");
 
     const appFormId = onboardingDoc.forms?.driverApplication;
-    if (!appFormId)
-      return errorResponse(404, "ApplicationForm not linked");
+    if (!appFormId) return errorResponse(404, "ApplicationForm not linked");
 
     const appFormDoc = await ApplicationForm.findById(appFormId);
-    if (!appFormDoc)
-      return errorResponse(404, "ApplicationForm not found");
+    if (!appFormDoc) return errorResponse(404, "ApplicationForm not found");
 
     const currentDecryptedSin = appFormDoc.page1?.sinEncrypted
       ? decryptString(appFormDoc.page1.sinEncrypted)
@@ -79,7 +77,10 @@ export async function PATCH(
 
     // validate at least 5 years of address history
     if (!hasRecentAddressCoverage(page1.addresses)) {
-      return errorResponse(400, "Total address history must cover at least 5 years.");
+      return errorResponse(
+        400,
+        "Total address history must cover at least 5 years."
+      );
     }
 
     if (!Array.isArray(page1.licenses)) {
@@ -113,19 +114,31 @@ export async function PATCH(
 
       if (frontFile) {
         if (!allowedImageTypes.includes(frontFile.type)) {
-          return errorResponse(400, `License #${i + 1} front photo must be a valid image.`);
+          return errorResponse(
+            400,
+            `License #${i + 1} front photo must be a valid image.`
+          );
         }
         if (frontFile.size > MAX_IMAGE_SIZE) {
-          return errorResponse(400, `License #${i + 1} front photo exceeds 10MB.`);
+          return errorResponse(
+            400,
+            `License #${i + 1} front photo exceeds 10MB.`
+          );
         }
       }
 
       if (backFile) {
         if (!allowedImageTypes.includes(backFile.type)) {
-          return errorResponse(400, `License #${i + 1} back photo must be a valid image.`);
+          return errorResponse(
+            400,
+            `License #${i + 1} back photo must be a valid image.`
+          );
         }
         if (backFile.size > MAX_IMAGE_SIZE) {
-          return errorResponse(400, `License #${i + 1} back photo exceeds 10MB.`);
+          return errorResponse(
+            400,
+            `License #${i + 1} back photo exceeds 10MB.`
+          );
         }
       }
     }
@@ -214,6 +227,10 @@ export async function PATCH(
     }
 
     onboardingDoc.status.currentStep = 2;
+    onboardingDoc.status.completedStep = Math.max(
+      onboardingDoc.status.completedStep,
+      2
+    );
     onboardingDoc.resumeExpiresAt = new Date(
       Date.now() + Number(FORM_RESUME_EXPIRES_AT_IN_MILSEC)
     );

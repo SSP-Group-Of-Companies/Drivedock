@@ -46,6 +46,10 @@ export const PATCH = async (
 
     // Step 3: Update onboarding status and resume expiration
     onboardingDoc.status.currentStep = 1;
+    onboardingDoc.status.completedStep = Math.max(
+      onboardingDoc.status.completedStep,
+      1
+    );
     onboardingDoc.resumeExpiresAt = new Date(
       Date.now() + Number(FORM_RESUME_EXPIRES_AT_IN_MILSEC)
     );
