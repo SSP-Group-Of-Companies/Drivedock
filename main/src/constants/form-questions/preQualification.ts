@@ -45,7 +45,7 @@ export const preQualificationQuestions = [
   {
     name: "canCrossBorderUSA",
     label: "form.canCrossBorderUSA",
-    options: ["form.yes"],
+    options: ["form.yes", "form.no"],
   },
   {
     name: "hasFASTCard",

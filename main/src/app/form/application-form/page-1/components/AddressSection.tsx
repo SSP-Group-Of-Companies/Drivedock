@@ -5,9 +5,11 @@ import { useFormContext, useFieldArray } from "react-hook-form";
 import { useRef, useEffect } from "react";
 import { IApplicationFormPage1 } from "@/types/applicationForm.types";
 import { Upload } from "lucide-react";
+import { useCompanySelection } from "@/hooks/useCompanySelection";
 
 export default function AddressSection() {
   const { t } = useTranslation("common");
+  const { selectedCompany } = useCompanySelection();
   const {
     register,
     control,
@@ -15,6 +17,19 @@ export default function AddressSection() {
     watch,
     formState: { errors },
   } = useFormContext<IApplicationFormPage1>();
+
+  // Helper functions for conditional labels and placeholders
+  const getPostalCodeLabel = () => {
+    return selectedCompany?.countryCode === "US"
+      ? t("form.fields.zipCode")
+      : t("form.fields.postalCode");
+  };
+
+  const getPostalCodePlaceholder = () => {
+    return selectedCompany?.countryCode === "US"
+      ? t("form.placeholders.zipCode")
+      : t("form.placeholders.postalCode");
+  };
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -37,7 +52,6 @@ export default function AddressSection() {
     return () => clearTimeout(timeout);
   }, [watchedAddresses, errors.addresses, trigger]);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const addressErrors = errors.addresses as any[] | undefined;
 
   const handleAdd = () => {
@@ -125,11 +139,12 @@ export default function AddressSection() {
           {/* Postal Code */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              {t("form.fields.postalCode")}
+              {getPostalCodeLabel()}
             </label>
             <input
               {...register(`addresses.0.postalCode`)}
               type="text"
+              placeholder={getPostalCodePlaceholder()}
               data-field="addresses.0.postalCode"
               className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
             />
@@ -259,11 +274,12 @@ export default function AddressSection() {
               {/* Postal Code */}
               <div>
                 <label className="block text-sm font-medium text-gray-700">
-                  {t("form.fields.postalCode")}
+                  {getPostalCodeLabel()}
                 </label>
                 <input
                   {...register(`addresses.${index + 1}.postalCode`)}
                   type="text"
+                  placeholder={getPostalCodePlaceholder()}
                   data-field={`addresses.${index + 1}.postalCode`}
                   className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
                 />

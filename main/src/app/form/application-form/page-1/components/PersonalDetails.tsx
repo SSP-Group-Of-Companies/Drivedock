@@ -3,7 +3,8 @@
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Camera, X } from "lucide-react";
+import Image from "next/image";
 
 export default function PersonalDetails() {
   const {
@@ -21,6 +22,7 @@ export default function PersonalDetails() {
   const dobValue = useWatch({ control, name: "dob" });
 
   const [showSIN, setShowSIN] = useState(false);
+  const [sinPhotoPreview, setSinPhotoPreview] = useState<string | null>(null);
 
   // Get the current SIN value and format it for display
   const sinValue = useWatch({ control, name: "sin" });
@@ -34,6 +36,34 @@ export default function PersonalDetails() {
     const raw = e.target.value.replace(/\D/g, "").slice(0, 9);
     setValue("sin", raw, { shouldValidate: true });
     setValue("sinEncrypted", raw, { shouldValidate: true }); // Set both fields
+  };
+
+  const handleSinPhotoUpload = (file: File | null) => {
+    if (file) {
+      const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+      if (!allowedTypes.includes(file.type)) {
+        alert("SIN photo must be a JPEG, PNG, or WebP image.");
+        return;
+      }
+
+      const MAX_SIZE = 10 * 1024 * 1024;
+      if (file.size > MAX_SIZE) {
+        alert("SIN photo must be less than 10MB.");
+        return;
+      }
+
+      setValue("sinPhoto", file, { shouldValidate: true });
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setSinPhotoPreview(result);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setValue("sinPhoto", undefined, { shouldValidate: true });
+      setSinPhotoPreview(null);
+    }
   };
 
   // Phone formatting functions
@@ -87,6 +117,26 @@ export default function PersonalDetails() {
           )}
         </div>
 
+        {/* Last Name */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            {t("form.fields.lastName")}
+          </label>
+          <input
+            {...register("lastName")}
+            type="text"
+            name="lastName"
+            data-field="lastName"
+            placeholder={t("form.placeholders.lastName")}
+            className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
+          />
+          {errors.lastName && (
+            <p className="text-red-500 text-sm mt-1">
+              {errors.lastName.message?.toString()}
+            </p>
+          )}
+        </div>
+
         {/* SIN Number */}
         <div className="relative">
           <label className="block text-sm font-medium text-gray-700">
@@ -117,22 +167,52 @@ export default function PersonalDetails() {
           )}
         </div>
 
-        {/* Last Name */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            {t("form.fields.lastName")}
+        {/* SIN Photo Upload */}
+        <div data-field="sinPhoto">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {t("form.fields.sinPhoto")}
           </label>
+          {sinPhotoPreview ? (
+            <div className="relative">
+              <Image
+                src={sinPhotoPreview}
+                alt="SIN Card Preview"
+                width={400}
+                height={128}
+                className="w-full h-32 object-cover rounded-lg border border-gray-300"
+              />
+              <button
+                type="button"
+                onClick={() => handleSinPhotoUpload(null)}
+                className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+              >
+                <X size={12} />
+              </button>
+            </div>
+          ) : (
+            <label
+              htmlFor="sinPhoto"
+              className="cursor-pointer flex flex-col items-center justify-center h-10 px-4 mt-1 w-full text-sm text-gray-600 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 hover:border-gray-400 transition-all duration-200 group"
+            >
+              <Camera className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+              <span className="font-medium text-gray-400 text-xs">
+                {t("form.fields.sinPhotoDesc")}
+              </span>
+            </label>
+          )}
           <input
-            {...register("lastName")}
-            type="text"
-            name="lastName"
-            data-field="lastName"
-            placeholder={t("form.placeholders.lastName")}
-            className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
+            id="sinPhoto"
+            type="file"
+            accept="image/*"
+            capture="environment"
+            {...register("sinPhoto")}
+            onChange={(e) => handleSinPhotoUpload(e.target.files?.[0] || null)}
+            data-field="sinPhoto"
+            className="hidden"
           />
-          {errors.lastName && (
+          {errors.sinPhoto && (
             <p className="text-red-500 text-sm mt-1">
-              {errors.lastName.message?.toString()}
+              {errors.sinPhoto.message?.toString()}
             </p>
           )}
         </div>
@@ -152,38 +232,6 @@ export default function PersonalDetails() {
           {errors.dob && (
             <p className="text-red-500 text-sm mt-1">
               {errors.dob.message?.toString()}
-            </p>
-          )}
-        </div>
-
-        {/* Phone (Home) */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            {t("form.fields.phoneHome")}
-          </label>
-          <div className="relative mt-1">
-            <div className="flex">
-              {/* Country Code */}
-              <div className="flex items-center px-3 py-2 border border-r-0 border-gray-300 rounded-l-md bg-gray-50 text-sm font-medium text-gray-700">
-                +1
-              </div>
-
-              {/* Phone Input */}
-              <input
-                type="tel"
-                placeholder="(555) 123-4567"
-                value={getDisplayPhone(
-                  useWatch({ control, name: "phoneHome" }) || ""
-                )}
-                onChange={(e) => handlePhoneChange("phoneHome", e.target.value)}
-                data-field="phoneHome"
-                className="flex-1 py-2 px-3 border border-gray-300 rounded-r-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md focus:border-transparent"
-              />
-            </div>
-          </div>
-          {errors.phoneHome && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.phoneHome.message?.toString()}
             </p>
           )}
         </div>
@@ -225,6 +273,38 @@ export default function PersonalDetails() {
           {errors.canProvideProofOfAge && (
             <p className="text-red-500 text-sm mt-1">
               {errors.canProvideProofOfAge.message?.toString()}
+            </p>
+          )}
+        </div>
+
+        {/* Phone (Home) */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">
+            {t("form.fields.phoneHome")}
+          </label>
+          <div className="relative mt-1">
+            <div className="flex">
+              {/* Country Code */}
+              <div className="flex items-center px-3 py-2 border border-r-0 border-gray-300 rounded-l-md bg-gray-50 text-sm font-medium text-gray-700">
+                +1
+              </div>
+
+              {/* Phone Input */}
+              <input
+                type="tel"
+                placeholder="(555) 123-4567"
+                value={getDisplayPhone(
+                  useWatch({ control, name: "phoneHome" }) || ""
+                )}
+                onChange={(e) => handlePhoneChange("phoneHome", e.target.value)}
+                data-field="phoneHome"
+                className="flex-1 py-2 px-3 border border-gray-300 rounded-r-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md focus:border-transparent"
+              />
+            </div>
+          </div>
+          {errors.phoneHome && (
+            <p className="text-red-500 text-sm mt-1">
+              {errors.phoneHome.message?.toString()}
             </p>
           )}
         </div>

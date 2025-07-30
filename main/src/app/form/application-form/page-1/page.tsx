@@ -23,6 +23,7 @@ export default function ApplicationFormPage1() {
       firstName: "",
       lastName: "",
       sin: "",
+      sinPhoto: undefined,
       dob: "",
       phoneHome: "",
       phoneCell: "",

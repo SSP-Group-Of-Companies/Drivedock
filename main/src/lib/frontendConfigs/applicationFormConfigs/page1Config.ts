@@ -9,6 +9,7 @@ export const page1Config = {
       "firstName",
       "lastName",
       "sin",
+      "sinPhoto",
       "dob",
       "phoneHome",
       "phoneCell",
@@ -52,6 +53,11 @@ export const page1Config = {
   ) => {
     const formData = new FormData();
 
+    // Handle SIN photo
+    if (values.sinPhoto instanceof File) {
+      formData.append("sinPhoto", values.sinPhoto);
+    }
+
     // Handle license photos (only for the first license)
     const firstLicense = values.licenses?.[0];
     if (firstLicense?.licenseFrontPhoto instanceof File) {
@@ -74,8 +80,14 @@ export const page1Config = {
       licenses: licensesCleaned,
       sin: values.sin?.replace(/\D/g, "") || "",
     };
+    // Remove sinPhoto from JSON payload since it's handled as file
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { sinPhoto, ...payloadWithoutSinPhoto } = payload;
 
-    formData.append("applicationFormPage1", JSON.stringify(payload));
+    formData.append(
+      "applicationFormPage1",
+      JSON.stringify(payloadWithoutSinPhoto)
+    );
     formData.append("prequalifications", JSON.stringify(prequalifications));
     formData.append("companyId", companyId);
 

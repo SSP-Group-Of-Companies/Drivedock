@@ -105,11 +105,11 @@ export function validateEmploymentHistory(
     const to = new Date(current.to);
 
     if (isNaN(from.getTime()) || isNaN(to.getTime())) {
-      return `Invalid date format in employment entry for ${current.employerName}`;
+      return `Invalid date format in employment entry for ${current.positionHeld}`;
     }
 
     if (to < from) {
-      return `End date cannot be before start date in job at ${current.employerName}`;
+      return `End date cannot be before start date in job at ${current.positionHeld}`;
     }
 
     totalDays += differenceInDays(to, from);
@@ -120,7 +120,7 @@ export function validateEmploymentHistory(
 
       // ❌ Overlap check: current.from must be >= next.to
       if (from < nextTo) {
-        return `Job at ${current.employerName} overlaps with job at ${next.employerName}`;
+        return `Job at ${current.positionHeld} overlaps with job at ${next.positionHeld}`;
       }
 
       // Gap check
@@ -130,7 +130,7 @@ export function validateEmploymentHistory(
         (!current.gapExplanationBefore ||
           current.gapExplanationBefore.trim() === "")
       ) {
-        return `Missing gap explanation before employment at ${current.employerName}`;
+        return `Missing gap explanation before employment at ${current.positionHeld}`;
       }
     }
   }

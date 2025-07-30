@@ -32,6 +32,9 @@ export const applicationFormPage1Schema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   sin: z.string().min(1, "SIN is required"),
+  sinPhoto: z
+    .instanceof(File, { message: "SIN photo is required" })
+    .refine((file) => file.size > 0, { message: "SIN photo is required" }),
   dob: z.string().min(1, "Date of birth is required"), // yyyy-mm-dd
   phoneHome: z
     .string()

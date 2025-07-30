@@ -1,4 +1,6 @@
+import mongoose from "mongoose";
 import { NextResponse } from "next/server";
+import formatMongooseValidationError from "./formatMongooseValidationError";
 
 export function successResponse(
   status: number = 200,
@@ -16,20 +18,42 @@ export function successResponse(
 }
 
 export function errorResponse(
-  status: number = 500,
-  message: string = "An error occurred",
-  errors = {}
+  statusOrError: number | unknown,
+  msgOrError?: string | unknown,
+  extraErrors: Record<string, unknown> = {}
 ) {
-  // Standardize error messages for frontend alignment
-  const standardizedMessage = message
-    .replace(/^Invalid /, "")
-    .replace(/\.$/, "");
+  let status = 500;
+  let message = "An error occurred";
+
+  // Case: errorResponse(error)
+  if (typeof statusOrError !== "number") {
+    const err = statusOrError;
+
+    if (err instanceof mongoose.Error.ValidationError) {
+      status = 400;
+      message = formatMongooseValidationError(err);
+    } else if (err instanceof Error) {
+      message = err.message;
+    } else if (typeof err === "string") {
+      message = err;
+    }
+  }
+
+  // Case: errorResponse(400, "My message")
+  else {
+    status = statusOrError;
+    if (typeof msgOrError === "string") {
+      message = msgOrError;
+    } else if (msgOrError instanceof Error) {
+      message = msgOrError.message;
+    }
+  }
 
   return NextResponse.json(
     {
       success: false,
-      message: standardizedMessage,
-      ...(errors && { errors }),
+      message,
+      ...(extraErrors && { errors: extraErrors }),
     },
     { status }
   );

@@ -1,7 +1,7 @@
 "use client";
 
 import { useForm, Controller, useWatch } from "react-hook-form";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import QuestionGroup from "@/components/form/QuestionGroup";
 import FlatbedPopup from "@/components/form/FlatbedPopup";
 import {
@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { ArrowRight } from "lucide-react";
 import { usePrequalificationStore } from "@/store/usePrequalificationStore";
+import { useCompanySelection } from "@/hooks/useCompanySelection";
 import {
   EDriverType,
   EHaulPreference,
@@ -22,14 +23,29 @@ export default function PreQualificationPage() {
   const { t } = useTranslation("common");
   const router = useRouter();
   const { setData } = usePrequalificationStore();
+  const { selectedCompany } = useCompanySelection();
   const [showFlatbedPopup, setShowFlatbedPopup] = useState<null | "yes" | "no">(
     null
   );
 
+  // Filter questions based on company selection
+  const filteredPreQualificationQuestions = useMemo(() => {
+    if (!selectedCompany) return preQualificationQuestions;
+
+    // If US company is selected, exclude cross-border related questions
+    if (selectedCompany.countryCode === "US") {
+      return preQualificationQuestions.filter(
+        (q) => q.name !== "canCrossBorderUSA" && q.name !== "hasFASTCard"
+      );
+    }
+
+    return preQualificationQuestions;
+  }, [selectedCompany]);
+
   const { control, handleSubmit, watch } = useForm({
     mode: "onChange",
     defaultValues: Object.fromEntries(
-      [...preQualificationQuestions, ...categoryQuestions].map((q) => [
+      [...filteredPreQualificationQuestions, ...categoryQuestions].map((q) => [
         q.name,
         "",
       ])
@@ -44,10 +60,18 @@ export default function PreQualificationPage() {
   }, [flatbedExperience]);
 
   const watchAllFields = watch();
-  const allAnswered = Object.values(watchAllFields).every((val) => val !== "");
+  const allAnswered = Object.keys(watchAllFields).every((key) => {
+    const value = watchAllFields[key];
+    // Only check fields that are actually rendered (in filtered questions)
+    const isFieldRendered = [
+      ...filteredPreQualificationQuestions,
+      ...categoryQuestions,
+    ].some((q) => q.name === key);
+    return !isFieldRendered || value !== "";
+  });
 
   const onSubmit = (data: Record<string, string>) => {
-    setData({
+    const prequalData: any = {
       over23Local: data.over23Local === "form.yes",
       over25CrossBorder: data.over25CrossBorder === "form.yes",
       canDriveManual: data.canDriveManual === "form.yes",
@@ -58,8 +82,6 @@ export default function PreQualificationPage() {
       noUnpardonedCriminalRecord:
         data.noUnpardonedCriminalRecord === "form.yes",
       legalRightToWorkCanada: data.legalRightToWorkCanada === "form.yes",
-      canCrossBorderUSA: data.canCrossBorderUSA === "form.yes",
-      hasFASTCard: data.hasFASTCard === "form.yes",
       driverType:
         data.driverType.replace("form.", "") === "ownerDriver"
           ? EDriverType.OwnerDriver
@@ -78,7 +100,15 @@ export default function PreQualificationPage() {
       preferSwitching: data.preferSwitching === "form.yes",
       flatbedExperience: data.flatbedExperience === "form.yes",
       completed: true,
-    });
+    };
+
+    // Only include cross-border questions if they were asked (not US company)
+    if (selectedCompany?.countryCode !== "US") {
+      prequalData.canCrossBorderUSA = data.canCrossBorderUSA === "form.yes";
+      prequalData.hasFASTCard = data.hasFASTCard === "form.yes";
+    }
+
+    setData(prequalData);
 
     router.push("/form/application-form/page-1");
   };
@@ -88,14 +118,20 @@ export default function PreQualificationPage() {
       <div className="space-y-6">
         {/* Pre-Qualification Questions */}
         <div className="space-y-4">
-          {preQualificationQuestions.map((q) => (
+          {filteredPreQualificationQuestions.map((q) => (
             <Controller
               key={q.name}
               control={control}
               name={q.name}
               render={({ field }) => (
                 <QuestionGroup
-                  question={t(q.label)}
+                  question={
+                    q.name === "legalRightToWorkCanada"
+                      ? selectedCompany?.countryCode === "US"
+                        ? t("form.legalRightToWorkUS")
+                        : t(q.label)
+                      : t(q.label)
+                  }
                   options={q.options}
                   {...field}
                 />
