@@ -15,7 +15,10 @@ import {
   validateImageFile,
   validatePostalCodeByCompany,
 } from "@/lib/utils/validationUtils";
-import { IApplicationFormPage1 } from "@/types/applicationForm.types";
+import {
+  IApplicationFormPage1,
+  ILicenseEntry,
+} from "@/types/applicationForm.types";
 import { IPreQualifications } from "@/types/preQualifications.types";
 
 export const config = {
@@ -96,7 +99,7 @@ export async function POST(req: Request) {
 
     // ✅ Step 2–3: Upload sinPhoto and license photos in parallel
     const uploadTasks: Promise<void>[] = [];
-    const updatedLicenses: any[] = [];
+    const updatedLicenses: ILicenseEntry[] = [];
 
     // Validate sin photo
     const sinPhotoRaw = formData.get("sinPhoto");
@@ -169,8 +172,8 @@ export async function POST(req: Request) {
 
       updatedLicenses[i] = {
         ...input,
-        licenseFrontPhoto: null,
-        licenseBackPhoto: null,
+        licenseFrontPhoto: null as any,
+        licenseBackPhoto: null as any,
       };
 
       if (frontFile) {
