@@ -10,6 +10,16 @@ import { HydratedDocument } from "mongoose";
 import { IOnboardingTrackerDoc } from "@/types/onboardingTracker.type";
 import { hasRecentAddressCoverage } from "@/lib/utils/hasMinimumAddressDuration";
 import { COMPANIES } from "@/constants/companies";
+import { IPhoto } from "@/types/shared.types";
+import {
+  validateImageFile,
+  validatePostalCodeByCompany,
+} from "@/lib/utils/validationUtils";
+import {
+  IApplicationFormPage1,
+  ILicenseEntry,
+} from "@/types/applicationForm.types";
+import { IPreQualifications } from "@/types/preQualifications.types";
 
 export const config = {
   api: { bodyParser: false },
@@ -29,22 +39,14 @@ export async function POST(req: Request) {
     const prequalRaw = formData.get("prequalifications") as string;
     const companyId = formData.get("companyId") as string;
 
-    if (!page1Raw) {
-      return errorResponse(400, "Missing applicationFormPage1");
-    }
-    if (!prequalRaw) {
-      return errorResponse(400, "Missing prequalifications");
-    }
-    if (!companyId) {
-      return errorResponse(400, "Missing companyId");
-    }
+    if (!page1Raw) return errorResponse(400, "Missing applicationFormPage1");
+    if (!prequalRaw) return errorResponse(400, "Missing prequalifications");
+    if (!companyId) return errorResponse(400, "Missing companyId");
 
     const isValidCompanyId = COMPANIES.some((c) => c.id === companyId);
-    if (!isValidCompanyId) {
-      return errorResponse(400, "invalid company id");
-    }
+    if (!isValidCompanyId) return errorResponse(400, "Invalid company id");
 
-    let page1, prequalifications;
+    let page1: IApplicationFormPage1, prequalifications: IPreQualifications;
     try {
       page1 = JSON.parse(page1Raw);
       prequalifications = JSON.parse(prequalRaw);
@@ -95,7 +97,6 @@ export async function POST(req: Request) {
       return errorResponse(400, "Application with this SIN already exists.");
     }
 
-    // validate at least 5 years of address history
     if (!hasRecentAddressCoverage(page1.addresses)) {
       return errorResponse(
         400,
@@ -103,7 +104,12 @@ export async function POST(req: Request) {
       );
     }
 
-    // Step 1: Create onboardingDoc first so we get the ID
+    for (const address of page1.addresses) {
+      const error = validatePostalCodeByCompany(address.postalCode, companyId);
+      if (error) return errorResponse(400, error);
+    }
+
+    // Step 1: Create OnboardingTracker
     onboardingDoc = await OnboardingTracker.create({
       sinHash,
       sinEncrypted: encryptString(sin),
@@ -114,22 +120,40 @@ export async function POST(req: Request) {
       forms: {},
       companyId,
     });
-    const trackerId = onboardingDoc.id; // Use in S3 folder
+    const trackerId = onboardingDoc.id;
 
-    // Helper to abort and clean up onboarding doc
     const abortWithTrackerCleanup = async (status: number, message: string) => {
-      if (uploadedKeys.length > 0) {
-        await deleteS3Objects(uploadedKeys);
-      }
-      if (onboardingDoc?._id) {
+      if (uploadedKeys.length > 0) await deleteS3Objects(uploadedKeys);
+      if (onboardingDoc?._id)
         await OnboardingTracker.findByIdAndDelete(onboardingDoc._id);
-      }
       return errorResponse(status, message);
     };
 
-    // Step 2: Validate and upload license photos
-    const updatedLicenses = [];
+    // ✅ Step 2–3: Upload sinPhoto and license photos in parallel
+    const uploadTasks: Promise<void>[] = [];
+    const updatedLicenses: ILicenseEntry[] = [];
 
+    // Validate sin photo
+    const sinPhotoRaw = formData.get("sinPhoto");
+    const sinPhotoResult = validateImageFile(sinPhotoRaw, "sin photo");
+
+    if (!sinPhotoResult.isValid) {
+      return abortWithTrackerCleanup(400, sinPhotoResult.errorMessage);
+    }
+
+    // Defer sin photo upload to its own promise, typed
+    const sinPhotoUploadResultPromise: Promise<IPhoto> = (async () => {
+      const buffer = Buffer.from(await sinPhotoResult.safeFile.arrayBuffer());
+      const upload = await uploadImageToS3({
+        fileBuffer: buffer,
+        fileType: sinPhotoResult.safeFile.type,
+        folder: `sin/${trackerId}`,
+      });
+      uploadedKeys.push(upload.key);
+      return { url: upload.url, s3Key: upload.key };
+    })();
+
+    // Validate and prepare license uploads
     if (!Array.isArray(page1.licenses)) {
       return abortWithTrackerCleanup(400, "`licenses` must be an array");
     }
@@ -142,44 +166,30 @@ export async function POST(req: Request) {
       );
     }
 
-    const allowedImageTypes = ["image/jpeg", "image/png", "image/webp"];
-    const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
-
     for (let i = 0; i < page1.licenses.length; i++) {
       const input = page1.licenses[i];
       const isFirst = i === 0;
 
-      const frontFile = formData.get(`license_${i}_front`) as File | null;
-      const backFile = formData.get(`license_${i}_back`) as File | null;
+      const frontRaw = formData.get(`license_${i}_front`);
+      const backRaw = formData.get(`license_${i}_back`);
 
-      if (frontFile) {
-        if (!allowedImageTypes.includes(frontFile.type)) {
-          return abortWithTrackerCleanup(
-            400,
-            `License #${i + 1} front photo must be an image.`
-          );
+      let frontFile: File | null = null;
+      let backFile: File | null = null;
+
+      if (frontRaw) {
+        const result = validateImageFile(frontRaw, `license ${i + 1} front`);
+        if (!result.isValid) {
+          return abortWithTrackerCleanup(400, result.errorMessage);
         }
-        if (frontFile.size > MAX_IMAGE_SIZE) {
-          return abortWithTrackerCleanup(
-            400,
-            `License #${i + 1} front photo exceeds 10MB.`
-          );
-        }
+        frontFile = result.safeFile;
       }
 
-      if (backFile) {
-        if (!allowedImageTypes.includes(backFile.type)) {
-          return abortWithTrackerCleanup(
-            400,
-            `License #${i + 1} back photo must be an image.`
-          );
+      if (backRaw) {
+        const result = validateImageFile(backRaw, `license ${i + 1} back`);
+        if (!result.isValid) {
+          return abortWithTrackerCleanup(400, result.errorMessage);
         }
-        if (backFile.size > MAX_IMAGE_SIZE) {
-          return abortWithTrackerCleanup(
-            400,
-            `License #${i + 1} back photo exceeds 10MB.`
-          );
-        }
+        backFile = result.safeFile;
       }
 
       if (
@@ -192,46 +202,61 @@ export async function POST(req: Request) {
         );
       }
 
-      let licenseFrontPhoto = null;
-      let licenseBackPhoto = null;
-
-      if (frontFile && frontFile.size > 0) {
-        const frontBuffer = Buffer.from(await frontFile.arrayBuffer());
-        const frontUpload = await uploadImageToS3({
-          fileBuffer: frontBuffer,
-          fileType: frontFile.type,
-          folder: `licenses/${trackerId}`,
-        });
-        uploadedKeys.push(frontUpload.key);
-        licenseFrontPhoto = {
-          url: frontUpload.url,
-          s3Key: frontUpload.key,
-        };
-      }
-
-      if (backFile && backFile.size > 0) {
-        const backBuffer = Buffer.from(await backFile.arrayBuffer());
-        const backUpload = await uploadImageToS3({
-          fileBuffer: backBuffer,
-          fileType: backFile.type,
-          folder: `licenses/${trackerId}`,
-        });
-        uploadedKeys.push(backUpload.key);
-        licenseBackPhoto = {
-          url: backUpload.url,
-          s3Key: backUpload.key,
-        };
-      }
-
-      updatedLicenses.push({
+      updatedLicenses[i] = {
         ...input,
-        licenseFrontPhoto,
-        licenseBackPhoto,
-      });
+        licenseFrontPhoto: null as any,
+        licenseBackPhoto: null as any,
+      };
+
+      if (frontFile) {
+        uploadTasks.push(
+          (async () => {
+            const buffer = Buffer.from(await frontFile.arrayBuffer());
+            const upload = await uploadImageToS3({
+              fileBuffer: buffer,
+              fileType: frontFile.type,
+              folder: `licenses/${trackerId}`,
+            });
+            uploadedKeys.push(upload.key);
+            updatedLicenses[i].licenseFrontPhoto = {
+              url: upload.url,
+              s3Key: upload.key,
+            };
+          })()
+        );
+      }
+
+      if (backFile) {
+        uploadTasks.push(
+          (async () => {
+            const buffer = Buffer.from(await backFile.arrayBuffer());
+            const upload = await uploadImageToS3({
+              fileBuffer: buffer,
+              fileType: backFile.type,
+              folder: `licenses/${trackerId}`,
+            });
+            uploadedKeys.push(upload.key);
+            updatedLicenses[i].licenseBackPhoto = {
+              url: upload.url,
+              s3Key: upload.key,
+            };
+          })()
+        );
+      }
     }
 
-    // Step 3: Save ApplicationForm
+    // Run license uploads concurrently
+    await Promise.all(uploadTasks);
+
+    // Wait for sin photo upload to finish
+    const sinPhotoUploadResult = await sinPhotoUploadResultPromise;
+
+    // ✅ Step 4: Save ApplicationForm
     page1.sinEncrypted = encryptString(sin);
+    page1.sinPhoto = {
+      url: sinPhotoUploadResult.url,
+      s3Key: sinPhotoUploadResult.s3Key,
+    };
     delete page1.sin;
 
     appFormDoc = new ApplicationForm({
@@ -242,13 +267,36 @@ export async function POST(req: Request) {
     });
     await appFormDoc.save();
 
-    // Step 4: Save PreQualifications
+    // ✅ Step 5: Validate prequal fields for Canadian applicants
+    const company = COMPANIES.find((c) => c.id === companyId);
+    if (!company) {
+      return abortWithTrackerCleanup(400, "Invalid companyId provided");
+    }
+    const isCanadian = company.countryCode === "CA";
+
+    if (isCanadian) {
+      const { canCrossBorderUSA, hasFASTCard } = prequalifications;
+      if (typeof canCrossBorderUSA !== "boolean") {
+        return abortWithTrackerCleanup(
+          400,
+          "Field 'canCrossBorderUSA' is required for Canadian applicants"
+        );
+      }
+      if (typeof hasFASTCard !== "boolean") {
+        return abortWithTrackerCleanup(
+          400,
+          "Field 'hasFASTCard' is required for Canadian applicants"
+        );
+      }
+    }
+
+    // ✅ Now save PreQualifications
     preQualDoc = await PreQualifications.create({
       ...prequalifications,
       completed: true,
     });
 
-    // Step 5: Update onboardingDoc
+    // ✅ Step 6: Update onboardingDoc
     onboardingDoc.forms = {
       preQualification: preQualDoc.id,
       driverApplication: appFormDoc.id,
@@ -262,10 +310,7 @@ export async function POST(req: Request) {
       onboardingTracker: onboardingDoc.toObject({ virtuals: true }),
     });
   } catch (error) {
-    // Cleanup
-    if (uploadedKeys.length > 0) {
-      await deleteS3Objects(uploadedKeys);
-    }
+    if (uploadedKeys.length > 0) await deleteS3Objects(uploadedKeys);
     if (onboardingDoc?._id)
       await OnboardingTracker.findByIdAndDelete(onboardingDoc._id);
     if (preQualDoc?._id)

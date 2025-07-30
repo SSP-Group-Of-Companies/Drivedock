@@ -33,7 +33,7 @@ export const PATCH = async (
 
     if (!file) return errorResponse(400, "Missing signature file");
 
-    // ✅ Validate file type
+    // Validate file type
     if (!ALLOWED_MIME_TYPES.includes(file.type)) {
       return errorResponse(
         400,
@@ -41,7 +41,7 @@ export const PATCH = async (
       );
     }
 
-    // ✅ Validate file size
+    // Validate file size
     if (file.size > MAX_FILE_SIZE_BYTES) {
       return errorResponse(
         400,
@@ -54,7 +54,7 @@ export const PATCH = async (
     if (!onboardingDoc)
       return errorResponse(404, "OnboardingTracker not found");
 
-    const existingId = onboardingDoc.forms?.consents;
+    const existingId = onboardingDoc.forms?.policiesConsents;
     const existingDoc = existingId
       ? await PoliciesConsents.findById(existingId)
       : null;
@@ -96,7 +96,7 @@ export const PATCH = async (
 
     // Update onboarding doc if not already linked
     if (!existingId) {
-      onboardingDoc.forms.consents = updatedDoc.id;
+      onboardingDoc.forms.policiesConsents = updatedDoc.id;
     }
 
     onboardingDoc.status.currentStep = 4; // step 3 complete → step 4

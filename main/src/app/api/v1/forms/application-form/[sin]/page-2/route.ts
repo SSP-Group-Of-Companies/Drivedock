@@ -50,6 +50,10 @@ export const PATCH = async (
 
     // Update onboarding tracker
     onboardingDoc.status.currentStep = 2;
+    onboardingDoc.status.completedStep = Math.max(
+      onboardingDoc.status.completedStep,
+      2
+    );
     onboardingDoc.resumeExpiresAt = new Date(
       Date.now() + Number(FORM_RESUME_EXPIRES_AT_IN_MILSEC)
     );

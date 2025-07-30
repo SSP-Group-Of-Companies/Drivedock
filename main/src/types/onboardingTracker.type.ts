@@ -23,7 +23,7 @@ export interface IOnboardingTracker {
   forms: {
     preQualification?: ObjectId;
     driverApplication?: ObjectId;
-    consents?: ObjectId;
+    policiesConsents?: ObjectId;
     carrierEdge?: ObjectId;
     driveTest?: ObjectId;
     drugTest?: ObjectId;

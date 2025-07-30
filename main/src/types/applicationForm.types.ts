@@ -17,6 +17,7 @@ export interface IApplicationFormPage1 {
   lastName: string;
   sin?: string;
   sinEncrypted: string;
+  sinPhoto: IPhoto;
   dob: string | Date; // Format: YYYY-MM-DD
   phoneHome: string;
   phoneCell: string;

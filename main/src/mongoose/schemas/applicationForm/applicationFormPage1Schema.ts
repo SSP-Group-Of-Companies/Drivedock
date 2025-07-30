@@ -56,8 +56,16 @@ export const applicationFormPage1Schema = new Schema<IApplicationFormPage1>(
       type: String,
       required: [true, "Encrypted SIN is required."],
     },
+    sinEncrypted: {
+      type: String,
+      required: [true, "Encrypted SIN is required."],
+    },
+    sinPhoto: { type: photoSchema, required: [true, "Sin photo is required"] },
     dob: { type: Date, required: [true, "Date of birth is required."] },
-    phoneHome: { type: String },
+    phoneHome: {
+      type: String,
+      required: [true, "Home phone number is required."],
+    },
     phoneCell: {
       type: String,
       required: [true, "Cell phone number is required."],
