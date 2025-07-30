@@ -19,7 +19,10 @@ const PreQualificationsSchema: Schema<IPreQualificationsDoc> = new Schema({
   },
   over25CrossBorder: {
     type: Boolean,
-    required: [true, "Confirmation of being over 25 (cross-border) is required."],
+    required: [
+      true,
+      "Confirmation of being over 25 (cross-border) is required.",
+    ],
   },
   canDriveManual: {
     type: Boolean,
@@ -47,11 +50,9 @@ const PreQualificationsSchema: Schema<IPreQualificationsDoc> = new Schema({
   },
   canCrossBorderUSA: {
     type: Boolean,
-    required: [true, "Ability to cross into the USA must be confirmed."],
   },
   hasFASTCard: {
     type: Boolean,
-    required: [true, "FAST card status must be specified."],
   },
 
   // Preferences & Profile
@@ -59,7 +60,9 @@ const PreQualificationsSchema: Schema<IPreQualificationsDoc> = new Schema({
     type: String,
     enum: {
       values: Object.values(EDriverType),
-      message: `Driver type must be one of: ${Object.values(EDriverType).join(", ")}`,
+      message: `Driver type must be one of: ${Object.values(EDriverType).join(
+        ", "
+      )}`,
     },
     required: [true, "Driver type is required."],
   },
@@ -67,7 +70,9 @@ const PreQualificationsSchema: Schema<IPreQualificationsDoc> = new Schema({
     type: String,
     enum: {
       values: Object.values(EHaulPreference),
-      message: `Haul preference must be one of: ${Object.values(EHaulPreference).join(", ")}`,
+      message: `Haul preference must be one of: ${Object.values(
+        EHaulPreference
+      ).join(", ")}`,
     },
     required: [true, "Haul preference is required."],
   },
@@ -75,7 +80,9 @@ const PreQualificationsSchema: Schema<IPreQualificationsDoc> = new Schema({
     type: String,
     enum: {
       values: Object.values(ETeamStatus),
-      message: `Team status must be one of: ${Object.values(ETeamStatus).join(", ")}`,
+      message: `Team status must be one of: ${Object.values(ETeamStatus).join(
+        ", "
+      )}`,
     },
     required: [true, "Team status is required."],
   },
@@ -91,6 +98,6 @@ const PreQualificationsSchema: Schema<IPreQualificationsDoc> = new Schema({
     type: Boolean,
     required: [true, "Flatbed experience status must be specified."],
   },
-});
+}, {timestamps: true});
 
 export default PreQualificationsSchema;

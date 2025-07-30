@@ -10,6 +10,12 @@ import {
 import { uploadImageToS3, deleteS3Objects } from "@/lib/utils/s3Upload";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import { hasRecentAddressCoverage } from "@/lib/utils/hasMinimumAddressDuration";
+import { IPhoto } from "@/types/shared.types";
+import { IApplicationFormPage1 } from "@/types/applicationForm.types";
+import {
+  validateImageFile,
+  validatePostalCodeByCompany,
+} from "@/lib/utils/validationUtils";
 
 export const config = {
   api: { bodyParser: false },
@@ -30,16 +36,18 @@ export async function PATCH(
   try {
     await connectDB();
 
+    // Step 1: Validate SIN from URL
     const oldSin = (await params).sin;
     if (!oldSin || oldSin.length !== 9)
       return errorResponse(400, "Invalid SIN in URL");
 
     const formData = await req.formData();
 
+    // Step 2: Parse and validate page1 data
     const page1Raw = formData.get("page1") as string;
     if (!page1Raw) return errorResponse(400, "Missing `page1` field");
 
-    let page1;
+    let page1: IApplicationFormPage1;
     try {
       page1 = JSON.parse(page1Raw);
     } catch {
@@ -50,6 +58,7 @@ export async function PATCH(
     if (!newSin || newSin.length !== 9)
       return errorResponse(400, "Invalid SIN in page1");
 
+    // Step 3: Lookup existing onboarding & application documents
     const oldSinHash = hashString(oldSin);
     const onboardingDoc = await OnboardingTracker.findOne({
       sinHash: oldSinHash,
@@ -63,6 +72,7 @@ export async function PATCH(
     const appFormDoc = await ApplicationForm.findById(appFormId);
     if (!appFormDoc) return errorResponse(404, "ApplicationForm not found");
 
+    // Step 4: Compute updated SIN values
     const currentDecryptedSin = appFormDoc.page1?.sinEncrypted
       ? decryptString(appFormDoc.page1.sinEncrypted)
       : null;
@@ -75,7 +85,7 @@ export async function PATCH(
     const existingLicenses = appFormDoc.page1?.licenses || [];
     const updatedLicenses = [];
 
-    // validate at least 5 years of address history
+    // Step 5: Address validation
     if (!hasRecentAddressCoverage(page1.addresses)) {
       return errorResponse(
         400,
@@ -83,6 +93,15 @@ export async function PATCH(
       );
     }
 
+    for (const address of page1.addresses) {
+      const error = validatePostalCodeByCompany(
+        address.postalCode,
+        onboardingDoc.companyId
+      );
+      if (error) return errorResponse(400, error);
+    }
+
+    // Step 6: License array & AZ check
     if (!Array.isArray(page1.licenses)) {
       return errorResponse(400, "`licenses` must be an array");
     }
@@ -92,61 +111,64 @@ export async function PATCH(
       return errorResponse(400, "The first license must be of type AZ.");
     }
 
-    const allowedImageTypes = ["image/jpeg", "image/png", "image/webp"];
-    const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
+    // Step 7: Validate and prepare SIN photo upload (if provided)
+    const sinPhotoRaw = formData.get("sinPhoto");
+    let sinPhotoUploadPromise: Promise<IPhoto> | null = null;
 
-    // Step 1: Validate presence, type, and size
+    if (sinPhotoRaw) {
+      const result = validateImageFile(sinPhotoRaw, "SIN photo");
+      if (!result.isValid) return errorResponse(400, result.errorMessage);
+
+      const prevSinPhotoKey = appFormDoc.page1?.sinPhoto?.s3Key;
+      if (prevSinPhotoKey) await deleteS3Objects([prevSinPhotoKey]);
+
+      sinPhotoUploadPromise = (async () => {
+        const buffer = Buffer.from(await result.safeFile.arrayBuffer());
+        const upload = await uploadImageToS3({
+          fileBuffer: buffer,
+          fileType: result.safeFile.type,
+          folder: `sin/${trackerId}`,
+        });
+        uploadedKeys.push(upload.key);
+        return { url: upload.url, s3Key: upload.key };
+      })();
+    }
+
+    // Step 8: Prepare license photo uploads
+    const uploadTasks: Promise<void>[] = [];
+
     for (let i = 0; i < page1.licenses.length; i++) {
-      const isFirst = i === 0;
-      const frontFile = formData.get(`license_${i}_front`) as File | null;
-      const backFile = formData.get(`license_${i}_back`) as File | null;
+      const input = page1.licenses[i];
       const existing = existingLicenses[i];
+      const isFirst = i === 0;
+
+      const frontRaw = formData.get(`license_${i}_front`);
+      const backRaw = formData.get(`license_${i}_back`);
+
+      let frontFile: File | null = null;
+      let backFile: File | null = null;
+
+      if (frontRaw) {
+        const result = validateImageFile(frontRaw, `License #${i + 1} front`);
+        if (!result.isValid) return errorResponse(400, result.errorMessage);
+        frontFile = result.safeFile;
+      }
+
+      if (backRaw) {
+        const result = validateImageFile(backRaw, `License #${i + 1} back`);
+        if (!result.isValid) return errorResponse(400, result.errorMessage);
+        backFile = result.safeFile;
+      }
 
       const hasFront = frontFile || existing?.licenseFrontPhoto?.url;
       const hasBack = backFile || existing?.licenseBackPhoto?.url;
 
       if (isFirst && (!hasFront || !hasBack)) {
         if (!hasFront)
-          return errorResponse(400, `License #1 must include front photo.`);
+          return errorResponse(400, "License #1 must include front photo.");
         if (!hasBack)
-          return errorResponse(400, `License #1 must include back photo.`);
+          return errorResponse(400, "License #1 must include back photo.");
       }
-
-      if (frontFile) {
-        if (!allowedImageTypes.includes(frontFile.type)) {
-          return errorResponse(
-            400,
-            `License #${i + 1} front photo must be a valid image.`
-          );
-        }
-        if (frontFile.size > MAX_IMAGE_SIZE) {
-          return errorResponse(
-            400,
-            `License #${i + 1} front photo exceeds 10MB.`
-          );
-        }
-      }
-
-      if (backFile) {
-        if (!allowedImageTypes.includes(backFile.type)) {
-          return errorResponse(
-            400,
-            `License #${i + 1} back photo must be a valid image.`
-          );
-        }
-        if (backFile.size > MAX_IMAGE_SIZE) {
-          return errorResponse(
-            400,
-            `License #${i + 1} back photo exceeds 10MB.`
-          );
-        }
-      }
-    }
-
-    // Step 2: Upload images
-    for (let i = 0; i < page1.licenses.length; i++) {
-      const input = page1.licenses[i];
-      const existing = existingLicenses[i];
 
       const license = {
         ...input,
@@ -154,52 +176,62 @@ export async function PATCH(
         licenseBackPhoto: existing?.licenseBackPhoto || null,
       };
 
-      const frontFile = formData.get(`license_${i}_front`) as File | null;
-      const backFile = formData.get(`license_${i}_back`) as File | null;
-
+      // Schedule upload for front photo
       if (frontFile && frontFile.size > 0) {
         if (existing?.licenseFrontPhoto?.s3Key) {
           await deleteS3Objects([existing.licenseFrontPhoto.s3Key]);
         }
-
-        const buffer = Buffer.from(await frontFile.arrayBuffer());
-        const frontUpload = await uploadImageToS3({
-          fileBuffer: buffer,
-          fileType: frontFile.type,
-          folder: `licenses/${trackerId}`,
-        });
-
-        license.licenseFrontPhoto = {
-          url: frontUpload.url,
-          s3Key: frontUpload.key,
-        };
-        uploadedKeys.push(frontUpload.key);
+        uploadTasks.push(
+          (async () => {
+            const buffer = Buffer.from(await frontFile!.arrayBuffer());
+            const upload = await uploadImageToS3({
+              fileBuffer: buffer,
+              fileType: frontFile!.type,
+              folder: `licenses/${trackerId}`,
+            });
+            uploadedKeys.push(upload.key);
+            license.licenseFrontPhoto = {
+              url: upload.url,
+              s3Key: upload.key,
+            };
+          })()
+        );
       }
 
+      // Schedule upload for back photo
       if (backFile && backFile.size > 0) {
         if (existing?.licenseBackPhoto?.s3Key) {
           await deleteS3Objects([existing.licenseBackPhoto.s3Key]);
         }
-
-        const buffer = Buffer.from(await backFile.arrayBuffer());
-        const backUpload = await uploadImageToS3({
-          fileBuffer: buffer,
-          fileType: backFile.type,
-          folder: `licenses/${trackerId}`,
-        });
-
-        license.licenseBackPhoto = {
-          url: backUpload.url,
-          s3Key: backUpload.key,
-        };
-        uploadedKeys.push(backUpload.key);
+        uploadTasks.push(
+          (async () => {
+            const buffer = Buffer.from(await backFile!.arrayBuffer());
+            const upload = await uploadImageToS3({
+              fileBuffer: buffer,
+              fileType: backFile!.type,
+              folder: `licenses/${trackerId}`,
+            });
+            uploadedKeys.push(upload.key);
+            license.licenseBackPhoto = {
+              url: upload.url,
+              s3Key: upload.key,
+            };
+          })()
+        );
       }
 
       updatedLicenses.push(license);
     }
 
-    // Step 3: Save to DB
+    // Step 9: Execute all uploads
+    await Promise.all(uploadTasks);
+    const sinPhoto = sinPhotoUploadPromise
+      ? await sinPhotoUploadPromise
+      : appFormDoc.page1?.sinPhoto;
+
+    // Step 10: Save updated form to DB
     page1.sinEncrypted = sinEncrypted;
+    page1.sinPhoto = sinPhoto;
     delete page1.sin;
 
     const updatedForm = await ApplicationForm.findByIdAndUpdate(
@@ -220,7 +252,7 @@ export async function PATCH(
       return errorResponse(500, "Failed to update ApplicationForm");
     }
 
-    // Step 4: Update onboarding tracker
+    // Step 11: Update onboarding tracker
     if (sinChanged) {
       onboardingDoc.sinHash = sinHash;
       onboardingDoc.sinEncrypted = sinEncrypted;
@@ -236,11 +268,13 @@ export async function PATCH(
     );
     await onboardingDoc.save();
 
+    // ✅ Success
     return successResponse(200, "ApplicationForm Page 1 updated", {
       onboardingTracker: onboardingDoc.toObject({ virtuals: true }),
       applicationForm: updatedForm.toObject({ virtuals: true }),
     });
   } catch (error) {
+    await cleanupUploadedKeys();
     return errorResponse(error);
   }
 }

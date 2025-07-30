@@ -17,6 +17,7 @@ export interface IApplicationFormPage1 {
   lastName: string;
   sin?: string;
   sinEncrypted: string;
+  sinPhoto: IPhoto;
   dob: string | Date; // Format: YYYY-MM-DD
   phoneHome: string;
   phoneCell: string;
@@ -63,15 +64,15 @@ export interface IEmploymentEntry {
   subjectToFMCSR: boolean; // Yes/No
   safetySensitiveFunction: boolean; // Yes/No
 
-   /**
+  /**
    * Optional explanation for a gap in employment **before** this job.
    * Used if there is >1 month gap between the previous job's `to` and this job's `from`.
    */
-   gapExplanationBefore?: string;
+  gapExplanationBefore?: string;
 }
 
 export interface IApplicationFormPage2 {
-  employments: IEmploymentEntry[]
+  employments: IEmploymentEntry[];
 }
 
 // Page 3
@@ -113,14 +114,12 @@ export interface IApplicationFormPage3 {
   canadianHoursOfService: ICanadianHoursOfService;
 }
 
-
 // Page 4
 export interface ICriminalRecordEntry {
   offense: string;
   dateOfSentence: string | Date; // Format: YYYY-MM-DD
   courtLocation: string;
 }
-
 
 export interface IApplicationFormPage4 {
   // Criminal Record Table
@@ -142,20 +141,18 @@ export interface IApplicationFormPage4 {
   hasAccidentalInsurance: boolean;
 }
 
-
 // page 5
 export interface ICompetencyQuestionOption {
-  id: string;       // e.g., 1, 2, 3 etc.
-  value: string;    // e.g., "30 km/h"
+  id: string; // e.g., 1, 2, 3 etc.
+  value: string; // e.g., "30 km/h"
 }
 
 export interface ICompetencyQuestion {
   questionId: string;
   questionText: string;
   options: ICompetencyQuestionOption[];
-  correctAnswerId: string;  // e.g., "a"
+  correctAnswerId: string; // e.g., "a"
 }
-
 
 export interface ICompetencyAnswer {
   questionId: string;
@@ -166,7 +163,6 @@ export interface IApplicationFormPage5 {
   answers: ICompetencyAnswer[];
   score: number;
 }
-
 
 // Placeholder structure for the other 11 pages (to be filled later)
 export interface IApplicationForm {

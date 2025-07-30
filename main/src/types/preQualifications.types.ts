@@ -26,8 +26,8 @@ export interface IPreQualifications {
   zeroPointsOnAbstract: boolean;
   noUnpardonedCriminalRecord: boolean;
   legalRightToWorkCanada: boolean;
-  canCrossBorderUSA: boolean;
-  hasFASTCard: boolean;
+  canCrossBorderUSA?: boolean; // only needed for US applicant
+  hasFASTCard?: boolean; // only needed for US applicant
 
   // Categories
   driverType: EDriverType;
