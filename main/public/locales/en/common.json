@@ -99,8 +99,9 @@
       "licenseProvince": "Province",
       "licenseType": "License Type",
       "licenseExpiry": "Expiry Date",
-      "licenseFrontPhoto": "Upload License Front Photo",
-      "licenseBackPhoto": "Upload License Back Photo",
+      "licenseFrontPhoto": "License Front Photo",
+      "licensePhotoDesc": "Click to capture or select an image",
+      "licenseBackPhoto": "License Back Photo",
       "address": "Street Address",
       "city": "City",
       "stateOrProvince": "State or Province",
@@ -126,7 +127,7 @@
       "birthStateOrProvince": "Enter province or state of birth",
       "birthCountry": "Enter country of birth",
       "sin": "123-456-789",
-      "dob": "yyyy-mm-dd",
+      "dob": "YYYY-mm-dd",
       "select": "--Select--"
     },
     "errors": {
@@ -175,7 +176,7 @@
       "title": "Terms & Conditions",
       "intro": "By continuing, you agree that:",
       "items": {
-        "subcontractor": "You are applying as a subcontractor, not an employee",
+        "subcontractor": "You are applying as a subcontractor, or an employee",
         "truthfulInfo": "All information you submit is true and accurate",
         "backgroundChecks": "You consent to background checks and driving record verification",
         "companyRules": {

@@ -38,8 +38,8 @@ export async function POST(req: Request) {
     if (!companyId) {
       return errorResponse(400, "Missing companyId");
     }
-    
-    const isValidCompanyId = COMPANIES.some(c => c.id === companyId);
+
+    const isValidCompanyId = COMPANIES.some((c) => c.id === companyId);
     if (!isValidCompanyId) {
       return errorResponse(400, "invalid company id");
     }
@@ -57,6 +57,38 @@ export async function POST(req: Request) {
       return errorResponse(400, "Invalid SIN");
     }
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!page1.email || !emailRegex.test(page1.email)) {
+      return errorResponse(400, "Invalid email format");
+    }
+
+    // Validate phone numbers (must be at least 10 digits, numbers only)
+    const phoneRegex = /^\d{10,}$/;
+    if (!page1.phoneHome || !phoneRegex.test(page1.phoneHome)) {
+      return errorResponse(400, "Invalid home phone number format");
+    }
+    if (!page1.phoneCell || !phoneRegex.test(page1.phoneCell)) {
+      return errorResponse(400, "Invalid cell phone number format");
+    }
+    if (
+      !page1.emergencyContactPhone ||
+      !phoneRegex.test(page1.emergencyContactPhone)
+    ) {
+      return errorResponse(
+        400,
+        "Invalid emergency contact phone number format"
+      );
+    }
+
+    // Validate date of birth (must be reasonable age)
+    const dob = new Date(page1.dob);
+    const today = new Date();
+    const age = today.getFullYear() - dob.getFullYear();
+    if (isNaN(dob.getTime()) || age < 18 || age > 100) {
+      return errorResponse(400, "Invalid date of birth");
+    }
+
     const sinHash = hashString(sin);
     const existingTracker = await OnboardingTracker.findOne({ sinHash });
     if (existingTracker) {
@@ -65,22 +97,27 @@ export async function POST(req: Request) {
 
     // validate at least 5 years of address history
     if (!hasRecentAddressCoverage(page1.addresses)) {
-      return errorResponse(400, "Total address history must cover at least 5 years.");
+      return errorResponse(
+        400,
+        "Total address history must cover at least 5 years."
+      );
     }
 
-   // Step 1: Create onboardingDoc first so we get the ID
+    // Step 1: Create onboardingDoc first so we get the ID
     onboardingDoc = await OnboardingTracker.create({
       sinHash,
       sinEncrypted: encryptString(sin),
-      resumeExpiresAt: new Date(Date.now() + Number(FORM_RESUME_EXPIRES_AT_IN_MILSEC)),
+      resumeExpiresAt: new Date(
+        Date.now() + Number(FORM_RESUME_EXPIRES_AT_IN_MILSEC)
+      ),
       status: { currentStep: 1, completedStep: 0, completed: false },
       forms: {},
-      companyId
+      companyId,
     });
     const trackerId = onboardingDoc.id; // Use in S3 folder
 
-     // Helper to abort and clean up onboarding doc
-     const abortWithTrackerCleanup = async (status: number, message: string) => {
+    // Helper to abort and clean up onboarding doc
+    const abortWithTrackerCleanup = async (status: number, message: string) => {
       if (uploadedKeys.length > 0) {
         await deleteS3Objects(uploadedKeys);
       }
@@ -89,7 +126,7 @@ export async function POST(req: Request) {
       }
       return errorResponse(status, message);
     };
-    
+
     // Step 2: Validate and upload license photos
     const updatedLicenses = [];
 
@@ -99,7 +136,10 @@ export async function POST(req: Request) {
 
     const firstLicense = page1.licenses[0];
     if (!firstLicense || firstLicense.licenseType !== "AZ") {
-      return abortWithTrackerCleanup(400, "The first license must be of type AZ.");
+      return abortWithTrackerCleanup(
+        400,
+        "The first license must be of type AZ."
+      );
     }
 
     const allowedImageTypes = ["image/jpeg", "image/png", "image/webp"];
@@ -114,24 +154,42 @@ export async function POST(req: Request) {
 
       if (frontFile) {
         if (!allowedImageTypes.includes(frontFile.type)) {
-          return abortWithTrackerCleanup(400, `License #${i + 1} front photo must be an image.`);
+          return abortWithTrackerCleanup(
+            400,
+            `License #${i + 1} front photo must be an image.`
+          );
         }
         if (frontFile.size > MAX_IMAGE_SIZE) {
-          return abortWithTrackerCleanup(400, `License #${i + 1} front photo exceeds 10MB.`);
+          return abortWithTrackerCleanup(
+            400,
+            `License #${i + 1} front photo exceeds 10MB.`
+          );
         }
       }
 
       if (backFile) {
         if (!allowedImageTypes.includes(backFile.type)) {
-          return abortWithTrackerCleanup(400, `License #${i + 1} back photo must be an image.`);
+          return abortWithTrackerCleanup(
+            400,
+            `License #${i + 1} back photo must be an image.`
+          );
         }
         if (backFile.size > MAX_IMAGE_SIZE) {
-          return abortWithTrackerCleanup(400, `License #${i + 1} back photo exceeds 10MB.`);
+          return abortWithTrackerCleanup(
+            400,
+            `License #${i + 1} back photo exceeds 10MB.`
+          );
         }
       }
 
-      if (isFirst && (!frontFile || !backFile || frontFile.size === 0 || backFile.size === 0)) {
-        return abortWithTrackerCleanup(400, "The first license must include both front and back photo.");
+      if (
+        isFirst &&
+        (!frontFile || !backFile || frontFile.size === 0 || backFile.size === 0)
+      ) {
+        return abortWithTrackerCleanup(
+          400,
+          "The first license must include both front and back photo."
+        );
       }
 
       let licenseFrontPhoto = null;
@@ -172,9 +230,6 @@ export async function POST(req: Request) {
       });
     }
 
-
-    
-
     // Step 3: Save ApplicationForm
     page1.sinEncrypted = encryptString(sin);
     delete page1.sin;
@@ -211,10 +266,14 @@ export async function POST(req: Request) {
     if (uploadedKeys.length > 0) {
       await deleteS3Objects(uploadedKeys);
     }
-    if (onboardingDoc?._id) await OnboardingTracker.findByIdAndDelete(onboardingDoc._id);
-    if (preQualDoc?._id) await PreQualifications.findByIdAndDelete(preQualDoc._id);
-    if (appFormDoc?._id) await ApplicationForm.findByIdAndDelete(appFormDoc._id);
+    if (onboardingDoc?._id)
+      await OnboardingTracker.findByIdAndDelete(onboardingDoc._id);
+    if (preQualDoc?._id)
+      await PreQualifications.findByIdAndDelete(preQualDoc._id);
+    if (appFormDoc?._id)
+      await ApplicationForm.findByIdAndDelete(appFormDoc._id);
 
-    return errorResponse(error);
+    console.error("Error creating application form:", error);
+    return errorResponse(500, "Failed to create application form");
   }
 }

@@ -32,8 +32,8 @@ export default function PersonalDetails() {
 
   const handleSINChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/\D/g, "").slice(0, 9);
-    // Store only the raw digits in the form (for backend)
     setValue("sin", raw, { shouldValidate: true });
+    setValue("sinEncrypted", raw, { shouldValidate: true }); // Set both fields
   };
 
   // Phone formatting functions
@@ -63,7 +63,7 @@ export default function PersonalDetails() {
 
   return (
     <section className="space-y-6 border border-gray-200 p-6 rounded-lg bg-white/80 shadow-sm">
-      <h2 className="text-lg font-semibold text-gray-800">
+      <h2 className="text-center text-lg font-semibold text-gray-800">
         {t("form.page1.sections.personal")}
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -76,6 +76,7 @@ export default function PersonalDetails() {
             {...register("firstName")}
             type="text"
             name="firstName"
+            data-field="firstName"
             placeholder={t("form.placeholders.firstName")}
             className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
           />
@@ -95,9 +96,11 @@ export default function PersonalDetails() {
             type={showSIN ? "text" : "password"}
             placeholder="123-456-789"
             value={displaySIN}
-            onChange={handleSINChange}
             inputMode="numeric"
             autoComplete="off"
+            {...register("sin")}
+            onChange={handleSINChange}
+            data-field="sin"
             className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md pr-10"
           />
           <button
@@ -123,6 +126,7 @@ export default function PersonalDetails() {
             {...register("lastName")}
             type="text"
             name="lastName"
+            data-field="lastName"
             placeholder={t("form.placeholders.lastName")}
             className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
           />
@@ -142,6 +146,7 @@ export default function PersonalDetails() {
             {...register("dob")}
             type="date"
             name="dob"
+            data-field="dob"
             className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
           />
           {errors.dob && (
@@ -171,6 +176,7 @@ export default function PersonalDetails() {
                   useWatch({ control, name: "phoneHome" }) || ""
                 )}
                 onChange={(e) => handlePhoneChange("phoneHome", e.target.value)}
+                data-field="phoneHome"
                 className="flex-1 py-2 px-3 border border-gray-300 rounded-r-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md focus:border-transparent"
               />
             </div>
@@ -184,17 +190,17 @@ export default function PersonalDetails() {
 
         {/* Can Provide Proof of Age */}
         <div className="flex items-center h-full">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 relative">
             <input
               type="checkbox"
               {...register("canProvideProofOfAge")}
               disabled={!dobValue}
+              data-field="canProvideProofOfAge"
               className="appearance-none w-6 h-6 border-2 border-gray-300 rounded-md bg-white focus:outline-none transition-all duration-150 cursor-pointer focus:shadow-[0_0_0_3px_rgba(56,189,248,0.25)] checked:shadow-[0_0_0_3px_rgba(56,189,248,0.25)] checked:bg-white relative"
             />
             {canProvideProofChecked && dobValue && (
               <svg
-                className="absolute w-6 h-6 pointer-events-none"
-                style={{ left: "0px", top: "0px" }}
+                className="absolute w-6 h-6 pointer-events-none left-0 top-0"
                 viewBox="0 0 24 24"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
@@ -243,6 +249,7 @@ export default function PersonalDetails() {
                   useWatch({ control, name: "phoneCell" }) || ""
                 )}
                 onChange={(e) => handlePhoneChange("phoneCell", e.target.value)}
+                data-field="phoneCell"
                 className="flex-1 py-2 px-3 border border-gray-300 rounded-r-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md focus:border-transparent"
               />
             </div>
@@ -263,6 +270,7 @@ export default function PersonalDetails() {
             {...register("email")}
             type="email"
             name="email"
+            data-field="email"
             placeholder={t("form.placeholders.email")}
             className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
           />
@@ -282,6 +290,7 @@ export default function PersonalDetails() {
             {...register("emergencyContactName")}
             type="text"
             name="emergencyContactName"
+            data-field="emergencyContactName"
             placeholder={t("form.placeholders.emergencyContactName")}
             className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
           />
@@ -314,6 +323,7 @@ export default function PersonalDetails() {
                 onChange={(e) =>
                   handlePhoneChange("emergencyContactPhone", e.target.value)
                 }
+                data-field="emergencyContactPhone"
                 className="flex-1 py-2 px-3 border border-gray-300 rounded-r-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md focus:border-transparent"
               />
             </div>

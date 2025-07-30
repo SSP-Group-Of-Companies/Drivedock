@@ -7,8 +7,6 @@ import { hashString } from "@/lib/utils/cryptoUtils";
 import { IApplicationFormPage2 } from "@/types/applicationForm.types";
 import { validateEmploymentHistory } from "@/lib/utils/validateEmploymentHistory";
 
-
-
 export const PATCH = async (
   req: Request,
   { params }: { params: Promise<{ sin: string }> }
@@ -21,7 +19,7 @@ export const PATCH = async (
       return errorResponse(400, "Invalid SIN in URL");
 
     const sinHash = hashString(sin);
-    const body = await req.json() as IApplicationFormPage2;
+    const body = (await req.json()) as IApplicationFormPage2;
 
     // Validate employment history logic
     const validationError = validateEmploymentHistory(body.employments);
@@ -39,7 +37,8 @@ export const PATCH = async (
     if (!appFormDoc) return errorResponse(404, "ApplicationForm not found");
 
     // check completed step
-    if (appFormDoc.completedStep < 1) return errorResponse(400, "please complete previous step first");
+    if (appFormDoc.completedStep < 1)
+      return errorResponse(400, "please complete previous step first");
 
     // Update Page 2
     appFormDoc.page2 = body;
@@ -61,6 +60,7 @@ export const PATCH = async (
       applicationForm: appFormDoc.toObject({ virtuals: true }),
     });
   } catch (error) {
-    return errorResponse(error);
+    console.error("Error updating application form page 2:", error);
+    return errorResponse(500, "Failed to update application form page 2");
   }
 };

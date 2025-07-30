@@ -12,7 +12,7 @@ export default function PlaceOfBirth() {
 
   return (
     <section className="space-y-6 border border-gray-200 p-6 rounded-lg bg-white/80 shadow-sm">
-      <h2 className="text-lg font-semibold text-gray-800">
+      <h2 className="text-center text-lg font-semibold text-gray-800">
         {t("form.page1.sections.birth")}
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -25,6 +25,7 @@ export default function PlaceOfBirth() {
             {...register("birthCity")}
             type="text"
             name="birthCity"
+            data-field="birthCity"
             placeholder={t("form.placeholders.birthCity")}
             className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
           />
@@ -43,6 +44,7 @@ export default function PlaceOfBirth() {
             {...register("birthStateOrProvince")}
             type="text"
             name="birthStateOrProvince"
+            data-field="birthStateOrProvince"
             placeholder={t("form.placeholders.birthStateOrProvince")}
             className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
           />
@@ -61,6 +63,7 @@ export default function PlaceOfBirth() {
             {...register("birthCountry")}
             type="text"
             name="birthCountry"
+            data-field="birthCountry"
             placeholder={t("form.placeholders.birthCountry")}
             className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
           />

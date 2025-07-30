@@ -6,6 +6,7 @@ import {
   applicationFormPage1Schema,
   ApplicationFormPage1Schema,
 } from "@/lib/zodSchemas/applicationFormPage1.schema";
+import { ELicenseType } from "@/types/shared.types";
 
 // Components
 import PersonalDetails from "./components/PersonalDetails";
@@ -17,12 +18,11 @@ import ContinueButton from "../ContinueButton";
 export default function ApplicationFormPage1() {
   const methods = useForm<ApplicationFormPage1Schema>({
     resolver: zodResolver(applicationFormPage1Schema),
-    mode: "onTouched",
+    mode: "onChange",
     defaultValues: {
       firstName: "",
       lastName: "",
       sin: "",
-      sinEncrypted: "",
       dob: "",
       phoneHome: "",
       phoneCell: "",
@@ -33,15 +33,23 @@ export default function ApplicationFormPage1() {
       birthCity: "",
       birthCountry: "",
       birthStateOrProvince: "",
-      licenses: [],
+      licenses: [
+        {
+          licenseNumber: "",
+          licenseStateOrProvince: "",
+          licenseType: ELicenseType.AZ,
+          licenseExpiry: "",
+          licenseFrontPhoto: undefined,
+          licenseBackPhoto: undefined,
+        },
+      ],
       addresses: [],
     },
   });
 
-  const onSubmit = (data: ApplicationFormPage1Schema) => {
+  const onSubmit = () => {
     // The ContinueButton will call this manually via context
     // So this will never be triggered unless we fallback to native form submission
-    console.log("Form submitted with:", data);
   };
 
   return (

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useLanguageCycle } from "@/hooks/useLanguageCycle";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import useMounted from "@/hooks/useMounted";
 
 import ResumeModal from "./ResumeModal";
 
@@ -11,6 +12,27 @@ export default function CTAButtons() {
   const router = useRouter();
   const animatedText = useLanguageCycle(2500);
   const [isModalOpen, setIsModalOpen] = useState(false); // modal state
+  const mounted = useMounted();
+
+  // Don't render animated content until mounted to prevent hydration mismatch
+  if (!mounted) {
+    return (
+      <>
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="rounded-full bg-blue-700 px-6 py-3 text-white font-medium text-sm shadow">
+            Start Application
+          </div>
+          <div className="rounded-full bg-white border border-blue-700 text-blue-700 px-6 py-3 font-medium text-sm shadow">
+            Resume Application
+          </div>
+        </div>
+        <ResumeModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+        />
+      </>
+    );
+  }
 
   return (
     <>

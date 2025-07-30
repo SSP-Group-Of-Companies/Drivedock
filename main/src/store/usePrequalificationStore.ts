@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import { IPreQualifications } from "@/types/preQualifications.types";
 
 interface PrequalificationStore {
@@ -7,10 +8,15 @@ interface PrequalificationStore {
   clearData: () => void;
 }
 
-export const usePrequalificationStore = create<PrequalificationStore>(
-  (set) => ({
-    data: null,
-    setData: (data) => set({ data }),
-    clearData: () => set({ data: null }),
-  })
+export const usePrequalificationStore = create<PrequalificationStore>()(
+  persist(
+    (set) => ({
+      data: null,
+      setData: (data) => set({ data }),
+      clearData: () => set({ data: null }),
+    }),
+    {
+      name: "drivedock-prequalifications",
+    }
+  )
 );

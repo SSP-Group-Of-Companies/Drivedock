@@ -1,43 +1,54 @@
 // constants/questions.ts
+import {
+  EDriverType,
+  EHaulPreference,
+  ETeamStatus,
+} from "@/types/preQualifications.types";
 
 export const preQualificationQuestions = [
-  { name: "over23Local",
-    label: "form.over23Local",
-    options: ["form.yes"],
-  },
-  { name: "over25CrossBorder",
+  { name: "over23Local", label: "form.over23Local", options: ["form.yes"] },
+  {
+    name: "over25CrossBorder",
     label: "form.over25CrossBorder",
     options: ["form.yes"],
   },
-  { name: "canDriveManual",
+  {
+    name: "canDriveManual",
     label: "form.canDriveManual",
     options: ["form.yes", "form.no"],
   },
-  { name: "experienceDrivingTractorTrailer",
+  {
+    name: "experienceDrivingTractorTrailer",
     label: "form.experienceDrivingTractorTrailer",
     options: ["form.yes"],
   },
-  { name: "faultAccidentIn3Years",
+  {
+    name: "faultAccidentIn3Years",
     label: "form.faultAccidentIn3Years",
-    options: ["form.yes", "form.no"],  
+    options: ["form.yes", "form.no"],
   },
-  { name: "zeroPointsOnAbstract",
+  {
+    name: "zeroPointsOnAbstract",
     label: "form.zeroPointsOnAbstract",
     options: ["form.yes", "form.no"],
   },
-  { name: "noUnpardonedCriminalRecord",
+  {
+    name: "noUnpardonedCriminalRecord",
     label: "form.noUnpardonedCriminalRecord",
-    options: ["form.yes", "form.no"],   
+    options: ["form.yes", "form.no"],
   },
-  { name: "legalRightToWorkCanada",
+  {
+    name: "legalRightToWorkCanada",
     label: "form.legalRightToWorkCanada",
     options: ["form.yes"],
   },
-  { name: "canCrossBorderUSA",
+  {
+    name: "canCrossBorderUSA",
     label: "form.canCrossBorderUSA",
     options: ["form.yes"],
   },
-  { name: "hasFASTCard",
+  {
+    name: "hasFASTCard",
     label: "form.hasFASTCard",
     options: ["form.yes", "form.no"],
   },
@@ -47,17 +58,21 @@ export const categoryQuestions = [
   {
     name: "driverType",
     label: "form.driverType",
-    options: ["form.company", "form.ownerOperator", "form.ownerDriver"],
+    options: [
+      EDriverType.Company,
+      EDriverType.OwnerOperator,
+      EDriverType.OwnerDriver,
+    ],
   },
   {
     name: "haulPreference",
     label: "form.haulPreference",
-    options: ["form.shortHaul", "form.longHaul"],
+    options: [EHaulPreference.ShortHaul, EHaulPreference.LongHaul],
   },
   {
     name: "teamStatus",
     label: "form.teamStatus",
-    options: ["form.team", "form.single"],
+    options: [ETeamStatus.Team, ETeamStatus.Single],
   },
   {
     name: "preferLocalDriving",

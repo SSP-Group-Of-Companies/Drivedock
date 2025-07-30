@@ -20,19 +20,22 @@ export const PATCH = async (
   try {
     await connectDB();
     const { sin } = await params;
-    if (!sin || sin.length !== 9) return errorResponse(400, "Invalid SIN in URL");
+    if (!sin || sin.length !== 9)
+      return errorResponse(400, "Invalid SIN in URL");
 
     const sinHash = hashString(sin);
     const formData = await req.formData();
 
     const rawPage4 = formData.get("applicationFormPage4") as string;
-    if (!rawPage4) return errorResponse(400, "Missing form field: applicationFormPage4");
+    if (!rawPage4)
+      return errorResponse(400, "Missing form field: applicationFormPage4");
 
     const body = JSON.parse(rawPage4) as IApplicationFormPage4;
 
     // Check presence of onboarding + app form BEFORE uploading files
     const onboardingDoc = await OnboardingTracker.findOne({ sinHash });
-    if (!onboardingDoc) return errorResponse(404, "OnboardingTracker not found");
+    if (!onboardingDoc)
+      return errorResponse(404, "OnboardingTracker not found");
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) return errorResponse(404, "ApplicationForm not linked");
@@ -41,7 +44,8 @@ export const PATCH = async (
     if (!appFormDoc) return errorResponse(404, "ApplicationForm not found");
 
     // check completed step
-    if (appFormDoc.completedStep < 3) return errorResponse(400, "please complete previous step first");
+    if (appFormDoc.completedStep < 3)
+      return errorResponse(400, "please complete previous step first");
 
     const employeeProvided = !!body.employeeNumber?.trim();
     const businessProvided = !!body.businessNumber?.trim();
@@ -57,8 +61,8 @@ export const PATCH = async (
 
       // ❌ Delete existing S3 files
       const existingKeys = [
-        ...(appFormDoc.page4?.incorporatePhotos || []).map(p => p.s3Key),
-        ...(appFormDoc.page4?.bankingInfoPhotos || []).map(p => p.s3Key),
+        ...(appFormDoc.page4?.incorporatePhotos || []).map((p) => p.s3Key),
+        ...(appFormDoc.page4?.bankingInfoPhotos || []).map((p) => p.s3Key),
       ];
       if (existingKeys.length > 0) {
         await deleteS3Objects(existingKeys);
@@ -106,18 +110,20 @@ export const PATCH = async (
     await appFormDoc.save();
 
     onboardingDoc.status.currentStep = 2;
-    onboardingDoc.resumeExpiresAt = new Date(Date.now() + Number(FORM_RESUME_EXPIRES_AT_IN_MILSEC));
+    onboardingDoc.resumeExpiresAt = new Date(
+      Date.now() + Number(FORM_RESUME_EXPIRES_AT_IN_MILSEC)
+    );
     await onboardingDoc.save();
 
     return successResponse(200, "ApplicationForm Page 4 updated", {
       onboardingTracker: onboardingDoc.toObject({ virtuals: true }),
       applicationForm: appFormDoc.toObject({ virtuals: true }),
     });
-
   } catch (error) {
     if (uploadedKeys.length > 0) {
       await deleteS3Objects(uploadedKeys);
     }
-    return errorResponse(error);
+    console.error("Error updating application form page 4:", error);
+    return errorResponse(500, "Failed to update application form page 4");
   }
 };

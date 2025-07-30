@@ -11,7 +11,6 @@ import {
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { ArrowRight } from "lucide-react";
-// import { useCompanySelection } from "@/hooks/useCompanySelection";
 import { usePrequalificationStore } from "@/store/usePrequalificationStore";
 import {
   EDriverType,
@@ -20,8 +19,9 @@ import {
 } from "@/types/preQualifications.types";
 
 export default function PreQualificationPage() {
-  const router = useRouter();
   const { t } = useTranslation("common");
+  const router = useRouter();
+  const { setData } = usePrequalificationStore();
   const [showFlatbedPopup, setShowFlatbedPopup] = useState<null | "yes" | "no">(
     null
   );
@@ -36,10 +36,7 @@ export default function PreQualificationPage() {
     ),
   });
 
-  // const { selectedCompany } = useCompanySelection();
   const flatbedExperience = useWatch({ control, name: "flatbedExperience" });
-
-  const { setData } = usePrequalificationStore();
 
   useEffect(() => {
     if (flatbedExperience === "form.yes") setShowFlatbedPopup("yes");
@@ -51,22 +48,34 @@ export default function PreQualificationPage() {
 
   const onSubmit = (data: Record<string, string>) => {
     setData({
-      over23Local: data.over23Local === "Yes",
-      over25CrossBorder: data.over25CrossBorder === "Yes",
-      canDriveManual: data.canDriveManual === "Yes",
+      over23Local: data.over23Local === "form.yes",
+      over25CrossBorder: data.over25CrossBorder === "form.yes",
+      canDriveManual: data.canDriveManual === "form.yes",
       experienceDrivingTractorTrailer:
-        data.experienceDrivingTractorTrailer === "Yes",
-      faultAccidentIn3Years: data.faultAccidentIn3Years === "Yes",
-      zeroPointsOnAbstract: data.zeroPointsOnAbstract === "Yes",
-      noUnpardonedCriminalRecord: data.noUnpardonedCriminalRecord === "Yes",
-      legalRightToWorkCanada: data.legalRightToWorkCanada === "Yes",
-      canCrossBorderUSA: data.canCrossBorderUSA === "Yes",
-      hasFASTCard: data.hasFASTCard === "Yes",
-      driverType: data.driverType as EDriverType,
-      haulPreference: data.haulPreference as EHaulPreference,
-      teamStatus: data.teamStatus as ETeamStatus,
-      preferLocalDriving: data.preferLocalDriving === "Yes",
-      preferSwitching: data.preferSwitching === "Yes",
+        data.experienceDrivingTractorTrailer === "form.yes",
+      faultAccidentIn3Years: data.faultAccidentIn3Years === "form.yes",
+      zeroPointsOnAbstract: data.zeroPointsOnAbstract === "form.yes",
+      noUnpardonedCriminalRecord:
+        data.noUnpardonedCriminalRecord === "form.yes",
+      legalRightToWorkCanada: data.legalRightToWorkCanada === "form.yes",
+      canCrossBorderUSA: data.canCrossBorderUSA === "form.yes",
+      hasFASTCard: data.hasFASTCard === "form.yes",
+      driverType:
+        data.driverType.replace("form.", "") === "ownerDriver"
+          ? EDriverType.OwnerDriver
+          : data.driverType.replace("form.", "") === "ownerOperator"
+          ? EDriverType.OwnerOperator
+          : EDriverType.Company,
+      haulPreference:
+        data.haulPreference.replace("form.", "") === "shortHaul"
+          ? EHaulPreference.ShortHaul
+          : EHaulPreference.LongHaul,
+      teamStatus:
+        data.teamStatus.replace("form.", "") === "single"
+          ? ETeamStatus.Single
+          : ETeamStatus.Team,
+      preferLocalDriving: data.preferLocalDriving === "form.yes",
+      preferSwitching: data.preferSwitching === "form.yes",
       flatbedExperience: data.flatbedExperience === "form.yes",
       completed: true,
     });
@@ -120,7 +129,10 @@ export default function PreQualificationPage() {
         <div className="flex justify-center">
           <button
             disabled={!allAnswered}
-            onClick={handleSubmit(onSubmit)}
+            onClick={() => {
+              // Call handleSubmit directly with the onSubmit function
+              handleSubmit(onSubmit)();
+            }}
             className={`px-8 py-2 mt-4 rounded-full font-semibold transition-colors shadow-md flex items-center gap-2
               ${
                 allAnswered

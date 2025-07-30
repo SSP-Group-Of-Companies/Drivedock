@@ -1,52 +1,44 @@
 "use client";
 
-import { useFormContext, useFieldArray } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useEffect, useRef, useState } from "react";
-import dayjs from "dayjs";
-import duration from "dayjs/plugin/duration";
+import { useFormContext, useFieldArray } from "react-hook-form";
+import { useRef, useEffect } from "react";
+import { IApplicationFormPage1 } from "@/types/applicationForm.types";
 import { Upload } from "lucide-react";
-dayjs.extend(duration);
-
-type AddressInput = {
-  from: string;
-  to: string;
-};
 
 export default function AddressSection() {
   const { t } = useTranslation("common");
-  const { register, control, watch } = useFormContext();
+  const {
+    register,
+    control,
+    trigger,
+    watch,
+    formState: { errors },
+  } = useFormContext<IApplicationFormPage1>();
 
   const { fields, append, remove } = useFieldArray({
     control,
     name: "addresses",
   });
 
-  const watchedAddresses = watch("addresses") as AddressInput[];
-
-  const [notEnoughYears, setNotEnoughYears] = useState(false);
   const addButtonRef = useRef<HTMLButtonElement | null>(null);
 
+  // Watch address dates to trigger validation immediately
+  const watchedAddresses = watch("addresses");
+
+  // Trigger validation when address dates change
   useEffect(() => {
-    // Only calculate if there are addresses with both from and to dates
-    const validAddresses = watchedAddresses?.filter(
-      (addr) => addr.from && addr.to
-    );
+    const timeout = setTimeout(() => {
+      if (errors.addresses) {
+        trigger("addresses");
+      }
+    }, 300);
 
-    if (!validAddresses || validAddresses.length === 0) {
-      setNotEnoughYears(false);
-      return;
-    }
+    return () => clearTimeout(timeout);
+  }, [watchedAddresses, errors.addresses, trigger]);
 
-    const totalMonths = validAddresses.reduce((acc, curr) => {
-      const from = dayjs(curr.from);
-      const to = dayjs(curr.to);
-      const diff = to.diff(from, "month");
-      return acc + (diff > 0 ? diff : 0);
-    }, 0);
-
-    setNotEnoughYears(totalMonths < 60);
-  }, [watchedAddresses]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const addressErrors = errors.addresses as any[] | undefined;
 
   const handleAdd = () => {
     append({
@@ -57,19 +49,13 @@ export default function AddressSection() {
       from: "",
       to: "",
     });
-
-    if (notEnoughYears && addButtonRef.current) {
-      addButtonRef.current.classList.remove("animate-wiggle");
-      void addButtonRef.current.offsetWidth;
-      addButtonRef.current.classList.add("animate-wiggle");
-    }
   };
 
   // Always ensure at least one address entry is rendered
   const hasFirst = fields.length > 0;
   return (
     <section className="space-y-6 border border-gray-200 p-6 rounded-lg bg-white/80 shadow-sm">
-      <h2 className="text-lg font-semibold text-gray-800">
+      <h2 className="text-center text-lg font-semibold text-gray-800">
         {t("form.page1.sections.address")}
       </h2>
       {/* Always show the first address entry */}
@@ -86,8 +72,16 @@ export default function AddressSection() {
             <input
               {...register(`addresses.0.address`)}
               type="text"
+              data-field="addresses.0.address"
               className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
             />
+            {addressErrors?.[0]?.address && (
+              <p className="text-red-500 text-xs mt-1">
+                {typeof addressErrors?.[0]?.address?.message === "string"
+                  ? addressErrors[0].address.message
+                  : ""}
+              </p>
+            )}
           </div>
           {/* City */}
           <div>
@@ -97,8 +91,16 @@ export default function AddressSection() {
             <input
               {...register(`addresses.0.city`)}
               type="text"
+              data-field="addresses.0.city"
               className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
             />
+            {addressErrors?.[0]?.city && (
+              <p className="text-red-500 text-xs mt-1">
+                {typeof addressErrors?.[0]?.city?.message === "string"
+                  ? addressErrors[0].city.message
+                  : ""}
+              </p>
+            )}
           </div>
           {/* State/Province */}
           <div>
@@ -108,8 +110,17 @@ export default function AddressSection() {
             <input
               {...register(`addresses.0.stateOrProvince`)}
               type="text"
+              data-field="addresses.0.stateOrProvince"
               className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
             />
+            {addressErrors?.[0]?.stateOrProvince && (
+              <p className="text-red-500 text-xs mt-1">
+                {typeof addressErrors?.[0]?.stateOrProvince?.message ===
+                "string"
+                  ? addressErrors[0].stateOrProvince.message
+                  : ""}
+              </p>
+            )}
           </div>
           {/* Postal Code */}
           <div>
@@ -119,8 +130,16 @@ export default function AddressSection() {
             <input
               {...register(`addresses.0.postalCode`)}
               type="text"
+              data-field="addresses.0.postalCode"
               className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
             />
+            {addressErrors?.[0]?.postalCode && (
+              <p className="text-red-500 text-xs mt-1">
+                {typeof addressErrors?.[0]?.postalCode?.message === "string"
+                  ? addressErrors[0].postalCode.message
+                  : ""}
+              </p>
+            )}
           </div>
           {/* From */}
           <div>
@@ -130,8 +149,16 @@ export default function AddressSection() {
             <input
               {...register(`addresses.0.from`)}
               type="date"
+              data-field="addresses.0.from"
               className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
             />
+            {addressErrors?.[0]?.from && (
+              <p className="text-red-500 text-xs mt-1">
+                {typeof addressErrors?.[0]?.from?.message === "string"
+                  ? addressErrors[0].from.message
+                  : ""}
+              </p>
+            )}
           </div>
           {/* To */}
           <div>
@@ -141,8 +168,16 @@ export default function AddressSection() {
             <input
               {...register(`addresses.0.to`)}
               type="date"
+              data-field="addresses.0.to"
               className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
             />
+            {addressErrors?.[0]?.to && (
+              <p className="text-red-500 text-xs mt-1">
+                {typeof addressErrors?.[0]?.to?.message === "string"
+                  ? addressErrors[0].to.message
+                  : ""}
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -169,8 +204,17 @@ export default function AddressSection() {
                 <input
                   {...register(`addresses.${index + 1}.address`)}
                   type="text"
+                  data-field={`addresses.${index + 1}.address`}
                   className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
                 />
+                {addressErrors?.[index + 1]?.address && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {typeof addressErrors?.[index + 1]?.address?.message ===
+                    "string"
+                      ? addressErrors[index + 1].address.message
+                      : ""}
+                  </p>
+                )}
               </div>
               {/* City */}
               <div>
@@ -180,8 +224,17 @@ export default function AddressSection() {
                 <input
                   {...register(`addresses.${index + 1}.city`)}
                   type="text"
+                  data-field={`addresses.${index + 1}.city`}
                   className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
                 />
+                {addressErrors?.[index + 1]?.city && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {typeof addressErrors?.[index + 1]?.city?.message ===
+                    "string"
+                      ? addressErrors[index + 1].city.message
+                      : ""}
+                  </p>
+                )}
               </div>
               {/* State/Province */}
               <div>
@@ -191,8 +244,17 @@ export default function AddressSection() {
                 <input
                   {...register(`addresses.${index + 1}.stateOrProvince`)}
                   type="text"
+                  data-field={`addresses.${index + 1}.stateOrProvince`}
                   className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
                 />
+                {addressErrors?.[index + 1]?.stateOrProvince && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {typeof addressErrors?.[index + 1]?.stateOrProvince
+                      ?.message === "string"
+                      ? addressErrors[index + 1].stateOrProvince.message
+                      : ""}
+                  </p>
+                )}
               </div>
               {/* Postal Code */}
               <div>
@@ -202,8 +264,17 @@ export default function AddressSection() {
                 <input
                   {...register(`addresses.${index + 1}.postalCode`)}
                   type="text"
+                  data-field={`addresses.${index + 1}.postalCode`}
                   className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
                 />
+                {addressErrors?.[index + 1]?.postalCode && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {typeof addressErrors?.[index + 1]?.postalCode?.message ===
+                    "string"
+                      ? addressErrors[index + 1].postalCode.message
+                      : ""}
+                  </p>
+                )}
               </div>
               {/* From */}
               <div>
@@ -213,8 +284,17 @@ export default function AddressSection() {
                 <input
                   {...register(`addresses.${index + 1}.from`)}
                   type="date"
+                  data-field={`addresses.${index + 1}.from`}
                   className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
                 />
+                {addressErrors?.[index + 1]?.from && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {typeof addressErrors?.[index + 1]?.from?.message ===
+                    "string"
+                      ? addressErrors[index + 1].from.message
+                      : ""}
+                  </p>
+                )}
               </div>
               {/* To */}
               <div>
@@ -224,14 +304,26 @@ export default function AddressSection() {
                 <input
                   {...register(`addresses.${index + 1}.to`)}
                   type="date"
+                  data-field={`addresses.${index + 1}.to`}
                   className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
                 />
+                {addressErrors?.[index + 1]?.to && (
+                  <p className="text-red-500 text-xs mt-1">
+                    {typeof addressErrors?.[index + 1]?.to?.message === "string"
+                      ? addressErrors[index + 1].to.message
+                      : ""}
+                  </p>
+                )}
               </div>
             </div>
           </div>
         ))}
-      {notEnoughYears && (
-        <p className="text-red-500 text-sm">{t("form.errors.minimum5Years")}</p>
+      {errors.addresses?.message && (
+        <p className="text-red-500 text-sm mt-2">
+          {typeof errors.addresses.message === "string"
+            ? errors.addresses.message
+            : "Address validation error"}
+        </p>
       )}
       <button
         type="button"
