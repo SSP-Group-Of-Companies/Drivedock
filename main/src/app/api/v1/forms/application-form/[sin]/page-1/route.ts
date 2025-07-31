@@ -12,10 +12,7 @@ import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import { hasRecentAddressCoverage } from "@/lib/utils/hasMinimumAddressDuration";
 import { IPhoto } from "@/types/shared.types";
 import { IApplicationFormPage1 } from "@/types/applicationForm.types";
-import {
-  validateImageFile,
-  validatePostalCodeByCompany,
-} from "@/lib/utils/validationUtils";
+import { validateImageFile } from "@/lib/utils/validationUtils";
 
 export const config = {
   api: { bodyParser: false },
@@ -91,14 +88,6 @@ export async function PATCH(
         400,
         "Total address history must cover at least 5 years."
       );
-    }
-
-    for (const address of page1.addresses) {
-      const error = validatePostalCodeByCompany(
-        address.postalCode,
-        onboardingDoc.companyId
-      );
-      if (error) return errorResponse(400, error);
     }
 
     // Step 6: License array & AZ check

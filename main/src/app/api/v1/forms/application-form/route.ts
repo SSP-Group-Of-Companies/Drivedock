@@ -11,10 +11,7 @@ import { IOnboardingTrackerDoc } from "@/types/onboardingTracker.type";
 import { hasRecentAddressCoverage } from "@/lib/utils/hasMinimumAddressDuration";
 import { COMPANIES } from "@/constants/companies";
 import { IPhoto } from "@/types/shared.types";
-import {
-  validateImageFile,
-  validatePostalCodeByCompany,
-} from "@/lib/utils/validationUtils";
+import { validateImageFile } from "@/lib/utils/validationUtils";
 import {
   IApplicationFormPage1,
   ILicenseEntry,
@@ -102,11 +99,6 @@ export async function POST(req: Request) {
         400,
         "Total address history must cover at least 5 years."
       );
-    }
-
-    for (const address of page1.addresses) {
-      const error = validatePostalCodeByCompany(address.postalCode, companyId);
-      if (error) return errorResponse(400, error);
     }
 
     // Step 1: Create OnboardingTracker

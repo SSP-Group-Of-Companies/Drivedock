@@ -20,3 +20,8 @@ export enum ELicenseType {
   AZ = "AZ",
   Other = "Other",
 }
+
+export enum ECountryCode {
+  CA = "CA",
+  US = "US",
+}

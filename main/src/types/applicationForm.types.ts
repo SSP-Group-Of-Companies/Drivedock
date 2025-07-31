@@ -120,15 +120,33 @@ export interface ICriminalRecordEntry {
   courtLocation: string;
 }
 
+export interface IFastCard {
+  fastCardNumber: string; 
+  fastCardExpiry: string | Date; 
+  fastCardFrontPhoto: IPhoto; 
+  fastCardBackPhoto: IPhoto;
+}
+
 export interface IApplicationFormPage4 {
   // Criminal Record Table
   criminalRecords: ICriminalRecordEntry[];
 
   // Incorporate Details
-  employeeNumber: string;
-  businessNumber: string;
-  incorporatePhotos: IPhoto[];
-  bankingInfoPhotos: IPhoto[];
+  employeeNumber?: string;
+  hstNumber?: string;
+  businessNumber?: string;
+  incorporatePhotos?: IPhoto[];
+  hstPhotos?: IPhoto[];
+  bankingInfoPhotos?: IPhoto[];
+
+  // medical
+  healthCardPhotos?: IPhoto[]; // for canadian applicants
+  medicalCertificationPhotos?: IPhoto[]; // for US applicants
+
+  passportPhotos?: IPhoto[]; // optional for american
+  prPermitCitizenshipPhotos?: IPhoto[]; // optional for american
+  usVisaPhotos?: IPhoto[]; // not needed for american
+  fastCard?: IFastCard; // optional and only shows for canadian
 
   // Additional Info
   deniedLicenseOrPermit: boolean;
