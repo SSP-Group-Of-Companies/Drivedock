@@ -1,5 +1,13 @@
 import { ECountryCode } from "@/types/shared.types";
 
+export enum ECompanyId {
+  SSP_CA = "ssp-ca",
+  SSP_US = "ssp-us",
+  FELLOW_TRANS = "fellowtrans",
+  WEB_FREIGHT = "webfreight",
+  NESH = "nesh",
+}
+
 export interface Company {
   id: string;
   name: string;
@@ -17,7 +25,7 @@ export interface Company {
 
 export const COMPANIES: Company[] = [
   {
-    id: "ssp-ca",
+    id: ECompanyId.SSP_CA,
     name: "SSP Truckline Inc",
     logo: "/assets/logos/SSP-Truck-LineFullLogo.png",
     country: "Canada",
@@ -32,7 +40,7 @@ export const COMPANIES: Company[] = [
     buttonGradient: "bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400",
   },
   {
-    id: "ssp-us",
+    id: ECompanyId.SSP_US,
     name: "SSP Trucklines Inc",
     logo: "/assets/logos/SSP-Truck-LineFullLogo.png",
     country: "USA",
@@ -47,7 +55,7 @@ export const COMPANIES: Company[] = [
     buttonGradient: "bg-gradient-to-r from-blue-800 via-blue-600 to-blue-400",
   },
   {
-    id: "fellowstrans",
+    id: ECompanyId.FELLOW_TRANS,
     name: "FellowsTrans Inc",
     logo: "/assets/logos/FellowLogo.png",
     country: "Canada",
@@ -62,7 +70,7 @@ export const COMPANIES: Company[] = [
     buttonGradient: "bg-gradient-to-r from-red-600 via-red-500 to-pink-400",
   },
   {
-    id: "webfreight",
+    id: ECompanyId.WEB_FREIGHT,
     name: "Web Freight Inc",
     logo: "/assets/logos/WebLogog.png",
     country: "Canada",
@@ -77,7 +85,7 @@ export const COMPANIES: Company[] = [
     buttonGradient: "bg-gradient-to-r from-blue-500 via-cyan-400 to-blue-300",
   },
   {
-    id: "nesh",
+    id: ECompanyId.NESH,
     name: "New England Steel Haulers Inc",
     logo: "/assets/logos/NewEnglandLogo.png",
     country: "Canada",

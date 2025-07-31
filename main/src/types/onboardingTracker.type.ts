@@ -1,5 +1,10 @@
 import { Document, ObjectId } from "mongoose";
 
+export enum EApplicationType {
+  FLAT_BED = "FLAT_BED",
+  DRY_VAN = "DRY_VAN",
+}
+
 export interface IOnboardingTracker {
   // Encrypted and hashed SIN
   sinHash: string;
@@ -10,13 +15,14 @@ export interface IOnboardingTracker {
 
   resumeExpiresAt: Date;
 
+  applicationType?: EApplicationType; // only applicable to ssp-canada
+
   status: {
     currentStep: number;
     completedStep: number;
     completed: boolean;
   };
 
-  
   // Selected company (e.g., 'ssp-ca', 'fellowstrans')
   companyId: string;
 

@@ -7,9 +7,12 @@ import PreQualifications from "@/mongoose/models/Prequalifications";
 import { FORM_RESUME_EXPIRES_AT_IN_MILSEC } from "@/config/env";
 import { uploadImageToS3, deleteS3Objects } from "@/lib/utils/s3Upload";
 import { HydratedDocument } from "mongoose";
-import { IOnboardingTrackerDoc } from "@/types/onboardingTracker.type";
+import {
+  EApplicationType,
+  IOnboardingTrackerDoc,
+} from "@/types/onboardingTracker.type";
 import { hasRecentAddressCoverage } from "@/lib/utils/hasMinimumAddressDuration";
-import { COMPANIES } from "@/constants/companies";
+import { COMPANIES, ECompanyId } from "@/constants/companies";
 import { IPhoto } from "@/types/shared.types";
 import { validateImageFile } from "@/lib/utils/validationUtils";
 import {
@@ -35,10 +38,27 @@ export async function POST(req: Request) {
     const page1Raw = formData.get("applicationFormPage1") as string;
     const prequalRaw = formData.get("prequalifications") as string;
     const companyId = formData.get("companyId") as string;
+    const appTypeRaw = formData.get("applicationType") as string | null;
 
     if (!page1Raw) return errorResponse(400, "Missing applicationFormPage1");
     if (!prequalRaw) return errorResponse(400, "Missing prequalifications");
     if (!companyId) return errorResponse(400, "Missing companyId");
+
+    // Enforce applicationType for ssp-canada
+    if (companyId === ECompanyId.SSP_CA) {
+      if (
+        !appTypeRaw ||
+        !Object.values(EApplicationType).includes(
+          appTypeRaw as EApplicationType
+        )
+      ) {
+        return errorResponse(
+          400,
+          "Field 'applicationType' is required for SSP-Canada and must be one of: " +
+            Object.values(EApplicationType).join(", ")
+        );
+      }
+    }
 
     const isValidCompanyId = COMPANIES.some((c) => c.id === companyId);
     if (!isValidCompanyId) return errorResponse(400, "Invalid company id");
@@ -77,8 +97,10 @@ export async function POST(req: Request) {
         Date.now() + Number(FORM_RESUME_EXPIRES_AT_IN_MILSEC)
       ),
       status: { currentStep: 1, completedStep: 0, completed: false },
-      forms: {},
       companyId,
+      // only set it if present (i.e. for ssp-canada)
+      ...(companyId === ECompanyId.SSP_CA && { applicationType: appTypeRaw }),
+      forms: {},
     });
     const trackerId = onboardingDoc.id;
 

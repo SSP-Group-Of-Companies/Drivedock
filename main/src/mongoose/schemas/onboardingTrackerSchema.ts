@@ -1,9 +1,13 @@
 import mongoose, { Schema } from "mongoose";
-import { IOnboardingTrackerDoc } from "@/types/onboardingTracker.type";
+import {
+  EApplicationType,
+  IOnboardingTrackerDoc,
+} from "@/types/onboardingTracker.type";
 import PreQualifications from "../models/Prequalifications";
 import ApplicationForm from "../models/applicationForm";
 import { decryptString } from "@/lib/utils/cryptoUtils";
 import PoliciesConsents from "../models/PoliciesConsents";
+import { ECompanyId } from "@/constants/companies";
 
 const onboardingTrackerSchema = new Schema<IOnboardingTrackerDoc>(
   {
@@ -21,6 +25,15 @@ const onboardingTrackerSchema = new Schema<IOnboardingTrackerDoc>(
       type: Date,
       required: [true, "Resume expiry date is required."],
     },
+    applicationType: {
+      type: String,
+      enum: {
+        values: Object.values(EApplicationType),
+        message: `application type can only be one of ${Object.values(
+          EApplicationType
+        )}`,
+      },
+    },
     status: {
       currentStep: {
         type: Number,
@@ -37,7 +50,13 @@ const onboardingTrackerSchema = new Schema<IOnboardingTrackerDoc>(
     },
     companyId: {
       type: String,
-      required: [true, "Company Id is required"],
+      required: [true, "Company id is requried"],
+      enum: {
+        values: Object.values(ECompanyId),
+        message: `application type can only be one of ${Object.values(
+          ECompanyId
+        )}`,
+      },
     },
     forms: {
       preQualification: {
@@ -104,9 +123,7 @@ onboardingTrackerSchema.post("findOneAndDelete", async function (doc) {
     tasks.push(ApplicationForm.deleteOne({ _id: forms.driverApplication }));
 
   if (forms.consents)
-    tasks.push(
-      mongoose.model("PoliciesConsents").deleteOne({ _id: forms.consents })
-    );
+    tasks.push(PoliciesConsents.deleteOne({ _id: forms.consents }));
 
   if (forms.carrierEdge)
     tasks.push(

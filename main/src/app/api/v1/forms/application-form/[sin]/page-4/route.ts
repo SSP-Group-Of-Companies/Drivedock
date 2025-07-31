@@ -285,31 +285,57 @@ export const PATCH = async (
 
     // finalize uploads & delete old
     await Promise.all(uploadTasks);
-    if (keysToDelete.length) await deleteS3Objects(keysToDelete);
 
-    // 6. Persist
-    appFormDoc.page4 = body;
-    appFormDoc.currentStep = 5;
-    if (appFormDoc.completedStep < 4) appFormDoc.completedStep = 4;
-    await appFormDoc.save();
+    //
+    // 6. Persist **with rollback on failure**
+    //
+    try {
+      appFormDoc.page4 = body;
+      appFormDoc.currentStep = 5;
+      if (appFormDoc.completedStep < 4) {
+        appFormDoc.completedStep = 4;
+      }
+      await appFormDoc.save();
 
-    onboardingDoc.status.currentStep = 2;
-    onboardingDoc.status.completedStep = Math.max(
-      onboardingDoc.status.completedStep,
-      2
-    );
-    onboardingDoc.resumeExpiresAt = new Date(
-      Date.now() + Number(FORM_RESUME_EXPIRES_AT_IN_MILSEC)
-    );
-    await onboardingDoc.save();
+      onboardingDoc.status.currentStep = 2;
+      onboardingDoc.status.completedStep = Math.max(
+        onboardingDoc.status.completedStep,
+        2
+      );
+      onboardingDoc.resumeExpiresAt = new Date(
+        Date.now() + Number(FORM_RESUME_EXPIRES_AT_IN_MILSEC)
+      );
+      await onboardingDoc.save();
+    } catch (saveErr) {
+      // rollback *only* the newly uploaded files
+      if (uploadedKeys.length) {
+        await deleteS3Objects(uploadedKeys);
+      }
+      // bubble up to outer catch
+      throw saveErr;
+    }
 
+    //
+    // 7. Now that both saves succeeded, delete the old files
+    //
+    if (keysToDelete.length) {
+      await deleteS3Objects(keysToDelete);
+    }
+
+    // 8. Success
     return successResponse(200, "ApplicationForm Page 4 updated", {
       onboardingTracker: onboardingDoc.toObject({ virtuals: true }),
       applicationForm: appFormDoc.toObject({ virtuals: true }),
     });
   } catch (error) {
+    // ensure any in-flight uploads finish
     await Promise.allSettled(uploadTasks);
-    if (uploadedKeys.length) await deleteS3Objects(uploadedKeys);
+
+    // on any failure, only delete *new* uploads (old ones were never touched)
+    if (uploadedKeys.length) {
+      await deleteS3Objects(uploadedKeys);
+    }
+
     return errorResponse(error);
   }
 };
