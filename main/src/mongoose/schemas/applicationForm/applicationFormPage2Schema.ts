@@ -23,7 +23,7 @@ export const employmentEntrySchema = new Schema<IEmploymentEntry>(
     gapExplanationBefore: { type: String }, // optional
   },
   { _id: false }
-);
+); 
 
 // Page 2 Schema
 export const applicationFormPage2Schema = new Schema<IApplicationFormPage2>(
