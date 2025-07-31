@@ -72,11 +72,6 @@ export async function POST(req: Request) {
       );
     }
 
-    for (const address of page1.addresses) {
-      const error = validatePostalCodeByCompany(address.postalCode, companyId);
-      if (error) return errorResponse(400, error);
-    }
-
     // Step 1: Create OnboardingTracker
     onboardingDoc = await OnboardingTracker.create({
       sinHash,
@@ -176,7 +171,7 @@ export async function POST(req: Request) {
         licenseBackPhoto: null as any,
       };
 
-      if (frontFile) {
+      if (frontFile) {  
         uploadTasks.push(
           (async () => {
             const buffer = Buffer.from(await frontFile.arrayBuffer());

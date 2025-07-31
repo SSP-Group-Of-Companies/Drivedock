@@ -1,6 +1,7 @@
 import {
   IApplicationFormPage4,
   ICriminalRecordEntry,
+  IFastCard,
 } from "@/types/applicationForm.types";
 import { Schema } from "mongoose";
 import { photoSchema } from "../sharedSchemas";
@@ -21,6 +22,26 @@ const criminalRecordEntrySchema = new Schema<ICriminalRecordEntry>(
   { _id: false }
 );
 
+// fast card schema
+const fastCardSchema = new Schema<IFastCard>({
+  fastCardNumber: {
+    type: String,
+    required: [true, "Fast card number is required"],
+  },
+  fastCardExpiry: {
+    type: Date,
+    required: [true, "Fast card expiry is required"],
+  },
+  fastCardFrontPhoto: {
+    type: photoSchema,
+    required: [true, "fast card front photo is required"],
+  },
+  fastCardBackPhoto: {
+    type: photoSchema,
+    required: [true, "fast card front photo is required"],
+  },
+});
+
 // Page 4 Schema
 export const applicationFormPage4Schema = new Schema<IApplicationFormPage4>(
   {
@@ -31,24 +52,51 @@ export const applicationFormPage4Schema = new Schema<IApplicationFormPage4>(
       default: [],
     },
 
-    // Incorporate & Banking
+    // Incorporate, hst & Banking
     employeeNumber: {
       type: String,
-      required: [true, "Employee number is required."],
+    },
+    hstNumber: {
+      type: String,
     },
     businessNumber: {
       type: String,
-      required: [true, "Business number is required."],
+    },
+    hstPhotos: {
+      type: [photoSchema],
+      default: [],
     },
     incorporatePhotos: {
       type: [photoSchema],
-      required: [true, "Incorporate photos are required."],
       default: [],
     },
     bankingInfoPhotos: {
       type: [photoSchema],
-      required: [true, "Banking info photos are required."],
       default: [],
+    },
+    healthCardPhotos: {
+      type: [photoSchema],
+      default: [],
+    },
+    medicalCertificationPhotos: {
+      type: [photoSchema],
+      default: [],
+    },
+    passportPhotos: {
+      type: [photoSchema],
+      default: [],
+    },
+    usVisaPhotos: {
+      type: [photoSchema],
+      default: [],
+    },
+    prPermitCitizenshipPhotos: {
+      type: [photoSchema],
+      default: [],
+    },
+    fastCard: {
+      type: fastCardSchema,
+      default: undefined,
     },
 
     // Additional Info
@@ -66,7 +114,10 @@ export const applicationFormPage4Schema = new Schema<IApplicationFormPage4>(
     },
     testedPositiveOrRefused: {
       type: Boolean,
-      required: [true, "Drug test refusal or positive result must be specified."],
+      required: [
+        true,
+        "Drug test refusal or positive result must be specified.",
+      ],
     },
     completedDOTRequirements: {
       type: Boolean,

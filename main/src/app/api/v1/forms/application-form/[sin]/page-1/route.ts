@@ -93,14 +93,6 @@ export async function PATCH(
       );
     }
 
-    for (const address of page1.addresses) {
-      const error = validatePostalCodeByCompany(
-        address.postalCode,
-        onboardingDoc.companyId
-      );
-      if (error) return errorResponse(400, error);
-    }
-
     // Step 6: License array & AZ check
     if (!Array.isArray(page1.licenses)) {
       return errorResponse(400, "`licenses` must be an array");
