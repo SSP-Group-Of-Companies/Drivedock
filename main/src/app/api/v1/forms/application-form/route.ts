@@ -11,10 +11,7 @@ import { IOnboardingTrackerDoc } from "@/types/onboardingTracker.type";
 import { hasRecentAddressCoverage } from "@/lib/utils/hasMinimumAddressDuration";
 import { COMPANIES } from "@/constants/companies";
 import { IPhoto } from "@/types/shared.types";
-import {
-  validateImageFile,
-  validatePostalCodeByCompany,
-} from "@/lib/utils/validationUtils";
+import { validateImageFile } from "@/lib/utils/validationUtils";
 import {
   IApplicationFormPage1,
   ILicenseEntry,
@@ -171,7 +168,7 @@ export async function POST(req: Request) {
         licenseBackPhoto: null as any,
       };
 
-      if (frontFile) {  
+      if (frontFile) {
         uploadTasks.push(
           (async () => {
             const buffer = Buffer.from(await frontFile.arrayBuffer());
