@@ -25,11 +25,13 @@ export function errorResponse(
   let status = 500;
   let message = "An error occurred";
 
-  // Case: errorResponse(error)
   if (typeof statusOrError !== "number") {
     const err = statusOrError;
 
-    if (err instanceof mongoose.Error.ValidationError) {
+    if (err instanceof AppError) {
+      status = err.status;
+      message = err.message;
+    } else if (err instanceof mongoose.Error.ValidationError) {
       status = 400;
       message = formatMongooseValidationError(err);
     } else if (err instanceof Error) {
@@ -37,10 +39,7 @@ export function errorResponse(
     } else if (typeof err === "string") {
       message = err;
     }
-  }
-
-  // Case: errorResponse(400, "My message")
-  else {
+  } else {
     status = statusOrError;
     if (typeof msgOrError === "string") {
       message = msgOrError;
@@ -57,4 +56,14 @@ export function errorResponse(
     },
     { status }
   );
+}
+
+export class AppError extends Error {
+  status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.name = "AppError";
+    this.status = status;
+  }
 }

@@ -52,7 +52,7 @@ export interface IEmploymentEntry {
   postalCode: string;
   city: string;
   stateOrProvince: string;
-  phone1: string;
+  phone1: string; 
   phone2?: string;
   email: string;
   positionHeld: string;
@@ -123,8 +123,8 @@ export interface ICriminalRecordEntry {
 export interface IFastCard {
   fastCardNumber: string; 
   fastCardExpiry: string | Date; 
-  fastCardFrontPhoto: IPhoto; 
-  fastCardBackPhoto: IPhoto;
+  fastCardFrontPhoto?: IPhoto; 
+  fastCardBackPhoto?: IPhoto;
 }
 
 export interface IApplicationFormPage4 {
