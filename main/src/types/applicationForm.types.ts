@@ -47,12 +47,13 @@ export interface IApplicationFormPage1 {
 
 // Page 2
 export interface IEmploymentEntry {
+  employerName: string;
   supervisorName: string;
   address: string;
   postalCode: string;
   city: string;
   stateOrProvince: string;
-  phone1: string; 
+  phone1: string;
   phone2?: string;
   email: string;
   positionHeld: string;
@@ -121,9 +122,9 @@ export interface ICriminalRecordEntry {
 }
 
 export interface IFastCard {
-  fastCardNumber: string; 
-  fastCardExpiry: string | Date; 
-  fastCardFrontPhoto?: IPhoto; 
+  fastCardNumber: string;
+  fastCardExpiry: string | Date;
+  fastCardFrontPhoto?: IPhoto;
   fastCardBackPhoto?: IPhoto;
 }
 

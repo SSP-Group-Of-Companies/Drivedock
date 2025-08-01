@@ -5,7 +5,7 @@ import ApplicationForm from "@/mongoose/models/applicationForm";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import { hashString } from "@/lib/utils/cryptoUtils";
 import { IApplicationFormPage2 } from "@/types/applicationForm.types";
-import { validateEmploymentHistory } from "@/lib/utils/validateEmploymentHistory";
+import { validateEmploymentHistory } from "@/lib/utils/validationUtils";
 
 export const PATCH = async (
   req: Request,

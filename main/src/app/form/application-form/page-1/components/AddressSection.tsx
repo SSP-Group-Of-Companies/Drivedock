@@ -2,7 +2,7 @@
 
 import { useTranslation } from "react-i18next";
 import { useFormContext, useFieldArray } from "react-hook-form";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { IApplicationFormPage1 } from "@/types/applicationForm.types";
 import { Upload } from "lucide-react";
 import { useCompanySelection } from "@/hooks/useCompanySelection";
@@ -31,6 +31,31 @@ export default function AddressSection() {
       : t("form.placeholders.postalCode");
   };
 
+  // State to track if form has been submitted (for error styling)
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+
+  // Check if there's an address duration error
+  const hasAddressDurationError =
+    errors.addresses?.message &&
+    typeof errors.addresses.message === "string" &&
+    errors.addresses.message.includes("5 years");
+
+  // Get subtitle text and styling
+  const getSubtitleText = () => {
+    if (hasAddressDurationError && hasSubmitted) {
+      return t("form.errors.addressDurationError");
+    }
+    return t("form.page1.sections.address.subtitle");
+  };
+
+  const getSubtitleClassName = () => {
+    const baseClass = "text-center text-sm mt-2";
+    if (hasAddressDurationError && hasSubmitted) {
+      return `${baseClass} text-red-600 font-medium`;
+    }
+    return `${baseClass} text-gray-600`;
+  };
+
   const { fields, append, remove } = useFieldArray({
     control,
     name: "addresses",
@@ -52,6 +77,13 @@ export default function AddressSection() {
     return () => clearTimeout(timeout);
   }, [watchedAddresses, errors.addresses, trigger]);
 
+  // Track form submission for error styling
+  useEffect(() => {
+    if (errors.addresses?.message) {
+      setHasSubmitted(true);
+    }
+  }, [errors.addresses?.message]);
+
   const addressErrors = errors.addresses as any[] | undefined;
 
   const handleAdd = () => {
@@ -69,9 +101,12 @@ export default function AddressSection() {
   const hasFirst = fields.length > 0;
   return (
     <section className="space-y-6 border border-gray-200 p-6 rounded-lg bg-white/80 shadow-sm">
-      <h2 className="text-center text-lg font-semibold text-gray-800">
-        {t("form.page1.sections.address")}
-      </h2>
+      <div className="text-center">
+        <h2 className="text-lg font-semibold text-gray-800">
+          {t("form.page1.sections.address.title")}
+        </h2>
+        <p className={getSubtitleClassName()}>{getSubtitleText()}</p>
+      </div>
       {/* Always show the first address entry */}
       <div
         key={hasFirst ? fields[0].id : "first-address"}
@@ -334,13 +369,6 @@ export default function AddressSection() {
             </div>
           </div>
         ))}
-      {errors.addresses?.message && (
-        <p className="text-red-500 text-sm mt-2">
-          {typeof errors.addresses.message === "string"
-            ? errors.addresses.message
-            : "Address validation error"}
-        </p>
-      )}
       <button
         type="button"
         ref={addButtonRef}

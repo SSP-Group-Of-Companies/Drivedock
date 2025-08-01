@@ -40,7 +40,38 @@ export async function POST(req: Request) {
     if (!prequalRaw) return errorResponse(400, "Missing prequalifications");
     if (!companyId) return errorResponse(400, "Missing companyId");
 
+    // Debug company ID
+    console.log("Raw companyId:", JSON.stringify(companyId));
+    console.log("Trimmed companyId:", JSON.stringify(companyId?.trim()));
+    console.log("CompanyId length:", companyId?.length);
+    console.log(
+      "CompanyId char codes:",
+      Array.from(companyId || "").map((c) => c.charCodeAt(0))
+    );
+
+    // Test COMPANIES constant
+    console.log("COMPANIES constant test:");
+    console.log("Total companies:", COMPANIES.length);
+    console.log(
+      "All company IDs:",
+      COMPANIES.map((c) => c.id)
+    );
+    console.log(
+      "Looking for 'webfreight':",
+      COMPANIES.find((c) => c.id === "webfreight")
+    );
+    console.log(
+      "Looking for received companyId:",
+      COMPANIES.find((c) => c.id === companyId)
+    );
+
     const isValidCompanyId = COMPANIES.some((c) => c.id === companyId);
+    console.log("Backend received companyId:", companyId);
+    console.log(
+      "Backend available companies:",
+      COMPANIES.map((c) => c.id)
+    );
+    console.log("Backend isValidCompanyId:", isValidCompanyId);
     if (!isValidCompanyId) return errorResponse(400, "Invalid company id");
 
     let page1: IApplicationFormPage1, prequalifications: IPreQualifications;
@@ -84,7 +115,7 @@ export async function POST(req: Request) {
     const dob = new Date(page1.dob);
     const today = new Date();
     const age = today.getFullYear() - dob.getFullYear();
-    if (isNaN(dob.getTime()) || age < 18 || age > 100) {
+    if (isNaN(dob.getTime()) || age < 23 || age > 100) {
       return errorResponse(400, "Invalid date of birth");
     }
 

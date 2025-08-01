@@ -7,6 +7,10 @@ import {
 // Employment Entry Schema
 export const employmentEntrySchema = new Schema<IEmploymentEntry>(
   {
+    employerName: {
+      type: String,
+      required: [true, "Employer name is required."],
+    },
     supervisorName: {
       type: String,
       required: [true, "Supervisor name is required."],
@@ -52,7 +56,7 @@ export const employmentEntrySchema = new Schema<IEmploymentEntry>(
     gapExplanationBefore: { type: String }, // optional
   },
   { _id: false }
-); 
+);
 
 // Page 2 Schema
 export const applicationFormPage2Schema = new Schema<IApplicationFormPage2>(

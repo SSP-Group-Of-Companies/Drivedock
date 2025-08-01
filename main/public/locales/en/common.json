@@ -79,8 +79,29 @@
         "personal": "Personal Information",
         "birth": "Place of Birth",
         "license": "License Information",
-        "address": "Address History"
+        "address": {
+          "title": "Address History",
+          "subtitle": "Please provide your address history for the past 5 years"
+        }
       }
+    },
+    "page2": {
+      "sections": {
+        "employment": "Employment History"
+      },
+      "labels": {
+        "currentEmployer": "Current Employer",
+        "previousEmployer": "Previous Employer"
+      },
+      "actions": {
+        "addPrevious": "Add Previous Employer",
+        "removePrevious": "Remove"
+      },
+      "modal": {
+        "title": "Additional Employment History Required",
+        "message": "You have more than 2 years of experience. Please add your previous employment history to complete the required information."
+      },
+      "gapDetected": "Gap of {days} days detected between employments. Please explain:"
     },
     "fields": {
       "firstName": "First Name",
@@ -90,7 +111,6 @@
       "sinPhotoDesc": "Click to capture or select an image",
       "dob": "Date of Birth",
       "canProvideProof": "Can you provide proof of age?",
-      "email": "Email Address",
       "phoneHome": "Phone (Home)",
       "phoneCell": "Phone (Cell)",
       "emergencyContactName": "Emergency Contact Name",
@@ -105,19 +125,31 @@
       "licenseFrontPhoto": "License Front Photo",
       "licensePhotoDesc": "Click to capture or select an image",
       "licenseBackPhoto": "License Back Photo",
-      "address": "Street Address",
+      "address": "Address",
       "city": "City",
       "stateOrProvince": "State or Province",
       "postalCode": "Postal Code",
       "zipCode": "Zip Code",
       "from": "From Date",
-      "to": "To Date"
+      "to": "To Date",
+      "employerName": "Employer Name",
+      "supervisorName": "Supervisor Name",
+      "phone1": "Phone 1",
+      "phone2": "Phone 2 (optional)",
+      "email": "Email Address",
+      "positionHeld": "Position Held",
+      "salary": "Salary",
+      "reasonForLeaving": "Reason for Leaving...",
+      "subjectToFMCSR": "Were you subject to FMCSR (Federal Motor Carrier Safety Regulations)?",
+      "safetySensitiveFunction": "Did you perform safety-sensitive functions?"
     },
     "actions": {
       "addLicense": "Add Another License",
       "removeLicense": "Remove License",
       "addAddress": "Add Another Address",
-      "removeAddress": "Remove Address"
+      "removeAddress": "Remove Address",
+      "cancel": "Cancel",
+      "ok": "OK"
     },
     "placeholders": {
       "firstName": "Enter your first name",
@@ -130,14 +162,26 @@
       "birthCity": "Enter city of birth",
       "birthStateOrProvince": "Enter province or state of birth",
       "birthCountry": "Enter country of birth",
-      "postalCode": "A1A 1A1",
       "zipCode": "12345 or 12345-6789",
       "sin": "123-456-789",
       "dob": "YYYY-mm-dd",
-      "select": "--Select--"
+      "select": "--Select--",
+      "employerName": "Enter employer name",
+      "supervisorName": "Enter supervisor name",
+      "address": "Enter street address",
+      "city": "Enter city",
+      "stateOrProvince": "Enter state or province",
+      "postalCode": "Enter postal code",
+      "phone1": "Enter primary phone number",
+      "phone2": "Enter secondary phone number (optional)",
+      "positionHeld": "Enter position held",
+      "salary": "Enter salary information",
+      "reasonForLeaving": "Enter reason for leaving",
+      "gapExplanation": "Please explain the gap in your employment history..."
     },
     "errors": {
-      "minimum5Years": "You must provide at least 5 years of address history."
+      "minimum5Years": "You must provide at least 5 years of address history.",
+      "addressDurationError": "Address provided should span for the last 5 years. Please add previous address if you lived in more than one location."
     },
     "continue": "Continue",
     "submitting": "Submitting..."

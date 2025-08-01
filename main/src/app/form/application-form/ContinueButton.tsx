@@ -1,34 +1,55 @@
 "use client";
 
-import { useFormContext } from "react-hook-form";
+import { useFormContext, FieldValues } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { useState } from "react";
+import { useState, ReactNode } from "react";
+
 import { usePrequalificationStore } from "@/store/usePrequalificationStore";
-import { IApplicationFormPage1 } from "@/types/applicationForm.types";
-import { COMPANIES } from "@/constants/companies";
+import { useOnboardingTracker } from "@/store/useOnboardingTracker";
 import { useCompanySelection } from "@/hooks/useCompanySelection";
 import { useFormErrorScroll } from "@/hooks/useFormErrorScroll";
-import { page1Config } from "@/lib/frontendConfigs/applicationFormConfigs/page1Config";
+import { COMPANIES } from "@/constants/companies";
+import { IPreQualifications } from "@/types/preQualifications.types";
 
-export default function ContinueButton() {
+type ContinueButtonProps<T extends FieldValues> = {
+  config: {
+    validationFields: (values: T) => string[];
+    buildFormData:
+      | ((values: T) => FormData)
+      | ((
+          values: T,
+          prequal: IPreQualifications,
+          companyId: string
+        ) => FormData);
+    nextRoute: string;
+    validateBusinessRules?: (values: T) => string | null;
+  };
+};
+
+export default function ContinueButton<T extends FieldValues>({
+  config,
+}: ContinueButtonProps<T>): ReactNode {
   const {
     getValues,
     trigger,
     formState: { errors },
-  } = useFormContext<IApplicationFormPage1>();
+  } = useFormContext<T>();
+
   const router = useRouter();
   const { t } = useTranslation("common");
   const { data: prequalifications } = usePrequalificationStore();
+  const { tracker, setTracker } = useOnboardingTracker();
   const { selectedCompany } = useCompanySelection();
-  const { handleFormError } = useFormErrorScroll<IApplicationFormPage1>();
+  const { handleFormError } = useFormErrorScroll<T>();
 
   const [submitting, setSubmitting] = useState(false);
 
   const onSubmit = async () => {
     const values = getValues();
 
-    const fieldsToValidate = page1Config.validationFields(values);
+    // Step 1: Field-level validation
+    const fieldsToValidate = config.validationFields(values);
     const isValid = await trigger(
       fieldsToValidate as Parameters<typeof trigger>[0]
     );
@@ -38,39 +59,82 @@ export default function ContinueButton() {
       return;
     }
 
-    if (!prequalifications?.completed) {
-      alert(
-        "Prequalification data is missing. Please restart the application."
-      );
-      return;
+    // Step 2: Optional business rule validation
+    if (config.validateBusinessRules) {
+      const ruleError = config.validateBusinessRules(values);
+      if (ruleError) {
+        alert(ruleError);
+        return;
+      }
     }
 
-    const companyId = selectedCompany?.id || "default";
-    const isValidCompany = COMPANIES.some((c) => c.id === companyId);
-    if (!isValidCompany) {
-      alert("Invalid company selection. Please restart the application.");
-      return;
+    // Step 3: Validate company and prequal if needed
+    const companyId = selectedCompany?.id;
+    const isValidCompany =
+      !!companyId && COMPANIES.some((c) => c.id === companyId);
+
+    if (config.buildFormData.length === 3) {
+      if (!prequalifications?.completed) {
+        alert(
+          "Prequalification data is missing. Please restart the application."
+        );
+        return;
+      }
+
+      if (!isValidCompany) {
+        alert("Invalid company selection. Please restart the application.");
+        return;
+      }
     }
 
     try {
       setSubmitting(true);
-      const formData = page1Config.buildFormData(
-        values,
-        prequalifications,
-        companyId
-      );
 
-      const res = await fetch("/api/v1/forms/application-form", {
-        method: "POST",
+      // Step 4: Build form data
+      const formData =
+        config.buildFormData.length === 3
+          ? (
+              config.buildFormData as (
+                values: T,
+                prequal: IPreQualifications,
+                companyId: string
+              ) => FormData
+            )(values, prequalifications!, companyId!)
+          : (config.buildFormData as (values: T) => FormData)(values);
+
+      // Step 5: Determine route and method
+      const sin = tracker?.sin;
+      const isUpdate = Boolean(sin);
+      const pageSegment = config.nextRoute.split("/").pop();
+
+      const url =
+        isUpdate && pageSegment
+          ? `/api/v1/forms/application-form/${sin}/${pageSegment}`
+          : "/api/v1/forms/application-form";
+
+      const method = isUpdate ? "PATCH" : "POST";
+
+      // Step 6: Submit to backend
+      const res = await fetch(url, {
+        method,
         body: formData,
       });
 
       if (!res.ok) {
-        const errorData = await res.text();
-        throw new Error(errorData);
+        const errorText = await res.text();
+        throw new Error(errorText);
       }
 
-      router.push(page1Config.nextRoute);
+      // Step 7: Save tracker if this is initial Page 1 POST
+      if (!isUpdate && pageSegment === "page-2") {
+        const responseData = await res.json();
+        if (responseData?.data?.sin) {
+          setTracker(responseData.data); // Save full tracker object
+        }
+      }
+
+      // Step 8: Route to next step
+      router.push(config.nextRoute);
     } catch (err) {
       console.error("Submission error:", err);
       alert("An error occurred while submitting. Please try again.");

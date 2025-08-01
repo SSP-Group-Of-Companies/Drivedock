@@ -7,6 +7,7 @@ import {
   ApplicationFormPage1Schema,
 } from "@/lib/zodSchemas/applicationFormPage1.schema";
 import { ELicenseType } from "@/types/shared.types";
+import { useCompanySelection } from "@/hooks/useCompanySelection";
 
 // Components
 import PersonalDetails from "./components/PersonalDetails";
@@ -15,7 +16,12 @@ import LicenseSection from "./components/LicenseSection";
 import AddressSection from "./components/AddressSection";
 import ContinueButton from "../ContinueButton";
 
+// Config
+import { page1Config } from "@/lib/frontendConfigs/applicationFormConfigs/page1Config";
+
 export default function ApplicationFormPage1() {
+  const { selectedCompany } = useCompanySelection();
+
   const methods = useForm<ApplicationFormPage1Schema>({
     resolver: zodResolver(applicationFormPage1Schema),
     mode: "onChange",
@@ -49,22 +55,21 @@ export default function ApplicationFormPage1() {
   });
 
   const onSubmit = () => {
-    // The ContinueButton will call this manually via context
-    // So this will never be triggered unless we fallback to native form submission
+    // Not used — handled by ContinueButton
   };
 
   return (
     <FormProvider {...methods}>
       <form
         className="space-y-8"
-        onSubmit={methods.handleSubmit(onSubmit)} // Industry-standard binding
-        noValidate // Optional: disable native browser validations
+        onSubmit={methods.handleSubmit(onSubmit)}
+        noValidate
       >
         <PersonalDetails />
         <PlaceOfBirth />
         <LicenseSection />
         <AddressSection />
-        <ContinueButton />
+        <ContinueButton<ApplicationFormPage1Schema> config={page1Config} />
       </form>
     </FormProvider>
   );

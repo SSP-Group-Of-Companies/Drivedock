@@ -1,10 +1,23 @@
+// src/lib/frontendConfigs/applicationFormConfigs/page1Config.ts
 "use client";
 
-import { IApplicationFormPage1 } from "@/types/applicationForm.types";
+import { ApplicationFormPage1Schema } from "@/lib/zodSchemas/applicationFormPage1.schema";
+import { FormPageConfig } from "@/lib/frontendConfigs/formPageConfig.types";
 import { IPreQualifications } from "@/types/preQualifications.types";
+import { IOnboardingTracker } from "@/types/onboardingTracker.type"; // ✅ Import Tracker Type
 
-export const page1Config = {
-  validationFields: (values: IApplicationFormPage1) => {
+// Extend FormPageConfig to support tracker-aware FormData building
+type Page1FormPageConfig = FormPageConfig<ApplicationFormPage1Schema> & {
+  buildFormData: (
+    values: ApplicationFormPage1Schema,
+    prequalifications: IPreQualifications,
+    companyId: string,
+    tracker?: IOnboardingTracker // ✅ Optional tracker for PATCH
+  ) => FormData;
+};
+
+export const page1Config: Page1FormPageConfig = {
+  validationFields: (values) => {
     const fields: string[] = [
       "firstName",
       "lastName",
@@ -47,18 +60,19 @@ export const page1Config = {
   },
 
   buildFormData: (
-    values: IApplicationFormPage1,
+    values: ApplicationFormPage1Schema,
     prequalifications: IPreQualifications,
-    companyId: string
+    companyId: string,
+    tracker?: IOnboardingTracker // ✅ Optional for PATCH
   ) => {
     const formData = new FormData();
 
-    // Handle SIN photo
+    // Upload SIN photo
     if (values.sinPhoto instanceof File) {
       formData.append("sinPhoto", values.sinPhoto);
     }
 
-    // Handle license photos (only for the first license)
+    // Upload license 0 photos
     const firstLicense = values.licenses?.[0];
     if (firstLicense?.licenseFrontPhoto instanceof File) {
       formData.append("license_0_front", firstLicense.licenseFrontPhoto);
@@ -67,7 +81,7 @@ export const page1Config = {
       formData.append("license_0_back", firstLicense.licenseBackPhoto);
     }
 
-    // Clean license payload
+    // Clean license array for JSON
     const licensesCleaned = values.licenses.map((license) => {
       const licenseCopy = structuredClone(license) as Partial<typeof license>;
       delete licenseCopy.licenseFrontPhoto;
@@ -75,21 +89,28 @@ export const page1Config = {
       return licenseCopy;
     });
 
-    const payload = {
+    const cleanedPayload = {
       ...values,
-      licenses: licensesCleaned,
       sin: values.sin?.replace(/\D/g, "") || "",
+      licenses: licensesCleaned,
     };
+
     // Remove sinPhoto from JSON payload since it's handled as file
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { sinPhoto, ...payloadWithoutSinPhoto } = payload;
+    const { sinPhoto, ...payloadWithoutSinPhoto } = cleanedPayload;
 
+    // Append FormData
     formData.append(
       "applicationFormPage1",
       JSON.stringify(payloadWithoutSinPhoto)
     );
     formData.append("prequalifications", JSON.stringify(prequalifications));
     formData.append("companyId", companyId);
+
+    // ✅ Handle PATCH mode by attaching encrypted SIN
+    if (tracker?.sinEncrypted) {
+      formData.append("sin", tracker.sinEncrypted);
+    }
 
     return formData;
   },
