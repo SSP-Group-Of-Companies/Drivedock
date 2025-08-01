@@ -44,7 +44,7 @@ const licenseSchema = new Schema(
     licenseFrontPhoto: { type: photoSchema },
     licenseBackPhoto: { type: photoSchema },
   },
-  { _id: false }
+  { _id: false, timestamps: true }
 );
 
 export const applicationFormPage1Schema = new Schema<IApplicationFormPage1>(
@@ -115,6 +115,7 @@ export const applicationFormPage1Schema = new Schema<IApplicationFormPage1>(
     _id: false,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
+    timestamps: true,
   }
 );
 

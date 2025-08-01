@@ -42,5 +42,6 @@ export const applicationFormPage2Schema = new Schema<IApplicationFormPage2>(
     _id: false,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
+    timestamps: true,
   }
 );

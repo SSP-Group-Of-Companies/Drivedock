@@ -26,9 +26,6 @@ export const GET = async (
       tracker.toObject({ virtuals: true })
     );
   } catch (error) {
-    return errorResponse(
-      500,
-      error instanceof Error ? error.message : String(error)
-    );
+    return errorResponse(error);
   }
 };

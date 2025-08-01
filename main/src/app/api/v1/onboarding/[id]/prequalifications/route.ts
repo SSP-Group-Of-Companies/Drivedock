@@ -3,26 +3,30 @@ import PreQualifications from "@/mongoose/models/Prequalifications";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import connectDB from "@/lib/utils/connectDB";
 import { FORM_RESUME_EXPIRES_AT_IN_MILSEC } from "@/config/env";
-import { hashString } from "@/lib/utils/cryptoUtils";
 import { COMPANIES } from "@/constants/companies";
+import {
+  advanceStatus,
+  buildTrackerContext,
+} from "@/lib/utils/onboardingUtils";
+import { EStepPath } from "@/types/onboardingTracker.type";
+import { isValidObjectId } from "mongoose";
+import { NextRequest } from "next/server";
 
 export const PATCH = async (
-  req: Request,
-  { params }: { params: Promise<{ sin: string }> }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) => {
   try {
     await connectDB();
 
-    const { sin } = await params;
-    if (!sin || sin.length !== 9) {
-      return errorResponse(400, "Invalid SIN");
-    }
+    const { id } = await params;
 
-    const sinHash = hashString(sin);
+    if (!isValidObjectId(id)) return errorResponse(400, "not a valid id");
+
     const body = await req.json();
 
     // Step 1: Find onboarding tracker
-    const onboardingDoc = await OnboardingTracker.findOne({ sinHash });
+    const onboardingDoc = await OnboardingTracker.findById(id);
     if (!onboardingDoc) {
       return errorResponse(404, "Onboarding tracker not found");
     }
@@ -70,10 +74,9 @@ export const PATCH = async (
     }
 
     // Step 5: Update onboarding tracker status
-    onboardingDoc.status.currentStep = 1;
-    onboardingDoc.status.completedStep = Math.max(
-      onboardingDoc.status.completedStep,
-      1
+    onboardingDoc.status = advanceStatus(
+      onboardingDoc.status,
+      EStepPath.PRE_QUALIFICATIONS
     );
     onboardingDoc.resumeExpiresAt = new Date(
       Date.now() + Number(FORM_RESUME_EXPIRES_AT_IN_MILSEC)
@@ -84,14 +87,51 @@ export const PATCH = async (
       200,
       "PreQualifications and onboarding tracker updated",
       {
+        onboardingContext: buildTrackerContext(
+          req,
+          onboardingDoc,
+          EStepPath.PRE_QUALIFICATIONS
+        ),
         preQualifications: preQualDoc,
-        onboardingTracker: onboardingDoc,
       }
     );
   } catch (error) {
-    return errorResponse(
-      500,
-      error instanceof Error ? error.message : String(error)
-    );
+    return errorResponse(error);
+  }
+};
+
+export const GET = async (
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) => {
+  try {
+    await connectDB();
+
+    const { id } = await params;
+    if (!isValidObjectId(id)) return errorResponse(400, "not a valid id");
+
+    // Step 1: Find onboarding tracker
+    const onboardingDoc = await OnboardingTracker.findById(id);
+    if (!onboardingDoc) {
+      return errorResponse(404, "Onboarding tracker not found");
+    }
+
+    // Step 2: Fetch pre-qualifications form using linked ID
+    const preQualId = onboardingDoc.forms?.preQualification;
+    if (!preQualId) {
+      return errorResponse(404, "PreQualifications form not linked");
+    }
+
+    const preQualDoc = await PreQualifications.findById(preQualId);
+    if (!preQualDoc) {
+      return errorResponse(404, "PreQualifications form not found");
+    }
+
+    return successResponse(200, "PreQualifications data retrieved", {
+      onboardingContext: buildTrackerContext(req, onboardingDoc),
+      preQualifications: preQualDoc,
+    });
+  } catch (error) {
+    return errorResponse(error);
   }
 };

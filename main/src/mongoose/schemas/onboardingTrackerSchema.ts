@@ -1,6 +1,7 @@
 import mongoose, { Schema } from "mongoose";
 import {
   EApplicationType,
+  EStepPath,
   IOnboardingTrackerDoc,
 } from "@/types/onboardingTracker.type";
 import PreQualifications from "../models/Prequalifications";
@@ -36,11 +37,23 @@ const onboardingTrackerSchema = new Schema<IOnboardingTrackerDoc>(
     },
     status: {
       currentStep: {
-        type: Number,
+        type: String,
+        enum: {
+          values: Object.values(EStepPath),
+          message: `Current step must be one of: ${Object.values(
+            EStepPath
+          ).join(", ")}`,
+        },
         required: [true, "Current onboarding step is required."],
       },
       completedStep: {
-        type: Number,
+        type: String,
+        enum: {
+          values: Object.values(EStepPath),
+          message: `Completed step must be one of: ${Object.values(
+            EStepPath
+          ).join(", ")}`,
+        },
         required: [true, "Completed onboarding step is required."],
       },
       completed: {

@@ -3,21 +3,27 @@ import { errorResponse, successResponse } from "@/lib/utils/apiResponse";
 import connectDB from "@/lib/utils/connectDB";
 import ApplicationForm from "@/mongoose/models/applicationForm";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
-import { hashString } from "@/lib/utils/cryptoUtils";
 import { IApplicationFormPage5 } from "@/types/applicationForm.types";
 import { competencyQuestions } from "@/constants/competencyTestQuestions";
+import {
+  advanceStatus,
+  buildTrackerContext,
+  hasCompletedStep,
+} from "@/lib/utils/onboardingUtils";
+import { EStepPath } from "@/types/onboardingTracker.type";
+import { isValidObjectId } from "mongoose";
+import { NextRequest } from "next/server";
 
 export const PATCH = async (
-  req: Request,
-  { params }: { params: Promise<{ sin: string }> }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) => {
   try {
     await connectDB();
-    const { sin } = await params;
-    if (!sin || sin.length !== 9)
-      return errorResponse(400, "Invalid SIN in URL");
+    const { id } = await params;
 
-    const sinHash = hashString(sin);
+    if (!isValidObjectId(id)) return errorResponse(400, "not a valid id");
+
     const body = (await req.json()) as IApplicationFormPage5;
 
     if (!Array.isArray(body.answers) || body.answers.length === 0) {
@@ -37,7 +43,7 @@ export const PATCH = async (
     }
 
     // Validate onboarding link
-    const onboardingDoc = await OnboardingTracker.findOne({ sinHash });
+    const onboardingDoc = await OnboardingTracker.findById(id);
     if (!onboardingDoc)
       return errorResponse(404, "OnboardingTracker not found");
 
@@ -47,11 +53,11 @@ export const PATCH = async (
     const appFormDoc = await ApplicationForm.findById(appFormId);
     if (!appFormDoc) return errorResponse(404, "ApplicationForm not found");
 
-    // Step check
-    if (appFormDoc.completedStep < 4)
-      return errorResponse(400, "Please complete previous step first");
+    // check completed step
+    if (!hasCompletedStep(onboardingDoc.status, EStepPath.APPLICATION_PAGE_4))
+      return errorResponse(400, "please complete previous step first");
 
-    if (appFormDoc.completedStep >= 5) {
+    if (hasCompletedStep(onboardingDoc.status, EStepPath.APPLICATION_PAGE_5)) {
       return errorResponse(400, "cannot retake competency questions");
     }
 
@@ -89,17 +95,12 @@ export const PATCH = async (
       answers: body.answers,
       score,
     };
-
-    // update application form steps
-    appFormDoc.currentStep = 5;
-    appFormDoc.completedStep = 5;
     await appFormDoc.save();
 
     // Update onboarding tracker steps
-    onboardingDoc.status.currentStep = 3;
-    onboardingDoc.status.completedStep = Math.max(
-      onboardingDoc.status.completedStep,
-      2
+    onboardingDoc.status = advanceStatus(
+      onboardingDoc.status,
+      EStepPath.APPLICATION_PAGE_5
     );
 
     onboardingDoc.resumeExpiresAt = new Date(
@@ -108,8 +109,50 @@ export const PATCH = async (
     await onboardingDoc.save();
 
     return successResponse(200, "ApplicationForm Page 5 updated", {
-      onboardingTracker: onboardingDoc.toObject({ virtuals: true }),
+      onboardingContext: buildTrackerContext(req, onboardingDoc, EStepPath.APPLICATION_PAGE_5),
       applicationForm: appFormDoc.toObject({ virtuals: true }),
+    });
+  } catch (error) {
+    return errorResponse(error);
+  }
+};
+
+export const GET = async (
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) => {
+  try {
+    await connectDB();
+
+    const { id: onboardingId } = await params;
+
+    if (!isValidObjectId(onboardingId)) {
+      return errorResponse(400, "Not a valid onboarding tracker ID");
+    }
+
+    // Fetch onboarding tracker
+    const onboardingDoc = await OnboardingTracker.findById(onboardingId);
+    if (!onboardingDoc) {
+      return errorResponse(404, "Onboarding tracker not found");
+    }
+
+    const appFormId = onboardingDoc.forms?.driverApplication;
+    if (!appFormId) {
+      return errorResponse(404, "ApplicationForm not linked");
+    }
+
+    const appFormDoc = await ApplicationForm.findById(appFormId);
+    if (!appFormDoc) {
+      return errorResponse(404, "ApplicationForm not found");
+    }
+
+    if (!appFormDoc.page4) {
+      return errorResponse(404, "Page 4 of the application form not found");
+    }
+
+    return successResponse(200, "Page 4 data retrieved", {
+      onboardingContext: buildTrackerContext(req, onboardingDoc),
+      page4: appFormDoc.page4,
     });
   } catch (error) {
     return errorResponse(error);

@@ -12,15 +12,22 @@ import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import { hasRecentAddressCoverage } from "@/lib/utils/hasMinimumAddressDuration";
 import { IPhoto } from "@/types/shared.types";
 import { IApplicationFormPage1 } from "@/types/applicationForm.types";
-import { validateImageFile } from "@/lib/utils/validationUtils";
+import { isValidSIN, validateImageFile } from "@/lib/utils/validationUtils";
+import { EStepPath } from "@/types/onboardingTracker.type";
+import {
+  buildTrackerContext,
+  getHigherStep,
+} from "@/lib/utils/onboardingUtils";
+import { isValidObjectId } from "mongoose";
+import { NextRequest } from "next/server";
 
 export const config = {
   api: { bodyParser: false },
 };
 
 export async function PATCH(
-  req: Request,
-  { params }: { params: Promise<{ sin: string }> }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const uploadedKeys: string[] = [];
 
@@ -33,14 +40,22 @@ export async function PATCH(
   try {
     await connectDB();
 
-    // Step 1: Validate SIN from URL
-    const oldSin = (await params).sin;
-    if (!oldSin || oldSin.length !== 9)
-      return errorResponse(400, "Invalid SIN in URL");
+    const { id: onboardingId } = await params;
+
+    if (!isValidObjectId(onboardingId))
+      return errorResponse(400, "not a valid id");
+
+    // Step 1: Lookup OnboardingTracker by ID
+    const onboardingDoc = await OnboardingTracker.findById(onboardingId);
+    if (!onboardingDoc)
+      return errorResponse(404, "OnboardingTracker not found");
+
+    // Step 2: Get and decrypt existing SIN
+    const oldSin = decryptString(onboardingDoc.sinEncrypted);
 
     const formData = await req.formData();
 
-    // Step 2: Parse and validate page1 data
+    // Step 3: Parse and validate page1 data
     const page1Raw = formData.get("page1") as string;
     if (!page1Raw) return errorResponse(400, "Missing `page1` field");
 
@@ -52,29 +67,17 @@ export async function PATCH(
     }
 
     const newSin = page1?.sin;
-    if (!newSin || newSin.length !== 9)
-      return errorResponse(400, "Invalid SIN in page1");
+    if (!isValidSIN(newSin)) return errorResponse(400, "Invalid SIN in page1");
 
-    // Step 3: Lookup existing onboarding & application documents
-    const oldSinHash = hashString(oldSin);
-    const onboardingDoc = await OnboardingTracker.findOne({
-      sinHash: oldSinHash,
-    });
-    if (!onboardingDoc)
-      return errorResponse(404, "OnboardingTracker not found");
-
+    // Step 4: Lookup ApplicationForm
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) return errorResponse(404, "ApplicationForm not linked");
 
     const appFormDoc = await ApplicationForm.findById(appFormId);
     if (!appFormDoc) return errorResponse(404, "ApplicationForm not found");
 
-    // Step 4: Compute updated SIN values
-    const currentDecryptedSin = appFormDoc.page1?.sinEncrypted
-      ? decryptString(appFormDoc.page1.sinEncrypted)
-      : null;
-
-    const sinChanged = currentDecryptedSin !== newSin;
+    // Step 5: Compare old and new SIN values
+    const sinChanged = oldSin !== newSin;
     const sinHash = hashString(newSin);
     const sinEncrypted = encryptString(newSin);
     const trackerId = onboardingDoc.id;
@@ -82,7 +85,7 @@ export async function PATCH(
     const existingLicenses = appFormDoc.page1?.licenses || [];
     const updatedLicenses = [];
 
-    // Step 5: Address validation
+    // Step 6: Address validation
     if (!hasRecentAddressCoverage(page1.addresses)) {
       return errorResponse(
         400,
@@ -90,7 +93,7 @@ export async function PATCH(
       );
     }
 
-    // Step 6: License array & AZ check
+    // Step 7: License array & AZ check
     if (!Array.isArray(page1.licenses)) {
       return errorResponse(400, "`licenses` must be an array");
     }
@@ -100,7 +103,7 @@ export async function PATCH(
       return errorResponse(400, "The first license must be of type AZ.");
     }
 
-    // Step 7: Validate and prepare SIN photo upload (if provided)
+    // Step 8: Validate and prepare SIN photo upload (if provided)
     const sinPhotoRaw = formData.get("sinPhoto");
     let sinPhotoUploadPromise: Promise<IPhoto> | null = null;
 
@@ -123,7 +126,7 @@ export async function PATCH(
       })();
     }
 
-    // Step 8: Prepare license photo uploads
+    // Step 9: Prepare license photo uploads
     const uploadTasks: Promise<void>[] = [];
 
     for (let i = 0; i < page1.licenses.length; i++) {
@@ -165,7 +168,7 @@ export async function PATCH(
         licenseBackPhoto: existing?.licenseBackPhoto || null,
       };
 
-      // Schedule upload for front photo
+      // Upload front
       if (frontFile && frontFile.size > 0) {
         if (existing?.licenseFrontPhoto?.s3Key) {
           await deleteS3Objects([existing.licenseFrontPhoto.s3Key]);
@@ -187,7 +190,7 @@ export async function PATCH(
         );
       }
 
-      // Schedule upload for back photo
+      // Upload back
       if (backFile && backFile.size > 0) {
         if (existing?.licenseBackPhoto?.s3Key) {
           await deleteS3Objects([existing.licenseBackPhoto.s3Key]);
@@ -212,13 +215,13 @@ export async function PATCH(
       updatedLicenses.push(license);
     }
 
-    // Step 9: Execute all uploads
+    // Step 10: Execute uploads
     await Promise.all(uploadTasks);
     const sinPhoto = sinPhotoUploadPromise
       ? await sinPhotoUploadPromise
       : appFormDoc.page1?.sinPhoto;
 
-    // Step 10: Save updated form to DB
+    // Step 11: Save updated form
     page1.sinEncrypted = sinEncrypted;
     page1.sinPhoto = sinPhoto;
     delete page1.sin;
@@ -228,9 +231,6 @@ export async function PATCH(
       {
         $set: {
           page1: { ...page1, licenses: updatedLicenses },
-          currentStep: 2,
-          completedStep: 1,
-          completed: false,
         },
       },
       { new: true }
@@ -241,16 +241,16 @@ export async function PATCH(
       return errorResponse(500, "Failed to update ApplicationForm");
     }
 
-    // Step 11: Update onboarding tracker
+    // Step 12: Update onboarding tracker
     if (sinChanged) {
       onboardingDoc.sinHash = sinHash;
       onboardingDoc.sinEncrypted = sinEncrypted;
     }
 
-    onboardingDoc.status.currentStep = 2;
-    onboardingDoc.status.completedStep = Math.max(
+    onboardingDoc.status.currentStep = EStepPath.APPLICATION_PAGE_2;
+    onboardingDoc.status.completedStep = getHigherStep(
       onboardingDoc.status.completedStep,
-      2
+      EStepPath.APPLICATION_PAGE_1
     );
     onboardingDoc.resumeExpiresAt = new Date(
       Date.now() + Number(FORM_RESUME_EXPIRES_AT_IN_MILSEC)
@@ -259,11 +259,57 @@ export async function PATCH(
 
     // ✅ Success
     return successResponse(200, "ApplicationForm Page 1 updated", {
-      onboardingTracker: onboardingDoc.toObject({ virtuals: true }),
-      applicationForm: updatedForm.toObject({ virtuals: true }),
+      onboardingContext: buildTrackerContext(
+        req,
+        onboardingDoc,
+        EStepPath.APPLICATION_PAGE_1
+      ),
+      page1: updatedForm.page1,
     });
   } catch (error) {
     await cleanupUploadedKeys();
     return errorResponse(error);
   }
 }
+
+export const GET = async (
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) => {
+  try {
+    await connectDB();
+
+    const { id: onboardingId } = await params;
+
+    if (!isValidObjectId(onboardingId)) {
+      return errorResponse(400, "Not a valid onboarding tracker ID");
+    }
+
+    // Fetch onboarding tracker
+    const onboardingDoc = await OnboardingTracker.findById(onboardingId);
+    if (!onboardingDoc) {
+      return errorResponse(404, "Onboarding tracker not found");
+    }
+
+    const appFormId = onboardingDoc.forms?.driverApplication;
+    if (!appFormId) {
+      return errorResponse(404, "ApplicationForm not linked");
+    }
+
+    const appFormDoc = await ApplicationForm.findById(appFormId);
+    if (!appFormDoc) {
+      return errorResponse(404, "ApplicationForm not found");
+    }
+
+    if (!appFormDoc.page1) {
+      return errorResponse(404, "Page 1 of the application form not found");
+    }
+
+    return successResponse(200, "Page 1 data retrieved", {
+      onboardingContext: buildTrackerContext(req, onboardingDoc),
+      page1: appFormDoc.page1,
+    });
+  } catch (error) {
+    return errorResponse(error);
+  }
+};

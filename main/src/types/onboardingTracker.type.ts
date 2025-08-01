@@ -5,6 +5,12 @@ export enum EApplicationType {
   DRY_VAN = "DRY_VAN",
 }
 
+export interface IOnboardingStatus {
+  currentStep: EStepPath;
+  completedStep: EStepPath;
+  completed: boolean;
+}
+
 export interface IOnboardingTracker {
   // Encrypted and hashed SIN
   sinHash: string;
@@ -17,11 +23,7 @@ export interface IOnboardingTracker {
 
   applicationType?: EApplicationType; // only applicable to ssp-canada
 
-  status: {
-    currentStep: number;
-    completedStep: number;
-    completed: boolean;
-  };
+  status: IOnboardingStatus;
 
   // Selected company (e.g., 'ssp-ca', 'fellowstrans')
   companyId: string;
@@ -44,4 +46,29 @@ export interface IOnboardingTracker {
 export interface IOnboardingTrackerDoc extends IOnboardingTracker, Document {
   // Virtual getter
   sin?: string;
+}
+
+// onboarding steps path
+export enum EStepPath {
+  PRE_QUALIFICATIONS = "prequalifications",
+  APPLICATION_PAGE_1 = "application-form/page-1",
+  APPLICATION_PAGE_2 = "application-form/page-2",
+  APPLICATION_PAGE_3 = "application-form/page-3",
+  APPLICATION_PAGE_4 = "application-form/page-4",
+  APPLICATION_PAGE_5 = "application-form/page-5",
+  POLICIES_CONSENTS = "policies-consents",
+}
+
+// tracker context (public-facing)
+export interface ITrackerContext {
+  id: string; // tracker.id
+  companyId: string;
+  applicationType?: EApplicationType;
+  status: {
+    currentStep: EStepPath;
+    completedStep: EStepPath;
+    completed: boolean;
+  };
+  prevUrl: string | null;
+  nextUrl: string | null;
 }

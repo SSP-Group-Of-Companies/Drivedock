@@ -9,6 +9,7 @@ import { uploadImageToS3, deleteS3Objects } from "@/lib/utils/s3Upload";
 import { HydratedDocument } from "mongoose";
 import {
   EApplicationType,
+  EStepPath,
   IOnboardingTrackerDoc,
 } from "@/types/onboardingTracker.type";
 import { hasRecentAddressCoverage } from "@/lib/utils/hasMinimumAddressDuration";
@@ -20,12 +21,17 @@ import {
   ILicenseEntry,
 } from "@/types/applicationForm.types";
 import { IPreQualifications } from "@/types/preQualifications.types";
+import {
+  advanceStatus,
+  buildTrackerContext,
+} from "@/lib/utils/onboardingUtils";
+import { NextRequest } from "next/server";
 
 export const config = {
   api: { bodyParser: false },
 };
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   const uploadedKeys: string[] = [];
   let appFormDoc = null;
   let preQualDoc = null;
@@ -96,7 +102,11 @@ export async function POST(req: Request) {
       resumeExpiresAt: new Date(
         Date.now() + Number(FORM_RESUME_EXPIRES_AT_IN_MILSEC)
       ),
-      status: { currentStep: 1, completedStep: 0, completed: false },
+      status: {
+        currentStep: EStepPath.PRE_QUALIFICATIONS,
+        completedStep: EStepPath.PRE_QUALIFICATIONS,
+        completed: false,
+      },
       companyId,
       // only set it if present (i.e. for ssp-canada)
       ...(companyId === ECompanyId.SSP_CA && { applicationType: appTypeRaw }),
@@ -243,9 +253,6 @@ export async function POST(req: Request) {
 
     appFormDoc = new ApplicationForm({
       page1: { ...page1, licenses: updatedLicenses },
-      currentStep: 2,
-      completedStep: 1,
-      completed: false,
     });
     await appFormDoc.save();
 
@@ -283,13 +290,22 @@ export async function POST(req: Request) {
       preQualification: preQualDoc.id,
       driverApplication: appFormDoc.id,
     };
-    onboardingDoc.status.completedStep = 1;
+
+    onboardingDoc.status = advanceStatus(
+      onboardingDoc.status,
+      EStepPath.APPLICATION_PAGE_1
+    );
+
     await onboardingDoc.save();
 
     return successResponse(200, "Onboarding created successfully", {
+      onboardingContext: buildTrackerContext(
+        req,
+        onboardingDoc,
+        EStepPath.APPLICATION_PAGE_1
+      ),
       preQualifications: preQualDoc.toObject(),
       applicationForm: appFormDoc.toObject({ virtuals: true }),
-      onboardingTracker: onboardingDoc.toObject({ virtuals: true }),
     });
   } catch (error) {
     if (uploadedKeys.length > 0) await deleteS3Objects(uploadedKeys);

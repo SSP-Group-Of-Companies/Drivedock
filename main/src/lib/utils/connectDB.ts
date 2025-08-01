@@ -1,5 +1,5 @@
-import { MONGO_URI } from '@/config/env';
-import mongoose from 'mongoose';
+import { MONGO_URI } from "@/config/env";
+import mongoose from "mongoose";
 
 let isConnected: boolean = false;
 
@@ -11,7 +11,7 @@ const connectDB = async () => {
   const uri = MONGO_URI;
 
   if (!uri) {
-    throw new Error('MONGODB_URI is not defined in environment variables');
+    throw new Error("MONGODB_URI is not defined in environment variables");
   }
 
   try {

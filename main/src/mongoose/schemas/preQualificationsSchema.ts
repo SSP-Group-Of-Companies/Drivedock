@@ -7,10 +7,6 @@ import {
 import { Schema } from "mongoose";
 
 const PreQualificationsSchema: Schema<IPreQualificationsDoc> = new Schema({
-  completed: {
-    type: Boolean,
-    required: [true, "Completion status is required."],
-  },
 
   // Eligibility Booleans
   over23Local: {

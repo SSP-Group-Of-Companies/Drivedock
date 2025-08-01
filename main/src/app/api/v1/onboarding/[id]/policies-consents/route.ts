@@ -3,9 +3,16 @@ import { errorResponse, successResponse } from "@/lib/utils/apiResponse";
 import connectDB from "@/lib/utils/connectDB";
 import PoliciesConsents from "@/mongoose/models/PoliciesConsents";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
-import { hashString } from "@/lib/utils/cryptoUtils";
 import { uploadImageToS3, deleteS3Objects } from "@/lib/utils/s3Upload";
 import { IPhoto } from "@/types/shared.types";
+import {
+  advanceStatus,
+  buildTrackerContext,
+  hasCompletedStep,
+} from "@/lib/utils/onboardingUtils";
+import { EStepPath } from "@/types/onboardingTracker.type";
+import { isValidObjectId } from "mongoose";
+import { NextRequest } from "next/server";
 
 export const config = {
   api: { bodyParser: false },
@@ -16,18 +23,17 @@ const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 export const PATCH = async (
-  req: Request,
-  { params }: { params: Promise<{ sin: string }> }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) => {
   let uploadedKey: string | null = null;
 
   try {
     await connectDB();
-    const { sin } = await params;
-    if (!sin || sin.length !== 9)
-      return errorResponse(400, "Invalid SIN in URL");
+    const { id } = await params;
 
-    const sinHash = hashString(sin);
+    if (!isValidObjectId(id)) return errorResponse(400, "not a valid id");
+
     const formData = await req.formData();
     const file = formData.get("signature") as File;
 
@@ -50,9 +56,13 @@ export const PATCH = async (
     }
 
     // Check onboarding doc
-    const onboardingDoc = await OnboardingTracker.findOne({ sinHash });
+    const onboardingDoc = await OnboardingTracker.findById(id);
     if (!onboardingDoc)
       return errorResponse(404, "OnboardingTracker not found");
+
+    // check completed step
+    if (!hasCompletedStep(onboardingDoc.status, EStepPath.APPLICATION_PAGE_5))
+      return errorResponse(400, "please complete previous step first");
 
     const existingId = onboardingDoc.forms?.policiesConsents;
     const existingDoc = existingId
@@ -99,10 +109,10 @@ export const PATCH = async (
       onboardingDoc.forms.policiesConsents = updatedDoc.id;
     }
 
-    onboardingDoc.status.currentStep = 4; // step 3 complete → step 4
-    onboardingDoc.status.completedStep = Math.max(
-      onboardingDoc.status.completedStep,
-      3
+    // Update onboarding tracker steps
+    onboardingDoc.status = advanceStatus(
+      onboardingDoc.status,
+      EStepPath.POLICIES_CONSENTS
     );
     onboardingDoc.resumeExpiresAt = new Date(
       Date.now() + Number(FORM_RESUME_EXPIRES_AT_IN_MILSEC)
@@ -110,13 +120,51 @@ export const PATCH = async (
     await onboardingDoc.save();
 
     return successResponse(200, "Policies & Consents updated", {
-      onboardingTracker: onboardingDoc.toObject({ virtuals: true }),
+      onboardingContext: buildTrackerContext(req, onboardingDoc, EStepPath.POLICIES_CONSENTS),
       policiesConsents: updatedDoc.toObject(),
     });
   } catch (error) {
     if (uploadedKey) {
       await deleteS3Objects([uploadedKey]);
     }
+    return errorResponse(error);
+  }
+};
+
+export const GET = async (
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) => {
+  try {
+    await connectDB();
+    const { id } = await params;
+
+    if (!isValidObjectId(id)) {
+      return errorResponse(400, "not a valid id");
+    }
+
+    // Step 1: Find onboarding tracker
+    const onboardingDoc = await OnboardingTracker.findById(id);
+    if (!onboardingDoc) {
+      return errorResponse(404, "Onboarding tracker not found");
+    }
+
+    // Step 2: Get linked Policies & Consents doc
+    const policiesId = onboardingDoc.forms?.policiesConsents;
+    if (!policiesId) {
+      return errorResponse(404, "PoliciesConsents form not linked");
+    }
+
+    const policiesDoc = await PoliciesConsents.findById(policiesId);
+    if (!policiesDoc) {
+      return errorResponse(404, "PoliciesConsents document not found");
+    }
+
+    return successResponse(200, "Policies & Consents data retrieved", {
+      onboardingContext: buildTrackerContext(req, onboardingDoc),
+      policiesConsents: policiesDoc.toObject(),
+    });
+  } catch (error) {
     return errorResponse(error);
   }
 };

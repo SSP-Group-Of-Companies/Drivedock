@@ -31,5 +31,5 @@ export const applicationFormPage5Schema = new Schema<IApplicationFormPage5>(
       min: [0, "Score cannot be negative."],
     },
   },
-  { _id: false }
+  { _id: false, timestamps: true }
 );

@@ -8,22 +8,6 @@ import { applicationFormPage5Schema } from "./applicationFormPage5Schema";
 
 const applicationFormSchema = new Schema<IApplicationFormDoc>(
   {
-    completed: {
-      type: Boolean,
-      required: [true, "Completed flag is required."],
-      default: false,
-    },
-    currentStep: {
-      type: Number,
-      required: [true, "Current step is required."],
-      default: 1,
-    },
-    completedStep: {
-      type: Number,
-      required: [true, "Completed step is required."],
-      default: 1,
-    },
-
     page1: {
       type: applicationFormPage1Schema,
       required: [true, "Page 1 data is required."],

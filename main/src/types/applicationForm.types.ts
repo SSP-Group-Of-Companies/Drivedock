@@ -53,7 +53,7 @@ export interface IEmploymentEntry {
   postalCode: string;
   city: string;
   stateOrProvince: string;
-  phone1: string; 
+  phone1: string;
   phone2?: string;
   email: string;
   positionHeld: string;
@@ -122,9 +122,9 @@ export interface ICriminalRecordEntry {
 }
 
 export interface IFastCard {
-  fastCardNumber: string; 
-  fastCardExpiry: string | Date; 
-  fastCardFrontPhoto?: IPhoto; 
+  fastCardNumber: string;
+  fastCardExpiry: string | Date;
+  fastCardFrontPhoto?: IPhoto;
   fastCardBackPhoto?: IPhoto;
 }
 
@@ -184,10 +184,6 @@ export interface IApplicationFormPage5 {
 
 // Placeholder structure for the other 11 pages (to be filled later)
 export interface IApplicationForm {
-  currentStep: number;
-  completedStep: number;
-  completed: boolean;
-
   page1: IApplicationFormPage1;
   page2: IApplicationFormPage2;
   page3: IApplicationFormPage3;

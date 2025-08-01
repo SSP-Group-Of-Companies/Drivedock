@@ -130,6 +130,7 @@ export const applicationFormPage3Schema = new Schema<IApplicationFormPage3>(
     _id: false,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
+    timestamps: true,
   }
 );
 

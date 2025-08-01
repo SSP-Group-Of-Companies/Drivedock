@@ -7,21 +7,27 @@ import {
 import connectDB from "@/lib/utils/connectDB";
 import ApplicationForm from "@/mongoose/models/applicationForm";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
-import { hashString } from "@/lib/utils/cryptoUtils";
 import { IApplicationFormPage4 } from "@/types/applicationForm.types";
 import { uploadImageToS3, deleteS3Objects } from "@/lib/utils/s3Upload";
 import { COMPANIES } from "@/constants/companies";
 import { ECountryCode } from "@/types/shared.types";
 import { validateImageFile } from "@/lib/utils/validationUtils";
+import {
+  advanceStatus,
+  buildTrackerContext,
+  hasCompletedStep,
+} from "@/lib/utils/onboardingUtils";
+import { EStepPath } from "@/types/onboardingTracker.type";
+import { isValidObjectId } from "mongoose";
+import { NextRequest } from "next/server";
 
 export const config = {
   api: { bodyParser: false },
 };
 
-// PATCH /forms/application-form/[sin]/page-4
 export const PATCH = async (
-  req: Request,
-  { params }: { params: Promise<{ sin: string }> }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) => {
   const uploadedKeys: string[] = [];
   const keysToDelete: string[] = [];
@@ -31,11 +37,9 @@ export const PATCH = async (
     await connectDB();
 
     // 1. Params & basic checks
-    const { sin } = await params;
-    if (!sin || sin.length !== 9) {
-      return errorResponse(400, "Invalid SIN in URL");
-    }
-    const sinHash = hashString(sin);
+    const { id } = await params;
+
+    if (!isValidObjectId(id)) return errorResponse(400, "not a valid id");
 
     const formData = await req.formData();
     const rawPage4 = formData.get("applicationFormPage4") as string;
@@ -45,7 +49,7 @@ export const PATCH = async (
     const body = JSON.parse(rawPage4) as IApplicationFormPage4;
 
     // 2. Load tracker & form
-    const onboardingDoc = await OnboardingTracker.findOne({ sinHash });
+    const onboardingDoc = await OnboardingTracker.findById(id);
     if (!onboardingDoc)
       return errorResponse(404, "OnboardingTracker not found");
 
@@ -55,9 +59,9 @@ export const PATCH = async (
     const appFormDoc = await ApplicationForm.findById(appFormId);
     if (!appFormDoc) return errorResponse(404, "ApplicationForm not found");
 
-    if (appFormDoc.completedStep < 3) {
-      return errorResponse(400, "Please complete the previous step first");
-    }
+    // check completed step
+    if (!hasCompletedStep(onboardingDoc.status, EStepPath.APPLICATION_PAGE_3))
+      return errorResponse(400, "please complete previous step first");
 
     // 3. Build fileGroups
     const photoFieldNames = [
@@ -291,16 +295,11 @@ export const PATCH = async (
     //
     try {
       appFormDoc.page4 = body;
-      appFormDoc.currentStep = 5;
-      if (appFormDoc.completedStep < 4) {
-        appFormDoc.completedStep = 4;
-      }
       await appFormDoc.save();
 
-      onboardingDoc.status.currentStep = 2;
-      onboardingDoc.status.completedStep = Math.max(
-        onboardingDoc.status.completedStep,
-        2
+      onboardingDoc.status = advanceStatus(
+        onboardingDoc.status,
+        EStepPath.APPLICATION_PAGE_4
       );
       onboardingDoc.resumeExpiresAt = new Date(
         Date.now() + Number(FORM_RESUME_EXPIRES_AT_IN_MILSEC)
@@ -324,7 +323,7 @@ export const PATCH = async (
 
     // 8. Success
     return successResponse(200, "ApplicationForm Page 4 updated", {
-      onboardingTracker: onboardingDoc.toObject({ virtuals: true }),
+      onboardingContext: buildTrackerContext(req, onboardingDoc, EStepPath.APPLICATION_PAGE_4),
       applicationForm: appFormDoc.toObject({ virtuals: true }),
     });
   } catch (error) {
@@ -336,6 +335,48 @@ export const PATCH = async (
       await deleteS3Objects(uploadedKeys);
     }
 
+    return errorResponse(error);
+  }
+};
+
+export const GET = async (
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) => {
+  try {
+    await connectDB();
+
+    const { id: onboardingId } = await params;
+
+    if (!isValidObjectId(onboardingId)) {
+      return errorResponse(400, "Not a valid onboarding tracker ID");
+    }
+
+    // Fetch onboarding tracker
+    const onboardingDoc = await OnboardingTracker.findById(onboardingId);
+    if (!onboardingDoc) {
+      return errorResponse(404, "Onboarding tracker not found");
+    }
+
+    const appFormId = onboardingDoc.forms?.driverApplication;
+    if (!appFormId) {
+      return errorResponse(404, "ApplicationForm not linked");
+    }
+
+    const appFormDoc = await ApplicationForm.findById(appFormId);
+    if (!appFormDoc) {
+      return errorResponse(404, "ApplicationForm not found");
+    }
+
+    if (!appFormDoc.page4) {
+      return errorResponse(404, "Page 4 of the application form not found");
+    }
+
+    return successResponse(200, "Page 4 data retrieved", {
+      onboardingContext: buildTrackerContext(req, onboardingDoc),
+      page4: appFormDoc.page4,
+    });
+  } catch (error) {
     return errorResponse(error);
   }
 };

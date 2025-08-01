@@ -1,6 +1,8 @@
+import { IS_PRODUCTION } from "@/config/env";
 import { COMPANIES } from "@/constants/companies";
 import { IEmploymentEntry } from "@/types/applicationForm.types";
 import { differenceInDays } from "date-fns";
+import mongoose from "mongoose";
 
 // validates postal code based on company
 export function validatePostalCodeByCompany(
@@ -150,4 +152,38 @@ export function validateEmploymentHistory(
   }
 
   return null; // ✅ 10+ years
+}
+
+export function isValidSIN(
+  sinInput: string | number | undefined
+): sinInput is string {
+  if (!sinInput) return false;
+  const sin = String(sinInput).trim();
+
+  if (!/^\d{9}$/.test(sin)) return false;
+
+  if (!IS_PRODUCTION) return true;
+
+  const digits = sin.split("").map(Number);
+  let sum = 0;
+
+  for (let i = 0; i < digits.length; i++) {
+    let digit = digits[i];
+    if (i % 2 === 1) {
+      digit *= 2;
+      if (digit > 9) digit -= 9;
+    }
+    sum += digit;
+  }
+
+  return sum % 10 === 0;
+}
+
+/**
+ * Checks if the given value is a valid MongoDB ObjectId.
+ * @param id - The value to check.
+ * @returns True if valid, false otherwise.
+ */
+export function isValidObjectId(id: unknown): boolean {
+  return typeof id === "string" && mongoose.Types.ObjectId.isValid(id);
 }
