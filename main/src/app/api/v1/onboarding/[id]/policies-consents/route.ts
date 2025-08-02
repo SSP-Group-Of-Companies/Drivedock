@@ -120,7 +120,11 @@ export const PATCH = async (
     await onboardingDoc.save();
 
     return successResponse(200, "Policies & Consents updated", {
-      onboardingContext: buildTrackerContext(req, onboardingDoc, EStepPath.POLICIES_CONSENTS),
+      onboardingContext: buildTrackerContext(
+        req,
+        onboardingDoc,
+        EStepPath.POLICIES_CONSENTS
+      ),
       policiesConsents: updatedDoc.toObject(),
     });
   } catch (error) {
@@ -156,13 +160,13 @@ export const GET = async (
     }
 
     const policiesDoc = await PoliciesConsents.findById(policiesId);
-    if (!policiesDoc) {
-      return errorResponse(404, "PoliciesConsents document not found");
+    if (!hasCompletedStep(onboardingDoc.status, EStepPath.APPLICATION_PAGE_5)) {
+      return errorResponse(403, "Please complete previous step first");
     }
 
     return successResponse(200, "Policies & Consents data retrieved", {
       onboardingContext: buildTrackerContext(req, onboardingDoc),
-      policiesConsents: policiesDoc.toObject(),
+      policiesConsents: policiesDoc?.toObject() ?? {},
     });
   } catch (error) {
     return errorResponse(error);

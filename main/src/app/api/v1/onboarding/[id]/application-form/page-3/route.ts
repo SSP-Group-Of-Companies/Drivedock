@@ -54,7 +54,11 @@ export const PATCH = async (
     await onboardingDoc.save();
 
     return successResponse(200, "ApplicationForm Page 3 updated", {
-      onboardingContext: buildTrackerContext(req, onboardingDoc, EStepPath.APPLICATION_PAGE_3),
+      onboardingContext: buildTrackerContext(
+        req,
+        onboardingDoc,
+        EStepPath.APPLICATION_PAGE_3
+      ),
       applicationForm: appFormDoc.toObject({ virtuals: true }),
     });
   } catch (error) {
@@ -91,8 +95,8 @@ export const GET = async (
       return errorResponse(404, "ApplicationForm not found");
     }
 
-    if (!appFormDoc.page3) {
-      return errorResponse(404, "Page 3 of the application form not found");
+    if (!hasCompletedStep(onboardingDoc.status, EStepPath.APPLICATION_PAGE_2)) {
+      return errorResponse(403, "Please complete previous step first");
     }
 
     return successResponse(200, "Page 3 data retrieved", {
@@ -103,4 +107,3 @@ export const GET = async (
     return errorResponse(error);
   }
 };
-

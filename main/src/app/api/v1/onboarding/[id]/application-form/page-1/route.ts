@@ -175,10 +175,10 @@ export async function PATCH(
         }
         uploadTasks.push(
           (async () => {
-            const buffer = Buffer.from(await frontFile!.arrayBuffer());
+            const buffer = Buffer.from(await frontFile.arrayBuffer());
             const upload = await uploadImageToS3({
               fileBuffer: buffer,
-              fileType: frontFile!.type,
+              fileType: frontFile.type,
               folder: `licenses/${trackerId}`,
             });
             uploadedKeys.push(upload.key);
@@ -197,10 +197,10 @@ export async function PATCH(
         }
         uploadTasks.push(
           (async () => {
-            const buffer = Buffer.from(await backFile!.arrayBuffer());
+            const buffer = Buffer.from(await backFile.arrayBuffer());
             const upload = await uploadImageToS3({
               fileBuffer: buffer,
-              fileType: backFile!.type,
+              fileType: backFile.type,
               folder: `licenses/${trackerId}`,
             });
             uploadedKeys.push(upload.key);

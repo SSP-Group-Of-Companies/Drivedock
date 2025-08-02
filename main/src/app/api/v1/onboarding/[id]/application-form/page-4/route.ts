@@ -163,8 +163,7 @@ export const PATCH = async (
       ];
       for (const [field, msg] of canadianReqs) {
         const providedNow = fileGroups[field].length > 0;
-        const alreadySaved =
-          (appFormDoc.page4?.[field as PhotoFieldName]?.length ?? 0) > 0;
+        const alreadySaved = (appFormDoc.page4?.[field]?.length ?? 0) > 0;
         if (!providedNow && !alreadySaved) throw new AppError(400, msg);
       }
     }
@@ -224,7 +223,7 @@ export const PATCH = async (
       const files = fileGroups[field];
       if (files.length === 0) continue;
 
-      const key = field as PhotoFieldName;
+      const key = field;
       const existingPhotos = appFormDoc.page4?.[key] ?? [];
       body[key] = [] as any;
 
@@ -323,7 +322,11 @@ export const PATCH = async (
 
     // 8. Success
     return successResponse(200, "ApplicationForm Page 4 updated", {
-      onboardingContext: buildTrackerContext(req, onboardingDoc, EStepPath.APPLICATION_PAGE_4),
+      onboardingContext: buildTrackerContext(
+        req,
+        onboardingDoc,
+        EStepPath.APPLICATION_PAGE_4
+      ),
       applicationForm: appFormDoc.toObject({ virtuals: true }),
     });
   } catch (error) {
@@ -368,8 +371,8 @@ export const GET = async (
       return errorResponse(404, "ApplicationForm not found");
     }
 
-    if (!appFormDoc.page4) {
-      return errorResponse(404, "Page 4 of the application form not found");
+    if (!hasCompletedStep(onboardingDoc.status, EStepPath.APPLICATION_PAGE_3)) {
+      return errorResponse(403, "Please complete previous step first");
     }
 
     return successResponse(200, "Page 4 data retrieved", {
