@@ -300,7 +300,6 @@ export async function POST(req: NextRequest) {
 
     return successResponse(200, "Onboarding created successfully", {
       onboardingContext: buildTrackerContext(
-        req,
         onboardingDoc,
         EStepPath.APPLICATION_PAGE_1
       ),

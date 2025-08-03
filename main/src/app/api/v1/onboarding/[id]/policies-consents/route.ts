@@ -9,6 +9,7 @@ import {
   advanceStatus,
   buildTrackerContext,
   hasCompletedStep,
+  onboardingExpired,
 } from "@/lib/utils/onboardingUtils";
 import { EStepPath } from "@/types/onboardingTracker.type";
 import { isValidObjectId } from "mongoose";
@@ -121,7 +122,6 @@ export const PATCH = async (
 
     return successResponse(200, "Policies & Consents updated", {
       onboardingContext: buildTrackerContext(
-        req,
         onboardingDoc,
         EStepPath.POLICIES_CONSENTS
       ),
@@ -136,7 +136,7 @@ export const PATCH = async (
 };
 
 export const GET = async (
-  req: NextRequest,
+  _: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) => {
   try {
@@ -150,8 +150,11 @@ export const GET = async (
     // Step 1: Find onboarding tracker
     const onboardingDoc = await OnboardingTracker.findById(id);
     if (!onboardingDoc) {
-      return errorResponse(404, "Onboarding tracker not found");
+      return errorResponse(404, "Onboarding document not found");
     }
+
+    if (onboardingExpired(onboardingDoc))
+      return errorResponse(400, "Onboarding session expired");
 
     // Step 2: Get linked Policies & Consents doc
     const policiesId = onboardingDoc.forms?.policiesConsents;
@@ -165,7 +168,7 @@ export const GET = async (
     }
 
     return successResponse(200, "Policies & Consents data retrieved", {
-      onboardingContext: buildTrackerContext(req, onboardingDoc),
+      onboardingContext: buildTrackerContext(onboardingDoc),
       policiesConsents: policiesDoc?.toObject() ?? {},
     });
   } catch (error) {

@@ -5,7 +5,6 @@ import { hashString } from "@/lib/utils/cryptoUtils";
 import { getOnboardingStepPaths } from "@/lib/utils/onboardingUtils";
 import { NextRequest } from "next/server";
 import { isValidSIN } from "@/lib/utils/validationUtils";
-import { EStepPath } from "@/types/onboardingTracker.type";
 
 export const GET = async (
   req: NextRequest,
@@ -26,15 +25,21 @@ export const GET = async (
       return errorResponse(404, "No onboarding record found");
     }
 
-    const currentStep = tracker.status.currentStep as EStepPath;
+    // Check if resume session has expired
+    if (tracker.resumeExpiresAt && new Date() > tracker.resumeExpiresAt) {
+      return errorResponse(410, "Resume link has expired");
+    }
 
-    const { currentUrl } = getOnboardingStepPaths(req, currentStep, tracker.id);
+    const currentStep = tracker.status.currentStep;
+
+    const { currentUrl } = getOnboardingStepPaths(currentStep, tracker.id);
 
     if (!currentUrl) {
       return errorResponse(400, "Unable to resolve redirect path");
     }
 
-    return Response.redirect(currentUrl, 302);
+    const fullUrl = new URL(currentUrl, req.url);
+    return Response.redirect(fullUrl, 302);
   } catch (error) {
     return errorResponse(error);
   }

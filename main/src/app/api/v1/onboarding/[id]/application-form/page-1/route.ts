@@ -17,6 +17,7 @@ import { EStepPath } from "@/types/onboardingTracker.type";
 import {
   buildTrackerContext,
   getHigherStep,
+  onboardingExpired,
 } from "@/lib/utils/onboardingUtils";
 import { isValidObjectId } from "mongoose";
 import { NextRequest } from "next/server";
@@ -260,7 +261,6 @@ export async function PATCH(
     // ✅ Success
     return successResponse(200, "ApplicationForm Page 1 updated", {
       onboardingContext: buildTrackerContext(
-        req,
         onboardingDoc,
         EStepPath.APPLICATION_PAGE_1
       ),
@@ -273,7 +273,7 @@ export async function PATCH(
 }
 
 export const GET = async (
-  req: NextRequest,
+  _: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) => {
   try {
@@ -288,8 +288,11 @@ export const GET = async (
     // Fetch onboarding tracker
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
     if (!onboardingDoc) {
-      return errorResponse(404, "Onboarding tracker not found");
+      return errorResponse(404, "Onboarding document not found");
     }
+
+    if (onboardingExpired(onboardingDoc))
+      return errorResponse(400, "Onboarding session expired");
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) {
@@ -306,7 +309,7 @@ export const GET = async (
     }
 
     return successResponse(200, "Page 1 data retrieved", {
-      onboardingContext: buildTrackerContext(req, onboardingDoc),
+      onboardingContext: buildTrackerContext(onboardingDoc),
       page1: appFormDoc.page1,
     });
   } catch (error) {

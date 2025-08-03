@@ -4,8 +4,6 @@ import {
   IOnboardingTrackerDoc,
   ITrackerContext,
 } from "@/types/onboardingTracker.type";
-import { NextRequest } from "next/server";
-import { getSiteUrl } from "./urlConstructor";
 
 // Canonical onboarding step flow
 export const onboardingStepFlow: EStepPath[] = [
@@ -44,7 +42,6 @@ export function isFinalStep(step: EStepPath): boolean {
  * Get the previous and next onboarding step paths for the onboarding process
  */
 export function getOnboardingStepPaths(
-  req: NextRequest,
   currentStep: EStepPath,
   onboardingId: string
 ): {
@@ -52,30 +49,24 @@ export function getOnboardingStepPaths(
   currentUrl: string | null;
   prevUrl: string | null;
 } {
-  const origin = getSiteUrl(req);
   const index = getStepIndex(currentStep);
 
   const prevStep = onboardingStepFlow[index - 1] ?? null;
   const nextStep = onboardingStepFlow[index + 1] ?? null;
 
   return {
-    prevUrl: prevStep
-      ? `${origin}/onboarding/${onboardingId}/${prevStep}`
-      : null,
-    currentUrl: `${origin}/onboarding/${onboardingId}/${currentStep}`,
-    nextUrl: nextStep
-      ? `${origin}/onboarding/${onboardingId}/${nextStep}`
-      : null,
+    prevUrl: prevStep ? `/onboarding/${onboardingId}/${prevStep}` : null,
+    currentUrl: `/onboarding/${onboardingId}/${currentStep}`,
+    nextUrl: nextStep ? `/onboarding/${onboardingId}/${nextStep}` : null,
   };
 }
 
 export function buildTrackerContext(
-  req: NextRequest,
   tracker: IOnboardingTrackerDoc,
   currentStepOverride?: EStepPath
 ): ITrackerContext {
   const step = currentStepOverride ?? tracker.status.currentStep;
-  const { prevUrl, nextUrl } = getOnboardingStepPaths(req, step, tracker.id);
+  const { prevUrl, nextUrl } = getOnboardingStepPaths(step, tracker.id);
 
   return {
     id: tracker.id,
@@ -151,4 +142,16 @@ export function hasCompletedStep(
   step: EStepPath
 ): boolean {
   return getStepIndex(status.completedStep) >= getStepIndex(step);
+}
+
+/**
+ * Determines whether the onboarding session has expired.
+ * @param tracker - The onboarding tracker document
+ * @returns true if the resume session is expired or missing, false otherwise
+ */
+export function onboardingExpired(
+  tracker?: IOnboardingTrackerDoc | null
+): boolean {
+  if (!tracker?.resumeExpiresAt) return true;
+  return new Date() > tracker.resumeExpiresAt;
 }
