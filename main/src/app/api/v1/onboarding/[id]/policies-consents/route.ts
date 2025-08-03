@@ -131,7 +131,8 @@ export const PATCH = async (
     if (uploadedKey) {
       await deleteS3Objects([uploadedKey]);
     }
-    return errorResponse(error);
+    console.error("Error updating policies and consents:", error);
+    return errorResponse(500, "Failed to update policies and consents");
   }
 };
 

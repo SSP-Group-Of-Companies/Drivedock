@@ -29,8 +29,9 @@ export default function Navbar() {
               <Image
                 src="/assets/logos/SSP-Truck-LineFullLogo.png"
                 alt={t("navbar.logoAlt")}
-                width={130}
-                height={40}
+                width={0}
+                height={0}
+                sizes="100vw"
                 className="w-[90px] sm:w-[110px] md:w-[130px] h-auto object-contain"
                 priority
               />
@@ -52,7 +53,9 @@ export default function Navbar() {
               >
                 <ArrowLeft size={18} />
               </motion.span>
-              <span className="hidden sm:inline">{t("navbar.back", "Back")}</span>
+              <span className="hidden sm:inline">
+                {t("navbar.back", "Back")}
+              </span>
             </button>
           )}
         </div>

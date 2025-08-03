@@ -41,6 +41,7 @@ export const GET = async (
       applicationForm: appFormDoc.toObject({ virtuals: true }),
     });
   } catch (error) {
-    return errorResponse(error);
+    console.error("Error retrieving application form:", error);
+    return errorResponse(500, "Failed to retrieve application form");
   }
 };

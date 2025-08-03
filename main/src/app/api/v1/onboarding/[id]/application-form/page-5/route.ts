@@ -117,7 +117,8 @@ export const PATCH = async (
       applicationForm: appFormDoc.toObject({ virtuals: true }),
     });
   } catch (error) {
-    return errorResponse(error);
+    console.error("Error updating application form page 5:", error);
+    return errorResponse(500, "Failed to update application form page 5");
   }
 };
 

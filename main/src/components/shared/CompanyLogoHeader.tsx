@@ -14,7 +14,7 @@ export default function CompanyLogoHeader({ logoOnly = false }: Props) {
   if (!selectedCompany) return null;
 
   return (
-    <div className="flex items-center justify-center mb-4">
+    <div className="flex items-center justify-center">
       <div className="flex flex-col items-center">
         <Image
           src={selectedCompany.logo}

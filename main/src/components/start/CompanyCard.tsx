@@ -11,7 +11,11 @@ interface CompanyCardProps {
   onSpecialApply?: (company: Company) => void; // new
 }
 
-export default function CompanyCard({ company, onApply, onSpecialApply }: CompanyCardProps) {
+export default function CompanyCard({
+  company,
+  onApply,
+  onSpecialApply,
+}: CompanyCardProps) {
   const mounted = useMounted();
   const { t } = useTranslation("common");
   const handleClick = () => {
@@ -29,8 +33,19 @@ export default function CompanyCard({ company, onApply, onSpecialApply }: Compan
       className="bg-white rounded-2xl shadow-md p-6 flex flex-col items-start justify-between min-h-[260px] transition-shadow duration-200"
     >
       <div className="flex items-center gap-3 mb-3">
-        <Image src={company.logo} alt={company.name} width={40} height={40} className="rounded-md object-contain" />
-        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${company.countryBadgeColor}`}>{company.countryCode} {company.country}</span>
+        <Image
+          src={company.logo}
+          alt={company.name}
+          width={0}
+          height={0}
+          sizes="40px"
+          className="w-[40px] h-auto rounded-md object-contain"
+        />
+        <span
+          className={`px-2 py-1 rounded-full text-xs font-semibold ${company.countryBadgeColor}`}
+        >
+          {company.countryCode} {company.country}
+        </span>
       </div>
       <h3 className="font-bold text-lg text-gray-900 mb-1">{company.name}</h3>
       <p className="text-gray-600 text-sm mb-2">{company.description}</p>
@@ -65,4 +80,4 @@ export default function CompanyCard({ company, onApply, onSpecialApply }: Compan
       </motion.button>
     </motion.div>
   );
-} 
+}

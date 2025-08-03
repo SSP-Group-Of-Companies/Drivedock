@@ -1,5 +1,6 @@
 import { IS_PRODUCTION } from "@/config/env";
 import { COMPANIES } from "@/constants/companies";
+import { differenceInDays, differenceInMonths } from "date-fns";
 import { IEmploymentEntry } from "@/types/applicationForm.types";
 import { differenceInDays } from "date-fns";
 import mongoose from "mongoose";
@@ -82,7 +83,37 @@ export function validateImageFile(
   return { isValid: true, safeFile: file };
 }
 
-// validates employments history
+/**
+ * Validates whether a given input is a valid Canadian SIN
+ * - Accepts string or number
+ * - Must be exactly 9 digits
+ * - Must pass Luhn checksum
+ */
+export function isValidSIN(sinInput: string | number): boolean {
+  if (!sinInput) return false;
+  const sin = String(sinInput).trim();
+
+  if (!/^\d{9}$/.test(sin)) return false;
+
+  const digits = sin.split("").map(Number);
+  let sum = 0;
+
+  for (let i = 0; i < digits.length; i++) {
+    let digit = digits[i];
+
+    // Double every second digit starting from index 1 (0-based)
+    if (i % 2 === 1) {
+      digit *= 2;
+      if (digit > 9) digit -= 9;
+    }
+
+    sum += digit;
+  }
+
+  return sum % 10 === 0;
+}
+
+// validates employment history
 export function validateEmploymentHistory(
   employments: IEmploymentEntry[]
 ): string | null {
@@ -99,7 +130,7 @@ export function validateEmploymentHistory(
     (a, b) => new Date(b.from).getTime() - new Date(a.from).getTime()
   );
 
-  let totalDays = 0;
+  let totalMonths = 0;
 
   for (let i = 0; i < sorted.length; i++) {
     const current = sorted[i];
@@ -107,14 +138,14 @@ export function validateEmploymentHistory(
     const to = new Date(current.to);
 
     if (isNaN(from.getTime()) || isNaN(to.getTime())) {
-      return `Invalid date format in employment entry for ${current.employerName}`;
+      return `Invalid date format in employment entry for ${current.supervisorName}`;
     }
 
     if (to < from) {
-      return `End date cannot be before start date in job at ${current.employerName}`;
+      return `End date cannot be before start date in job at ${current.supervisorName}`;
     }
 
-    totalDays += differenceInDays(to, from);
+    totalMonths += differenceInMonths(to, from);
 
     const next = sorted[i + 1];
     if (next) {
@@ -122,7 +153,7 @@ export function validateEmploymentHistory(
 
       // ❌ Overlap check: current.from must be >= next.to
       if (from < nextTo) {
-        return `Job at ${current.employerName} overlaps with job at ${next.employerName}`;
+        return `Job at ${current.supervisorName} overlaps with job at ${next.supervisorName}`;
       }
 
       // Gap check
@@ -132,12 +163,10 @@ export function validateEmploymentHistory(
         (!current.gapExplanationBefore ||
           current.gapExplanationBefore.trim() === "")
       ) {
-        return `Missing gap explanation before employment at ${current.employerName}`;
+        return `Missing gap explanation before employment at ${current.supervisorName}`;
       }
     }
   }
-
-  const totalMonths = Math.floor(totalDays / 30);
 
   if (totalMonths === 24) {
     return null; // ✅ Exactly 2 years

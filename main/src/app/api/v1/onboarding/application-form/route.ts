@@ -67,6 +67,12 @@ export async function POST(req: NextRequest) {
     }
 
     const isValidCompanyId = COMPANIES.some((c) => c.id === companyId);
+    console.log("Backend received companyId:", companyId);
+    console.log(
+      "Backend available companies:",
+      COMPANIES.map((c) => c.id)
+    );
+    console.log("Backend isValidCompanyId:", isValidCompanyId);
     if (!isValidCompanyId) return errorResponse(400, "Invalid company id");
 
     let page1: IApplicationFormPage1, prequalifications: IPreQualifications;
@@ -80,6 +86,38 @@ export async function POST(req: NextRequest) {
     const sin = page1?.sin;
     if (!sin || typeof sin !== "string" || sin.length !== 9) {
       return errorResponse(400, "Invalid SIN");
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!page1.email || !emailRegex.test(page1.email)) {
+      return errorResponse(400, "Invalid email format");
+    }
+
+    // Validate phone numbers (must be at least 10 digits, numbers only)
+    const phoneRegex = /^\d{10,}$/;
+    if (!page1.phoneHome || !phoneRegex.test(page1.phoneHome)) {
+      return errorResponse(400, "Invalid home phone number format");
+    }
+    if (!page1.phoneCell || !phoneRegex.test(page1.phoneCell)) {
+      return errorResponse(400, "Invalid cell phone number format");
+    }
+    if (
+      !page1.emergencyContactPhone ||
+      !phoneRegex.test(page1.emergencyContactPhone)
+    ) {
+      return errorResponse(
+        400,
+        "Invalid emergency contact phone number format"
+      );
+    }
+
+    // Validate date of birth (must be reasonable age)
+    const dob = new Date(page1.dob);
+    const today = new Date();
+    const age = today.getFullYear() - dob.getFullYear();
+    if (isNaN(dob.getTime()) || age < 23 || age > 100) {
+      return errorResponse(400, "Invalid date of birth");
     }
 
     const sinHash = hashString(sin);
@@ -315,6 +353,7 @@ export async function POST(req: NextRequest) {
     if (appFormDoc?._id)
       await ApplicationForm.findByIdAndDelete(appFormDoc._id);
 
-    return errorResponse(error);
+    console.error("Error creating application form:", error);
+    return errorResponse(500, "Failed to create application form");
   }
 }

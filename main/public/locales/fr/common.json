@@ -1,153 +1,235 @@
 {
   "company": {
-    "heading": "Rejoignez notre groupe de sociétés",
-    "subheading": "Choisissez la compagnie où vous souhaitez construire votre carrière de conducteur",
+    "heading": "Rejoignez notre groupe d'entreprises",
+    "subheading": "Choisissez l'entreprise où vous souhaitez construire votre carrière de conducteur",
     "applyNow": "Postuler maintenant",
-    "selectType": "Sélectionnez le type de candidature",
-    "selectTypeDesc": "Veuillez choisir le type de poste auquel vous postulez :",
-    "flatbed": "Plate‑forme (flatbed)",
-    "dropdeck": "Remorque sèche (Dry Van)",
+    "selectType": "Sélectionner le type de candidature",
+    "selectTypeDesc": "Veuillez choisir le type de poste pour lequel vous postulez :",
+    "flatbed": "Plateforme",
+    "dropdeck": "Fourgon sec",
     "cancel": "Annuler"
   },
-
   "features": {
     "language": {
       "title": "Multilingue",
-      "description": "Disponible en anglais, punjabi et français pour servir tous les conducteurs confortablement"
+      "description": "Disponible en anglais, punjabi et français pour mieux servir tous les conducteurs"
     },
     "security": {
-      "title": "Sûr & sécurisé",
-      "description": "Vos informations sont protégées avec sécurité et chiffrement de niveau entreprise"
+      "title": "Sécurisé & Fiable",
+      "description": "Vos informations sont protégées avec une sécurité et un chiffrement de niveau entreprise"
     },
     "steps": {
       "title": "Processus en 6 étapes",
-      "description": "Complétez tous les documents nécessaires via notre assistant pas à pas en 6 étapes"
+      "description": "Complétez tous les documents obligatoires à l’aide de notre assistant guidé en 6 étapes"
     }
   },
-
   "flatbedPopup": {
     "title": "Avis",
-    "yes": "Votre niveau de compétence flatbed sera évalué lors du test de conduite.",
-    "no": "Après le test de conduite, vous serez inscrit à une formation flatbed de 2 semaines.",
+    "yes": "Votre niveau de compétence en plateforme sera évalué lors du test de conduite.",
+    "no": "Après votre test de conduite, vous serez inscrit à une formation de deux semaines sur la plateforme.",
     "ok": "OK"
   },
-
   "footer": {
     "rights": "Tous droits réservés.",
-    "tagline": "DriveDock – Plateforme numérique d’accueil des conducteurs"
+    "tagline": "DriveDock – Plateforme numérique d'intégration des conducteurs"
   },
-
   "form": {
-    "subtitle": "Toutes les informations doivent être répondues de manière honnête. La responsabilité incombe au candidat.",
+    "subtitle": "Toutes les informations doivent être fournies de manière véridique. La responsabilité incombe au candidat.",
     "categories": "Catégories",
     "next": "Suivant",
-    "step1": { "title": "Formulaire de Pré‑Qualification" },
-    "step2": { "title": "Formulaire de candidature conducteur" },
-    "over23Local": "Avez-vous plus de 23 ans (pour local) ?",
-    "over25CrossBorder": "Avez-vous plus de 25 ans (pour transfrontalier) ?",
-    "canDriveManual": "Savez-vous conduire une transmission manuelle ?",
+    "step1": {
+      "title": "Formulaire de pré-qualification"
+    },
+    "step2": {
+      "title": "Formulaire de candidature"
+    },
+    "over23Local": "Avez-vous plus de 23 ans (pour les trajets locaux) ?",
+    "over25CrossBorder": "Avez-vous plus de 25 ans (pour les trajets transfrontaliers) ?",
+    "canDriveManual": "Pouvez-vous conduire une transmission manuelle ?",
     "experienceDrivingTractorTrailer": "Avez-vous au moins 2 ans d'expérience vérifiable en conduite de tracteur/remorque ?",
     "faultAccidentIn3Years": "Avez-vous eu un accident responsable au cours des 3 dernières années ?",
-    "zeroPointsOnAbstract": "Avez-vous plus de 0 point sur votre relevé de conducteur ?",
-    "noUnpardonedCriminalRecord": "Avez-vous un casier judiciaire pour lequel aucune réhabilitation n'a été accordée ?",
+    "zeroPointsOnAbstract": "Avez-vous plus de 0 point(s) sur votre relevé de conduite ?",
+    "noUnpardonedCriminalRecord": "Avez-vous un casier judiciaire non gracié ?",
     "legalRightToWorkCanada": "Avez-vous le droit légal de travailler au Canada ?",
-    "canCrossBorderUSA": "Pouvez-vous traverser la frontière vers les États-Unis ?",
+    "legalRightToWorkUS": "Avez-vous le droit légal de travailler aux États-Unis ?",
+    "canCrossBorderUSA": "Pouvez-vous traverser la frontière américaine ?",
     "hasFASTCard": "Avez-vous une carte FAST ?",
     "driverType": "Quel type de conducteur êtes-vous ?",
-    "haulPreference": "Que préférez-vous ?",
-    "teamStatus": "Faites-vous partie d'une équipe ou non ?",
-    "preferLocalDriving": "Préférez-vous conduire localement ?",
-    "preferSwitching": "Préférez-vous le switching ?",
-    "flatbedExperience": "Avez-vous de l'expérience en flatbed ?",
+    "haulPreference": "Quelles sont vos préférences ?",
+    "teamStatus": "Faites-vous partie d'une équipe ?",
+    "preferLocalDriving": "Préférez-vous la conduite locale ?",
+    "preferSwitching": "Préférez-vous les changements (Switching) ?",
+    "flatbedExperience": "Avez-vous de l'expérience en plateforme ?",
     "yes": "Oui",
     "no": "Non",
-    "company": "Société",
+    "company": "Entreprise",
     "ownerOperator": "Propriétaire exploitant",
-    "ownerDriver": "Propriétaire conducteur",
+    "ownerDriver": "Conducteur propriétaire",
     "shortHaul": "Courte distance",
     "longHaul": "Longue distance",
     "team": "Équipe",
-    "single": "Seul"
+    "single": "Individuel",
+    "page1": {
+      "sections": {
+        "personal": "Informations personnelles",
+        "birth": "Lieu de naissance",
+        "license": "Informations sur le permis",
+        "address": "Historique des adresses"
+      }
+    },
+    "fields": {
+      "firstName": "Prénom",
+      "lastName": "Nom de famille",
+      "sin": "NAS (Numéro d'assurance sociale)",
+      "sinPhoto": "Photo de la carte NAS",
+      "sinPhotoDesc": "Cliquez pour capturer ou sélectionner une image",
+      "dob": "Date de naissance",
+      "canProvideProof": "Pouvez-vous fournir une preuve d'âge ?",
+      "email": "Adresse e-mail",
+      "phoneHome": "Téléphone (Domicile)",
+      "phoneCell": "Téléphone (Portable)",
+      "emergencyContactName": "Nom de la personne à contacter en cas d'urgence",
+      "emergencyContactPhone": "Téléphone de la personne à contacter",
+      "birthCity": "Ville de naissance",
+      "birthStateOrProvince": "État ou province",
+      "birthCountry": "Pays de naissance",
+      "licenseNumber": "Numéro de permis",
+      "licenseProvince": "Province",
+      "licenseType": "Type de permis",
+      "licenseExpiry": "Date d'expiration",
+      "licenseFrontPhoto": "Photo avant du permis",
+      "licensePhotoDesc": "Cliquez pour capturer ou sélectionner une image",
+      "licenseBackPhoto": "Photo arrière du permis",
+      "address": "Adresse",
+      "city": "Ville",
+      "stateOrProvince": "État ou province",
+      "postalCode": "Code postal",
+      "zipCode": "Code ZIP",
+      "from": "Depuis la date",
+      "to": "Jusqu'à la date"
+    },
+    "actions": {
+      "addLicense": "Ajouter un autre permis",
+      "removeLicense": "Supprimer le permis",
+      "addAddress": "Ajouter une autre adresse",
+      "removeAddress": "Supprimer l'adresse"
+    },
+    "placeholders": {
+      "firstName": "Entrez votre prénom",
+      "lastName": "Entrez votre nom de famille",
+      "phoneHome": "Entrez votre numéro de téléphone (domicile)",
+      "phoneCell": "Entrez votre numéro de téléphone (portable)",
+      "email": "Entrez votre adresse e-mail",
+      "emergencyContactName": "Nom du contact d'urgence",
+      "emergencyContactPhone": "Téléphone du contact d'urgence",
+      "birthCity": "Entrez la ville de naissance",
+      "birthStateOrProvince": "Entrez l'état ou la province de naissance",
+      "birthCountry": "Entrez le pays de naissance",
+      "postalCode": "A1A 1A1",
+      "zipCode": "12345 ou 12345-6789",
+      "sin": "123-456-789",
+      "dob": "AAAA-MM-JJ",
+      "select": "--Sélectionner--"
+    },
+    "errors": {
+      "minimum5Years": "Vous devez fournir au moins 5 ans d'historique d'adresse."
+    },
+    "continue": "Continuer",
+    "submitting": "Envoi en cours..."
   },
-
+  "common": {
+    "yes": "Oui",
+    "no": "Non"
+  },
   "navbar": {
     "logoAlt": "Logo SSP"
   },
-
   "resume": {
     "title": "Reprendre votre candidature",
-    "description": "Entrez votre NAS pour reprendre votre onboarding là où vous l’avez laissé.",
-    "placeholder": "999‑888‑777",
-    "success": "Correspondance trouvée ! Redirection…",
+    "description": "Entrez votre NAS pour reprendre votre intégration là où vous l’avez laissée.",
+    "placeholder": "999-888-777",
+    "success": "Correspondance trouvée ! Redirection...",
     "error": "Aucune candidature trouvée pour ce NAS.",
     "cancel": "Annuler",
     "continue": "Continuer"
   },
-
   "start": {
     "heading": "Commencez votre candidature",
-    "subheading": "Engagez votre parcours avec SSP Group of Companies",
+    "subheading": "Commencez votre parcours avec le Groupe SSP",
     "languageLabel": "🌐 Sélectionnez la langue",
     "selectLanguage": "Sélectionner la langue",
     "beforeYouBegin": "Avant de commencer",
-    "readAndAgree": "Veuillez lire et accepter ce qui suit :",
-    "continue": "Continuer vers la candidature",
-    "estimatedTime": "Durée estimée : 15–20 minutes",
-    "agreeToTerms": "J’accepte les termes ci-dessus",
-
+    "readAndAgree": "Veuillez lire et accepter les conditions suivantes :",
+    "continue": "Passer à la candidature",
+    "estimatedTime": "Temps estimé : 15–20 minutes",
+    "agreeToTerms": "J'accepte les conditions ci-dessus",
     "checklist": {
       "accurateInfo": "Toutes les informations fournies doivent être exactes et véridiques",
-      "digitalProcess": "Vous comprenez qu’il s’agit d’un processus numérique",
-      "consentChecks": "Vous consentez aux vérifications d’antécédents et du dossier de conduite",
-      "termsAgreement": "Vous acceptez les termes et conditions de SSP Group of Companies"
+      "digitalProcess": "Vous comprenez qu'il s'agit d'un processus de candidature numérique",
+      "consentChecks": "Vous consentez aux vérifications des antécédents et du dossier de conduite",
+      "termsAgreement": "Vous acceptez les conditions générales du Groupe SSP"
     },
-
     "termsModal": {
-      "title": "Termes & Conditions",
+      "title": "Conditions générales",
       "intro": "En continuant, vous acceptez que :",
       "items": {
-        "subcontractor": "Vous postulez en tant que sous‑traitant, et non comme employé",
+        "subcontractor": "Vous postulez en tant que sous-traitant ou employé",
         "truthfulInfo": "Toutes les informations soumises sont vraies et exactes",
-        "backgroundChecks": "Vous consentez aux vérifications d’antécédents et du dossier de conduite",
+        "backgroundChecks": "Vous consentez aux vérifications des antécédents et du dossier de conduite",
         "companyRules": {
-          "title": "Vous comprenez et acceptez les règles de l’entreprise concernant :",
-          "drugPolicy": "Politique de drogue et consommation d’alcool",
-          "dashCam": "Enregistrement avec dashcam dans les véhicules",
-          "safetyRules": "Excès de vitesse, déclaration d’accident, usage du téléphone",
+          "title": "Vous comprenez et acceptez les règles de l’entreprise concernant :",
+          "drugPolicy": "Politiques sur les drogues et l'alcool",
+          "dashCam": "Enregistrements dashcam dans les véhicules",
+          "safetyRules": "Excès de vitesse, déclaration d'accident et utilisation du téléphone",
           "seals": "Scellés de remorque et inspections transfrontalières"
         },
-        "discipline": "Des mesures disciplinaires peuvent inclure amendes, suspension ou licenciement",
-        "laws": "Vous êtes responsable de respecter les lois canadiennes et américaines sur le transport routier"
+        "discipline": "Les sanctions disciplinaires peuvent inclure des amendes, une suspension ou une résiliation",
+        "laws": "Vous êtes responsable de respecter les lois canadiennes et américaines sur le transport"
       },
       "cancel": "Annuler",
-      "agree": "J’accepte"
+      "agree": "J'accepte"
     }
   },
-
   "steps": {
     "title": "Processus de candidature",
     "personal": "Informations personnelles",
-    "employment": "Antécédents professionnels",
+    "employment": "Historique d'emploi",
     "driving": "Dossier de conduite",
     "medical": "Informations médicales",
     "references": "Références",
     "review": "Révision finale"
   },
-
   "welcome": {
-    "heading": "Prenez la route avec SSP",
-    "description": "Votre plateforme d’onboarding numérique pour rejoindre SSP Truck Line. Complétez vos documents rapidement et en toute sécurité."
+    "heading": "Rejoignez la route avec SSP",
+    "description": "Votre plateforme numérique d'intégration pour rejoindre SSP Truck Line. Remplissez vos documents d'embauche rapidement et en toute sécurité."
   },
-
   "wizard": {
-    "infoTitle": "Que signifient les étapes ?",
+    "infoTitle": "Que signifient les étapes ?",
     "modalTitle": "Étapes de la candidature",
     "close": "Fermer",
-    "step1": { "label": "Étape 1", "desc": "Pré‑Qualification" },
-    "step2": { "label": "Étape 2", "desc": "Formulaire de candidature conducteur" },
-    "step3": { "label": "Étape 3", "desc": "Politiques et consentements" },
-    "step4": { "label": "Étape 4", "desc": "Formation CarrierEdge" },
-    "step5": { "label": "Étape 5", "desc": "Test de conduite" },
-    "step6": { "label": "Étape 6", "desc": "Test de dépistage" }
+    "step1": {
+      "label": "Étape 1",
+      "desc": "Pré-qualification"
+    },
+    "step2": {
+      "label": "Étape 2",
+      "desc": "Formulaire de candidature du conducteur"
+    },
+    "step3": {
+      "label": "Étape 3",
+      "desc": "Politiques et consentements"
+    },
+    "step4": {
+      "label": "Étape 4",
+      "desc": "Formation CarrierEdge"
+    },
+    "step5": {
+      "label": "Étape 5",
+      "desc": "Test de conduite"
+    },
+    "step6": {
+      "label": "Étape 6",
+      "desc": "Test de dépistage de drogues"
+    }
   }
 }

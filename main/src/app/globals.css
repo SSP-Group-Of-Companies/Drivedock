@@ -12,6 +12,23 @@
   }
 }
 
+@keyframes wiggle {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-6px);
+  }
+  75% {
+    transform: translateX(6px);
+  }
+}
+
+.animate-wiggle {
+  animation: wiggle 0.4s ease-in-out;
+}
+
 .ssp-animated-ring {
   position: relative;
   z-index: 0;
@@ -19,7 +36,7 @@
 }
 
 .ssp-animated-ring::before {
-  content: '';
+  content: "";
   position: absolute;
   z-index: -2;
   top: -50%;
@@ -29,18 +46,15 @@
   background-repeat: no-repeat;
   background-size: 50% 50%;
   background-position: 0 0, 100% 0, 100% 100%, 0 100%;
-  background-image:
-    linear-gradient(#005baa, #005baa),
-    linear-gradient(#005baa, #005baa),
-    linear-gradient(#e30613, #e30613),
+  background-image: linear-gradient(#005baa, #005baa),
+    linear-gradient(#005baa, #005baa), linear-gradient(#e30613, #e30613),
     linear-gradient(#e30613, #e30613);
-  animation:
-    rotate-ssp 2.5s linear forwards,
+  animation: rotate-ssp 2.5s linear forwards,
     fade-out 0.4s ease-out 2.2s forwards;
 }
 
 .ssp-animated-ring::after {
-  content: '';
+  content: "";
   position: absolute;
   z-index: -1;
   top: 6px;
@@ -55,14 +69,32 @@
 /* Flags Setup */
 @layer components {
   .bg-flag-fr {
-    background: linear-gradient(to right, #0055A4 33%, #ffffff 33%, #ffffff 66%, #EF4135 66%);
+    background: linear-gradient(
+      to right,
+      #0055a4 33%,
+      #ffffff 33%,
+      #ffffff 66%,
+      #ef4135 66%
+    );
   }
 
   .bg-flag-us {
-    background: linear-gradient(to right, #3C3B6E 33%, #ffffff 33%, #ffffff 66%, #B22234 66%);
+    background: linear-gradient(
+      to right,
+      #3c3b6e 33%,
+      #ffffff 33%,
+      #ffffff 66%,
+      #b22234 66%
+    );
   }
 
   .bg-flag-in {
-    background: linear-gradient(to right, #FF9933 33%, #ffffff 33%, #ffffff 66%, #138808 66%);
+    background: linear-gradient(
+      to right,
+      #ff9933 33%,
+      #ffffff 33%,
+      #ffffff 66%,
+      #138808 66%
+    );
   }
 }
