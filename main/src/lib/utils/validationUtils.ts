@@ -2,7 +2,6 @@ import { IS_PRODUCTION } from "@/config/env";
 import { COMPANIES } from "@/constants/companies";
 import { differenceInDays, differenceInMonths } from "date-fns";
 import { IEmploymentEntry } from "@/types/applicationForm.types";
-import { differenceInDays } from "date-fns";
 import mongoose from "mongoose";
 
 // validates postal code based on company
@@ -81,36 +80,6 @@ export function validateImageFile(
   }
 
   return { isValid: true, safeFile: file };
-}
-
-/**
- * Validates whether a given input is a valid Canadian SIN
- * - Accepts string or number
- * - Must be exactly 9 digits
- * - Must pass Luhn checksum
- */
-export function isValidSIN(sinInput: string | number): boolean {
-  if (!sinInput) return false;
-  const sin = String(sinInput).trim();
-
-  if (!/^\d{9}$/.test(sin)) return false;
-
-  const digits = sin.split("").map(Number);
-  let sum = 0;
-
-  for (let i = 0; i < digits.length; i++) {
-    let digit = digits[i];
-
-    // Double every second digit starting from index 1 (0-based)
-    if (i % 2 === 1) {
-      digit *= 2;
-      if (digit > 9) digit -= 9;
-    }
-
-    sum += digit;
-  }
-
-  return sum % 10 === 0;
 }
 
 // validates employment history

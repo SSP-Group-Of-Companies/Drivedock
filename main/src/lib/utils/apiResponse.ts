@@ -18,8 +18,8 @@ export function successResponse(
 }
 
 export function errorResponse(
-  statusOrError: number | unknown,
-  msgOrError?: string | unknown,
+  statusOrError: unknown,
+  msgOrError?: unknown,
   extraErrors: Record<string, unknown> = {}
 ) {
   let status = 500;

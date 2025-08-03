@@ -4,7 +4,6 @@ import connectDB from "@/lib/utils/connectDB";
 import ApplicationForm from "@/mongoose/models/applicationForm";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import { IApplicationFormPage2 } from "@/types/applicationForm.types";
-import { validateEmploymentHistory } from "@/lib/utils/validateEmploymentHistory";
 import {
   advanceStatus,
   buildTrackerContext,
@@ -14,6 +13,7 @@ import {
 import { EStepPath } from "@/types/onboardingTracker.type";
 import { isValidObjectId } from "mongoose";
 import { NextRequest } from "next/server";
+import { validateEmploymentHistory } from "@/lib/utils/validationUtils";
 
 export const PATCH = async (
   req: NextRequest,
