@@ -133,6 +133,10 @@ export const GET = async (
       return errorResponse(404, "PreQualifications form not found");
     }
 
+    // update tracker current step 
+    onboardingDoc.status.currentStep = EStepPath.PRE_QUALIFICATIONS;
+    await onboardingDoc.save();
+
     return successResponse(200, "PreQualifications data retrieved", {
       onboardingContext: buildTrackerContext(onboardingDoc),
       preQualifications: preQualDoc,

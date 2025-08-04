@@ -59,7 +59,7 @@ export const PATCH = async (
     // Check onboarding doc
     const onboardingDoc = await OnboardingTracker.findById(id);
     if (!onboardingDoc)
-      return errorResponse(404, "OnboardingTracker not found");
+      return errorResponse(404, "Onboarding document not found");
 
     // check completed step
     if (!hasCompletedStep(onboardingDoc.status, EStepPath.APPLICATION_PAGE_5))
@@ -94,10 +94,10 @@ export const PATCH = async (
     // Create or update PoliciesConsents document
     const updatedDoc = existingDoc
       ? await PoliciesConsents.findByIdAndUpdate(
-          existingDoc._id,
-          { signature, signedAt },
-          { new: true }
-        )
+        existingDoc._id,
+        { signature, signedAt },
+        { new: true }
+      )
       : await PoliciesConsents.create({ signature, signedAt });
 
     if (!updatedDoc) {
@@ -167,6 +167,10 @@ export const GET = async (
     if (!hasCompletedStep(onboardingDoc.status, EStepPath.APPLICATION_PAGE_5)) {
       return errorResponse(403, "Please complete previous step first");
     }
+
+    // update tracker current step 
+    onboardingDoc.status.currentStep = EStepPath.POLICIES_CONSENTS;
+    await onboardingDoc.save();
 
     return successResponse(200, "Policies & Consents data retrieved", {
       onboardingContext: buildTrackerContext(onboardingDoc),

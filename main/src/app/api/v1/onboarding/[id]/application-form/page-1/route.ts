@@ -49,7 +49,7 @@ export async function PATCH(
     // Step 1: Lookup OnboardingTracker by ID
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
     if (!onboardingDoc)
-      return errorResponse(404, "OnboardingTracker not found");
+      return errorResponse(404, "Onboarding document not found");
 
     // Step 2: Get and decrypt existing SIN
     const oldSin = decryptString(onboardingDoc.sinEncrypted);
@@ -307,6 +307,10 @@ export const GET = async (
     if (!appFormDoc.page1) {
       return errorResponse(404, "Page 1 of the application form not found");
     }
+
+    // update tracker current step 
+    onboardingDoc.status.currentStep = EStepPath.APPLICATION_PAGE_1;
+    await onboardingDoc.save();
 
     return successResponse(200, "Page 1 data retrieved", {
       onboardingContext: buildTrackerContext(onboardingDoc),

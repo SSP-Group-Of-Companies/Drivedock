@@ -35,7 +35,7 @@ export const PATCH = async (
     // Retrieve onboarding tracker
     const onboardingDoc = await OnboardingTracker.findById(id);
     if (!onboardingDoc)
-      return errorResponse(404, "OnboardingTracker not found");
+      return errorResponse(404, "Onboarding document not found");
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) return errorResponse(404, "ApplicationForm not linked");
@@ -108,6 +108,10 @@ export const GET = async (
     if (!hasCompletedStep(onboardingDoc.status, EStepPath.APPLICATION_PAGE_1)) {
       return errorResponse(403, "Please complete previous step first");
     }
+
+    // update tracker current step 
+    onboardingDoc.status.currentStep = EStepPath.APPLICATION_PAGE_2;
+    await onboardingDoc.save();
 
     return successResponse(200, "Page 2 data retrieved", {
       onboardingContext: buildTrackerContext(onboardingDoc),

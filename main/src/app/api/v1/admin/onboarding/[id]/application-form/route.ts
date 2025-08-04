@@ -21,7 +21,7 @@ export const GET = async (
     // Step 1: Find the onboarding tracker to get the linked application form
     const onboardingDoc = await OnboardingTracker.findOne({ sinHash });
     if (!onboardingDoc) {
-      return errorResponse(404, "OnboardingTracker not found");
+      return errorResponse(404, "Onboarding document not found");
     }
 
     const appFormId = onboardingDoc.forms?.driverApplication;

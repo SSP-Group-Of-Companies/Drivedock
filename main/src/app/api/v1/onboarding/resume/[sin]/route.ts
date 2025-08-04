@@ -2,7 +2,7 @@ import { errorResponse } from "@/lib/utils/apiResponse";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import connectDB from "@/lib/utils/connectDB";
 import { hashString } from "@/lib/utils/cryptoUtils";
-import { getOnboardingStepPaths } from "@/lib/utils/onboardingUtils";
+import { getOnboardingStepPaths, onboardingExpired } from "@/lib/utils/onboardingUtils";
 import { NextRequest } from "next/server";
 import { isValidSIN } from "@/lib/utils/validationUtils";
 
@@ -26,7 +26,7 @@ export const GET = async (
     }
 
     // Check if resume session has expired
-    if (tracker.resumeExpiresAt && new Date() > tracker.resumeExpiresAt) {
+    if (onboardingExpired(tracker)) {
       return errorResponse(410, "Resume link has expired");
     }
 

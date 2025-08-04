@@ -52,7 +52,7 @@ export const PATCH = async (
     // 2. Load tracker & form
     const onboardingDoc = await OnboardingTracker.findById(id);
     if (!onboardingDoc)
-      return errorResponse(404, "OnboardingTracker not found");
+      return errorResponse(404, "Onboarding document not found");
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) return errorResponse(404, "ApplicationForm not linked");
@@ -261,9 +261,9 @@ export const PATCH = async (
         File | undefined,
         "fastCardFrontPhoto" | "fastCardBackPhoto"
       ][] = [
-        [fastCardFrontFiles[0], "fastCardFrontPhoto"],
-        [fastCardBackFiles[0], "fastCardBackPhoto"],
-      ];
+          [fastCardFrontFiles[0], "fastCardFrontPhoto"],
+          [fastCardBackFiles[0], "fastCardBackPhoto"],
+        ];
 
       for (const [file, type] of fastPairs) {
         if (!file) continue;
@@ -377,6 +377,10 @@ export const GET = async (
     if (!hasCompletedStep(onboardingDoc.status, EStepPath.APPLICATION_PAGE_3)) {
       return errorResponse(403, "Please complete previous step first");
     }
+
+    // update tracker current step 
+    onboardingDoc.status.currentStep = EStepPath.APPLICATION_PAGE_4;
+    await onboardingDoc.save();
 
     return successResponse(200, "Page 4 data retrieved", {
       onboardingContext: buildTrackerContext(onboardingDoc),
