@@ -124,13 +124,9 @@ export const GET = async (
 
     // Step 2: Fetch pre-qualifications form using linked ID
     const preQualId = onboardingDoc.forms?.preQualification;
-    if (!preQualId) {
-      return errorResponse(404, "PreQualifications form not linked");
-    }
-
-    const preQualDoc = await PreQualifications.findById(preQualId);
-    if (!preQualDoc) {
-      return errorResponse(404, "PreQualifications form not found");
+    let preQualDoc = null;
+    if (preQualId) {
+      preQualDoc = await PreQualifications.findById(preQualId);
     }
 
     // update tracker current step 
@@ -139,7 +135,7 @@ export const GET = async (
 
     return successResponse(200, "PreQualifications data retrieved", {
       onboardingContext: buildTrackerContext(onboardingDoc),
-      preQualifications: preQualDoc,
+      preQualifications: preQualDoc?.toObject() ?? {},
     });
   } catch (error) {
     return errorResponse(error);

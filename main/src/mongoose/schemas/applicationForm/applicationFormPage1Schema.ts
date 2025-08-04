@@ -15,8 +15,7 @@ const addressSchema = new Schema(
     postalCode: { type: String, required: [true, "Postal code is required."] },
     from: { type: Date, required: [true, "Address 'from' date is required."] },
     to: { type: Date, required: [true, "Address 'to' date is required."] },
-  },
-  { _id: false }
+  }
 );
 
 const licenseSchema = new Schema(
@@ -43,8 +42,7 @@ const licenseSchema = new Schema(
     },
     licenseFrontPhoto: { type: photoSchema },
     licenseBackPhoto: { type: photoSchema },
-  },
-  { _id: false, timestamps: true }
+  }
 );
 
 export const applicationFormPage1Schema = new Schema<IApplicationFormPage1>(
@@ -112,7 +110,6 @@ export const applicationFormPage1Schema = new Schema<IApplicationFormPage1>(
     },
   },
   {
-    _id: false,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
     timestamps: true,

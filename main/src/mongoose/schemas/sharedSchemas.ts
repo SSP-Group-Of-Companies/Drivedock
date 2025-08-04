@@ -12,5 +12,5 @@ export const photoSchema = new Schema<IPhoto>(
       required: [true, "S3 storage key is required."],
     },
   },
-  { _id: false, timestamps: true }
+  { timestamps: true }
 );

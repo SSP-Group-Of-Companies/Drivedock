@@ -23,8 +23,7 @@ const accidentEntrySchema = new Schema<IAccidentEntry>(
       min: [0, "Injuries cannot be negative."],
       required: [true, "Number of injuries is required."],
     },
-  },
-  { _id: false }
+  }
 );
 
 // Conviction Entry Schema
@@ -34,8 +33,7 @@ const convictionEntrySchema = new Schema<ITrafficConvictionEntry>(
     location: { type: String, required: [true, "Conviction location is required."] },
     charge: { type: String, required: [true, "Charge is required."] },
     penalty: { type: String, required: [true, "Penalty is required."] },
-  },
-  { _id: false }
+  }
 );
 
 // Education Schema
@@ -44,26 +42,25 @@ const educationSchema = new Schema<IEducation>(
     gradeSchool: {
       type: Number,
       min: [0, "Grade school years cannot be negative."],
-      max: [20, "Grade school years cannot exceed 20."],
+      max: [12, "Grade school years cannot exceed 12."],
       default: 0,
       required: [true, "Grade school years are required."],
     },
     college: {
       type: Number,
       min: [0, "College years cannot be negative."],
-      max: [10, "College years cannot exceed 10."],
+      max: [4, "College years cannot exceed 4."],
       default: 0,
       required: [true, "College years are required."],
     },
     postGraduate: {
       type: Number,
       min: [0, "Postgraduate years cannot be negative."],
-      max: [10, "Postgraduate years cannot exceed 10."],
+      max: [4, "Postgraduate years cannot exceed 4."],
       default: 0,
       required: [true, "Postgraduate years are required."],
     },
-  },
-  { _id: false }
+  }
 );
 
 // Canadian Daily Hours Schema
@@ -81,8 +78,7 @@ const dailyHoursSchema = new Schema<ICanadianDailyHours>(
       max: [24, "Hours cannot exceed 24 in a day."],
       required: [true, "Hours for the day are required."],
     },
-  },
-  { _id: false }
+  }
 );
 
 // Canadian Hours of Service Schema
@@ -100,8 +96,7 @@ const canadianHoursSchema = new Schema<ICanadianHoursOfService>(
         message: "Exactly 14 days of hours must be provided.",
       },
     },
-  },
-  { _id: false }
+  }
 );
 
 // Page 3 Schema
@@ -127,7 +122,6 @@ export const applicationFormPage3Schema = new Schema<IApplicationFormPage3>(
     },
   },
   {
-    _id: false,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
     timestamps: true,

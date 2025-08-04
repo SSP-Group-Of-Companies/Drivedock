@@ -14,6 +14,7 @@ import {
 import { EStepPath } from "@/types/onboardingTracker.type";
 import { isValidObjectId } from "mongoose";
 import { NextRequest } from "next/server";
+import { parseFormData } from "@/lib/utils/reqParser";
 
 export const config = {
   api: { bodyParser: false },
@@ -35,7 +36,7 @@ export const PATCH = async (
 
     if (!isValidObjectId(id)) return errorResponse(400, "not a valid id");
 
-    const formData = await req.formData();
+    const formData = await parseFormData(req);
     const file = formData.get("signature") as File;
 
     if (!file) return errorResponse(400, "Missing signature file");
@@ -131,8 +132,7 @@ export const PATCH = async (
     if (uploadedKey) {
       await deleteS3Objects([uploadedKey]);
     }
-    console.error("Error updating policies and consents:", error);
-    return errorResponse(500, "Failed to update policies and consents");
+    return errorResponse(error);
   }
 };
 
@@ -159,11 +159,11 @@ export const GET = async (
 
     // Step 2: Get linked Policies & Consents doc
     const policiesId = onboardingDoc.forms?.policiesConsents;
-    if (!policiesId) {
-      return errorResponse(404, "PoliciesConsents form not linked");
+    let policiesDoc = null;
+    if (policiesId) {
+      policiesDoc = await PoliciesConsents.findById(policiesId);
     }
 
-    const policiesDoc = await PoliciesConsents.findById(policiesId);
     if (!hasCompletedStep(onboardingDoc.status, EStepPath.APPLICATION_PAGE_5)) {
       return errorResponse(403, "Please complete previous step first");
     }

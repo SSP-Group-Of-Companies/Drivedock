@@ -54,8 +54,7 @@ export const employmentEntrySchema = new Schema<IEmploymentEntry>(
       required: [true, "Safety sensitive function flag is required."],
     },
     gapExplanationBefore: { type: String }, // optional
-  },
-  { _id: false }
+  }
 );
 
 // Page 2 Schema
@@ -72,7 +71,6 @@ export const applicationFormPage2Schema = new Schema<IApplicationFormPage2>(
     },
   },
   {
-    _id: false,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
     timestamps: true,

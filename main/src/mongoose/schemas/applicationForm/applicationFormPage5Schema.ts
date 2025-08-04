@@ -11,8 +11,7 @@ export const competencyAnswerSchema = new Schema<ICompetencyAnswer>(
       type: String,
       required: [true, "Each answer must include an answer ID."],
     },
-  },
-  { _id: false }
+  }
 );
 
 export const applicationFormPage5Schema = new Schema<IApplicationFormPage5>(
@@ -31,5 +30,5 @@ export const applicationFormPage5Schema = new Schema<IApplicationFormPage5>(
       min: [0, "Score cannot be negative."],
     },
   },
-  { _id: false, timestamps: true }
+  { timestamps: true }
 );

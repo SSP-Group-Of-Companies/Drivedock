@@ -18,8 +18,7 @@ const criminalRecordEntrySchema = new Schema<ICriminalRecordEntry>(
       type: String,
       required: [true, "Court location is required."],
     },
-  },
-  { _id: false }
+  }
 );
 
 // fast card schema
@@ -129,7 +128,6 @@ export const applicationFormPage4Schema = new Schema<IApplicationFormPage4>(
     },
   },
   {
-    _id: false,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
     timestamps: true,
