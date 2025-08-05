@@ -185,3 +185,31 @@ export function isValidSIN(
 export function isValidObjectId(id: unknown): boolean {
   return typeof id === "string" && mongoose.Types.ObjectId.isValid(id);
 }
+
+/**
+ * Validates email format.
+ */
+export function isValidEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+
+/**
+ * Validates North American phone number format (min 10 digits, numeric only).
+ */
+export function isValidPhoneNumber(phone: string): boolean {
+  const phoneRegex = /^\d{10,}$/;
+  return phoneRegex.test(phone);
+}
+
+/**
+ * Validates reasonable date of birth (must be a valid date and age between 23–100).
+ */
+export function isValidDOB(dobInput: string | Date): boolean {
+  const dob = new Date(dobInput);
+  if (isNaN(dob.getTime())) return false;
+
+  const now = new Date();
+  const age = now.getFullYear() - dob.getFullYear();
+  return age >= 23 && age <= 100;
+}

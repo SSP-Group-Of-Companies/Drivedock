@@ -1,4 +1,7 @@
 import { Document, ObjectId } from "mongoose";
+import { IApplicationFormPage1 } from "./applicationForm.types";
+import { IPreQualifications } from "./preQualifications.types";
+import { ECompanyId } from "@/constants/companies";
 
 export enum EApplicationType {
   FLAT_BED = "FLAT_BED",
@@ -71,4 +74,11 @@ export interface ITrackerContext {
   };
   prevUrl: string | null;
   nextUrl: string | null;
+}
+
+export interface ICreateOnboardingPayload {
+  applicationFormPage1: IApplicationFormPage1;
+  prequalifications: IPreQualifications;
+  companyId: ECompanyId;
+  applicationType?: EApplicationType;
 }

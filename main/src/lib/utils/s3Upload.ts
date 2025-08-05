@@ -8,8 +8,13 @@ import {
   S3Client,
   PutObjectCommand,
   DeleteObjectCommand,
+  CopyObjectCommand,
+  HeadObjectCommand,
 } from "@aws-sdk/client-s3";
 import { v4 as uuidv4 } from "uuid";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { DEFAULT_PRESIGN_EXPIRY_SECONDS } from "@/constants/aws";
+import { IPhoto } from "@/types/shared.types";
 
 const s3 = new S3Client({
   region: AWS_REGION,
@@ -68,4 +73,104 @@ export async function deleteS3Objects(keys: string[]): Promise<void> {
   });
 
   await Promise.all(deletePromises);
+}
+
+/**
+ * Moves an object from one key to another (e.g., from temp-uploads to final folder).
+ * Returns the new key and URL.
+ */
+export async function moveS3Object({
+  fromKey,
+  toKey,
+}: {
+  fromKey: string;
+  toKey: string;
+}): Promise<{ url: string; key: string }> {
+  const Bucket = AWS_BUCKET_NAME;
+
+  await s3.send(
+    new CopyObjectCommand({
+      Bucket,
+      CopySource: `${Bucket}/${fromKey}`,
+      Key: toKey,
+    })
+  );
+
+  await s3.send(new DeleteObjectCommand({ Bucket, Key: fromKey }));
+
+  return {
+    url: `https://${Bucket}.s3.${AWS_REGION}.amazonaws.com/${toKey}`,
+    key: toKey,
+  };
+}
+
+/**
+ * Checks if an object exists in S3.
+ * Returns true if found, false otherwise.
+ */
+export async function s3ObjectExists(key: string): Promise<boolean> {
+  try {
+    await s3.send(
+      new HeadObjectCommand({
+        Bucket: AWS_BUCKET_NAME,
+        Key: key,
+      })
+    );
+    return true;
+  } catch (err: any) {
+    if (err.name === "NotFound") return false;
+    console.error("S3 existence check failed:", err);
+    return false;
+  }
+}
+
+/**
+ * Generates a presigned PUT URL for direct upload from the browser.
+ */
+export async function getPresignedPutUrl({
+  folder,
+  fileType,
+  expiresIn = DEFAULT_PRESIGN_EXPIRY_SECONDS,
+}: {
+  folder: string;
+  fileType: string;
+  expiresIn?: number;
+}): Promise<{ url: string; key: string }> {
+  const extension = fileType.split("/")[1] || "jpg";
+  const key = `${folder}/${uuidv4()}.${extension}`;
+
+  const command = new PutObjectCommand({
+    Bucket: AWS_BUCKET_NAME,
+    Key: key,
+    ContentType: fileType,
+  });
+
+  const url = await getSignedUrl(s3, command, { expiresIn });
+
+  return { url, key };
+}
+
+/**
+ * Finalizes a photo by moving it from temp-files to the final folder.
+ * Returns the updated photo object with the new S3 key.
+ */
+export async function finalizePhoto(
+  photo: IPhoto,
+  finalFolder: string
+): Promise<IPhoto> {
+  if (!photo?.s3Key) throw new Error("Missing s3Key in photo");
+
+  if (!photo.s3Key.startsWith("temp-files/")) {
+    // already finalized
+    return photo;
+  }
+
+  const filename = photo.s3Key.split("/").pop();
+  const finalKey = `${finalFolder}/${filename}`;
+
+  const moved = await moveS3Object({ fromKey: photo.s3Key, toKey: finalKey });
+  return {
+    s3Key: moved.key,
+    url: moved.url,
+  };
 }

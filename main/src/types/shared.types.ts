@@ -25,3 +25,15 @@ export enum ECountryCode {
   CA = "CA",
   US = "US",
 }
+
+export enum EImageMimeType {
+  JPEG = "image/jpeg",
+  JPG = "image/jpg",
+  PNG = "image/png",
+}
+
+export enum EImageExtension {
+  JPG = "jpg",
+  JPEG = "jpeg",
+  PNG = "png",
+}
