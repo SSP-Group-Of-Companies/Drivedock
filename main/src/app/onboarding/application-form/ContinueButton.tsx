@@ -21,6 +21,12 @@ type ContinueButtonProps<T extends FieldValues> = {
           values: T,
           prequal: IPreQualifications,
           companyId: string
+        ) => FormData)
+      | ((
+          values: T,
+          prequal: IPreQualifications,
+          companyId: string,
+          tracker?: any
         ) => FormData);
     nextRoute: string;
     validateBusinessRules?: (values: T) => string | null;
@@ -92,7 +98,16 @@ export default function ContinueButton<T extends FieldValues>({
 
       // Step 4: Build form data
       const formData =
-        config.buildFormData.length === 3
+        config.buildFormData.length === 4
+          ? (
+              config.buildFormData as (
+                values: T,
+                prequal: IPreQualifications,
+                companyId: string,
+                tracker?: any
+              ) => FormData
+            )(values, prequalifications!, companyId!, tracker)
+          : config.buildFormData.length === 3
           ? (
               config.buildFormData as (
                 values: T,
@@ -103,14 +118,13 @@ export default function ContinueButton<T extends FieldValues>({
           : (config.buildFormData as (values: T) => FormData)(values);
 
       // Step 5: Determine route and method
-      const sin = tracker?.sin;
-      const isUpdate = Boolean(sin);
+      const trackerId = tracker?.id;
+      const isUpdate = Boolean(trackerId);
       const pageSegment = config.nextRoute.split("/").pop();
 
-      const url =
-        isUpdate && pageSegment
-          ? `/api/v1/forms/application-form/${sin}/${pageSegment}`
-          : "/api/v1/forms/application-form";
+      const url = isUpdate && pageSegment
+        ? `/api/v1/onboarding/${trackerId}/application-form/${pageSegment}`
+        : "/api/v1/onboarding/application-form";
 
       const method = isUpdate ? "PATCH" : "POST";
 
@@ -134,7 +148,8 @@ export default function ContinueButton<T extends FieldValues>({
       }
 
       // Step 8: Route to next step
-      router.push(config.nextRoute);
+      const nextRoute = config.nextRoute.replace("[id]", trackerId || "");
+      router.push(nextRoute);
     } catch (err) {
       console.error("Submission error:", err);
       alert("An error occurred while submitting. Please try again.");

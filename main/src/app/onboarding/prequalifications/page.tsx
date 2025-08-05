@@ -2,8 +2,8 @@
 
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { useEffect, useState, useMemo } from "react";
-import QuestionGroup from "@/components/form/QuestionGroup";
-import FlatbedPopup from "@/components/form/FlatbedPopup";
+import QuestionGroup from "@/app/onboarding/components/QuestionGroup";
+import FlatbedPopup from "@/app/onboarding/components/FlatbedPopup";
 import {
   preQualificationQuestions,
   categoryQuestions,
@@ -110,7 +110,7 @@ export default function PreQualificationPage() {
 
     setData(prequalData);
 
-    router.push("/form/application-form/page-1");
+    router.push("/onboarding/application-form");
   };
 
   return (

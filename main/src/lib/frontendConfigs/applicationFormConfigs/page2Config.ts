@@ -52,5 +52,5 @@ function buildFormData(values: ApplicationFormPage2Schema): FormData {
 export const page2Config: FormPageConfig<ApplicationFormPage2Schema> = {
   validationFields,
   buildFormData,
-  nextRoute: "/form/application-form/page-3",
+  nextRoute: "/onboarding/[id]/application-form/page-3",
 };

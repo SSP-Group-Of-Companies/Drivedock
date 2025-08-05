@@ -4,7 +4,7 @@
 import { useFormContext, FieldErrors } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { ApplicationFormPage2Schema } from "@/lib/zodSchemas/applicationFormPage2.schema";
-import QuestionGroup from "@/components/form/QuestionGroup";
+import QuestionGroup from "@/app/onboarding/components/QuestionGroup";
 
 import { calculateTimelineFromCurrent } from "@/lib/frontendConfigs/applicationFormConfigs/validateEmploymentHistory";
 

@@ -1,4 +1,5 @@
 "use client";
+
 import Navbar from "@/components/Navbar";
 import { COMPANIES, Company } from "@/constants/companies";
 import CompanyCard from "@/components/start/CompanyCard";
@@ -8,34 +9,33 @@ import Footer from "@/components/Footer";
 import { useState } from "react";
 import { Dialog } from "@headlessui/react";
 import WatermarkBackground from "@/components/WatermarkBackground";
-import { useCompanySelection } from "@/hooks/useCompanySelection"; 
+import { useCompanySelection } from "@/hooks/useCompanySelection";
 
 export default function CompanyPage() {
   const { t } = useTranslation("common");
   const router = useRouter();
   const [showModal, setShowModal] = useState(false);
-  const [selectedCompany, setSelectedCompanyState] = useState<Company | null>(null);
-  const { setSelectedCompany } = useCompanySelection(); // STORE HOOK
+  const { selectedCompany, setSelectedCompany } = useCompanySelection();
 
   const handleApply = (company: Company) => {
-    setSelectedCompany(company); // STORE COMPANY
-    router.push(`/form/pre-qualification`);
+    setSelectedCompany(company); // ✅ Zustand
+    router.push("/onboarding/prequalifications");
   };
 
   const handleSpecialApply = (company: Company) => {
-    setSelectedCompanyState(company);
+    setSelectedCompany(company); // ✅ Zustand
     setShowModal(true);
   };
 
   const handleModalSelect = (type: string) => {
     setShowModal(false);
     if (selectedCompany) {
-      setSelectedCompany({ ...selectedCompany, type }); // STORE COMPANY WITH TYPE
-      router.push(`/form/pre-qualification`);
+      setSelectedCompany({ ...selectedCompany, type }); // ✅ Zustand update
+      router.push("/onboarding/prequalifications");
     }
   };
 
-  // Split companies for custom rows
+  // Custom layout grouping
   const firstRow = COMPANIES.slice(0, 2);
   const secondRow = COMPANIES.slice(2);
 
@@ -49,8 +49,12 @@ export default function CompanyPage() {
             {t("company.heading", "Join Our Family of Companies")}
           </h1>
           <p className="text-center text-gray-500 mb-10">
-            {t("company.subheading", "Choose the company where you want to build your driving career")}
+            {t(
+              "company.subheading",
+              "Choose the company where you want to build your driving career"
+            )}
           </p>
+
           {/* First row: 2 cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mb-8">
             {firstRow.map((company) => (
@@ -62,23 +66,39 @@ export default function CompanyPage() {
               />
             ))}
           </div>
+
           {/* Second row: 3 cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {secondRow.map((company) => (
-              <CompanyCard key={company.id} company={company} onApply={handleApply} />
+              <CompanyCard
+                key={company.id}
+                company={company}
+                onApply={handleApply}
+              />
             ))}
           </div>
         </div>
+
         {/* Modal for Flatbed/Drop Deck selection */}
-        <Dialog open={showModal} onClose={() => setShowModal(false)} className="relative z-50">
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" aria-hidden="true" />
+        <Dialog
+          open={showModal}
+          onClose={() => setShowModal(false)}
+          className="relative z-50"
+        >
+          <div
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm"
+            aria-hidden="true"
+          />
           <div className="fixed inset-0 flex items-center justify-center p-4">
             <Dialog.Panel className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
               <Dialog.Title className="text-lg font-semibold text-gray-900 mb-2">
                 {t("company.selectType", "Select Application Type")}
               </Dialog.Title>
               <Dialog.Description className="text-sm text-gray-600 mb-4">
-                {t("company.selectTypeDesc", "Please choose the type of position you are applying for:")}
+                {t(
+                  "company.selectTypeDesc",
+                  "Please choose the type of position you are applying for:"
+                )}
               </Dialog.Description>
               <div className="flex flex-col gap-4">
                 <button
@@ -91,7 +111,7 @@ export default function CompanyPage() {
                   className="w-full py-3 rounded-lg font-semibold text-white bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 shadow hover:opacity-90 transition"
                   onClick={() => handleModalSelect("Dry Van")}
                 >
-                  {t("company.dropdeck", "Drop Deck")}
+                  {t("company.dropdeck", "Dry Van")}
                 </button>
               </div>
               <button

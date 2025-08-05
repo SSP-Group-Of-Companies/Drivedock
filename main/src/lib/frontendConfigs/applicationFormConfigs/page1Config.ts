@@ -100,20 +100,16 @@ export const page1Config: Page1FormPageConfig = {
     const { sinPhoto, ...payloadWithoutSinPhoto } = cleanedPayload;
 
     // Append FormData
-    formData.append(
-      "applicationFormPage1",
-      JSON.stringify(payloadWithoutSinPhoto)
-    );
-    formData.append("prequalifications", JSON.stringify(prequalifications));
-    formData.append("companyId", companyId);
-
-    // ✅ Handle PATCH mode by attaching encrypted SIN
-    if (tracker?.sinEncrypted) {
-      formData.append("sin", tracker.sinEncrypted);
+    formData.append("page1", JSON.stringify(payloadWithoutSinPhoto));
+    
+    // Only include prequalifications and companyId for initial POST
+    if (!tracker) {
+      formData.append("prequalifications", JSON.stringify(prequalifications));
+      formData.append("companyId", companyId);
     }
 
     return formData;
   },
 
-  nextRoute: "/form/application-form/page-2",
+  nextRoute: "/onboarding/[id]/application-form/page-2",
 };
