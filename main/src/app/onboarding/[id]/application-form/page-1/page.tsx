@@ -1,76 +1,107 @@
-"use client";
-
-import { useForm, FormProvider } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  applicationFormPage1Schema,
-  ApplicationFormPage1Schema,
-} from "@/lib/zodSchemas/applicationFormPage1.schema";
+import { ApplicationFormPage1Schema } from "@/lib/zodSchemas/applicationFormPage1.schema";
 import { ELicenseType } from "@/types/shared.types";
-import { useCompanySelection } from "@/hooks/useCompanySelection";
 
-// Components
-import PersonalDetails from "./components/PersonalDetails";
-import PlaceOfBirth from "./components/PlaceOfBirth";
-import LicenseSection from "./components/LicenseSection";
-import AddressSection from "./components/AddressSection";
-import ContinueButton from "../../../application-form/ContinueButton";
+import Page1Client from "./Page1Client";
 
-// Config
-import { page1Config } from "@/lib/frontendConfigs/applicationFormConfigs/page1Config";
+// Server-side data fetching function
+async function fetchPage1Data(trackerId: string) {
+  try {
+    const response = await fetch(
+      `${
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
+      }/api/v1/onboarding/${trackerId}/application-form/page-1`,
+      {
+        cache: "no-store",
+      }
+    );
 
-export default function ApplicationFormPage1() {
-  const { selectedCompany } = useCompanySelection();
+    if (!response.ok) {
+      return null;
+    }
 
-  const methods = useForm<ApplicationFormPage1Schema>({
-    resolver: zodResolver(applicationFormPage1Schema),
-    mode: "onChange",
-    defaultValues: {
-      firstName: "",
-      lastName: "",
-      sin: "",
-      sinPhoto: undefined,
-      dob: "",
-      phoneHome: "",
-      phoneCell: "",
-      canProvideProofOfAge: false,
-      email: "",
-      emergencyContactName: "",
-      emergencyContactPhone: "",
-      birthCity: "",
-      birthCountry: "",
-      birthStateOrProvince: "",
-      licenses: [
-        {
-          licenseNumber: "",
-          licenseStateOrProvince: "",
-          licenseType: ELicenseType.AZ,
-          licenseExpiry: "",
-          licenseFrontPhoto: undefined,
-          licenseBackPhoto: undefined,
-        },
-      ],
-      addresses: [],
-    },
-  });
+    const data = await response.json();
+    return data.data?.page1 || null;
+  } catch (error) {
+    console.error("Error fetching page 1 data:", error);
+    return null;
+  }
+}
 
-  const onSubmit = () => {
-    // Not used — handled by ContinueButton
-  };
+export default async function ApplicationFormPage1({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id: trackerId } = await params;
 
-  return (
-    <FormProvider {...methods}>
-      <form
-        className="space-y-8"
-        onSubmit={methods.handleSubmit(onSubmit)}
-        noValidate
-      >
-        <PersonalDetails />
-        <PlaceOfBirth />
-        <LicenseSection />
-        <AddressSection />
-        <ContinueButton<ApplicationFormPage1Schema> config={page1Config} />
-      </form>
-    </FormProvider>
-  );
+  // ✅ Server-side data fetching
+  const pageData = await fetchPage1Data(trackerId);
+
+  // ✅ Transform data for form (handle decryption, etc.)
+  const defaultValues: ApplicationFormPage1Schema = pageData
+    ? {
+        firstName: pageData.firstName || "",
+        lastName: pageData.lastName || "",
+        sin: pageData.sinEncrypted ? "•••••••••" : "", // Masked for security
+        sinPhoto: undefined as any, // Files can't be pre-filled
+        dob: pageData.dob || "",
+        phoneHome: pageData.phoneHome || "",
+        phoneCell: pageData.phoneCell || "",
+        canProvideProofOfAge: pageData.canProvideProofOfAge || false,
+        email: pageData.email || "",
+        emergencyContactName: pageData.emergencyContactName || "",
+        emergencyContactPhone: pageData.emergencyContactPhone || "",
+        birthCity: pageData.birthCity || "",
+        birthCountry: pageData.birthCountry || "",
+        birthStateOrProvince: pageData.birthStateOrProvince || "",
+        licenses: pageData.licenses?.length
+          ? pageData.licenses.map((license: any) => ({
+              licenseNumber: license.licenseNumber || "",
+              licenseStateOrProvince: license.licenseStateOrProvince || "",
+              licenseType: license.licenseType || ELicenseType.AZ,
+              licenseExpiry: license.licenseExpiry || "",
+              licenseFrontPhoto: undefined as any, // Files can't be pre-filled
+              licenseBackPhoto: undefined as any, // Files can't be pre-filled
+            }))
+          : [
+              {
+                licenseNumber: "",
+                licenseStateOrProvince: "",
+                licenseType: ELicenseType.AZ,
+                licenseExpiry: "",
+                licenseFrontPhoto: undefined as any,
+                licenseBackPhoto: undefined as any,
+              },
+            ],
+        addresses: pageData.addresses || [],
+      }
+    : {
+        firstName: "",
+        lastName: "",
+        sin: "",
+        sinPhoto: undefined as any,
+        dob: "",
+        phoneHome: "",
+        phoneCell: "",
+        canProvideProofOfAge: false,
+        email: "",
+        emergencyContactName: "",
+        emergencyContactPhone: "",
+        birthCity: "",
+        birthCountry: "",
+        birthStateOrProvince: "",
+        licenses: [
+          {
+            licenseNumber: "",
+            licenseStateOrProvince: "",
+            licenseType: ELicenseType.AZ,
+            licenseExpiry: "",
+            licenseFrontPhoto: undefined as any,
+            licenseBackPhoto: undefined as any,
+          },
+        ],
+        addresses: [],
+      };
+
+  return <Page1Client defaultValues={defaultValues} trackerId={trackerId} />;
 }

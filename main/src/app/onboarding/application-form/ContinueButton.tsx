@@ -1,7 +1,7 @@
 "use client";
 
 import { useFormContext, FieldValues } from "react-hook-form";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useState, ReactNode } from "react";
 
@@ -32,10 +32,12 @@ type ContinueButtonProps<T extends FieldValues> = {
     nextRoute: string;
     validateBusinessRules?: (values: T) => string | null;
   };
+  trackerId?: string; // ✅ Add optional trackerId prop
 };
 
 export default function ContinueButton<T extends FieldValues>({
   config,
+  trackerId,
 }: ContinueButtonProps<T>): ReactNode {
   const {
     getValues,
@@ -44,6 +46,7 @@ export default function ContinueButton<T extends FieldValues>({
   } = useFormContext<T>();
 
   const router = useRouter();
+  const params = useParams();
   const { t } = useTranslation("common");
   const { data: prequalifications, clearData } = usePrequalificationStore();
   const { tracker, setTracker } = useOnboardingTracker();
@@ -76,8 +79,10 @@ export default function ContinueButton<T extends FieldValues>({
 
     // 3. Determine mode (POST or PATCH)
     const companyId = selectedCompany?.id;
+    const urlTrackerId = params.id as string; // Extract tracker ID from URL
+    const effectiveTrackerId = trackerId || urlTrackerId; // ✅ Use passed trackerId or fallback to URL
     const isFirstPost = config.buildFormData.length === 3;
-    const isPatchMode = !isFirstPost && tracker?.id;
+    const isPatchMode = !isFirstPost && (tracker?.id || effectiveTrackerId);
 
     if (isFirstPost) {
       if (!prequalifications?.completed) {
@@ -121,6 +126,7 @@ export default function ContinueButton<T extends FieldValues>({
         formData,
         tracker,
         nextRoute: config.nextRoute,
+        urlTrackerId: effectiveTrackerId, // ✅ Pass effective tracker ID
       });
 
       // 6. Routing

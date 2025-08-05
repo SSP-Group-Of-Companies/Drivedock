@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import useMounted from "@/hooks/useMounted";
 import { useTranslation } from "react-i18next";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import LanguageDropdown from "@/components/LanguageDropdown";
@@ -14,6 +14,27 @@ export default function Navbar() {
   const { t } = useTranslation("common");
   const router = useRouter();
   const pathname = usePathname();
+  const params = useParams();
+
+  // ✅ Smart back navigation that preserves tracker ID
+  const handleBackClick = () => {
+    const trackerId = params.id as string;
+    
+    // If we're in onboarding with tracker ID, navigate to previous step
+    if (trackerId && pathname.includes('/onboarding/')) {
+      if (pathname.includes('/page-2')) {
+        router.push(`/onboarding/${trackerId}/application-form/page-1`);
+      } else if (pathname.includes('/page-1')) {
+        router.push(`/onboarding/${trackerId}/prequalifications`);
+      } else if (pathname.includes('/prequalifications')) {
+        router.push('/start');
+      } else {
+        router.back(); // Fallback
+      }
+    } else {
+      router.back(); // Fallback for other pages
+    }
+  };
 
   // Hide back button on landing page
   const showBack = pathname !== "/";
@@ -42,7 +63,7 @@ export default function Navbar() {
           {showLanguageDropdown && <LanguageDropdown />}
           {showBack && (
             <button
-              onClick={() => router.back()}
+              onClick={handleBackClick}
               className="ml-2 flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 text-white font-medium shadow hover:opacity-90 transition focus:outline-none focus:ring-2 focus:ring-blue-300"
               aria-label={t("navbar.back", "Go Back")}
             >

@@ -4,20 +4,24 @@ type SubmitFormStepParams = {
   formData: FormData;
   tracker: ITrackerContext | null;
   nextRoute: string;
+  urlTrackerId?: string; // Optional tracker ID from URL
 };
 
 export async function submitFormStep({
   formData,
   tracker,
   nextRoute,
+  urlTrackerId,
 }: SubmitFormStepParams): Promise<{ trackerContext?: ITrackerContext }> {
-  const isPatch = !!tracker?.id;
+  // Use URL tracker ID if Zustand tracker is null
+  const effectiveTrackerId = tracker?.id || urlTrackerId;
+  const isPatch = !!effectiveTrackerId;
 
   // Extract final segment from route (e.g., "page-2", "policies-consents")
   const pageSegment = nextRoute.split("/").pop() ?? "page-1";
 
   const url = isPatch
-    ? `/api/v1/onboarding/${tracker.id}/application-form/${pageSegment}`
+    ? `/api/v1/onboarding/${effectiveTrackerId}/application-form/${pageSegment}`
     : `/api/v1/onboarding/application-form`;
 
   const method = isPatch ? "PATCH" : "POST";
@@ -58,6 +62,40 @@ export async function submitFormStep({
 
   if (!res.ok) {
     const errorText = await res.text();
+
+    // Handle "already exists" error for POST requests
+    if (
+      !isPatch &&
+      res.status === 400 &&
+      errorText.includes("already exists")
+    ) {
+      try {
+        const errorData = JSON.parse(errorText);
+        const existingTrackerId = errorData.trackerId;
+
+        if (existingTrackerId) {
+          // Retry as PATCH with existing tracker ID
+          const patchUrl = `/api/v1/onboarding/${existingTrackerId}/application-form/${pageSegment}`;
+          const patchRes = await fetch(patchUrl, {
+            ...options,
+            method: "PATCH",
+          });
+
+          if (!patchRes.ok) {
+            throw new Error(await patchRes.text());
+          }
+
+          const patchData = await patchRes.json();
+          return {
+            trackerContext: patchData?.data?.onboardingContext,
+          };
+        }
+      } catch {
+        // If we can't parse the error response, throw the original error
+        throw new Error(errorText);
+      }
+    }
+
     throw new Error(errorText);
   }
 

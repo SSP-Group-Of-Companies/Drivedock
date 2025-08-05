@@ -20,30 +20,31 @@ export default function PersonalDetails() {
     name: "canProvideProofOfAge",
   });
   const dobValue = useWatch({ control, name: "dob" });
-  
+
   // Calculate age from DOB
   const calculateAge = (dob: string) => {
     if (!dob) return null;
     const birthDate = new Date(dob);
     const today = new Date();
     const age = today.getFullYear() - birthDate.getFullYear();
-    
+
     // Check if birthday has occurred this year
     const monthDiff = today.getMonth() - birthDate.getMonth();
     const dayDiff = today.getDate() - birthDate.getDate();
-    
-    const actualAge = monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) 
-      ? age - 1 
-      : age;
-    
+
+    const actualAge =
+      monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
+
     return actualAge;
   };
-  
+
   const calculatedAge = dobValue ? calculateAge(dobValue) : null;
 
   const [showSIN, setShowSIN] = useState(false);
   const [sinPhotoPreview, setSinPhotoPreview] = useState<string | null>(null);
-  const [sinValidationStatus, setSinValidationStatus] = useState<"idle" | "checking" | "valid" | "invalid">("idle");
+  const [sinValidationStatus, setSinValidationStatus] = useState<
+    "idle" | "checking" | "valid" | "invalid"
+  >("idle");
   const [sinValidationMessage, setSinValidationMessage] = useState("");
 
   // Get the current SIN value and format it for display
@@ -81,7 +82,7 @@ export default function PersonalDetails() {
         setSinValidationStatus("invalid");
         setSinValidationMessage(errorData.message || "SIN already exists");
       }
-    } catch (error) {
+    } catch {
       setSinValidationStatus("invalid");
       setSinValidationMessage("Error checking SIN availability");
     }
@@ -103,7 +104,7 @@ export default function PersonalDetails() {
     const raw = e.target.value.replace(/\D/g, "").slice(0, 9);
     setValue("sin", raw, { shouldValidate: true });
     setValue("sinEncrypted", raw, { shouldValidate: true }); // Set both fields
-    
+
     // Validate SIN when it reaches 9 digits
     if (raw.length === 9) {
       debouncedValidateSIN(raw);
@@ -227,10 +228,13 @@ export default function PersonalDetails() {
             onChange={handleSINChange}
             data-field="sin"
             className={`py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md pr-10 ${
-              sinValidationStatus === "valid" ? "border-green-500 focus:border-green-500" :
-              sinValidationStatus === "invalid" ? "border-red-500 focus:border-red-500" :
-              sinValidationStatus === "checking" ? "border-yellow-500 focus:border-yellow-500" :
-              ""
+              sinValidationStatus === "valid"
+                ? "border-green-500 focus:border-green-500"
+                : sinValidationStatus === "invalid"
+                ? "border-red-500 focus:border-red-500"
+                : sinValidationStatus === "checking"
+                ? "border-yellow-500 focus:border-yellow-500"
+                : ""
             }`}
           />
           <button
@@ -240,7 +244,7 @@ export default function PersonalDetails() {
           >
             {showSIN ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
-          
+
           {/* SIN Validation Status */}
           {sinValidationStatus === "checking" && (
             <p className="text-yellow-600 text-sm mt-1 flex items-center">
@@ -248,25 +252,41 @@ export default function PersonalDetails() {
               Checking SIN availability...
             </p>
           )}
-          
+
           {sinValidationStatus === "valid" && (
             <p className="text-green-600 text-sm mt-1 flex items-center">
-              <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              <svg
+                className="w-4 h-4 mr-1"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clipRule="evenodd"
+                />
               </svg>
               {sinValidationMessage}
             </p>
           )}
-          
+
           {sinValidationStatus === "invalid" && (
             <p className="text-red-500 text-sm mt-1 flex items-center">
-              <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+              <svg
+                className="w-4 h-4 mr-1"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                  clipRule="evenodd"
+                />
               </svg>
               {sinValidationMessage}
             </p>
           )}
-          
+
           {errors.sin && (
             <p className="text-red-500 text-sm mt-1">
               {errors.sin.message?.toString()}
@@ -336,22 +356,32 @@ export default function PersonalDetails() {
             data-field="dob"
             max={(() => {
               const today = new Date();
-              const maxDate = new Date(today.getFullYear() - 23, today.getMonth(), today.getDate());
-              return maxDate.toISOString().split('T')[0];
+              const maxDate = new Date(
+                today.getFullYear() - 23,
+                today.getMonth(),
+                today.getDate()
+              );
+              return maxDate.toISOString().split("T")[0];
             })()}
             min={(() => {
               const today = new Date();
-              const minDate = new Date(today.getFullYear() - 100, today.getMonth(), today.getDate());
-              return minDate.toISOString().split('T')[0];
+              const minDate = new Date(
+                today.getFullYear() - 100,
+                today.getMonth(),
+                today.getDate()
+              );
+              return minDate.toISOString().split("T")[0];
             })()}
             className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
           />
           {calculatedAge !== null && (
-            <p className={`text-sm mt-1 ${
-              calculatedAge >= 23 && calculatedAge <= 100 
-                ? 'text-green-600' 
-                : 'text-red-500'
-            }`}>
+            <p
+              className={`text-sm mt-1 ${
+                calculatedAge >= 23 && calculatedAge <= 100
+                  ? "text-green-600"
+                  : "text-red-500"
+              }`}
+            >
               Age: {calculatedAge} years old
               {calculatedAge < 23 && " (Must be at least 23 years old)"}
               {calculatedAge > 100 && " (Age cannot exceed 100 years)"}

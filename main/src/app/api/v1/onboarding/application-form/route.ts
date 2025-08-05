@@ -123,7 +123,10 @@ export async function POST(req: NextRequest) {
     const sinHash = hashString(sin);
     const existingTracker = await OnboardingTracker.findOne({ sinHash });
     if (existingTracker) {
-      return errorResponse(400, "Application with this SIN already exists.");
+      return errorResponse(400, "Application with this SIN already exists.", {
+        trackerId: existingTracker.id,
+        message: "Application with this SIN already exists."
+      });
     }
 
     if (!hasRecentAddressCoverage(page1.addresses)) {
