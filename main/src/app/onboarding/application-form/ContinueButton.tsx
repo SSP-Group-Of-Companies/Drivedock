@@ -11,6 +11,7 @@ import { useCompanySelection } from "@/hooks/useCompanySelection";
 import { useFormErrorScroll } from "@/hooks/useFormErrorScroll";
 import { COMPANIES } from "@/constants/companies";
 import { IPreQualifications } from "@/types/preQualifications.types";
+import { submitFormStep } from "@/lib/frontendUtils/submitFormStep";
 
 type ContinueButtonProps<T extends FieldValues> = {
   config: {
@@ -21,6 +22,12 @@ type ContinueButtonProps<T extends FieldValues> = {
           values: T,
           prequal: IPreQualifications,
           companyId: string
+        ) => FormData)
+      | ((
+          values: T,
+          prequal: IPreQualifications,
+          companyId: string,
+          tracker?: any
         ) => FormData);
     nextRoute: string;
     validateBusinessRules?: (values: T) => string | null;
@@ -38,7 +45,7 @@ export default function ContinueButton<T extends FieldValues>({
 
   const router = useRouter();
   const { t } = useTranslation("common");
-  const { data: prequalifications } = usePrequalificationStore();
+  const { data: prequalifications, clearData } = usePrequalificationStore();
   const { tracker, setTracker } = useOnboardingTracker();
   const { selectedCompany } = useCompanySelection();
   const { handleFormError } = useFormErrorScroll<T>();
@@ -48,18 +55,17 @@ export default function ContinueButton<T extends FieldValues>({
   const onSubmit = async () => {
     const values = getValues();
 
-    // Step 1: Field-level validation
+    // 1. Validate fields
     const fieldsToValidate = config.validationFields(values);
     const isValid = await trigger(
       fieldsToValidate as Parameters<typeof trigger>[0]
     );
-
     if (!isValid) {
       handleFormError(errors);
       return;
     }
 
-    // Step 2: Optional business rule validation
+    // 2. Optional business rule validation
     if (config.validateBusinessRules) {
       const ruleError = config.validateBusinessRules(values);
       if (ruleError) {
@@ -68,20 +74,19 @@ export default function ContinueButton<T extends FieldValues>({
       }
     }
 
-    // Step 3: Validate company and prequal if needed
+    // 3. Determine mode (POST or PATCH)
     const companyId = selectedCompany?.id;
-    const isValidCompany =
-      !!companyId && COMPANIES.some((c) => c.id === companyId);
+    const isFirstPost = config.buildFormData.length === 3;
+    const isPatchMode = !isFirstPost && tracker?.id;
 
-    if (config.buildFormData.length === 3) {
+    if (isFirstPost) {
       if (!prequalifications?.completed) {
         alert(
           "Prequalification data is missing. Please restart the application."
         );
         return;
       }
-
-      if (!isValidCompany) {
+      if (!companyId || !COMPANIES.some((c) => c.id === companyId)) {
         alert("Invalid company selection. Please restart the application.");
         return;
       }
@@ -90,9 +95,18 @@ export default function ContinueButton<T extends FieldValues>({
     try {
       setSubmitting(true);
 
-      // Step 4: Build form data
+      // 4. Build FormData
       const formData =
-        config.buildFormData.length === 3
+        config.buildFormData.length === 4
+          ? (
+              config.buildFormData as (
+                values: T,
+                prequal: IPreQualifications,
+                companyId: string,
+                tracker?: any
+              ) => FormData
+            )(values, prequalifications!, companyId!, tracker)
+          : config.buildFormData.length === 3
           ? (
               config.buildFormData as (
                 values: T,
@@ -102,39 +116,25 @@ export default function ContinueButton<T extends FieldValues>({
             )(values, prequalifications!, companyId!)
           : (config.buildFormData as (values: T) => FormData)(values);
 
-      // Step 5: Determine route and method
-      const sin = tracker?.sin;
-      const isUpdate = Boolean(sin);
-      const pageSegment = config.nextRoute.split("/").pop();
-
-      const url =
-        isUpdate && pageSegment
-          ? `/api/v1/forms/application-form/${sin}/${pageSegment}`
-          : "/api/v1/forms/application-form";
-
-      const method = isUpdate ? "PATCH" : "POST";
-
-      // Step 6: Submit to backend
-      const res = await fetch(url, {
-        method,
-        body: formData,
+      // 5. Submit via shared utility
+      const { trackerContext } = await submitFormStep({
+        formData,
+        tracker,
+        nextRoute: config.nextRoute,
       });
 
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(errorText);
-      }
-
-      // Step 7: Save tracker if this is initial Page 1 POST
-      if (!isUpdate && pageSegment === "page-2") {
-        const responseData = await res.json();
-        if (responseData?.data?.sin) {
-          setTracker(responseData.data); // Save full tracker object
+      // 6. Routing
+      if (!isPatchMode) {
+        if (trackerContext?.id) {
+          setTracker(trackerContext);
+          clearData();
+          router.push(config.nextRoute.replace("[id]", trackerContext.id));
+        } else {
+          throw new Error("Tracker not returned from POST");
         }
+      } else {
+        router.push(config.nextRoute.replace("[id]", tracker?.id || ""));
       }
-
-      // Step 8: Route to next step
-      router.push(config.nextRoute);
     } catch (err) {
       console.error("Submission error:", err);
       alert("An error occurred while submitting. Please try again.");

@@ -20,7 +20,7 @@ export default function GapBlock({ index, days }: Props) {
   const error = employmentErrors?.[index]?.gapExplanationBefore;
 
   return (
-    <div className="border border-red-300 bg-red-50 p-4 rounded-md shadow-sm">
+    <div className="border border-red-300 bg-red-50 p-4 rounded-md shadow-sm my-6">
       <p className="text-sm font-semibold text-red-800 mb-2">
         Gap of {days} days detected between employments. Please explain:
       </p>

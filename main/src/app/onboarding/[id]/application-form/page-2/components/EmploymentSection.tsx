@@ -161,8 +161,7 @@ export default function EmploymentSection() {
           }}
           className="mt-6 mx-auto flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 rounded-md transition-colors duration-200 font-medium"
         >
-          {t("form.page2.actions.addPrevious")} ({fields.length - 1}/4) -{" "}
-          {totalMonths - 24} months needed
+          {t("form.page2.actions.addPrevious")} ({fields.length - 1}/4)
         </button>
       )}
     </section>

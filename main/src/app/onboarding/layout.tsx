@@ -1,10 +1,10 @@
-// src/app/form/layout.tsx
+// src/app/onboarding/layout.tsx
 "use client";
 
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import CompanyLogoHeader from "@/components/shared/CompanyLogoHeader";
-import FormWizardNav from "@/components/form/FormWizardNav";
+import FormWizardNav from "@/app/onboarding/components/FormWizardNav";
 import { usePathname, useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { Dialog } from "@headlessui/react";
@@ -36,7 +36,7 @@ export default function FormLayout({
 
   // Step detection (simple mapping)
   const getCurrentStep = (): number => {
-    if (pathname.includes("pre-qualification")) return 1;
+    if (pathname.includes("prequalifications")) return 1;
     if (pathname.includes("application-form")) return 2;
     if (pathname.includes("policies-consents")) return 3;
     if (pathname.includes("carrieredge-training")) return 4;
@@ -212,4 +212,4 @@ export default function FormLayout({
       <Footer />
     </>
   );
-}
+} 

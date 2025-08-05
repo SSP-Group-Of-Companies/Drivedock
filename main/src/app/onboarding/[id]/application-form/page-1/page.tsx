@@ -14,7 +14,7 @@ import PersonalDetails from "./components/PersonalDetails";
 import PlaceOfBirth from "./components/PlaceOfBirth";
 import LicenseSection from "./components/LicenseSection";
 import AddressSection from "./components/AddressSection";
-import ContinueButton from "../ContinueButton";
+import ContinueButton from "../../../application-form/ContinueButton";
 
 // Config
 import { page1Config } from "@/lib/frontendConfigs/applicationFormConfigs/page1Config";

@@ -4,7 +4,7 @@
 import { ApplicationFormPage1Schema } from "@/lib/zodSchemas/applicationFormPage1.schema";
 import { FormPageConfig } from "@/lib/frontendConfigs/formPageConfig.types";
 import { IPreQualifications } from "@/types/preQualifications.types";
-import { IOnboardingTracker } from "@/types/onboardingTracker.type"; // ✅ Import Tracker Type
+import { IOnboardingTracker } from "@/types/onboardingTracker.type"; // Import Tracker Type
 
 // Extend FormPageConfig to support tracker-aware FormData building
 type Page1FormPageConfig = FormPageConfig<ApplicationFormPage1Schema> & {
@@ -12,7 +12,7 @@ type Page1FormPageConfig = FormPageConfig<ApplicationFormPage1Schema> & {
     values: ApplicationFormPage1Schema,
     prequalifications: IPreQualifications,
     companyId: string,
-    tracker?: IOnboardingTracker // ✅ Optional tracker for PATCH
+    tracker?: IOnboardingTracker // Optional tracker for PATCH
   ) => FormData;
 };
 
@@ -99,21 +99,22 @@ export const page1Config: Page1FormPageConfig = {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { sinPhoto, ...payloadWithoutSinPhoto } = cleanedPayload;
 
-    // Append FormData
-    formData.append(
-      "applicationFormPage1",
-      JSON.stringify(payloadWithoutSinPhoto)
-    );
-    formData.append("prequalifications", JSON.stringify(prequalifications));
-    formData.append("companyId", companyId);
-
-    // ✅ Handle PATCH mode by attaching encrypted SIN
-    if (tracker?.sinEncrypted) {
-      formData.append("sin", tracker.sinEncrypted);
+    // Append FormData - use different field names for POST vs PATCH
+    if (!tracker) {
+      // Initial POST expects "applicationFormPage1"
+      formData.append(
+        "applicationFormPage1",
+        JSON.stringify(payloadWithoutSinPhoto)
+      );
+      formData.append("prequalifications", JSON.stringify(prequalifications));
+      formData.append("companyId", companyId);
+    } else {
+      // PATCH expects "page1"
+      formData.append("page1", JSON.stringify(payloadWithoutSinPhoto));
     }
 
     return formData;
   },
 
-  nextRoute: "/form/application-form/page-2",
+  nextRoute: "/onboarding/[id]/application-form/page-2",
 };
