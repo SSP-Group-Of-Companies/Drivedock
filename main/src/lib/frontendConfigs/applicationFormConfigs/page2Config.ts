@@ -44,7 +44,11 @@ function validationFields(values: ApplicationFormPage2Schema): string[] {
 // ✅ Clean JSON builder for PATCH
 function buildFormData(values: ApplicationFormPage2Schema): FormData {
   const formData = new FormData();
-  formData.append("page2", JSON.stringify(values));
+
+  // Must match the key expected in submitFormStep.ts
+  const key = "page2"; // not "page-2"
+  formData.append(key, JSON.stringify(values));
+
   return formData;
 }
 

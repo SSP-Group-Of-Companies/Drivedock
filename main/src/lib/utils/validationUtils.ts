@@ -99,7 +99,7 @@ export function validateEmploymentHistory(
     (a, b) => new Date(b.from).getTime() - new Date(a.from).getTime()
   );
 
-  let totalMonths = 0;
+  let totalDays = 0;
 
   for (let i = 0; i < sorted.length; i++) {
     const current = sorted[i];
@@ -114,7 +114,9 @@ export function validateEmploymentHistory(
       return `End date cannot be before start date in job at ${current.supervisorName}`;
     }
 
-    totalMonths += differenceInMonths(to, from);
+    // Calculate exact days for this employment period
+    const daysInThisJob = differenceInDays(to, from) + 1; // +1 to include both start and end dates
+    totalDays += daysInThisJob;
 
     const next = sorted[i + 1];
     if (next) {
@@ -137,19 +139,29 @@ export function validateEmploymentHistory(
     }
   }
 
-  if (totalMonths === 24) {
-    return null; // ✅ Exactly 2 years
+  // Convert days to months for comparison (using 30.44 days per month average)
+  const totalMonths = Math.round(totalDays / 30.44);
+  const requiredDaysFor2Years = 730; // 2 years = 730 days
+  const requiredDaysFor10Years = 3650; // 10 years = 3650 days
+
+  if (totalDays >= requiredDaysFor2Years && totalDays <= 760) {
+    return null; // ✅ Exactly 2 years or more, but less than 2 years + 30 days buffer
   }
 
-  if (totalMonths < 24) {
-    return "Driving experience must be at least 2 years.";
+  if (totalDays > 760 && totalDays < requiredDaysFor10Years) {
+    return "If experience is over 2 years + 30 days, a full 10 years of history must be entered.";
   }
 
-  if (totalMonths > 24 && totalMonths < 120) {
-    return "If experience is over 2 years, a full 10 years of history must be entered.";
+  if (totalDays < requiredDaysFor2Years) {
+    const months = Math.round(totalDays / 30.44);
+    return `Employment duration of ${months} months (${totalDays} days) detected. You must provide 2 years of employment history.`;
   }
 
-  return null; // ✅ 10+ years
+  if (totalDays >= requiredDaysFor10Years) {
+    return null; // ✅ 10+ years
+  }
+
+  return "Employment history validation failed.";
 }
 
 export function isValidSIN(

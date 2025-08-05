@@ -2,9 +2,10 @@
 
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment, useState } from "react";
-import { useRouter } from "next/navigation";
 import { CheckCircle, XCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useRouter } from "next/navigation";
+import { useOnboardingTracker } from "@/store/useOnboardingTracker";
 
 interface ResumeModalProps {
   isOpen: boolean;
@@ -12,25 +13,47 @@ interface ResumeModalProps {
 }
 
 export default function ResumeModal({ isOpen, onClose }: ResumeModalProps) {
-  const router = useRouter();
   const { t } = useTranslation("common");
+  const router = useRouter();
+  const { setTracker } = useOnboardingTracker();
+
   const [sin, setSin] = useState("");
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleSubmit = async () => {
+    const cleanedSin = sin.trim();
+
+    if (!cleanedSin) {
+      setStatus("error");
+      setErrorMessage("Please enter your SIN");
+      return;
+    }
+
+    if (cleanedSin.length !== 9) {
+      setStatus("error");
+      setErrorMessage("SIN must be exactly 9 digits");
+      return;
+    }
+
     try {
-      const res = await fetch(`/api/check-sin?sin=${sin}`);
-      if (res.status === 200) {
-        setStatus("success");
-        setTimeout(() => {
-          router.push(`/resume/${sin}`);
-          onClose();
-        }, 1000);
+      setStatus("success");
+
+      const res = await fetch(`/api/v1/onboarding/resume/${cleanedSin}`);
+      const data = await res.json();
+
+      const trackerContext = data?.data?.onboardingContext;
+      const redirectUrl = data?.data?.redirectUrl;
+
+      if (trackerContext && redirectUrl) {
+        setTracker(trackerContext); // ✅ Hydrate Zustand store before redirect
+        router.push(redirectUrl); // ✅ Navigate to resumed step
       } else {
-        setStatus("error");
+        throw new Error("Resume info missing");
       }
     } catch {
       setStatus("error");
+      setErrorMessage("Could not resume application. Please try again.");
     }
   };
 
@@ -71,9 +94,12 @@ export default function ResumeModal({ isOpen, onClose }: ResumeModalProps) {
                 type="text"
                 placeholder={t("resume.placeholder")}
                 value={sin}
+                maxLength={9}
                 onChange={(e) => {
-                  setSin(e.target.value);
+                  const value = e.target.value.replace(/\D/g, "");
+                  setSin(value);
                   setStatus("idle");
+                  setErrorMessage("");
                 }}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-blue-500 focus:outline-none focus:border-blue-500"
               />
@@ -87,7 +113,7 @@ export default function ResumeModal({ isOpen, onClose }: ResumeModalProps) {
               {status === "error" && (
                 <p className="mt-2 flex items-center text-sm text-red-600">
                   <XCircle className="w-4 h-4 mr-1" />
-                  {t("resume.error")}
+                  {errorMessage || t("resume.error")}
                 </p>
               )}
 

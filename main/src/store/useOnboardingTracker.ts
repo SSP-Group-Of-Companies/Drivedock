@@ -1,11 +1,23 @@
 // src/store/useOnboardingTracker.ts
 
 import { create } from "zustand";
-import { IOnboardingTracker } from "@/types/onboardingTracker.type";
+
+export interface ITrackerContext {
+  id: string;
+  companyId: string;
+  applicationType?: string;
+  status: {
+    currentStep: string;
+    completedStep: string;
+    completed: boolean;
+  };
+  prevUrl: string;
+  nextUrl: string;
+}
 
 interface OnboardingTrackerStore {
-  tracker: IOnboardingTracker | null;
-  setTracker: (data: IOnboardingTracker) => void;
+  tracker: ITrackerContext | null;
+  setTracker: (data: ITrackerContext) => void;
   clearTracker: () => void;
 }
 

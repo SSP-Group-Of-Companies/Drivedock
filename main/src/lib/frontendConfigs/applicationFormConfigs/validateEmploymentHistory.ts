@@ -30,7 +30,9 @@ export function validateEmploymentHistory(employments: any[]): string | null {
       return `End date cannot be before start date in job at ${current.supervisorName}`;
     }
 
-    totalDays += differenceInDays(to, from);
+    // Calculate exact days for this employment period
+    const daysInThisJob = differenceInDays(to, from) + 1; // +1 to include both start and end dates
+    totalDays += daysInThisJob;
 
     const next = sorted[i + 1];
     if (next) {
@@ -53,23 +55,27 @@ export function validateEmploymentHistory(employments: any[]): string | null {
     }
   }
 
-  const totalMonths = Math.floor(totalDays / 30.44); // Average days per month
+  const totalMonths = Math.round(totalDays / 30.44); // Average days per month
   const twoYearsInDays = 730; // 2 years = 730 days
   const tenYearsInDays = 3650; // 10 years = 3650 days
 
-  if (totalDays === twoYearsInDays) {
-    return null; // ✅ Exactly 2 years
+  if (totalDays >= twoYearsInDays && totalDays <= 760) {
+    return null; // ✅ Exactly 2 years or more, but less than 2 years + 30 days buffer
+  }
+
+  if (totalDays > 760 && totalDays < tenYearsInDays) {
+    return "If experience is over 2 years + 30 days, a full 10 years of history must be entered.";
   }
 
   if (totalDays < twoYearsInDays) {
-    return "Driving experience must be at least 2 years.";
+    return `Employment duration of ${totalMonths} months (${totalDays} days) detected. You must provide 2 years of employment history.`;
   }
 
-  if (totalDays > twoYearsInDays && totalDays < tenYearsInDays) {
-    return "If experience is over 2 years, a full 10 years of history must be entered.";
+  if (totalDays >= tenYearsInDays) {
+    return null; // ✅ 10+ years
   }
 
-  return null; // ✅ 10+ years
+  return "Employment history validation failed.";
 }
 
 // Timeline calculation for real-time UI messages
@@ -88,12 +94,13 @@ export function calculateTimelineFromCurrent(employments: any[]) {
   // The current employment's "to" date is our "wall" - everything is calculated backwards from here
   const currentToDate = new Date(current.to);
   let totalDays = 0;
-  let timeline = [];
+  const timeline = [];
 
   // Calculate current employment duration (this is the "wall")
   if (current.from && current.to) {
     const currentFrom = new Date(current.from);
-    const currentDurationDays = differenceInDays(currentToDate, currentFrom);
+    const currentDurationDays =
+      differenceInDays(currentToDate, currentFrom) + 1; // +1 to include both start and end dates
     totalDays += currentDurationDays;
     timeline.push({
       from: currentFrom,
@@ -112,7 +119,7 @@ export function calculateTimelineFromCurrent(employments: any[]) {
       const to = new Date(emp.to);
 
       // Calculate duration from this employment's "to" date backwards
-      const durationDays = differenceInDays(to, from);
+      const durationDays = differenceInDays(to, from) + 1; // +1 to include both start and end dates
 
       totalDays += durationDays;
       timeline.push({
@@ -133,7 +140,7 @@ export function calculateTimelineFromCurrent(employments: any[]) {
   const tenYearsInDays = 3650; // 10 years = 3650 days
   const daysNeeded = Math.max(0, tenYearsInDays - totalDays);
   const monthsNeeded = Math.floor(daysNeeded / 30.44);
-  const needsMore = totalDays > 730 && totalDays < tenYearsInDays; // 730 days = 2 years
+  const needsMore = totalDays > 760 && totalDays < tenYearsInDays; // 760 days = 2 years + 30 days buffer
 
   return {
     totalDays,
