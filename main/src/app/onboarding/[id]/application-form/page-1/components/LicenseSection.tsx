@@ -8,6 +8,10 @@ import { FieldErrors } from "react-hook-form";
 import { ApplicationFormPage1Schema } from "@/lib/zodSchemas/applicationFormPage1.schema";
 import { Camera, Upload, X } from "lucide-react";
 import Image from "next/image";
+import { uploadToS3Presigned } from "@/lib/utils/s3Upload";
+import { ES3Folder } from "@/types/aws.types";
+import { useParams } from "next/navigation";
+
 
 export default function LicenseSection() {
   const { t } = useTranslation("common");
@@ -17,6 +21,8 @@ export default function LicenseSection() {
     formState: { errors },
     setValue,
   } = useFormContext();
+
+  const { id } = useParams<{ id: string }>();
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -28,58 +34,44 @@ export default function LicenseSection() {
   );
   const [backPhotoPreview, setBackPhotoPreview] = useState<string | null>(null);
 
-  const handlePhotoUpload = (file: File | null, type: "front" | "back") => {
-    if (file) {
-      const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-      if (!allowedTypes.includes(file.type)) {
-        alert(
-          `${
-            type === "front" ? "Front" : "Back"
-          } photo must be a JPEG, PNG, or WebP image.`
-        );
-        return;
-      }
+  const handleLicensePhotoUpload = async (
+    file: File | null,
+    side: "front" | "back"
+  ) => {
+    const fieldKey =
+      side === "front"
+        ? "licenses.0.licenseFrontPhoto"
+        : "licenses.0.licenseBackPhoto";
 
-      const MAX_SIZE = 10 * 1024 * 1024;
-      if (file.size > MAX_SIZE) {
-        alert(
-          `${type === "front" ? "Front" : "Back"} photo must be less than 10MB.`
-        );
-        return;
-      }
+    if (!file) {
+      setValue(fieldKey, undefined, { shouldValidate: true });
+      if (side === "front") setFrontPhotoPreview(null);
+      else setBackPhotoPreview(null);
+      return;
+    }
 
-      if (type === "front") {
-        setValue(`licenses.0.licenseFrontPhoto`, file, {
-          shouldValidate: true,
-        });
-      } else {
-        setValue(`licenses.0.licenseBackPhoto`, file, { shouldValidate: true });
-      }
+    try {
+      const result = await uploadToS3Presigned({
+        file,
+        folder: ES3Folder.LICENSES,
+        trackerId: id, // replace with actual trackerId if available
+      });
+
+      setValue(fieldKey, result, { shouldValidate: true });
 
       const reader = new FileReader();
       reader.onload = (e) => {
-        const result = e.target?.result as string;
-        if (type === "front") {
-          setFrontPhotoPreview(result);
-        } else {
-          setBackPhotoPreview(result);
-        }
+        const preview = e.target?.result as string;
+        if (side === "front") setFrontPhotoPreview(preview);
+        else setBackPhotoPreview(preview);
       };
       reader.readAsDataURL(file);
-    } else {
-      if (type === "front") {
-        setValue(`licenses.0.licenseFrontPhoto`, undefined, {
-          shouldValidate: true,
-        });
-        setFrontPhotoPreview(null);
-      } else {
-        setValue(`licenses.0.licenseBackPhoto`, undefined, {
-          shouldValidate: true,
-        });
-        setBackPhotoPreview(null);
-      }
+    } catch (error: any) {
+      console.error(`License ${side} upload error:`, error);
+      alert(error.message || `Failed to upload ${side} photo.`);
     }
   };
+
 
   const licenseErrors =
     errors.licenses as FieldErrors<ApplicationFormPage1Schema>["licenses"];
@@ -205,7 +197,7 @@ export default function LicenseSection() {
                     />
                     <button
                       type="button"
-                      onClick={() => handlePhotoUpload(null, "front")}
+                      onClick={() => handleLicensePhotoUpload(null, "front")}
                       className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
                     >
                       <X size={12} />
@@ -228,9 +220,7 @@ export default function LicenseSection() {
                   accept="image/*"
                   capture="environment"
                   {...register(`licenses.0.licenseFrontPhoto`)}
-                  onChange={(e) =>
-                    handlePhotoUpload(e.target.files?.[0] || null, "front")
-                  }
+                  onChange={(e) => handleLicensePhotoUpload(e.target.files?.[0] || null, "front")}
                   data-field="licenses.0.licenseFrontPhoto"
                   className="hidden"
                 />
@@ -257,7 +247,7 @@ export default function LicenseSection() {
                     />
                     <button
                       type="button"
-                      onClick={() => handlePhotoUpload(null, "back")}
+                      onClick={() => handleLicensePhotoUpload(null, "back")}
                       className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
                     >
                       <X size={12} />
@@ -280,9 +270,7 @@ export default function LicenseSection() {
                   accept="image/*"
                   capture="environment"
                   {...register(`licenses.0.licenseBackPhoto`)}
-                  onChange={(e) =>
-                    handlePhotoUpload(e.target.files?.[0] || null, "back")
-                  }
+                  onChange={(e) => handleLicensePhotoUpload(e.target.files?.[0] || null, "back")}
                   data-field="licenses.0.licenseBackPhoto"
                   className="hidden"
                 />

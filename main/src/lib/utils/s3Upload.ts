@@ -14,7 +14,8 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { DEFAULT_PRESIGN_EXPIRY_SECONDS } from "@/constants/aws";
-import { IPhoto } from "@/types/shared.types";
+import { EImageMimeType, IPhoto } from "@/types/shared.types";
+import { ES3Folder, IPresignResponse } from "@/types/aws.types";
 
 const s3 = new S3Client({
   region: AWS_REGION,
@@ -173,4 +174,70 @@ export async function finalizePhoto(
     s3Key: moved.key,
     url: moved.url,
   };
+}
+
+interface UploadToS3Options {
+  file: File;
+  folder: ES3Folder;
+  trackerId?: string;
+}
+
+interface UploadResult {
+  s3Key: string;
+  url: string;
+}
+
+export async function uploadToS3Presigned({
+  file,
+  folder,
+  trackerId = "unknown",
+}: UploadToS3Options): Promise<UploadResult> {
+  const allowedMimeTypes: EImageMimeType[] = [
+    EImageMimeType.JPEG,
+    EImageMimeType.PNG,
+    EImageMimeType.JPG,
+  ];
+
+  const mimetype = file.type.toLowerCase() as EImageMimeType;
+  if (!allowedMimeTypes.includes(mimetype)) {
+    throw new Error("Only JPEG, or PNG images are allowed.");
+  }
+
+  const MAX_SIZE_MB = 10;
+  if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+    throw new Error(`File size exceeds ${MAX_SIZE_MB}MB.`);
+  }
+
+  const ext = file.name.split(".").pop()?.toLowerCase();
+  if (!ext) throw new Error("Invalid file extension.");
+
+  const filename = `photo.${ext}`;
+
+  const res = await fetch("/api/v1/presign", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      folder,
+      filename,
+      mimetype,
+      filesize: file.size,
+      trackerId,
+    }),
+  });
+
+  if (!res.ok) {
+    const { message } = await res.json();
+    throw new Error(message || "Failed to get presigned URL.");
+  }
+
+  const { data }: { data: IPresignResponse } = await res.json();
+
+  console.log(data)
+  await fetch(data.url, {
+    method: "PUT",
+    headers: { "Content-Type": mimetype },
+    body: file,
+  });
+
+  return { s3Key: data.key, url: data.url };
 }

@@ -1,6 +1,6 @@
 import { IS_PRODUCTION } from "@/config/env";
 import { COMPANIES } from "@/constants/companies";
-import { differenceInDays, differenceInMonths } from "date-fns";
+import { differenceInDays } from "date-fns";
 import { IEmploymentEntry } from "@/types/applicationForm.types";
 import mongoose from "mongoose";
 
@@ -140,7 +140,6 @@ export function validateEmploymentHistory(
   }
 
   // Convert days to months for comparison (using 30.44 days per month average)
-  const totalMonths = Math.round(totalDays / 30.44);
   const requiredDaysFor2Years = 730; // 2 years = 730 days
   const requiredDaysFor10Years = 3650; // 10 years = 3650 days
 

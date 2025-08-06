@@ -3,6 +3,11 @@ import { z } from "zod";
 import { ELicenseType } from "@/types/shared.types";
 import { hasRecentAddressCoverage } from "@/lib/utils/hasMinimumAddressDuration";
 
+export const photoSchema = z.object({
+  s3Key: z.string(),
+  url: z.string(),
+});
+
 // Single license schema for all licenses (like addressEntrySchema)
 export const licenseEntrySchema = z.object({
   licenseNumber: z.string().min(1, "License number is required"),
@@ -10,13 +15,13 @@ export const licenseEntrySchema = z.object({
   licenseType: z.nativeEnum(ELicenseType),
   licenseExpiry: z.string().min(1, "Expiry date is required"),
 
-  licenseFrontPhoto: z
-    .instanceof(File, { message: "Front photo is required" })
-    .refine((file) => file.size > 0, { message: "Front photo is required" }),
+  licenseFrontPhoto: photoSchema.refine((photo) => photo.s3Key && photo.url, {
+    message: "Front photo is required",
+  }),
 
-  licenseBackPhoto: z
-    .instanceof(File, { message: "Back photo is required" })
-    .refine((file) => file.size > 0, { message: "Back photo is required" }),
+  licenseBackPhoto: photoSchema.refine((photo) => photo.s3Key && photo.url, {
+    message: "Back photo is required",
+  }),
 });
 
 export const addressEntrySchema = z.object({
@@ -44,12 +49,12 @@ export const addressEntrySchema = z.object({
 }).refine((data) => {
   const fromDate = new Date(data.from);
   const toDate = new Date(data.to);
-  
+
   // Check if dates are valid
   if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
     return false;
   }
-  
+
   // Check if end date is after start date
   return toDate > fromDate;
 }, {
@@ -61,22 +66,22 @@ export const applicationFormPage1Schema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   sin: z.string().min(1, "SIN is required"),
-  sinPhoto: z
-    .instanceof(File, { message: "SIN photo is required" })
-    .refine((file) => file.size > 0, { message: "SIN photo is required" }),
+  sinPhoto: photoSchema.refine((photo) => photo.s3Key && photo.url, {
+    message: "SIN photo is required",
+  }),
   dob: z.string().min(1, "Date of birth is required").refine((dob) => {
     const birthDate = new Date(dob);
     const today = new Date();
     const age = today.getFullYear() - birthDate.getFullYear();
-    
+
     // Check if birthday has occurred this year
     const monthDiff = today.getMonth() - birthDate.getMonth();
     const dayDiff = today.getDate() - birthDate.getDate();
-    
-    const actualAge = monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) 
-      ? age - 1 
+
+    const actualAge = monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)
+      ? age - 1
       : age;
-    
+
     return actualAge >= 23 && actualAge <= 100;
   }, {
     message: "Age must be between 23 and 100 years old"
@@ -126,44 +131,44 @@ export const applicationFormPage1Schema = z.object({
     .min(1, "Address history is required")
     .refine((addresses) => {
       // Check for overlapping addresses
-      const sortedAddresses = [...addresses].sort((a, b) => 
+      const sortedAddresses = [...addresses].sort((a, b) =>
         new Date(a.from).getTime() - new Date(b.from).getTime()
       );
-      
+
       for (let i = 0; i < sortedAddresses.length - 1; i++) {
         const current = sortedAddresses[i];
         const next = sortedAddresses[i + 1];
-        
+
         const currentEnd = new Date(current.to);
         const nextStart = new Date(next.from);
-        
+
         // Check for overlap (current end date is after next start date)
         if (currentEnd > nextStart) {
           return false;
         }
-        
+
         // Check for unreasonable gaps (more than 2 years between addresses)
         const gapInDays = (nextStart.getTime() - currentEnd.getTime()) / (1000 * 60 * 60 * 24);
         if (gapInDays > 730) { // 2 years = 730 days
           return false;
         }
       }
-      
+
       return true;
     }, {
       message: "Addresses cannot overlap and gaps between addresses cannot exceed 2 years"
     })
     .refine((addresses) => {
       // Check if the most recent address extends to present or very recent past
-      const sortedAddresses = [...addresses].sort((a, b) => 
+      const sortedAddresses = [...addresses].sort((a, b) =>
         new Date(a.from).getTime() - new Date(b.from).getTime()
       );
-      
+
       const mostRecentAddress = sortedAddresses[sortedAddresses.length - 1];
       const mostRecentEndDate = new Date(mostRecentAddress.to);
       const today = new Date();
       const sixMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 6, today.getDate());
-      
+
       return mostRecentEndDate >= sixMonthsAgo;
     }, {
       message: "Your most recent address must extend to within the last 6 months"
