@@ -8,10 +8,9 @@ import {
   preQualificationQuestions,
   categoryQuestions,
 } from "@/constants/form-questions/preQualification";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { ArrowRight } from "lucide-react";
-import { usePrequalificationStore } from "@/store/usePrequalificationStore";
 import { useCompanySelection } from "@/hooks/useCompanySelection";
 import {
   EDriverType,
@@ -20,14 +19,15 @@ import {
   IPreQualifications,
 } from "@/types/preQualifications.types";
 
-export default function PreQualificationPage() {
+export default function PreQualificationWithIdPage() {
   const { t } = useTranslation("common");
   const router = useRouter();
-  const { data: prequalData, setData } = usePrequalificationStore();
+  const { id } = useParams();
   const { selectedCompany } = useCompanySelection();
   const [showFlatbedPopup, setShowFlatbedPopup] = useState<null | "yes" | "no">(
     null
   );
+  const [loading, setLoading] = useState(true);
 
   const filteredPreQualificationQuestions = useMemo(() => {
     if (!selectedCompany) return preQualificationQuestions;
@@ -51,12 +51,24 @@ export default function PreQualificationPage() {
     ),
   });
 
-  // 🚀 Hydrate from Zustand local storage if data exists
+  // Fetch prequalification from backend
   useEffect(() => {
-    if (prequalData) {
-      reset(transformToFormValues(prequalData));
-    }
-  }, [prequalData, reset]);
+    const fetchData = async () => {
+      try {
+        const res = await fetch(`/api/v1/onboarding/${id}/prequalifications`);
+        if (!res.ok) throw new Error("Failed to load prequalification data");
+        const data: IPreQualifications = await res.json();
+        reset(transformToFormValues(data));
+      } catch (err) {
+        console.error(err);
+        // Optionally redirect or show error toast
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) fetchData();
+  }, [id, reset]);
 
   const flatbedExperience = useWatch({ control, name: "flatbedExperience" });
 
@@ -75,8 +87,8 @@ export default function PreQualificationPage() {
     return !isFieldRendered || value !== "";
   });
 
-  const onSubmit = (data: Record<string, string>) => {
-    const prequalData: IPreQualifications = {
+  const onSubmit = async (data: Record<string, string>) => {
+    const transformed: IPreQualifications = {
       over23Local: data.over23Local === "form.yes",
       over25CrossBorder: data.over25CrossBorder === "form.yes",
       canDriveManual: data.canDriveManual === "form.yes",
@@ -108,13 +120,26 @@ export default function PreQualificationPage() {
     };
 
     if (selectedCompany?.countryCode !== "US") {
-      prequalData.canCrossBorderUSA = data.canCrossBorderUSA === "form.yes";
-      prequalData.hasFASTCard = data.hasFASTCard === "form.yes";
+      transformed.canCrossBorderUSA = data.canCrossBorderUSA === "form.yes";
+      transformed.hasFASTCard = data.hasFASTCard === "form.yes";
     }
 
-    setData(prequalData);
-    router.push("/onboarding/application-form");
+    try {
+      const res = await fetch(`/api/v1/onboarding/${id}/prequalifications`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(transformed),
+      });
+
+      if (!res.ok) throw new Error("Failed to update prequalifications");
+      const { onboardingContext } = await res.json();
+      router.push(onboardingContext.nextUrl);
+    } catch (err) {
+      console.error(err);
+    }
   };
+
+  if (loading) return <p className="text-center py-10">Loading...</p>;
 
   return (
     <>

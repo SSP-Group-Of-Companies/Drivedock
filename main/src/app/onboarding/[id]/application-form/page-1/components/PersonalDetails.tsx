@@ -1,3 +1,13 @@
+/**
+ * PersonalDetails.tsx
+ *
+ * 👤 Renders the first section of the Driver Application Form:
+ * - Name, SIN, Date of Birth, Contact Info, and Proof of Age
+ * - Includes SIN validation via debounce + server check
+ * - Includes live age calculation and dynamic phone formatting
+ * - Controlled via React Hook Form context
+ */
+
 "use client";
 
 import { useFormContext, useWatch } from "react-hook-form";
@@ -5,6 +15,35 @@ import { useTranslation } from "react-i18next";
 import { useState, useCallback } from "react";
 import { Eye, EyeOff, Camera, X } from "lucide-react";
 import Image from "next/image";
+
+import TextInput from "@/app/onboarding/components/TextInput";
+import PhoneInput from "@/app/onboarding/components/PhoneInput";
+
+// Helpers
+const formatPhoneNumber = (value: string) => {
+  const cleaned = value.replace(/\D/g, "");
+  if (cleaned.length <= 3) return cleaned;
+  if (cleaned.length <= 6) return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
+  return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(
+    6,
+    10
+  )}`;
+};
+
+const getDisplayPhone = (value: string) => {
+  if (!value) return "";
+  return formatPhoneNumber(value);
+};
+
+const calculateAge = (dob: string) => {
+  if (!dob) return null;
+  const birthDate = new Date(dob);
+  const today = new Date();
+  const age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  const dayDiff = today.getDate() - birthDate.getDate();
+  return monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
+};
 
 export default function PersonalDetails() {
   const {
@@ -15,30 +54,12 @@ export default function PersonalDetails() {
   } = useFormContext();
   const { t } = useTranslation("common");
 
+  const sinValue = useWatch({ control, name: "sin" });
+  const dobValue = useWatch({ control, name: "dob" });
   const canProvideProofChecked = useWatch({
     control,
     name: "canProvideProofOfAge",
   });
-  const dobValue = useWatch({ control, name: "dob" });
-
-  // Calculate age from DOB
-  const calculateAge = (dob: string) => {
-    if (!dob) return null;
-    const birthDate = new Date(dob);
-    const today = new Date();
-    const age = today.getFullYear() - birthDate.getFullYear();
-
-    // Check if birthday has occurred this year
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    const dayDiff = today.getDate() - birthDate.getDate();
-
-    const actualAge =
-      monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
-
-    return actualAge;
-  };
-
-  const calculatedAge = dobValue ? calculateAge(dobValue) : null;
 
   const [showSIN, setShowSIN] = useState(false);
   const [sinPhotoPreview, setSinPhotoPreview] = useState<string | null>(null);
@@ -47,8 +68,7 @@ export default function PersonalDetails() {
   >("idle");
   const [sinValidationMessage, setSinValidationMessage] = useState("");
 
-  // Get the current SIN value and format it for display
-  const sinValue = useWatch({ control, name: "sin" });
+  const calculatedAge = dobValue ? calculateAge(dobValue) : null;
   const displaySIN = sinValue
     ? sinValue
         .replace(/^(\d{3})(\d)/, "$1-$2")
@@ -56,31 +76,25 @@ export default function PersonalDetails() {
     : "";
 
   const validateSIN = useCallback(async (sin: string) => {
-    if (sin.length !== 9) {
-      setSinValidationStatus("idle");
-      setSinValidationMessage("");
-      return;
-    }
+    if (sin.length !== 9) return;
 
     setSinValidationStatus("checking");
     setSinValidationMessage("");
 
     try {
-      const response = await fetch("/api/v1/onboarding/validate-sin", {
+      const res = await fetch("/api/v1/onboarding/validate-sin", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sin }),
       });
 
-      if (response.ok) {
+      if (res.ok) {
         setSinValidationStatus("valid");
         setSinValidationMessage("SIN is available");
       } else {
-        const errorData = await response.json();
+        const data = await res.json();
         setSinValidationStatus("invalid");
-        setSinValidationMessage(errorData.message || "SIN already exists");
+        setSinValidationMessage(data.message || "SIN already exists");
       }
     } catch {
       setSinValidationStatus("invalid");
@@ -88,24 +102,19 @@ export default function PersonalDetails() {
     }
   }, []);
 
-  // Debounced SIN validation
-  const debouncedValidateSIN = useCallback(
-    (() => {
-      let timeoutId: NodeJS.Timeout;
-      return (sin: string) => {
-        clearTimeout(timeoutId);
-        timeoutId = setTimeout(() => validateSIN(sin), 500); // 500ms delay
-      };
-    })(),
-    [validateSIN]
-  );
+  const debouncedValidateSIN = useCallback(() => {
+    let timeout: NodeJS.Timeout;
+    return (sin: string) => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => validateSIN(sin), 500);
+    };
+  }, [validateSIN])();
 
   const handleSINChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/\D/g, "").slice(0, 9);
     setValue("sin", raw, { shouldValidate: true });
-    setValue("sinEncrypted", raw, { shouldValidate: true }); // Set both fields
+    setValue("sinEncrypted", raw, { shouldValidate: true });
 
-    // Validate SIN when it reaches 9 digits
     if (raw.length === 9) {
       debouncedValidateSIN(raw);
     } else {
@@ -114,22 +123,29 @@ export default function PersonalDetails() {
     }
   };
 
+  const handlePhoneChange = (
+    field: "phoneHome" | "phoneCell" | "emergencyContactPhone",
+    value: string
+  ) => {
+    const raw = value.replace(/\D/g, "").slice(0, 10);
+    setValue(field, raw, { shouldValidate: true });
+  };
+
   const handleSinPhotoUpload = (file: File | null) => {
     if (file) {
       const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
       if (!allowedTypes.includes(file.type)) {
-        alert("SIN photo must be a JPEG, PNG, or WebP image.");
+        alert("SIN photo must be JPEG, PNG, or WebP.");
         return;
       }
 
-      const MAX_SIZE = 10 * 1024 * 1024;
-      if (file.size > MAX_SIZE) {
-        alert("SIN photo must be less than 10MB.");
+      const maxSize = 10 * 1024 * 1024;
+      if (file.size > maxSize) {
+        alert("SIN photo must be under 10MB.");
         return;
       }
 
       setValue("sinPhoto", file, { shouldValidate: true });
-
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result as string;
@@ -142,76 +158,30 @@ export default function PersonalDetails() {
     }
   };
 
-  // Phone formatting functions
-  const formatPhoneNumber = (value: string) => {
-    const cleaned = value.replace(/\D/g, "");
-    if (cleaned.length <= 3) return cleaned;
-    if (cleaned.length <= 6)
-      return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
-    return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(
-      6,
-      10
-    )}`;
-  };
-
-  const handlePhoneChange = (
-    field: "phoneHome" | "phoneCell" | "emergencyContactPhone",
-    value: string
-  ) => {
-    const raw = value.replace(/\D/g, "").slice(0, 10);
-    setValue(field, raw, { shouldValidate: true });
-  };
-
-  const getDisplayPhone = (value: string) => {
-    if (!value) return "";
-    return formatPhoneNumber(value);
-  };
-
   return (
     <section className="space-y-6 border border-gray-200 p-6 rounded-lg bg-white/80 shadow-sm">
       <h2 className="text-center text-lg font-semibold text-gray-800">
         {t("form.page1.sections.personal")}
       </h2>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* First Name */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            {t("form.fields.firstName")}
-          </label>
-          <input
-            {...register("firstName")}
-            type="text"
-            name="firstName"
-            data-field="firstName"
-            placeholder={t("form.placeholders.firstName")}
-            className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
-          />
-          {errors.firstName && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.firstName.message?.toString()}
-            </p>
-          )}
-        </div>
+        <TextInput
+          name="firstName"
+          label={t("form.fields.firstName")}
+          placeholder={t("form.placeholders.firstName")}
+          error={errors.firstName}
+          register={register}
+        />
 
         {/* Last Name */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            {t("form.fields.lastName")}
-          </label>
-          <input
-            {...register("lastName")}
-            type="text"
-            name="lastName"
-            data-field="lastName"
-            placeholder={t("form.placeholders.lastName")}
-            className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
-          />
-          {errors.lastName && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.lastName.message?.toString()}
-            </p>
-          )}
-        </div>
+        <TextInput
+          name="lastName"
+          label={t("form.fields.lastName")}
+          placeholder={t("form.placeholders.lastName")}
+          error={errors.lastName}
+          register={register}
+        />
 
         {/* SIN Number */}
         <div className="relative">
@@ -435,143 +405,52 @@ export default function PersonalDetails() {
           )}
         </div>
 
-        {/* Phone (Home) */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            {t("form.fields.phoneHome")}
-          </label>
-          <div className="relative mt-1">
-            <div className="flex">
-              {/* Country Code */}
-              <div className="flex items-center px-3 py-2 border border-r-0 border-gray-300 rounded-l-md bg-gray-50 text-sm font-medium text-gray-700">
-                +1
-              </div>
-
-              {/* Phone Input */}
-              <input
-                type="tel"
-                placeholder="(555) 123-4567"
-                value={getDisplayPhone(
-                  useWatch({ control, name: "phoneHome" }) || ""
-                )}
-                onChange={(e) => handlePhoneChange("phoneHome", e.target.value)}
-                data-field="phoneHome"
-                className="flex-1 py-2 px-3 border border-gray-300 rounded-r-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md focus:border-transparent"
-              />
-            </div>
-          </div>
-          {errors.phoneHome && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.phoneHome.message?.toString()}
-            </p>
+        {/* Phone Fields */}
+        {/* Home */}
+        <PhoneInput
+          label={t("form.fields.phoneHome")}
+          value={getDisplayPhone(
+            useWatch({ control, name: "phoneHome" }) || ""
           )}
-        </div>
+          onChange={(v) => handlePhoneChange("phoneHome", v)}
+          error={errors.phoneHome}
+        />
 
-        {/* Phone (Cell) */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            {t("form.fields.phoneCell")}
-          </label>
-          <div className="relative mt-1">
-            <div className="flex">
-              {/* Country Code */}
-              <div className="flex items-center px-3 py-2 border border-r-0 border-gray-300 rounded-l-md bg-gray-50 text-sm font-medium text-gray-700">
-                +1
-              </div>
-
-              {/* Phone Input */}
-              <input
-                type="tel"
-                placeholder="(555) 123-4567"
-                value={getDisplayPhone(
-                  useWatch({ control, name: "phoneCell" }) || ""
-                )}
-                onChange={(e) => handlePhoneChange("phoneCell", e.target.value)}
-                data-field="phoneCell"
-                className="flex-1 py-2 px-3 border border-gray-300 rounded-r-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md focus:border-transparent"
-              />
-            </div>
-          </div>
-          {errors.phoneCell && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.phoneCell.message?.toString()}
-            </p>
+        {/* Cell */}
+        <PhoneInput
+          label={t("form.fields.phoneCell")}
+          value={getDisplayPhone(
+            useWatch({ control, name: "phoneCell" }) || ""
           )}
-        </div>
+          onChange={(v) => handlePhoneChange("phoneCell", v)}
+          error={errors.phoneCell}
+        />
 
         {/* Email */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            {t("form.fields.email")}
-          </label>
-          <input
-            {...register("email")}
-            type="email"
-            name="email"
-            data-field="email"
-            placeholder={t("form.placeholders.email")}
-            className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
-          />
-          {errors.email && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.email.message?.toString()}
-            </p>
-          )}
-        </div>
+        <TextInput
+          name="email"
+          label={t("form.fields.email")}
+          placeholder={t("form.placeholders.email")}
+          error={errors.email}
+          register={register}
+        />
 
-        {/* Emergency Contact Name */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            {t("form.fields.emergencyContactName")}
-          </label>
-          <input
-            {...register("emergencyContactName")}
-            type="text"
-            name="emergencyContactName"
-            data-field="emergencyContactName"
-            placeholder={t("form.placeholders.emergencyContactName")}
-            className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
-          />
-          {errors.emergencyContactName && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.emergencyContactName.message?.toString()}
-            </p>
+        {/* Emergency Contact */}
+        <TextInput
+          name="emergencyContactName"
+          label={t("form.fields.emergencyContactName")}
+          placeholder={t("form.placeholders.emergencyContactName")}
+          error={errors.emergencyContactName}
+          register={register}
+        />
+        <PhoneInput
+          label={t("form.fields.emergencyContactPhone")}
+          value={getDisplayPhone(
+            useWatch({ control, name: "emergencyContactPhone" }) || ""
           )}
-        </div>
-
-        {/* Emergency Contact Phone */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            {t("form.fields.emergencyContactPhone")}
-          </label>
-          <div className="relative mt-1">
-            <div className="flex">
-              {/* Country Code */}
-              <div className="flex items-center px-3 py-2 border border-r-0 border-gray-300 rounded-l-md bg-gray-50 text-sm font-medium text-gray-700">
-                +1
-              </div>
-
-              {/* Phone Input */}
-              <input
-                type="tel"
-                placeholder="(555) 123-4567"
-                value={getDisplayPhone(
-                  useWatch({ control, name: "emergencyContactPhone" }) || ""
-                )}
-                onChange={(e) =>
-                  handlePhoneChange("emergencyContactPhone", e.target.value)
-                }
-                data-field="emergencyContactPhone"
-                className="flex-1 py-2 px-3 border border-gray-300 rounded-r-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md focus:border-transparent"
-              />
-            </div>
-          </div>
-          {errors.emergencyContactPhone && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.emergencyContactPhone.message?.toString()}
-            </p>
-          )}
-        </div>
+          onChange={(v) => handlePhoneChange("emergencyContactPhone", v)}
+          error={errors.emergencyContactPhone}
+        />
       </div>
     </section>
   );

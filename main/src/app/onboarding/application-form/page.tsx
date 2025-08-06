@@ -1,3 +1,18 @@
+/**
+ * DriveDock Onboarding - Page 1 Initial Entry
+ *
+ * This client component handles:
+ * - The first-time rendering of the Application Form (Page 1)
+ * - Collects both `applicationFormPage1` and `prequalifications` data
+ * - Submits to POST /api/v1/onboarding/application-form to create tracker
+ *
+ * This page is used only **once** before the tracker ID exists.
+ * After submission, routing shifts to ID-based folder structure.
+ *
+ * @route /onboarding/application-form
+ * @owner SSP Tech Team - Faruq Adebayo
+ */
+
 "use client";
 
 import { useForm, FormProvider } from "react-hook-form";
@@ -7,7 +22,6 @@ import {
   ApplicationFormPage1Schema,
 } from "@/lib/zodSchemas/applicationFormPage1.schema";
 import { ELicenseType } from "@/types/shared.types";
-import { useCompanySelection } from "@/hooks/useCompanySelection";
 
 // Components
 import PersonalDetails from "../[id]/application-form/page-1/components/PersonalDetails";
@@ -20,8 +34,6 @@ import ContinueButton from "./ContinueButton";
 import { page1Config } from "@/lib/frontendConfigs/applicationFormConfigs/page1Config";
 
 export default function ApplicationFormPage1() {
-  const { selectedCompany } = useCompanySelection();
-
   const methods = useForm<ApplicationFormPage1Schema>({
     resolver: zodResolver(applicationFormPage1Schema),
     mode: "onChange",
@@ -54,17 +66,9 @@ export default function ApplicationFormPage1() {
     },
   });
 
-  const onSubmit = () => {
-    // Not used — handled by ContinueButton
-  };
-
   return (
     <FormProvider {...methods}>
-      <form
-        className="space-y-8"
-        onSubmit={methods.handleSubmit(onSubmit)}
-        noValidate
-      >
+      <form className="space-y-8" noValidate>
         <PersonalDetails />
         <PlaceOfBirth />
         <LicenseSection />

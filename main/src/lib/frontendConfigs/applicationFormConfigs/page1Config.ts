@@ -1,4 +1,25 @@
-// src/lib/frontendConfigs/applicationFormConfigs/page1Config.ts
+/**
+ * page1Config.ts
+ *
+ * Configuration file for Application Form Page 1 in the DriveDock Onboarding Flow.
+ *
+ * This config enables dynamic handling of:
+ * - Zod validation field paths
+ * - FormData construction for both POST and PATCH logic
+ * - Tracker-aware payload routing
+ * - Dynamic routing to the next onboarding step
+ *
+ * POST: Triggered on first-time form submission from /onboarding/application-form
+ * - Uses multipart/form-data with "applicationFormPage1" and "prequalifications"
+ * - Includes sinPhoto and AZ license photo uploads
+ *
+ * PATCH: Triggered from /onboarding/[id]/application-form/page-1
+ * - Uses multipart/form-data with "page1" key only
+ * - Tracker ID must be passed in
+ *
+ * Used by the shared <ContinueButton /> component to ensure consistent form behavior across steps.
+ */
+
 "use client";
 
 import { ApplicationFormPage1Schema } from "@/lib/zodSchemas/applicationFormPage1.schema";
@@ -63,7 +84,7 @@ export const page1Config: Page1FormPageConfig = {
     values: ApplicationFormPage1Schema,
     prequalifications: IPreQualifications,
     companyId: string,
-    tracker?: IOnboardingTracker // ✅ Optional for PATCH
+    tracker?: IOnboardingTracker // Optional for PATCH
   ) => {
     const formData = new FormData();
 
