@@ -2,11 +2,21 @@ import { Document } from "mongoose";
 import { ELicenseType, IPhoto } from "./shared.types";
 
 // Page 1
+export interface Iaddress {
+  address: string;
+  city: string;
+  stateOrProvince: string;
+  postalCode: string;
+  from: string | Date; // Format: YYYY-MM-DD
+  to: string | Date; // Format: YYYY-MM-DD
+}
+
+
 export interface ILicenseEntry {
   licenseNumber: string;
   licenseStateOrProvince: string;
   licenseType: ELicenseType;
-  licenseExpiry: string;
+  licenseExpiry: string | Date; // Format: YYYY-MM-DD
   licenseFrontPhoto: IPhoto;
   licenseBackPhoto: IPhoto;
 }
@@ -35,14 +45,7 @@ export interface IApplicationFormPage1 {
   licenses: Array<ILicenseEntry>;
 
   // Address
-  addresses: Array<{
-    address: string;
-    city: string;
-    stateOrProvince: string;
-    postalCode: string;
-    from: string; // Format: YYYY-MM-DD
-    to: string; // Format: YYYY-MM-DD
-  }>;
+  addresses: Array<Iaddress>;
 }
 
 // Page 2
@@ -201,4 +204,4 @@ export interface IApplicationForm {
   updatedAt: Date;
 }
 
-export interface IApplicationFormDoc extends IApplicationForm, Document {}
+export interface IApplicationFormDoc extends IApplicationForm, Document { }

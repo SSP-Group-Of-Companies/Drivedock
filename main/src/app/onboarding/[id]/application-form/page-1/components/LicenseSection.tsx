@@ -10,7 +10,7 @@
 
 "use client";
 
-import { useFieldArray, useFormContext } from "react-hook-form";
+import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { ELicenseType } from "@/types/shared.types";
@@ -18,6 +18,9 @@ import { FieldErrors } from "react-hook-form";
 import { ApplicationFormPage1Schema } from "@/lib/zodSchemas/applicationFormPage1.schema";
 import { Camera, Upload, X } from "lucide-react";
 import Image from "next/image";
+import { uploadToS3Presigned } from "@/lib/utils/s3Upload";
+import { ES3Folder } from "@/types/aws.types";
+import { useParams } from "next/navigation";
 
 export default function LicenseSection() {
   const { t } = useTranslation("common");
@@ -27,6 +30,8 @@ export default function LicenseSection() {
     formState: { errors },
     setValue,
   } = useFormContext();
+
+  const { id } = useParams<{ id: string }>();
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -38,52 +43,113 @@ export default function LicenseSection() {
   );
   const [backPhotoPreview, setBackPhotoPreview] = useState<string | null>(null);
 
-  const handlePhotoUpload = (file: File | null, type: "front" | "back") => {
-    if (file) {
-      const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-      if (!allowedTypes.includes(file.type)) {
-        alert(
-          `${
-            type === "front" ? "Front" : "Back"
-          } photo must be JPEG, PNG, or WebP.`
-        );
-        return;
-      }
+  const frontPhotoS3Key = useWatch({
+    control,
+    name: "licenses.0.licenseFrontPhoto.s3Key",
+  });
+  const backPhotoS3Key = useWatch({
+    control,
+    name: "licenses.0.licenseBackPhoto.s3Key",
+  });
+  const [frontPhotoStatus, setFrontPhotoStatus] = useState<
+    "idle" | "uploading" | "deleting" | "error"
+  >("idle");
+  const [backPhotoStatus, setBackPhotoStatus] = useState<
+    "idle" | "uploading" | "deleting" | "error"
+  >("idle");
+  const [frontPhotoMessage, setFrontPhotoMessage] = useState("");
+  const [backPhotoMessage, setBackPhotoMessage] = useState("");
 
-      const MAX_SIZE = 10 * 1024 * 1024;
-      if (file.size > MAX_SIZE) {
-        alert(
-          `${type === "front" ? "Front" : "Back"} photo must be less than 10MB.`
-        );
-        return;
-      }
+  const handleLicensePhotoUpload = async (
+    file: File | null,
+    side: "front" | "back"
+  ) => {
+    const fieldKey =
+      side === "front"
+        ? "licenses.0.licenseFrontPhoto"
+        : "licenses.0.licenseBackPhoto";
 
-      const key = `licenses.0.${
-        type === "front" ? "licenseFrontPhoto" : "licenseBackPhoto"
-      }` as const;
-      setValue(key, file, { shouldValidate: true });
+    const setPreview =
+      side === "front" ? setFrontPhotoPreview : setBackPhotoPreview;
+    const setStatus =
+      side === "front" ? setFrontPhotoStatus : setBackPhotoStatus;
+    const setMessage =
+      side === "front" ? setFrontPhotoMessage : setBackPhotoMessage;
+
+    if (!file) {
+      setValue(fieldKey, undefined, { shouldValidate: true });
+      setPreview(null);
+      setStatus("idle");
+      setMessage("");
+      return;
+    }
+
+    setStatus("uploading");
+    setMessage("");
+
+    try {
+      const result = await uploadToS3Presigned({
+        file,
+        folder: ES3Folder.LICENSES,
+        trackerId: id,
+      });
+
+      setValue(fieldKey, result, { shouldValidate: true });
 
       const reader = new FileReader();
       reader.onload = (e) => {
-        const result = e.target?.result as string;
-        if (type === "front") {
-          setFrontPhotoPreview(result);
-        } else {
-          setBackPhotoPreview(result);
-        }
+        const preview = e.target?.result as string;
+        setPreview(preview);
       };
       reader.readAsDataURL(file);
-    } else {
-      const key = `licenses.0.${
-        type === "front" ? "licenseFrontPhoto" : "licenseBackPhoto"
-      }` as const;
-      setValue(key, undefined, { shouldValidate: true });
-      if (type === "front") {
-        setFrontPhotoPreview(null);
-      } else {
-        setBackPhotoPreview(null);
+
+      setStatus("idle");
+      setMessage("Upload successful");
+    } catch (error: any) {
+      console.error(`License ${side} upload error:`, error);
+      setStatus("error");
+      setMessage(error.message || `Failed to upload ${side} photo.`);
+    }
+  };
+
+  const handleLicensePhotoRemove = async (
+    side: "front" | "back",
+    s3Key: string
+  ) => {
+    const fieldKey =
+      side === "front"
+        ? "licenses.0.licenseFrontPhoto"
+        : "licenses.0.licenseBackPhoto";
+
+    const setPreview =
+      side === "front" ? setFrontPhotoPreview : setBackPhotoPreview;
+    const setStatus =
+      side === "front" ? setFrontPhotoStatus : setBackPhotoStatus;
+    const setMessage =
+      side === "front" ? setFrontPhotoMessage : setBackPhotoMessage;
+
+    setStatus("deleting");
+    setMessage("");
+
+    if (s3Key?.startsWith("temp-files/")) {
+      try {
+        await fetch("/api/v1/delete-temp-files", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ keys: [s3Key] }),
+        });
+
+        setMessage("Photo removed");
+      } catch (err) {
+        console.error(`Failed to delete temp S3 ${side} photo:`, err);
+        setStatus("error");
+        setMessage("Delete failed");
       }
     }
+
+    setValue(fieldKey, undefined, { shouldValidate: true });
+    setPreview(null);
+    setStatus("idle");
   };
 
   const licenseErrors =
@@ -193,27 +259,185 @@ export default function LicenseSection() {
           {/* Photo Uploads (Only for AZ license - index 0) */}
           {index === 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-              {/* License Front Photo */}
-              <PhotoUpload
-                preview={frontPhotoPreview}
-                onClear={() => handlePhotoUpload(null, "front")}
-                onSelect={(f) => handlePhotoUpload(f, "front")}
-                id="licenseFrontPhoto"
-                label={t("form.fields.licenseFrontPhoto")}
-                register={register}
-                error={licenseErrors?.[0]?.licenseFrontPhoto?.message}
-              />
+              {/* License Front Photo Upload */}
+              <div data-field="licenses.0.licenseFrontPhoto">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t("form.fields.licenseFrontPhoto")}
+                </label>
+                {frontPhotoPreview ? (
+                  <div className="relative">
+                    <Image
+                      src={frontPhotoPreview}
+                      alt="License Front Preview"
+                      width={400}
+                      height={128}
+                      className="w-full h-32 object-cover rounded-lg border border-gray-300"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleLicensePhotoRemove("front", frontPhotoS3Key)
+                      }
+                      disabled={
+                        frontPhotoStatus === "uploading" ||
+                        frontPhotoStatus === "deleting"
+                      }
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ) : (
+                  <label
+                    htmlFor="licenseFrontPhoto"
+                    className="cursor-pointer flex flex-col items-center justify-center py-6 px-4 mt-1 w-full text-sm text-gray-600 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 hover:border-gray-400 transition-all duration-200 group"
+                  >
+                    <Camera className="w-8 h-8 text-gray-400 mb-2 group-hover:text-gray-600" />
+                    <span className="font-medium text-gray-400">
+                      {t("form.fields.licensePhotoDesc")}
+                    </span>
+                  </label>
+                )}
+                <input
+                  id="licenseFrontPhoto"
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  {...register(`licenses.0.licenseFrontPhoto`)}
+                  onChange={(e) =>
+                    handleLicensePhotoUpload(
+                      e.target.files?.[0] || null,
+                      "front"
+                    )
+                  }
+                  data-field="licenses.0.licenseFrontPhoto"
+                  className="hidden"
+                />
+                {frontPhotoStatus !== "uploading" &&
+                  licenseErrors?.[0]?.licenseFrontPhoto && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {licenseErrors?.[0]?.licenseFrontPhoto?.message?.toString()}
+                    </p>
+                  )}
 
-              {/* License Back Photo */}
-              <PhotoUpload
-                preview={backPhotoPreview}
-                onClear={() => handlePhotoUpload(null, "back")}
-                onSelect={(f) => handlePhotoUpload(f, "back")}
-                id="licenseBackPhoto"
-                label={t("form.fields.licenseBackPhoto")}
-                register={register}
-                error={licenseErrors?.[0]?.licenseBackPhoto?.message}
-              />
+                {frontPhotoStatus === "uploading" && (
+                  <p className="text-yellow-600 text-sm mt-1 flex items-center">
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-600 mr-2"></div>
+                    Uploading...
+                  </p>
+                )}
+
+                {frontPhotoStatus === "deleting" && (
+                  <p className="text-yellow-600 text-sm mt-1 flex items-center">
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-600 mr-2"></div>
+                    Deleting...
+                  </p>
+                )}
+
+                {frontPhotoStatus === "error" && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {frontPhotoMessage}
+                  </p>
+                )}
+
+                {!licenseErrors?.[0]?.licenseFrontPhoto &&
+                  frontPhotoStatus === "idle" &&
+                  frontPhotoMessage && (
+                    <p className="text-green-600 text-sm mt-1">
+                      {frontPhotoMessage}
+                    </p>
+                  )}
+              </div>
+
+              {/* License Back Photo Upload */}
+              <div data-field="licenses.0.licenseBackPhoto">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t("form.fields.licenseBackPhoto")}
+                </label>
+                {backPhotoPreview ? (
+                  <div className="relative">
+                    <Image
+                      src={backPhotoPreview}
+                      alt="License Back Preview"
+                      width={400}
+                      height={128}
+                      className="w-full h-32 object-cover rounded-lg border border-gray-300"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleLicensePhotoRemove("back", backPhotoS3Key)
+                      }
+                      disabled={
+                        backPhotoStatus === "uploading" ||
+                        backPhotoStatus === "deleting"
+                      }
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ) : (
+                  <label
+                    htmlFor="licenseBackPhoto"
+                    className="cursor-pointer flex flex-col items-center justify-center py-6 px-4 mt-1 w-full text-sm text-gray-600 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 hover:border-gray-400 transition-all duration-200 group"
+                  >
+                    <Camera className="w-8 h-8 text-gray-400 mb-2 group-hover:text-gray-600" />
+                    <span className="font-medium text-gray-400">
+                      {t("form.fields.licensePhotoDesc")}
+                    </span>
+                  </label>
+                )}
+                <input
+                  id="licenseBackPhoto"
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  {...register(`licenses.0.licenseBackPhoto`)}
+                  onChange={(e) =>
+                    handleLicensePhotoUpload(
+                      e.target.files?.[0] || null,
+                      "back"
+                    )
+                  }
+                  data-field="licenses.0.licenseBackPhoto"
+                  className="hidden"
+                />
+                {backPhotoStatus !== "uploading" &&
+                  licenseErrors?.[0]?.licenseBackPhoto && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {licenseErrors?.[0]?.licenseBackPhoto?.message?.toString()}
+                    </p>
+                  )}
+
+                {backPhotoStatus === "uploading" && (
+                  <p className="text-yellow-600 text-sm mt-1 flex items-center">
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-600 mr-2"></div>
+                    Uploading...
+                  </p>
+                )}
+
+                {backPhotoStatus === "deleting" && (
+                  <p className="text-yellow-600 text-sm mt-1 flex items-center">
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-600 mr-2"></div>
+                    Deleting...
+                  </p>
+                )}
+
+                {backPhotoStatus === "error" && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {backPhotoMessage}
+                  </p>
+                )}
+
+                {!licenseErrors?.[0]?.licenseBackPhoto &&
+                  backPhotoStatus === "idle" &&
+                  backPhotoMessage && (
+                    <p className="text-green-600 text-sm mt-1">
+                      {backPhotoMessage}
+                    </p>
+                  )}
+              </div>
             </div>
           )}
         </div>

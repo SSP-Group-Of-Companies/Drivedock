@@ -1,3 +1,4 @@
+import { NextRequest } from "next/server";
 import { encryptString, hashString } from "@/lib/utils/cryptoUtils";
 import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
 import connectDB from "@/lib/utils/connectDB";
@@ -5,358 +6,179 @@ import ApplicationForm from "@/mongoose/models/applicationForm";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import PreQualifications from "@/mongoose/models/Prequalifications";
 import { FORM_RESUME_EXPIRES_AT_IN_MILSEC } from "@/config/env";
-import { uploadImageToS3, deleteS3Objects } from "@/lib/utils/s3Upload";
-import { HydratedDocument } from "mongoose";
+import { finalizePhoto } from "@/lib/utils/s3Upload";
+import { COMPANIES, ECompanyId } from "@/constants/companies";
 import {
   EApplicationType,
   EStepPath,
+  ICreateOnboardingPayload,
   IOnboardingTrackerDoc,
 } from "@/types/onboardingTracker.type";
+import { ILicenseEntry } from "@/types/applicationForm.types";
+import { HydratedDocument } from "mongoose";
 import { hasRecentAddressCoverage } from "@/lib/utils/hasMinimumAddressDuration";
-import { COMPANIES, ECompanyId } from "@/constants/companies";
-import { IPhoto } from "@/types/shared.types";
-import { validateImageFile } from "@/lib/utils/validationUtils";
+import { advanceStatus, buildTrackerContext } from "@/lib/utils/onboardingUtils";
+import { S3_SUBMISSIONS_FOLDER, S3_TEMP_FOLDER } from "@/constants/aws";
+import { ES3Folder } from "@/types/aws.types";
+import { ECountryCode, ELicenseType } from "@/types/shared.types";
 import {
-  IApplicationFormPage1,
-  ILicenseEntry,
-} from "@/types/applicationForm.types";
-import { IPreQualifications } from "@/types/preQualifications.types";
-import {
-  advanceStatus,
-  buildTrackerContext,
-} from "@/lib/utils/onboardingUtils";
-import { NextRequest } from "next/server";
-
-export const config = {
-  api: { bodyParser: false },
-};
+  isValidEmail,
+  isValidPhoneNumber,
+  isValidDOB,
+  isValidSIN,
+} from "@/lib/utils/validationUtils";
 
 export async function POST(req: NextRequest) {
-  const uploadedKeys: string[] = [];
+  await connectDB();
+  let onboardingDoc: HydratedDocument<IOnboardingTrackerDoc> | null = null;
   let appFormDoc = null;
   let preQualDoc = null;
-  let onboardingDoc: HydratedDocument<IOnboardingTrackerDoc> | null = null;
 
   try {
-    await connectDB();
-    const formData = await req.formData();
+    const {
+      applicationFormPage1: page1,
+      prequalifications,
+      companyId,
+      applicationType,
+    }: ICreateOnboardingPayload = await req.json();
 
-    const page1Raw = formData.get("applicationFormPage1") as string;
-    const prequalRaw = formData.get("prequalifications") as string;
-    const companyId = formData.get("companyId") as string;
-    const appTypeRaw = formData.get("applicationType") as string | null;
+    if (!page1 || !prequalifications || !companyId)
+      return errorResponse(400, "Missing required fields. 'page1', 'prequalifications', and 'companyId' are required.");
 
-    if (!page1Raw) return errorResponse(400, "Missing applicationFormPage1");
-    if (!prequalRaw) return errorResponse(400, "Missing prequalifications");
-    if (!companyId) return errorResponse(400, "Missing companyId");
-
-    // Enforce applicationType for ssp-canada
-    if (companyId === ECompanyId.SSP_CA) {
-      if (
-        !appTypeRaw ||
-        !Object.values(EApplicationType).includes(
-          appTypeRaw as EApplicationType
-        )
-      ) {
-        return errorResponse(
-          400,
-          "Field 'applicationType' is required for SSP-Canada and must be one of: " +
-            Object.values(EApplicationType).join(", ")
-        );
-      }
+    if (companyId === ECompanyId.SSP_CA &&
+      (!applicationType || !Object.values(EApplicationType).includes(applicationType))) {
+      return errorResponse(400, "Invalid or missing application type for SSP-Canada.");
     }
 
-    const isValidCompanyId = COMPANIES.some((c) => c.id === companyId);
-    console.log("Backend received companyId:", companyId);
-    console.log(
-      "Backend available companies:",
-      COMPANIES.map((c) => c.id)
-    );
-    console.log("Backend isValidCompanyId:", isValidCompanyId);
-    if (!isValidCompanyId) return errorResponse(400, "Invalid company id");
+    const company = COMPANIES.find((c) => c.id === companyId);
+    if (!company) return errorResponse(400, "Invalid company id");
 
-    let page1: IApplicationFormPage1, prequalifications: IPreQualifications;
-    try {
-      page1 = JSON.parse(page1Raw);
-      prequalifications = JSON.parse(prequalRaw);
-    } catch {
-      return errorResponse(400, "Invalid JSON in request");
-    }
+    const sin = page1.sin;
+    if (!isValidSIN(sin)) return errorResponse(400, "Invalid SIN");
 
-    const sin = page1?.sin;
-    if (!sin || typeof sin !== "string" || sin.length !== 9) {
-      return errorResponse(400, "Invalid SIN");
-    }
+    if (!isValidEmail(page1.email)) return errorResponse(400, "Invalid email");
+    if (page1.phoneHome && !isValidPhoneNumber(page1.phoneHome)) return errorResponse(400, "Invalid home phone");
+    if (!isValidPhoneNumber(page1.phoneCell)) return errorResponse(400, "Invalid cell phone");
+    if (!isValidPhoneNumber(page1.emergencyContactPhone)) return errorResponse(400, "Invalid emergency contact phone");
+    if (!isValidDOB(page1.dob)) return errorResponse(400, "Invalid DOB");
+    if (!hasRecentAddressCoverage(page1.addresses)) return errorResponse(400, "Address history must cover 5 years");
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!page1.email || !emailRegex.test(page1.email)) {
-      return errorResponse(400, "Invalid email format");
-    }
+    const licenses = page1.licenses;
+    if (!Array.isArray(licenses) || licenses.length === 0)
+      return errorResponse(400, "'licenses' must be a non-empty array");
 
-    // Validate phone numbers (must be at least 10 digits, numbers only)
-    const phoneRegex = /^\d{10,}$/;
-    if (!page1.phoneHome || !phoneRegex.test(page1.phoneHome)) {
-      return errorResponse(400, "Invalid home phone number format");
-    }
-    if (!page1.phoneCell || !phoneRegex.test(page1.phoneCell)) {
-      return errorResponse(400, "Invalid cell phone number format");
-    }
-    if (
-      !page1.emergencyContactPhone ||
-      !phoneRegex.test(page1.emergencyContactPhone)
-    ) {
-      return errorResponse(
-        400,
-        "Invalid emergency contact phone number format"
-      );
-    }
+    const firstLicense = licenses[0];
+    if (firstLicense.licenseType !== ELicenseType.AZ)
+      return errorResponse(400, "First license must be of type AZ");
 
-    // Validate date of birth (must be reasonable age)
-    const dob = new Date(page1.dob);
-    const today = new Date();
-    const age = today.getFullYear() - dob.getFullYear();
-    if (isNaN(dob.getTime()) || age < 23 || age > 100) {
-      return errorResponse(400, "Invalid date of birth");
+    if (!firstLicense.licenseFrontPhoto || !firstLicense.licenseBackPhoto)
+      return errorResponse(400, "First license must include both front and back photos");
+
+    if (company.countryCode === ECountryCode.CA) {
+      const { canCrossBorderUSA, hasFASTCard } = prequalifications;
+      if (typeof canCrossBorderUSA !== "boolean")
+        return errorResponse(400, "'canCrossBorderUSA' is required for Canadian applicants");
+      if (typeof hasFASTCard !== "boolean")
+        return errorResponse(400, "'hasFASTCard' is required for Canadian applicants");
     }
 
     const sinHash = hashString(sin);
-    const existingTracker = await OnboardingTracker.findOne({ sinHash });
-    if (existingTracker) {
-      return errorResponse(400, "Application with this SIN already exists.", {
-        trackerId: existingTracker.id,
-        message: "Application with this SIN already exists."
-      });
-    }
+    const existing = await OnboardingTracker.findOne({ sinHash });
+    if (existing) return errorResponse(400, "Application with this SIN already exists");
 
-    if (!hasRecentAddressCoverage(page1.addresses)) {
-      return errorResponse(
-        400,
-        "Total address history must cover at least 5 years."
-      );
-    }
-
-    // Step 1: Create OnboardingTracker
     onboardingDoc = await OnboardingTracker.create({
       sinHash,
       sinEncrypted: encryptString(sin),
-      resumeExpiresAt: new Date(
-        Date.now() + Number(FORM_RESUME_EXPIRES_AT_IN_MILSEC)
-      ),
+      resumeExpiresAt: new Date(Date.now() + Number(FORM_RESUME_EXPIRES_AT_IN_MILSEC)),
       status: {
         currentStep: EStepPath.PRE_QUALIFICATIONS,
         completedStep: EStepPath.PRE_QUALIFICATIONS,
         completed: false,
       },
       companyId,
-      // only set it if present (i.e. for ssp-canada)
-      ...(companyId === ECompanyId.SSP_CA && { applicationType: appTypeRaw }),
+      ...(companyId === ECompanyId.SSP_CA && { applicationType }),
       forms: {},
     });
-    const trackerId = onboardingDoc.id;
 
-    const abortWithTrackerCleanup = async (status: number, message: string) => {
-      if (uploadedKeys.length > 0) await deleteS3Objects(uploadedKeys);
-      if (onboardingDoc?._id)
-        await OnboardingTracker.findByIdAndDelete(onboardingDoc._id);
-      return errorResponse(status, message);
+    // Save temporary S3 refs
+    const page1ToSave = {
+      ...page1,
+      sinEncrypted: encryptString(sin),
+      licenses,
     };
+    delete (page1ToSave as any).sin;
 
-    // ✅ Step 2–3: Upload sinPhoto and license photos in parallel
-    const uploadTasks: Promise<void>[] = [];
-    const updatedLicenses: ILicenseEntry[] = [];
+    appFormDoc = await ApplicationForm.create({ page1: page1ToSave });
+    preQualDoc = await PreQualifications.create({ ...prequalifications, completed: true });
 
-    // Validate sin photo
-    const sinPhotoRaw = formData.get("sinPhoto");
-    const sinPhotoResult = validateImageFile(sinPhotoRaw, "sin photo");
-
-    if (!sinPhotoResult.isValid) {
-      return abortWithTrackerCleanup(400, sinPhotoResult.errorMessage);
-    }
-
-    // Defer sin photo upload to its own promise, typed
-    const sinPhotoUploadResultPromise: Promise<IPhoto> = (async () => {
-      const buffer = Buffer.from(await sinPhotoResult.safeFile.arrayBuffer());
-      const upload = await uploadImageToS3({
-        fileBuffer: buffer,
-        fileType: sinPhotoResult.safeFile.type,
-        folder: `sin/${trackerId}`,
-      });
-      uploadedKeys.push(upload.key);
-      return { url: upload.url, s3Key: upload.key };
-    })();
-
-    // Validate and prepare license uploads
-    if (!Array.isArray(page1.licenses)) {
-      return abortWithTrackerCleanup(400, "`licenses` must be an array");
-    }
-
-    const firstLicense = page1.licenses[0];
-    if (!firstLicense || firstLicense.licenseType !== "AZ") {
-      return abortWithTrackerCleanup(
-        400,
-        "The first license must be of type AZ."
-      );
-    }
-
-    for (let i = 0; i < page1.licenses.length; i++) {
-      const input = page1.licenses[i];
-      const isFirst = i === 0;
-
-      const frontRaw = formData.get(`license_${i}_front`);
-      const backRaw = formData.get(`license_${i}_back`);
-
-      let frontFile: File | null = null;
-      let backFile: File | null = null;
-
-      if (frontRaw) {
-        const result = validateImageFile(frontRaw, `license ${i + 1} front`);
-        if (!result.isValid) {
-          return abortWithTrackerCleanup(400, result.errorMessage);
-        }
-        frontFile = result.safeFile;
-      }
-
-      if (backRaw) {
-        const result = validateImageFile(backRaw, `license ${i + 1} back`);
-        if (!result.isValid) {
-          return abortWithTrackerCleanup(400, result.errorMessage);
-        }
-        backFile = result.safeFile;
-      }
-
-      if (
-        isFirst &&
-        (!frontFile || !backFile || frontFile.size === 0 || backFile.size === 0)
-      ) {
-        return abortWithTrackerCleanup(
-          400,
-          "The first license must include both front and back photo."
-        );
-      }
-
-      updatedLicenses[i] = {
-        ...input,
-        licenseFrontPhoto: null as any,
-        licenseBackPhoto: null as any,
-      };
-
-      if (frontFile) {
-        uploadTasks.push(
-          (async () => {
-            const buffer = Buffer.from(await frontFile.arrayBuffer());
-            const upload = await uploadImageToS3({
-              fileBuffer: buffer,
-              fileType: frontFile.type,
-              folder: `licenses/${trackerId}`,
-            });
-            uploadedKeys.push(upload.key);
-            updatedLicenses[i].licenseFrontPhoto = {
-              url: upload.url,
-              s3Key: upload.key,
-            };
-          })()
-        );
-      }
-
-      if (backFile) {
-        uploadTasks.push(
-          (async () => {
-            const buffer = Buffer.from(await backFile.arrayBuffer());
-            const upload = await uploadImageToS3({
-              fileBuffer: buffer,
-              fileType: backFile.type,
-              folder: `licenses/${trackerId}`,
-            });
-            uploadedKeys.push(upload.key);
-            updatedLicenses[i].licenseBackPhoto = {
-              url: upload.url,
-              s3Key: upload.key,
-            };
-          })()
-        );
-      }
-    }
-
-    // Run license uploads concurrently
-    await Promise.all(uploadTasks);
-
-    // Wait for sin photo upload to finish
-    const sinPhotoUploadResult = await sinPhotoUploadResultPromise;
-
-    // ✅ Step 4: Save ApplicationForm
-    page1.sinEncrypted = encryptString(sin);
-    page1.sinPhoto = {
-      url: sinPhotoUploadResult.url,
-      s3Key: sinPhotoUploadResult.s3Key,
-    };
-    delete page1.sin;
-
-    appFormDoc = new ApplicationForm({
-      page1: { ...page1, licenses: updatedLicenses },
-    });
-    await appFormDoc.save();
-
-    // ✅ Step 5: Validate prequal fields for Canadian applicants
-    const company = COMPANIES.find((c) => c.id === companyId);
-    if (!company) {
-      return abortWithTrackerCleanup(400, "Invalid companyId provided");
-    }
-    const isCanadian = company.countryCode === "CA";
-
-    if (isCanadian) {
-      const { canCrossBorderUSA, hasFASTCard } = prequalifications;
-      if (typeof canCrossBorderUSA !== "boolean") {
-        return abortWithTrackerCleanup(
-          400,
-          "Field 'canCrossBorderUSA' is required for Canadian applicants"
-        );
-      }
-      if (typeof hasFASTCard !== "boolean") {
-        return abortWithTrackerCleanup(
-          400,
-          "Field 'hasFASTCard' is required for Canadian applicants"
-        );
-      }
-    }
-
-    // ✅ Now save PreQualifications
-    preQualDoc = await PreQualifications.create({
-      ...prequalifications,
-      completed: true,
-    });
-
-    // ✅ Step 6: Update onboardingDoc
     onboardingDoc.forms = {
-      preQualification: preQualDoc.id,
       driverApplication: appFormDoc.id,
+      preQualification: preQualDoc.id,
     };
-
-    onboardingDoc.status = advanceStatus(
-      onboardingDoc.status,
-      EStepPath.APPLICATION_PAGE_1
-    );
-
+    onboardingDoc.status = advanceStatus(onboardingDoc.status, EStepPath.APPLICATION_PAGE_1);
     await onboardingDoc.save();
 
+    // Finalize files only after successful DB save
+    const trackerId = onboardingDoc.id;
+    const movedKeys: string[] = [];
+
+    // Finalize SIN photo
+    const finalizedSinPhoto = await finalizePhoto(
+      page1.sinPhoto,
+      `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.SIN_PHOTOS}/${trackerId}`
+    );
+    movedKeys.push(finalizedSinPhoto.s3Key);
+
+    const tempPrefix = `${S3_TEMP_FOLDER}/`;
+    // Finalize license photos
+    const finalizedLicenses: ILicenseEntry[] = await Promise.all(
+      licenses.map(async (lic) => {
+        const updated: ILicenseEntry = { ...lic };
+
+        if (lic.licenseFrontPhoto?.s3Key?.startsWith(tempPrefix)) {
+          updated.licenseFrontPhoto = await finalizePhoto(
+            lic.licenseFrontPhoto,
+            `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.LICENSES}/${trackerId}`
+          );
+          movedKeys.push(updated.licenseFrontPhoto.s3Key);
+        }
+
+        if (lic.licenseBackPhoto?.s3Key?.startsWith(tempPrefix)) {
+          updated.licenseBackPhoto = await finalizePhoto(
+            lic.licenseBackPhoto,
+            `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.LICENSES}/${trackerId}`
+          );
+          movedKeys.push(updated.licenseBackPhoto.s3Key);
+        }
+
+        return updated;
+      })
+    );
+
+    // Update with finalized photos
+    const updatedForm = await ApplicationForm.findByIdAndUpdate(
+      appFormDoc._id,
+      {
+        $set: {
+          "page1.sinPhoto": finalizedSinPhoto,
+          "page1.licenses": finalizedLicenses,
+        },
+      },
+      { new: true }
+    );
+
     return successResponse(200, "Onboarding created successfully", {
-      onboardingContext: buildTrackerContext(
-        onboardingDoc,
-        EStepPath.APPLICATION_PAGE_1
-      ),
+      onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_1),
       preQualifications: preQualDoc.toObject(),
-      applicationForm: appFormDoc.toObject({ virtuals: true }),
+      applicationForm: updatedForm?.toObject({ virtuals: true }),
     });
   } catch (error) {
-    if (uploadedKeys.length > 0) await deleteS3Objects(uploadedKeys);
-    if (onboardingDoc?._id)
-      await OnboardingTracker.findByIdAndDelete(onboardingDoc._id);
-    if (preQualDoc?._id)
-      await PreQualifications.findByIdAndDelete(preQualDoc._id);
-    if (appFormDoc?._id)
-      await ApplicationForm.findByIdAndDelete(appFormDoc._id);
+    // Cleanup
+    if (appFormDoc?._id) await ApplicationForm.findByIdAndDelete(appFormDoc._id);
+    if (preQualDoc?._id) await PreQualifications.findByIdAndDelete(preQualDoc._id);
+    if (onboardingDoc?._id) await OnboardingTracker.findByIdAndDelete(onboardingDoc._id);
 
-    console.error("Error creating application form:", error);
-    return errorResponse(500, "Failed to create application form");
+    console.error("POST /onboarding error:", error);
+    return errorResponse(error);
   }
 }

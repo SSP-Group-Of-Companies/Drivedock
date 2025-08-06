@@ -8,8 +8,14 @@ import {
   S3Client,
   PutObjectCommand,
   DeleteObjectCommand,
+  CopyObjectCommand,
+  HeadObjectCommand,
 } from "@aws-sdk/client-s3";
 import { v4 as uuidv4 } from "uuid";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { DEFAULT_PRESIGN_EXPIRY_SECONDS } from "@/constants/aws";
+import { EImageMimeType, IPhoto } from "@/types/shared.types";
+import { ES3Folder, IPresignResponse } from "@/types/aws.types";
 
 const s3 = new S3Client({
   region: AWS_REGION,
@@ -68,4 +74,176 @@ export async function deleteS3Objects(keys: string[]): Promise<void> {
   });
 
   await Promise.all(deletePromises);
+}
+
+/**
+ * Moves an object from one key to another (e.g., from temp-uploads to final folder).
+ * Returns the new key and URL.
+ */
+export async function moveS3Object({
+  fromKey,
+  toKey,
+}: {
+  fromKey: string;
+  toKey: string;
+}): Promise<{ url: string; key: string }> {
+  const Bucket = AWS_BUCKET_NAME;
+
+  await s3.send(
+    new CopyObjectCommand({
+      Bucket,
+      CopySource: `${Bucket}/${fromKey}`,
+      Key: toKey,
+    })
+  );
+
+  await s3.send(new DeleteObjectCommand({ Bucket, Key: fromKey }));
+
+  return {
+    url: `https://${Bucket}.s3.${AWS_REGION}.amazonaws.com/${toKey}`,
+    key: toKey,
+  };
+}
+
+/**
+ * Checks if an object exists in S3.
+ * Returns true if found, false otherwise.
+ */
+export async function s3ObjectExists(key: string): Promise<boolean> {
+  try {
+    await s3.send(
+      new HeadObjectCommand({
+        Bucket: AWS_BUCKET_NAME,
+        Key: key,
+      })
+    );
+    return true;
+  } catch (err: any) {
+    if (err.name === "NotFound") return false;
+    console.error("S3 existence check failed:", err);
+    return false;
+  }
+}
+
+/**
+ * Generates a presigned PUT URL for direct upload to S3.
+ * Assumes the full S3 key (including folder/filename) is provided.
+ */
+export async function getPresignedPutUrl({
+  key,
+  fileType,
+  expiresIn = DEFAULT_PRESIGN_EXPIRY_SECONDS,
+}: {
+  key: string;
+  fileType: string;
+  expiresIn?: number;
+}): Promise<{ url: string }> {
+  const command = new PutObjectCommand({
+    Bucket: AWS_BUCKET_NAME,
+    Key: key,
+    ContentType: fileType,
+  });
+
+  const url = await getSignedUrl(s3, command, { expiresIn });
+
+  return { url };
+}
+
+
+/**
+ * Finalizes a photo by moving it from temp-files to the final folder.
+ * Returns the updated photo object with the new S3 key.
+ */
+export async function finalizePhoto(
+  photo: IPhoto,
+  finalFolder: string
+): Promise<IPhoto> {
+  if (!photo?.s3Key) throw new Error("Missing s3Key in photo");
+
+  if (!photo.s3Key.startsWith("temp-files/")) {
+    // already finalized
+    return photo;
+  }
+
+  const filename = photo.s3Key.split("/").pop();
+  const finalKey = `${finalFolder}/${filename}`;
+
+  const moved = await moveS3Object({ fromKey: photo.s3Key, toKey: finalKey });
+  return {
+    s3Key: moved.key,
+    url: moved.url,
+  };
+}
+
+export interface UploadToS3Options {
+  file: File;
+  folder: ES3Folder;
+  trackerId?: string;
+}
+
+export interface UploadResult {
+  s3Key: string;
+  url: string;
+  putUrl: string; // optional: useful for debugging
+}
+
+
+/**
+ * Uploads a file to S3 using a presigned URL.
+ * Returns the S3 key and public URL of the uploaded file.
+ */
+
+export async function uploadToS3Presigned({
+  file,
+  folder,
+  trackerId = "unknown",
+}: UploadToS3Options): Promise<UploadResult> {
+  const allowedMimeTypes: EImageMimeType[] = [
+    EImageMimeType.JPEG,
+    EImageMimeType.PNG,
+    EImageMimeType.JPG,
+  ];
+
+  const mimetype = file.type.toLowerCase() as EImageMimeType;
+  if (!allowedMimeTypes.includes(mimetype)) {
+    throw new Error("Only JPEG or PNG images are allowed.");
+  }
+
+  const MAX_SIZE_MB = 10;
+  if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+    throw new Error(`File size exceeds ${MAX_SIZE_MB}MB.`);
+  }
+
+  // Request presigned URL from backend
+  const res = await fetch("/api/v1/presign", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      folder,
+      mimetype,
+      filesize: file.size,
+      trackerId,
+    }),
+  });
+
+  if (!res.ok) {
+    const { message } = await res.json();
+    throw new Error(message || "Failed to get presigned URL.");
+  }
+
+  const { data }: { data: IPresignResponse } = await res.json();
+
+  // Upload file to S3 using the presigned URL
+  await fetch(data.url, {
+    method: "PUT",
+    headers: { "Content-Type": mimetype },
+    body: file,
+  });
+
+  return {
+    s3Key: data.key,
+    url: data.publicUrl, // this is now the GET URL
+    putUrl: data.url,    // optional: useful for debugging
+  };
+
 }

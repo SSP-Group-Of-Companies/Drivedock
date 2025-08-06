@@ -62,17 +62,21 @@ export default function PersonalDetails() {
   });
 
   const [showSIN, setShowSIN] = useState(false);
-  const [sinPhotoPreview, setSinPhotoPreview] = useState<string | null>(null);
-  const [sinValidationStatus, setSinValidationStatus] = useState<
-    "idle" | "checking" | "valid" | "invalid"
-  >("idle");
+  const sinPhoto = useWatch({ control, name: "sinPhoto" });
+  const sinPhotoS3Key = sinPhoto?.s3Key || "";
+  const sinPhotoUrl = sinPhoto?.url || "";
+  const [sinPhotoPreview, setSinPhotoPreview] = useState<string | null>(sinPhotoUrl || null);
+  const [sinValidationStatus, setSinValidationStatus] = useState<"idle" | "checking" | "valid" | "invalid">("idle");
+  const [sinPhotoStatus, setSinPhotoStatus] = useState<"idle" | "uploading" | "deleting" | "error">("idle");
+  const [sinPhotoMessage, setSinPhotoMessage] = useState("");
+
   const [sinValidationMessage, setSinValidationMessage] = useState("");
 
   const calculatedAge = dobValue ? calculateAge(dobValue) : null;
   const displaySIN = sinValue
     ? sinValue
-        .replace(/^(\d{3})(\d)/, "$1-$2")
-        .replace(/^(\d{3})-(\d{3})(\d)/, "$1-$2-$3")
+      .replace(/^(\d{3})(\d)/, "$1-$2")
+      .replace(/^(\d{3})-(\d{3})(\d)/, "$1-$2-$3")
     : "";
 
   const validateSIN = useCallback(async (sin: string) => {
@@ -96,6 +100,7 @@ export default function PersonalDetails() {
         setSinValidationStatus("invalid");
         setSinValidationMessage(data.message || "SIN already exists");
       }
+
     } catch {
       setSinValidationStatus("invalid");
       setSinValidationMessage("Error checking SIN availability");
@@ -152,10 +157,39 @@ export default function PersonalDetails() {
         setSinPhotoPreview(result);
       };
       reader.readAsDataURL(file);
-    } else {
-      setValue("sinPhoto", undefined, { shouldValidate: true });
-      setSinPhotoPreview(null);
+
+      setSinPhotoStatus("idle");
+      setSinPhotoMessage("Upload successful");
+    } catch (error: any) {
+      console.error("SIN photo upload failed:", error);
+      setSinPhotoStatus("error");
+      setSinPhotoMessage(error.message || "Upload failed");
     }
+  };
+
+  const handleSinPhotoRemove = async () => {
+    setSinPhotoStatus("deleting");
+    setSinPhotoMessage("");
+
+    if (sinPhotoS3Key?.startsWith("temp-files/")) {
+      try {
+        await fetch("/api/v1/delete-temp-files", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ keys: [sinPhotoS3Key] }),
+        });
+
+        setSinPhotoMessage("Photo removed");
+      } catch (err) {
+        console.error("Failed to delete temp S3 file:", err);
+        setSinPhotoStatus("error");
+        setSinPhotoMessage("Delete failed");
+      }
+    }
+
+    setValue("sinPhoto", undefined, { shouldValidate: true });
+    setSinPhotoPreview(null);
+    setSinPhotoStatus("idle");
   };
 
   return (
@@ -197,15 +231,11 @@ export default function PersonalDetails() {
             {...register("sin")}
             onChange={handleSINChange}
             data-field="sin"
-            className={`py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md pr-10 ${
-              sinValidationStatus === "valid"
-                ? "border-green-500 focus:border-green-500"
-                : sinValidationStatus === "invalid"
-                ? "border-red-500 focus:border-red-500"
-                : sinValidationStatus === "checking"
-                ? "border-yellow-500 focus:border-yellow-500"
-                : ""
-            }`}
+            className={`py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md pr-10 ${sinValidationStatus === "valid" ? "border-green-500 focus:border-green-500" :
+              sinValidationStatus === "invalid" ? "border-red-500 focus:border-red-500" :
+                sinValidationStatus === "checking" ? "border-yellow-500 focus:border-yellow-500" :
+                  ""
+              }`}
           />
           <button
             type="button"
@@ -215,6 +245,7 @@ export default function PersonalDetails() {
             {showSIN ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
 
+
           {/* SIN Validation Status */}
           {sinValidationStatus === "checking" && (
             <p className="text-yellow-600 text-sm mt-1 flex items-center">
@@ -222,6 +253,7 @@ export default function PersonalDetails() {
               Checking SIN availability...
             </p>
           )}
+
 
           {sinValidationStatus === "valid" && (
             <p className="text-green-600 text-sm mt-1 flex items-center">
@@ -240,6 +272,7 @@ export default function PersonalDetails() {
             </p>
           )}
 
+
           {sinValidationStatus === "invalid" && (
             <p className="text-red-500 text-sm mt-1 flex items-center">
               <svg
@@ -257,6 +290,7 @@ export default function PersonalDetails() {
             </p>
           )}
 
+
           {errors.sin && (
             <p className="text-red-500 text-sm mt-1">
               {errors.sin.message?.toString()}
@@ -269,10 +303,10 @@ export default function PersonalDetails() {
           <label className="block text-sm font-medium text-gray-700 mb-1">
             {t("form.fields.sinPhoto")}
           </label>
-          {sinPhotoPreview ? (
+          {sinPhotoPreview || sinPhotoUrl ? (
             <div className="relative">
               <Image
-                src={sinPhotoPreview}
+                src={sinPhotoPreview || sinPhotoUrl || ""}
                 alt="SIN Card Preview"
                 width={400}
                 height={128}
@@ -280,7 +314,8 @@ export default function PersonalDetails() {
               />
               <button
                 type="button"
-                onClick={() => handleSinPhotoUpload(null)}
+                onClick={handleSinPhotoRemove}
+                disabled={sinPhotoStatus === "uploading" || sinPhotoStatus === "deleting"}
                 className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
               >
                 <X size={12} />
@@ -307,11 +342,34 @@ export default function PersonalDetails() {
             data-field="sinPhoto"
             className="hidden"
           />
-          {errors.sinPhoto && (
+          {sinPhotoStatus !== "uploading" && errors.sinPhoto && (
             <p className="text-red-500 text-sm mt-1">
               {errors.sinPhoto.message?.toString()}
             </p>
           )}
+
+          {sinPhotoStatus === "uploading" && (
+            <p className="text-yellow-600 text-sm mt-1 flex items-center">
+              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-600 mr-2"></div>
+              Uploading...
+            </p>
+          )}
+
+          {sinPhotoStatus === "deleting" && (
+            <p className="text-yellow-600 text-sm mt-1 flex items-center">
+              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-600 mr-2"></div>
+              Deleting...
+            </p>
+          )}
+
+          {sinPhotoStatus === "error" && (
+            <p className="text-red-500 text-sm mt-1">{sinPhotoMessage}</p>
+          )}
+
+          {!errors.sinPhoto && sinPhotoStatus === "idle" && sinPhotoMessage && (
+            <p className="text-green-600 text-sm mt-1">{sinPhotoMessage}</p>
+          )}
+
         </div>
 
         {/* Date of Birth */}
@@ -345,13 +403,10 @@ export default function PersonalDetails() {
             className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
           />
           {calculatedAge !== null && (
-            <p
-              className={`text-sm mt-1 ${
-                calculatedAge >= 23 && calculatedAge <= 100
-                  ? "text-green-600"
-                  : "text-red-500"
-              }`}
-            >
+            <p className={`text-sm mt-1 ${calculatedAge >= 23 && calculatedAge <= 100
+              ? 'text-green-600'
+              : 'text-red-500'
+              }`}>
               Age: {calculatedAge} years old
               {calculatedAge < 23 && " (Must be at least 23 years old)"}
               {calculatedAge > 100 && " (Age cannot exceed 100 years)"}
@@ -391,9 +446,8 @@ export default function PersonalDetails() {
               </svg>
             )}
             <label
-              className={`text-sm font-medium ${
-                dobValue ? "text-gray-700" : "text-gray-400"
-              }`}
+              className={`text-sm font-medium ${dobValue ? "text-gray-700" : "text-gray-400"
+                }`}
             >
               {t("form.fields.canProvideProof")}
             </label>

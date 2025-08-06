@@ -10,29 +10,16 @@ import { useOnboardingTracker } from "@/store/useOnboardingTracker";
 import { useCompanySelection } from "@/hooks/useCompanySelection";
 import { useFormErrorScroll } from "@/hooks/useFormErrorScroll";
 import { COMPANIES } from "@/constants/companies";
-import { IPreQualifications } from "@/types/preQualifications.types";
 import { submitFormStep } from "@/lib/frontendUtils/submitFormStep";
+import { EApplicationType } from "@/types/onboardingTracker.type";
 
 type ContinueButtonProps<T extends FieldValues> = {
   config: {
     validationFields: (values: T) => string[];
-    buildFormData:
-      | ((values: T) => FormData)
-      | ((
-          values: T,
-          prequal: IPreQualifications,
-          companyId: string
-        ) => FormData)
-      | ((
-          values: T,
-          prequal: IPreQualifications,
-          companyId: string,
-          tracker?: any
-        ) => FormData);
     nextRoute: string;
     validateBusinessRules?: (values: T) => string | null;
   };
-  trackerId?: string; // ✅ Add optional trackerId prop
+  trackerId?: string;
 };
 
 export default function ContinueButton<T extends FieldValues>({
@@ -58,17 +45,13 @@ export default function ContinueButton<T extends FieldValues>({
   const onSubmit = async () => {
     const values = getValues();
 
-    // 1. Validate fields
     const fieldsToValidate = config.validationFields(values);
-    const isValid = await trigger(
-      fieldsToValidate as Parameters<typeof trigger>[0]
-    );
+    const isValid = await trigger(fieldsToValidate as Parameters<typeof trigger>[0]);
     if (!isValid) {
       handleFormError(errors);
       return;
     }
 
-    // 2. Optional business rule validation
     if (config.validateBusinessRules) {
       const ruleError = config.validateBusinessRules(values);
       if (ruleError) {
@@ -77,20 +60,17 @@ export default function ContinueButton<T extends FieldValues>({
       }
     }
 
-    // 3. Determine mode (POST or PATCH)
     const companyId = selectedCompany?.id;
-    const urlTrackerId = params.id as string; // Extract tracker ID from URL
-    const effectiveTrackerId = trackerId || urlTrackerId; // ✅ Use passed trackerId or fallback to URL
-    const isFirstPost = config.buildFormData.length === 3;
-    const isPatchMode = !isFirstPost && (tracker?.id || effectiveTrackerId);
+    const urlTrackerId = params.id as string;
+    const effectiveTrackerId = trackerId || urlTrackerId;
+    const isPost = !tracker?.id && !effectiveTrackerId;
 
-    if (isFirstPost) {
+    if (isPost) {
       if (!prequalifications?.completed) {
-        alert(
-          "Prequalification data is missing. Please restart the application."
-        );
+        alert("Prequalification data is missing. Please restart the application.");
         return;
       }
+
       if (!companyId || !COMPANIES.some((c) => c.id === companyId)) {
         alert("Invalid company selection. Please restart the application.");
         return;
@@ -100,37 +80,23 @@ export default function ContinueButton<T extends FieldValues>({
     try {
       setSubmitting(true);
 
-      // 4. Build FormData
-      const formData =
-        config.buildFormData.length === 4
-          ? (
-              config.buildFormData as (
-                values: T,
-                prequal: IPreQualifications,
-                companyId: string,
-                tracker?: any
-              ) => FormData
-            )(values, prequalifications!, companyId!, tracker)
-          : config.buildFormData.length === 3
-          ? (
-              config.buildFormData as (
-                values: T,
-                prequal: IPreQualifications,
-                companyId: string
-              ) => FormData
-            )(values, prequalifications!, companyId!)
-          : (config.buildFormData as (values: T) => FormData)(values);
+      const jsonPayload = isPost
+        ? {
+          applicationFormPage1: values,
+          prequalifications,
+          companyId,
+          applicationType: EApplicationType.FLAT_BED,
+        }
+        : values;
 
-      // 5. Submit via shared utility
       const { trackerContext } = await submitFormStep({
-        formData,
+        json: jsonPayload,
         tracker,
         nextRoute: config.nextRoute,
-        urlTrackerId: effectiveTrackerId, // ✅ Pass effective tracker ID
+        urlTrackerId: effectiveTrackerId,
       });
 
-      // 6. Routing
-      if (!isPatchMode) {
+      if (isPost) {
         if (trackerContext?.id) {
           setTracker(trackerContext);
           clearData();
@@ -156,10 +122,9 @@ export default function ContinueButton<T extends FieldValues>({
         disabled={submitting}
         onClick={onSubmit}
         className={`px-8 py-2 mt-6 rounded-full font-semibold transition-colors shadow-md flex items-center gap-2
-          ${
-            submitting
-              ? "bg-gray-400 text-white cursor-not-allowed"
-              : "bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 text-white hover:opacity-90"
+          ${submitting
+            ? "bg-gray-400 text-white cursor-not-allowed"
+            : "bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 text-white hover:opacity-90"
           }
         `}
       >

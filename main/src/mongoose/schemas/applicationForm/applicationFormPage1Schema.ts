@@ -1,10 +1,10 @@
 import { decryptString } from "@/lib/utils/cryptoUtils";
-import { IApplicationFormPage1 } from "@/types/applicationForm.types";
+import { Iaddress, IApplicationFormPage1, ILicenseEntry } from "@/types/applicationForm.types";
 import { ELicenseType } from "@/types/shared.types";
 import { Schema } from "mongoose";
 import { photoSchema } from "../sharedSchemas";
 
-const addressSchema = new Schema(
+const addressSchema = new Schema<Iaddress>(
   {
     address: { type: String, required: [true, "Address is required."] },
     city: { type: String, required: [true, "City is required."] },
@@ -18,7 +18,7 @@ const addressSchema = new Schema(
   }
 );
 
-const licenseSchema = new Schema(
+const licenseSchema = new Schema<ILicenseEntry>(
   {
     licenseNumber: {
       type: String,
@@ -57,8 +57,7 @@ export const applicationFormPage1Schema = new Schema<IApplicationFormPage1>(
     sinPhoto: { type: photoSchema, required: [true, "Sin photo is required"] },
     dob: { type: Date, required: [true, "Date of birth is required."] },
     phoneHome: {
-      type: String,
-      required: [true, "Home phone number is required."],
+      type: String
     },
     phoneCell: {
       type: String,
