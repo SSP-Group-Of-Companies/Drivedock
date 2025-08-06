@@ -5,7 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import CompanyLogoHeader from "@/components/shared/CompanyLogoHeader";
 import FormWizardNav from "@/app/onboarding/components/FormWizardNav";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { Dialog } from "@headlessui/react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -21,8 +21,29 @@ export default function FormLayout({
   const { t } = useTranslation("common");
   const pathname = usePathname();
   const router = useRouter();
+  const params = useParams();
   const [showModal, setShowModal] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+
+  // ✅ Smart back navigation that preserves tracker ID
+  const handleBackClick = () => {
+    const trackerId = params.id as string;
+    
+    // If we're in onboarding with tracker ID, navigate to previous step
+    if (trackerId && pathname.includes('/onboarding/')) {
+      if (pathname.includes('/page-2')) {
+        router.push(`/onboarding/${trackerId}/application-form/page-1`);
+      } else if (pathname.includes('/page-1')) {
+        router.push(`/onboarding/${trackerId}/prequalifications`);
+      } else if (pathname.includes('/prequalifications')) {
+        router.push('/start');
+      } else {
+        router.back(); // Fallback
+      }
+    } else {
+      router.back(); // Fallback for other pages
+    }
+  };
 
   // Scroll detection
   useEffect(() => {
@@ -84,7 +105,7 @@ export default function FormLayout({
                 <div className="flex items-center gap-2 ml-auto h-full">
                   <LanguageDropdown />
                   <button
-                    onClick={() => router.back()}
+                    onClick={handleBackClick}
                     className="ml-2 flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 text-white font-medium shadow hover:opacity-90 transition focus:outline-none focus:ring-2 focus:ring-blue-300"
                     aria-label={t("navbar.back", "Go Back")}
                   >
@@ -106,7 +127,7 @@ export default function FormLayout({
                   <div className="flex items-center gap-2">
                     <LanguageDropdown />
                     <button
-                      onClick={() => router.back()}
+                      onClick={handleBackClick}
                       className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 text-white text-xs font-medium shadow hover:opacity-90 transition focus:outline-none focus:ring-2 focus:ring-blue-300"
                       aria-label={t("navbar.back", "Go Back")}
                     >
