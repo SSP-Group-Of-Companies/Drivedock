@@ -126,20 +126,18 @@ export async function s3ObjectExists(key: string): Promise<boolean> {
 }
 
 /**
- * Generates a presigned PUT URL for direct upload from the browser.
+ * Generates a presigned PUT URL for direct upload to S3.
+ * Assumes the full S3 key (including folder/filename) is provided.
  */
 export async function getPresignedPutUrl({
-  folder,
+  key,
   fileType,
   expiresIn = DEFAULT_PRESIGN_EXPIRY_SECONDS,
 }: {
-  folder: string;
+  key: string;
   fileType: string;
   expiresIn?: number;
-}): Promise<{ url: string; key: string }> {
-  const extension = fileType.split("/")[1] || "jpg";
-  const key = `${folder}/${uuidv4()}.${extension}`;
-
+}): Promise<{ url: string }> {
   const command = new PutObjectCommand({
     Bucket: AWS_BUCKET_NAME,
     Key: key,
@@ -148,8 +146,9 @@ export async function getPresignedPutUrl({
 
   const url = await getSignedUrl(s3, command, { expiresIn });
 
-  return { url, key };
+  return { url };
 }
+
 
 /**
  * Finalizes a photo by moving it from temp-files to the final folder.
@@ -176,16 +175,23 @@ export async function finalizePhoto(
   };
 }
 
-interface UploadToS3Options {
+export interface UploadToS3Options {
   file: File;
   folder: ES3Folder;
   trackerId?: string;
 }
 
-interface UploadResult {
+export interface UploadResult {
   s3Key: string;
   url: string;
+  putUrl: string; // optional: useful for debugging
 }
+
+
+/**
+ * Uploads a file to S3 using a presigned URL.
+ * Returns the S3 key and public URL of the uploaded file.
+ */
 
 export async function uploadToS3Presigned({
   file,
@@ -200,7 +206,7 @@ export async function uploadToS3Presigned({
 
   const mimetype = file.type.toLowerCase() as EImageMimeType;
   if (!allowedMimeTypes.includes(mimetype)) {
-    throw new Error("Only JPEG, or PNG images are allowed.");
+    throw new Error("Only JPEG or PNG images are allowed.");
   }
 
   const MAX_SIZE_MB = 10;
@@ -208,17 +214,12 @@ export async function uploadToS3Presigned({
     throw new Error(`File size exceeds ${MAX_SIZE_MB}MB.`);
   }
 
-  const ext = file.name.split(".").pop()?.toLowerCase();
-  if (!ext) throw new Error("Invalid file extension.");
-
-  const filename = `photo.${ext}`;
-
+  // Request presigned URL from backend
   const res = await fetch("/api/v1/presign", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       folder,
-      filename,
       mimetype,
       filesize: file.size,
       trackerId,
@@ -232,12 +233,17 @@ export async function uploadToS3Presigned({
 
   const { data }: { data: IPresignResponse } = await res.json();
 
-  console.log(data)
+  // Upload file to S3 using the presigned URL
   await fetch(data.url, {
     method: "PUT",
     headers: { "Content-Type": mimetype },
     body: file,
   });
 
-  return { s3Key: data.key, url: data.url };
+  return {
+    s3Key: data.key,
+    url: data.publicUrl, // this is now the GET URL
+    putUrl: data.url,    // optional: useful for debugging
+  };
+
 }

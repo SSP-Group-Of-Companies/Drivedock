@@ -23,7 +23,8 @@ export interface IPresignRequest {
 }
 
 export interface IPresignResponse {
-    key: string;
-    url: string;
+    key: string;       // The S3 object key
+    url: string;       // Presigned PUT URL
+    publicUrl: string; // Public GET URL (derived from key)
     expiresIn: number;
 }

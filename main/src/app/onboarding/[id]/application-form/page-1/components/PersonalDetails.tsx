@@ -50,9 +50,14 @@ export default function PersonalDetails() {
   const calculatedAge = dobValue ? calculateAge(dobValue) : null;
 
   const [showSIN, setShowSIN] = useState(false);
-  const sinPhotoUrl = useWatch({ control, name: "sinPhoto.url" });
+  const sinPhoto = useWatch({ control, name: "sinPhoto" });
+  const sinPhotoS3Key = sinPhoto?.s3Key || "";
+  const sinPhotoUrl = sinPhoto?.url || "";
   const [sinPhotoPreview, setSinPhotoPreview] = useState<string | null>(sinPhotoUrl || null);
   const [sinValidationStatus, setSinValidationStatus] = useState<"idle" | "checking" | "valid" | "invalid">("idle");
+  const [sinPhotoStatus, setSinPhotoStatus] = useState<"idle" | "uploading" | "deleting" | "error">("idle");
+  const [sinPhotoMessage, setSinPhotoMessage] = useState("");
+
   const [sinValidationMessage, setSinValidationMessage] = useState("");
 
   // Get the current SIN value and format it for display
@@ -90,7 +95,7 @@ export default function PersonalDetails() {
         setSinValidationStatus("invalid");
         setSinValidationMessage(errorData.message || "SIN already exists");
       }
-    } catch {
+
     } catch {
       setSinValidationStatus("invalid");
       setSinValidationMessage("Error checking SIN availability");
@@ -123,30 +128,65 @@ export default function PersonalDetails() {
     if (!file) {
       setValue("sinPhoto", undefined, { shouldValidate: true });
       setSinPhotoPreview(null);
+      setSinPhotoStatus("idle");
+      setSinPhotoMessage("");
       return;
     }
+
+    setSinPhotoStatus("uploading");
+    setSinPhotoMessage("");
 
     try {
       const result = await uploadToS3Presigned({
         file,
         folder: ES3Folder.SIN_PHOTOS,
-        trackerId: id, // or pass real trackerId if you have it
+        trackerId: id,
       });
 
       setValue("sinPhoto", result, { shouldValidate: true });
 
-      // Optional: local preview
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result as string;
         setSinPhotoPreview(result);
       };
       reader.readAsDataURL(file);
+
+      setSinPhotoStatus("idle");
+      setSinPhotoMessage("Upload successful");
     } catch (error: any) {
       console.error("SIN photo upload failed:", error);
-      alert(error.message || "Failed to upload SIN photo.");
+      setSinPhotoStatus("error");
+      setSinPhotoMessage(error.message || "Upload failed");
     }
   };
+
+  const handleSinPhotoRemove = async () => {
+    setSinPhotoStatus("deleting");
+    setSinPhotoMessage("");
+
+    if (sinPhotoS3Key?.startsWith("temp-files/")) {
+      try {
+        await fetch("/api/v1/delete-temp-files", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ keys: [sinPhotoS3Key] }),
+        });
+
+        setSinPhotoMessage("Photo removed");
+      } catch (err) {
+        console.error("Failed to delete temp S3 file:", err);
+        setSinPhotoStatus("error");
+        setSinPhotoMessage("Delete failed");
+      }
+    }
+
+    setValue("sinPhoto", undefined, { shouldValidate: true });
+    setSinPhotoPreview(null);
+    setSinPhotoStatus("idle");
+  };
+
+
 
   // Phone formatting functions
   const formatPhoneNumber = (value: string) => {
@@ -172,6 +212,7 @@ export default function PersonalDetails() {
     if (!value) return "";
     return formatPhoneNumber(value);
   };
+
 
   return (
     <section className="space-y-6 border border-gray-200 p-6 rounded-lg bg-white/80 shadow-sm">
@@ -316,7 +357,8 @@ export default function PersonalDetails() {
               />
               <button
                 type="button"
-                onClick={() => handleSinPhotoUpload(null)}
+                onClick={handleSinPhotoRemove}
+                disabled={sinPhotoStatus === "uploading" || sinPhotoStatus === "deleting"}
                 className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
               >
                 <X size={12} />
@@ -343,11 +385,34 @@ export default function PersonalDetails() {
             data-field="sinPhoto"
             className="hidden"
           />
-          {errors.sinPhoto && (
+          {sinPhotoStatus !== "uploading" && errors.sinPhoto && (
             <p className="text-red-500 text-sm mt-1">
               {errors.sinPhoto.message?.toString()}
             </p>
           )}
+
+          {sinPhotoStatus === "uploading" && (
+            <p className="text-yellow-600 text-sm mt-1 flex items-center">
+              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-600 mr-2"></div>
+              Uploading...
+            </p>
+          )}
+
+          {sinPhotoStatus === "deleting" && (
+            <p className="text-yellow-600 text-sm mt-1 flex items-center">
+              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-600 mr-2"></div>
+              Deleting...
+            </p>
+          )}
+
+          {sinPhotoStatus === "error" && (
+            <p className="text-red-500 text-sm mt-1">{sinPhotoMessage}</p>
+          )}
+
+          {!errors.sinPhoto && sinPhotoStatus === "idle" && sinPhotoMessage && (
+            <p className="text-green-600 text-sm mt-1">{sinPhotoMessage}</p>
+          )}
+
         </div>
 
         {/* Date of Birth */}
