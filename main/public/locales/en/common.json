@@ -84,7 +84,9 @@
         "license": "License Information",
         "address": {
           "title": "Address History",
-          "subtitle": "Please provide your address history for the past 5 years"
+          "subtitle": "Please provide your address history for the past 5 years",
+          "current": "Current Address",
+          "previous": "Previous Address"
         }
       }
     },
