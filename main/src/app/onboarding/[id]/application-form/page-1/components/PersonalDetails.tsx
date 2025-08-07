@@ -92,32 +92,35 @@ export default function PersonalDetails() {
       : ""
   );
 
-  const validateSIN = useCallback(async (sin: string) => {
-    if (sin.length !== 9) return;
+  const validateSIN = useCallback(
+    async (sin: string) => {
+      if (sin.length !== 9) return;
 
-    setSinValidationStatus("checking");
-    setSinValidationMessage("");
+      setSinValidationStatus("checking");
+      setSinValidationMessage("");
 
-    try {
-      const res = await fetch("/api/v1/onboarding/validate-sin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sin }),
-      });
+      try {
+        const res = await fetch("/api/v1/onboarding/check-sin-availability", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sin, trackerId: id }),
+        });
 
-      if (res.ok) {
-        setSinValidationStatus("valid");
-        setSinValidationMessage("SIN is available");
-      } else {
-        const data = await res.json();
+        if (res.ok) {
+          setSinValidationStatus("valid");
+          setSinValidationMessage("SIN is available");
+        } else {
+          const data = await res.json();
+          setSinValidationStatus("invalid");
+          setSinValidationMessage(data.message || "SIN already exists");
+        }
+      } catch {
         setSinValidationStatus("invalid");
-        setSinValidationMessage(data.message || "SIN already exists");
+        setSinValidationMessage("Error checking SIN availability");
       }
-    } catch {
-      setSinValidationStatus("invalid");
-      setSinValidationMessage("Error checking SIN availability");
-    }
-  }, []);
+    },
+    [id]
+  );
 
   const debouncedValidateSIN = useCallback(() => {
     let timeout: NodeJS.Timeout;
@@ -246,13 +249,21 @@ export default function PersonalDetails() {
           <label className="block text-sm font-medium text-gray-700">
             {t("form.fields.sin")}
           </label>
+
           <input
             type={showSIN ? "text" : "password"}
             placeholder="123-456-789"
             value={displaySIN}
             inputMode="numeric"
             autoComplete="off"
-            onChange={handleSINChange}
+            maxLength={11} // allows for format like 123-456-789 if needed
+            onChange={(e) => {
+              const raw = e.target.value.replace(/\D/g, ""); // only digits
+              if (raw.length <= 9) {
+                handleSINChange(e); // your existing function
+              }
+            }}
+            pattern="\d{9}"
             data-field="sin"
             className={`py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md pr-10 ${
               sinValidationStatus === "valid"
@@ -264,6 +275,7 @@ export default function PersonalDetails() {
                 : ""
             }`}
           />
+
           <button
             type="button"
             onClick={() => setShowSIN((prev) => !prev)}
