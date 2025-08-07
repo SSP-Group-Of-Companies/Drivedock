@@ -1,6 +1,7 @@
 import PreQualificationClient from "@/app/onboarding/[id]/prequalifications/PrequalificationClient";
 import { IPreQualifications } from "@/types/preQualifications.types";
 import { ITrackerContext } from "@/types/onboardingTracker.type";
+import { NEXT_PUBLIC_BASE_URL } from "@/config/env";
 
 // ✅ Transform prequalification object → RHF-compatible string form
 function transformToFormValues(
@@ -43,8 +44,7 @@ export default async function PrequalificationsPage({
   const { id } = await params;
 
   const res = await fetch(
-    `${
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
+    `${NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
     }/api/v1/onboarding/${id}/prequalifications`,
     { cache: "no-store" }
   );
