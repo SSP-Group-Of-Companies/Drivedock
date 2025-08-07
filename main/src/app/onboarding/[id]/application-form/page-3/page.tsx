@@ -3,7 +3,7 @@
 "use client";
 
 import { useForm, FormProvider } from "react-hook-form";
-import ContinueButton from "@/app/onboarding/application-form/ContinueButton";
+import ContinueButton from "@/app/onboarding/[id]/ContinueButton";
 import { page3Config } from "@/lib/frontendConfigs/applicationFormConfigs/page3Config";
 
 export default function Page3() {

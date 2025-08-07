@@ -1,5 +1,19 @@
 "use client";
 
+/**
+ * <ContinueButton />
+ *
+ * Generic continue button for multi-step DriveDock form pages.
+ * Handles validation, business rule checks, and submits via POST or PATCH.
+ *
+ * Supports:
+ * - Dynamic form field validation
+ * - Resume flow using tracker ID
+ * - Company + Prequalification validation for POST
+ * - Auto PATCH if tracker ID exists (via Zustand or URL)
+ * - Redirect + router.refresh() to reload server-rendered form pages
+ */
+
 import { useFormContext, FieldValues } from "react-hook-form";
 import { useRouter, useParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
@@ -17,6 +31,7 @@ type ContinueButtonProps<T extends FieldValues> = {
   config: {
     validationFields: (values: T) => string[];
     nextRoute: string;
+    submitSegment: string;
     validateBusinessRules?: (values: T) => string | null;
   };
   trackerId?: string;
@@ -45,13 +60,17 @@ export default function ContinueButton<T extends FieldValues>({
   const onSubmit = async () => {
     const values = getValues();
 
+    // Run frontend validations
     const fieldsToValidate = config.validationFields(values);
-    const isValid = await trigger(fieldsToValidate as Parameters<typeof trigger>[0]);
+    const isValid = await trigger(
+      fieldsToValidate as Parameters<typeof trigger>[0]
+    );
     if (!isValid) {
       handleFormError(errors);
       return;
     }
 
+    // Custom business rule validations (e.g. Page 2 employment logic)
     if (config.validateBusinessRules) {
       const ruleError = config.validateBusinessRules(values);
       if (ruleError) {
@@ -60,17 +79,20 @@ export default function ContinueButton<T extends FieldValues>({
       }
     }
 
-    const companyId = selectedCompany?.id;
-    const urlTrackerId = params.id as string;
+    // Tracker + Company logic
+    const urlTrackerId = params?.id as string;
     const effectiveTrackerId = trackerId || urlTrackerId;
-    const isPost = !tracker?.id && !effectiveTrackerId;
+    const isPost = !effectiveTrackerId;
 
     if (isPost) {
       if (!prequalifications?.completed) {
-        alert("Prequalification data is missing. Please restart the application.");
+        alert(
+          "Prequalification data is missing. Please restart the application."
+        );
         return;
       }
 
+      const companyId = selectedCompany?.id;
       if (!companyId || !COMPANIES.some((c) => c.id === companyId)) {
         alert("Invalid company selection. Please restart the application.");
         return;
@@ -80,22 +102,24 @@ export default function ContinueButton<T extends FieldValues>({
     try {
       setSubmitting(true);
 
+      // Cleaned payload is built by calling page-specific config (handled outside this file)
       const jsonPayload = isPost
         ? {
-          applicationFormPage1: values,
-          prequalifications,
-          companyId,
-          applicationType: EApplicationType.FLAT_BED,
-        }
+            applicationFormPage1: values,
+            prequalifications,
+            companyId: selectedCompany?.id,
+            applicationType: EApplicationType.FLAT_BED,
+          }
         : values;
 
       const { trackerContext } = await submitFormStep({
         json: jsonPayload,
         tracker,
-        nextRoute: config.nextRoute,
-        urlTrackerId: effectiveTrackerId,
+        urlTrackerId,
+        submitSegment: config.submitSegment,
       });
 
+      // Redirect to next route
       if (isPost) {
         if (trackerContext?.id) {
           setTracker(trackerContext);
@@ -105,7 +129,8 @@ export default function ContinueButton<T extends FieldValues>({
           throw new Error("Tracker not returned from POST");
         }
       } else {
-        router.push(config.nextRoute.replace("[id]", tracker?.id || ""));
+        router.push(config.nextRoute.replace("[id]", effectiveTrackerId));
+        router.refresh(); // ✅ force server re-fetch when navigating back
       }
     } catch (err) {
       console.error("Submission error:", err);
@@ -122,9 +147,10 @@ export default function ContinueButton<T extends FieldValues>({
         disabled={submitting}
         onClick={onSubmit}
         className={`px-8 py-2 mt-6 rounded-full font-semibold transition-colors shadow-md flex items-center gap-2
-          ${submitting
-            ? "bg-gray-400 text-white cursor-not-allowed"
-            : "bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 text-white hover:opacity-90"
+          ${
+            submitting
+              ? "bg-gray-400 text-white cursor-not-allowed"
+              : "bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 text-white hover:opacity-90"
           }
         `}
       >

@@ -1,7 +1,7 @@
 "use client";
 
 import { Dialog, Transition } from "@headlessui/react";
-import { Fragment, useState } from "react";
+import { Fragment, useState, startTransition } from "react";
 import { CheckCircle, XCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
@@ -46,8 +46,11 @@ export default function ResumeModal({ isOpen, onClose }: ResumeModalProps) {
       const redirectUrl = data?.data?.redirectUrl;
 
       if (trackerContext && redirectUrl) {
-        setTracker(trackerContext); // ✅ Hydrate Zustand store before redirect
-        router.push(redirectUrl); // ✅ Navigate to resumed step
+        //  Wrap in transition for safe reroute after Zustand update
+        startTransition(() => {
+          setTracker(trackerContext);
+          router.replace(redirectUrl);
+        });
       } else {
         throw new Error("Resume info missing");
       }

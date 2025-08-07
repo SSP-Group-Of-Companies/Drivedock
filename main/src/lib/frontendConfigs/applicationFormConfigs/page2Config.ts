@@ -1,60 +1,63 @@
-// src/lib/frontendConfigs/applicationFormConfigs/page2Config.ts
-"use client";
+// page2Config.ts
 
-import { ApplicationFormPage2Schema } from "@/lib/zodSchemas/applicationFormPage2.schema";
 import { FormPageConfig } from "../formPageConfig.types";
+import { ApplicationFormPage2Schema } from "@/lib/zodSchemas/applicationFormPage2.schema";
+import { IOnboardingTracker } from "@/types/onboardingTracker.type";
 
-// ✅ Type-safe validator that only checks rendered fields
-function validationFields(values: ApplicationFormPage2Schema): string[] {
-  const fields: string[] = [];
+// 🔐 Custom config contract for Page 2 (no prequal/companyId required)
+type Page2FormPageConfig = Omit<
+  FormPageConfig<ApplicationFormPage2Schema>,
+  "buildPayload"
+> & {
+  buildPayload: (
+    values: ApplicationFormPage2Schema,
+    tracker?: IOnboardingTracker
+  ) => Record<string, unknown>;
+};
 
-  values.employments.forEach((employment, i) => {
-    const isRendered = document.querySelector(
-      `[data-field="employments.${i}.employerName"]`
-    );
+export const page2Config: Page2FormPageConfig = {
+  validationFields: (values) => {
+    const fields: string[] = [];
 
-    if (!isRendered) return;
+    values.employments.forEach((employment, i) => {
+      const isRendered = document.querySelector(
+        `[data-field="employments.${i}.employerName"]`
+      );
 
-    fields.push(
-      `employments.${i}.employerName`,
-      `employments.${i}.supervisorName`,
-      `employments.${i}.address`,
-      `employments.${i}.postalCode`,
-      `employments.${i}.city`,
-      `employments.${i}.stateOrProvince`,
-      `employments.${i}.phone1`,
-      `employments.${i}.email`,
-      `employments.${i}.positionHeld`,
-      `employments.${i}.from`,
-      `employments.${i}.to`,
-      `employments.${i}.salary`,
-      `employments.${i}.reasonForLeaving`,
-      `employments.${i}.subjectToFMCSR`,
-      `employments.${i}.safetySensitiveFunction`
-    );
+      if (!isRendered) return;
 
-    if (employment.gapExplanationBefore !== undefined) {
-      fields.push(`employments.${i}.gapExplanationBefore`);
-    }
-  });
+      fields.push(
+        `employments.${i}.employerName`,
+        `employments.${i}.supervisorName`,
+        `employments.${i}.address`,
+        `employments.${i}.postalCode`,
+        `employments.${i}.city`,
+        `employments.${i}.stateOrProvince`,
+        `employments.${i}.phone1`,
+        `employments.${i}.email`,
+        `employments.${i}.positionHeld`,
+        `employments.${i}.from`,
+        `employments.${i}.to`,
+        `employments.${i}.salary`,
+        `employments.${i}.reasonForLeaving`,
+        `employments.${i}.subjectToFMCSR`,
+        `employments.${i}.safetySensitiveFunction`
+      );
 
-  return fields;
-}
+      if (employment.gapExplanationBefore !== undefined) {
+        fields.push(`employments.${i}.gapExplanationBefore`);
+      }
+    });
 
-// ✅ Clean JSON builder for PATCH
-function buildFormData(values: ApplicationFormPage2Schema): FormData {
-  const formData = new FormData();
+    return fields;
+  },
 
-  // Must match the key expected in submitFormStep.ts
-  const key = "page2"; // not "page-2"
-  formData.append(key, JSON.stringify(values));
+  buildPayload: (values) => {
+    return {
+      page2: values,
+    };
+  },
 
-  return formData;
-}
-
-// ✅ Final export
-export const page2Config: FormPageConfig<ApplicationFormPage2Schema> = {
-  validationFields,
-  buildFormData,
   nextRoute: "/onboarding/[id]/application-form/page-3",
+  submitSegment: "page-2",
 };

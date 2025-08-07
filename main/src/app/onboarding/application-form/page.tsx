@@ -28,7 +28,7 @@ import PersonalDetails from "../[id]/application-form/page-1/components/Personal
 import PlaceOfBirth from "../[id]/application-form/page-1/components/PlaceOfBirth";
 import LicenseSection from "../[id]/application-form/page-1/components/LicenseSection";
 import AddressSection from "../[id]/application-form/page-1/components/AddressSection";
-import ContinueButton from "./ContinueButton";
+import ContinueButton from "../[id]/ContinueButton";
 
 // Config
 import { page1Config } from "@/lib/frontendConfigs/applicationFormConfigs/page1Config";

@@ -17,16 +17,24 @@ import { ApplicationFormPage1Schema } from "@/lib/zodSchemas/applicationFormPage
 import { ELicenseType } from "@/types/shared.types";
 import Page1Client from "./Page1Client";
 
-//Fix: Creates empty mock file to satisfy zod + TS
-function getEmptyFile(): File {
-  return new File([], "", { type: "application/octet-stream" });
+// Fix: Creates empty mock file to satisfy zod + TS
+function getEmptyS3Photo() {
+  return { s3Key: "", url: "" };
 }
 
+// Utility: Normalize date to YYYY-MM-DD format
+function formatDate(dateString: string): string {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  return isNaN(date.getTime()) ? "" : date.toISOString().split("T")[0];
+}
+
+// Empty fallback object for first-time render
 const emptyFormDefaults: ApplicationFormPage1Schema = {
   firstName: "",
   lastName: "",
   sin: "",
-  sinPhoto: getEmptyFile(),
+  sinPhoto: getEmptyS3Photo(),
   dob: "",
   phoneHome: "",
   phoneCell: "",
@@ -43,8 +51,8 @@ const emptyFormDefaults: ApplicationFormPage1Schema = {
       licenseStateOrProvince: "",
       licenseType: ELicenseType.AZ,
       licenseExpiry: "",
-      licenseFrontPhoto: getEmptyFile(),
-      licenseBackPhoto: getEmptyFile(),
+      licenseFrontPhoto: getEmptyS3Photo(),
+      licenseBackPhoto: getEmptyS3Photo(),
     },
   ],
   addresses: [],
@@ -60,7 +68,11 @@ async function fetchPage1Data(trackerId: string) {
       { cache: "no-store" }
     );
 
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.warn("Page 1 fetch failed:", res.status);
+      return null;
+    }
+
     const data = await res.json();
     return data.data?.page1 || null;
   } catch (error) {
@@ -72,18 +84,18 @@ async function fetchPage1Data(trackerId: string) {
 export default async function Page1ServerWrapper({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const trackerId = params.id;
+  const { id: trackerId } = await params;
   const pageData = await fetchPage1Data(trackerId);
 
   const defaultValues: ApplicationFormPage1Schema = pageData
     ? {
         firstName: pageData.firstName || "",
         lastName: pageData.lastName || "",
-        sin: pageData.sinEncrypted ? "•••••••••" : "",
-        sinPhoto: getEmptyFile(),
-        dob: pageData.dob || "",
+        sin: pageData.sin || "",
+        sinPhoto: pageData.sinPhoto || getEmptyS3Photo(),
+        dob: formatDate(pageData.dob),
         phoneHome: pageData.phoneHome || "",
         phoneCell: pageData.phoneCell || "",
         canProvideProofOfAge: pageData.canProvideProofOfAge || false,
@@ -98,12 +110,24 @@ export default async function Page1ServerWrapper({
               licenseNumber: license.licenseNumber || "",
               licenseStateOrProvince: license.licenseStateOrProvince || "",
               licenseType: license.licenseType || ELicenseType.AZ,
-              licenseExpiry: license.licenseExpiry || "",
-              licenseFrontPhoto: getEmptyFile(),
-              licenseBackPhoto: getEmptyFile(),
+              licenseExpiry: formatDate(license.licenseExpiry),
+              licenseFrontPhoto: {
+                s3Key: license.licenseFrontPhoto?.s3Key || "",
+                url: license.licenseFrontPhoto?.url || "",
+              },
+              licenseBackPhoto: {
+                s3Key: license.licenseBackPhoto?.s3Key || "",
+                url: license.licenseBackPhoto?.url || "",
+              },
             }))
           : emptyFormDefaults.licenses,
-        addresses: pageData.addresses || [],
+
+        addresses:
+          pageData.addresses?.map((addr: any) => ({
+            ...addr,
+            from: formatDate(addr.from),
+            to: formatDate(addr.to),
+          })) || [],
       }
     : emptyFormDefaults;
 

@@ -19,15 +19,15 @@ export default function Navbar() {
   // ✅ Smart back navigation that preserves tracker ID
   const handleBackClick = () => {
     const trackerId = params.id as string;
-    
+
     // If we're in onboarding with tracker ID, navigate to previous step
-    if (trackerId && pathname.includes('/onboarding/')) {
-      if (pathname.includes('/page-2')) {
+    if (trackerId && pathname.includes("/onboarding/")) {
+      if (pathname.includes("/page-2")) {
         router.push(`/onboarding/${trackerId}/application-form/page-1`);
-      } else if (pathname.includes('/page-1')) {
+      } else if (pathname.includes("/page-1")) {
         router.push(`/onboarding/${trackerId}/prequalifications`);
-      } else if (pathname.includes('/prequalifications')) {
-        router.push('/start');
+      } else if (pathname.includes("/prequalifications")) {
+        router.push("/start");
       } else {
         router.back(); // Fallback
       }

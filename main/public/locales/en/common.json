@@ -67,10 +67,10 @@
     "yes": "Yes",
     "no": "No",
     "company": "Company",
-    "ownerOperator": "Owner Operator",
-    "ownerDriver": "Owner Driver",
-    "shortHaul": "Short Haul",
-    "longHaul": "Long Haul",
+    "owneroperator": "Owner Operator",
+    "ownerdriver": "Owner Driver",
+    "shorthaul": "Short Haul",
+    "longhaul": "Long Haul",
     "team": "Team",
     "single": "Single",
 
@@ -97,6 +97,7 @@
         "addPrevious": "Add Previous Employer",
         "removePrevious": "Remove"
       },
+      "requirements": "The Federal Motor Carrier Safety Regulations (49CFR391.21) require that all applicants wishing to drive a commercial vehicle list all employment for the last two (2) years. In addition, if you have driven a commercial vehicle previously, you must provide employment history for an additional eight (8) years for a total of ten (10) years. Any 1 month or more gaps in employment must be explained.",
       "modal": {
         "title": "Additional Employment History Required",
         "message": "You have more than 2 years of experience. Please add your previous employment history to complete the required information."

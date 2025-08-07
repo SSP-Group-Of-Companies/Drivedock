@@ -28,15 +28,15 @@ export default function FormLayout({
   // ✅ Smart back navigation that preserves tracker ID
   const handleBackClick = () => {
     const trackerId = params.id as string;
-    
+
     // If we're in onboarding with tracker ID, navigate to previous step
-    if (trackerId && pathname.includes('/onboarding/')) {
-      if (pathname.includes('/page-2')) {
+    if (trackerId && pathname.includes("/onboarding/")) {
+      if (pathname.includes("/page-2")) {
         router.push(`/onboarding/${trackerId}/application-form/page-1`);
-      } else if (pathname.includes('/page-1')) {
+      } else if (pathname.includes("/page-1")) {
         router.push(`/onboarding/${trackerId}/prequalifications`);
-      } else if (pathname.includes('/prequalifications')) {
-        router.push('/start');
+      } else if (pathname.includes("/prequalifications")) {
+        router.push("/start");
       } else {
         router.back(); // Fallback
       }
@@ -72,7 +72,7 @@ export default function FormLayout({
   return (
     <>
       {/* Hide navbar when scrolled */}
-      <div className={isScrolled ? "hidden" : ""}>
+      <div className={isScrolled ? "hidden" : "block"}>
         <Navbar />
       </div>
 
@@ -149,7 +149,7 @@ export default function FormLayout({
         )}
       </AnimatePresence>
 
-      <main className="relative min-h-screen bg-gradient-to-b from-slate-50 via-sky-100 to-sky-200 px-4 py-6 sm:px-8">
+      <main className="relative min-h-[calc(100vh-120px)] bg-gradient-to-b from-slate-50 via-sky-100 to-sky-200 px-4 py-6 sm:px-8">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -233,4 +233,4 @@ export default function FormLayout({
       <Footer />
     </>
   );
-} 
+}

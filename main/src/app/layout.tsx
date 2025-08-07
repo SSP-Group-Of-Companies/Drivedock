@@ -29,20 +29,24 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="icon" href="/assets/logos/blackFavicon.png" type="image/png" />
+        <link
+          rel="icon"
+          href="/assets/logos/blackFavicon.png"
+          type="image/png"
+        />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased relative min-h-screen overflow-x-hidden bg-white text-gray-900`}
       >
         <I18nProvider>
-        {/* Background Gradient Layer */}
-        <div className="absolute inset-0 z-[-2] bg-gradient-to-br from-white via-blue-100 to-blue-600 opacity-40" />
+          {/* Background Gradient Layer */}
+          <div className="absolute inset-0 z-[-2] bg-gradient-to-br from-white via-blue-100 to-blue-600 opacity-40" />
 
-        {/* Star Watermark */}
-        {/* Watermark is now handled per-page */}
+          {/* Star Watermark */}
+          {/* Watermark is now handled per-page */}
 
-        {/* Main Content */}
-        <main className="relative z-10">{children}</main>
+          {/* Main Content */}
+          <main className="relative z-10">{children}</main>
         </I18nProvider>
       </body>
     </html>

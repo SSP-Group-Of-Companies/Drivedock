@@ -8,15 +8,15 @@ i18n
   .use(initReactI18next) // connect with react
   .init({
     fallbackLng: "en",
-    supportedLngs: ["en", "fr", "pa"],
+    supportedLngs: ["en", "fr", "es"],
     defaultNS: "common",
     ns: ["common"],
     backend: {
-      loadPath: "/locales/{{lng}}/{{ns}}.json"
+      loadPath: "/locales/{{lng}}/{{ns}}.json",
     },
     react: {
-      useSuspense: false
-    }
+      useSuspense: false,
+    },
   });
 
 export default i18n;

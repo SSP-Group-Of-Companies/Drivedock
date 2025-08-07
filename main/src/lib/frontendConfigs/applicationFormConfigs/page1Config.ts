@@ -1,23 +1,28 @@
 /**
  * page1Config.ts
  *
- * Configuration file for Application Form Page 1 in the DriveDock Onboarding Flow.
+ * Configuration for Application Form Page 1 in the DriveDock Onboarding Flow.
  *
- * This config enables dynamic handling of:
- * - Zod validation field paths
- * - FormData construction for both POST and PATCH logic
- * - Tracker-aware payload routing
- * - Dynamic routing to the next onboarding step
+ * This config powers the ContinueButton with:
+ * - Zod validation field paths for RHF scroll-to-error
+ * - Clean JSON payload builder for both POST and PATCH
+ * - Dynamic route to the next onboarding step
  *
- * POST: Triggered on first-time form submission from /onboarding/application-form
- * - Uses multipart/form-data with "applicationFormPage1" and "prequalifications"
- * - Includes sinPhoto and AZ license photo uploads
+ *  S3 Upload Flow:
+ * - All files (sinPhoto, licenseFrontPhoto, licenseBackPhoto) are uploaded to S3 before submit
+ * - The form only sends JSON containing s3Key + url per photo field
  *
- * PATCH: Triggered from /onboarding/[id]/application-form/page-1
- * - Uses multipart/form-data with "page1" key only
- * - Tracker ID must be passed in
+ *  POST: /api/v1/onboarding/application-form
+ * {
+ *   applicationFormPage1: { ... },
+ *   prequalifications: { ... },
+ *   companyId: "..."
+ * }
  *
- * Used by the shared <ContinueButton /> component to ensure consistent form behavior across steps.
+ *  PATCH: /api/v1/onboarding/:trackerId/application-form/page-1
+ * {
+ *   page1: { ... }
+ * }
  */
 
 "use client";
@@ -25,16 +30,15 @@
 import { ApplicationFormPage1Schema } from "@/lib/zodSchemas/applicationFormPage1.schema";
 import { FormPageConfig } from "@/lib/frontendConfigs/formPageConfig.types";
 import { IPreQualifications } from "@/types/preQualifications.types";
-import { IOnboardingTracker } from "@/types/onboardingTracker.type"; // Import Tracker Type
+import { IOnboardingTracker } from "@/types/onboardingTracker.type";
 
-// Extend FormPageConfig to support tracker-aware FormData building
 type Page1FormPageConfig = FormPageConfig<ApplicationFormPage1Schema> & {
-  buildFormData: (
+  buildPayload: (
     values: ApplicationFormPage1Schema,
     prequalifications: IPreQualifications,
     companyId: string,
-    tracker?: IOnboardingTracker // Optional tracker for PATCH
-  ) => FormData;
+    tracker?: IOnboardingTracker
+  ) => Record<string, unknown>;
 };
 
 export const page1Config: Page1FormPageConfig = {
@@ -80,62 +84,32 @@ export const page1Config: Page1FormPageConfig = {
     return fields;
   },
 
-  buildFormData: (
-    values: ApplicationFormPage1Schema,
-    prequalifications: IPreQualifications,
-    companyId: string,
-    tracker?: IOnboardingTracker // Optional for PATCH
-  ) => {
-    const formData = new FormData();
-
-    // Upload SIN photo
-    if (values.sinPhoto instanceof File) {
-      formData.append("sinPhoto", values.sinPhoto);
-    }
-
-    // Upload license 0 photos
-    const firstLicense = values.licenses?.[0];
-    if (firstLicense?.licenseFrontPhoto instanceof File) {
-      formData.append("license_0_front", firstLicense.licenseFrontPhoto);
-    }
-    if (firstLicense?.licenseBackPhoto instanceof File) {
-      formData.append("license_0_back", firstLicense.licenseBackPhoto);
-    }
-
-    // Clean license array for JSON
-    const licensesCleaned = values.licenses.map((license) => {
-      const licenseCopy = structuredClone(license) as Partial<typeof license>;
-      delete licenseCopy.licenseFrontPhoto;
-      delete licenseCopy.licenseBackPhoto;
-      return licenseCopy;
-    });
-
-    const cleanedPayload = {
+  buildPayload: (
+    values,
+    prequalifications,
+    companyId,
+    tracker
+  ): Record<string, unknown> => {
+    const cleaned = {
       ...values,
       sin: values.sin?.replace(/\D/g, "") || "",
-      licenses: licensesCleaned,
     };
 
-    // Remove sinPhoto from JSON payload since it's handled as file
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { sinPhoto, ...payloadWithoutSinPhoto } = cleanedPayload;
-
-    // Append FormData - use different field names for POST vs PATCH
     if (!tracker) {
-      // Initial POST expects "applicationFormPage1"
-      formData.append(
-        "applicationFormPage1",
-        JSON.stringify(payloadWithoutSinPhoto)
-      );
-      formData.append("prequalifications", JSON.stringify(prequalifications));
-      formData.append("companyId", companyId);
+      // First-time POST
+      return {
+        applicationFormPage1: cleaned,
+        prequalifications,
+        companyId,
+      };
     } else {
-      // PATCH expects "page1"
-      formData.append("page1", JSON.stringify(payloadWithoutSinPhoto));
+      // PATCH update
+      return {
+        page1: cleaned,
+      };
     }
-
-    return formData;
   },
 
   nextRoute: "/onboarding/[id]/application-form/page-2",
+  submitSegment: "page-1",
 };

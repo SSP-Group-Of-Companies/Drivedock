@@ -12,7 +12,7 @@ import {
   getEmploymentGaps,
 } from "@/lib/frontendConfigs/applicationFormConfigs/validateEmploymentHistory";
 
-// 👇 Type alias for a single employment entry
+// Type alias for a single employment entry
 type EmploymentEntry = ApplicationFormPage2Schema["employments"][number];
 
 export default function EmploymentSection() {
@@ -30,7 +30,7 @@ export default function EmploymentSection() {
   const [showPrevious, setShowPrevious] = useState(false);
   const hasAutoAddedRef = useRef(false);
 
-  // ✅ Strictly typed employment factory
+  // Strictly typed employment factory
   const createEmptyEmployment = (): EmploymentEntry => ({
     employerName: "",
     supervisorName: "",
@@ -90,12 +90,7 @@ export default function EmploymentSection() {
           </h2>
         </div>
         <p className="text-sm text-gray-700 leading-relaxed">
-          The Federal Motor Carrier Safety Regulations (49CFR391.21) require
-          that all applicants wishing to drive a commercial vehicle list all
-          employment for the last two (2) years. In addition, if you have driven
-          a commercial vehicle previously, you must provide employment history
-          for an additional eight (8) years for a total of ten (10) years. Any 1
-          month or more gaps in employment must be explained.
+          {t("form.page2.requirements")}
         </p>
       </div>
 

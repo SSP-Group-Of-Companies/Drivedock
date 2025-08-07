@@ -12,7 +12,7 @@
 
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ELicenseType } from "@/types/shared.types";
 import { FieldErrors } from "react-hook-form";
 import { ApplicationFormPage1Schema } from "@/lib/zodSchemas/applicationFormPage1.schema";
@@ -154,7 +154,28 @@ export default function LicenseSection() {
 
   const licenseErrors =
     errors.licenses as FieldErrors<ApplicationFormPage1Schema>["licenses"];
+
   const canAddMore = fields.length < 3;
+
+  const methods = useFormContext();
+
+  useEffect(() => {
+    if (!frontPhotoPreview && frontPhotoS3Key) {
+      const frontUrl = methods.getValues("licenses.0.licenseFrontPhoto.url");
+      if (frontUrl) setFrontPhotoPreview(frontUrl);
+    }
+
+    if (!backPhotoPreview && backPhotoS3Key) {
+      const backUrl = methods.getValues("licenses.0.licenseBackPhoto.url");
+      if (backUrl) setBackPhotoPreview(backUrl);
+    }
+  }, [
+    frontPhotoPreview,
+    frontPhotoS3Key,
+    backPhotoPreview,
+    backPhotoS3Key,
+    methods,
+  ]);
 
   return (
     <section className="space-y-6 border border-gray-200 p-6 rounded-lg bg-white/80 shadow-sm">
@@ -185,7 +206,6 @@ export default function LicenseSection() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* License Number */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 {t("form.fields.licenseNumber")}
@@ -194,15 +214,15 @@ export default function LicenseSection() {
                 type="text"
                 {...register(`licenses.${index}.licenseNumber`)}
                 className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
+                data-field={`licenses.${index}.licenseNumber`}
               />
               {licenseErrors?.[index]?.licenseNumber && (
                 <p className="text-red-500 text-sm mt-1">
-                  {licenseErrors[index]?.licenseNumber?.message}
+                  {licenseErrors?.[index]?.licenseNumber?.message}
                 </p>
               )}
             </div>
 
-            {/* Province */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 {t("form.fields.licenseProvince")}
@@ -211,15 +231,15 @@ export default function LicenseSection() {
                 type="text"
                 {...register(`licenses.${index}.licenseStateOrProvince`)}
                 className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
+                data-field={`licenses.${index}.licenseStateOrProvince`}
               />
               {licenseErrors?.[index]?.licenseStateOrProvince && (
                 <p className="text-red-500 text-sm mt-1">
-                  {licenseErrors[index]?.licenseStateOrProvince?.message}
+                  {licenseErrors?.[index]?.licenseStateOrProvince?.message}
                 </p>
               )}
             </div>
 
-            {/* Type */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 {t("form.fields.licenseType")}
@@ -230,15 +250,15 @@ export default function LicenseSection() {
                 value={index === 0 ? "AZ" : ""}
                 readOnly={index === 0}
                 className="py-2 px-3 mt-1 block w-full rounded-md bg-gray-100 text-gray-700 border border-gray-300"
+                data-field={`licenses.${index}.licenseType`}
               />
               {licenseErrors?.[index]?.licenseType && (
                 <p className="text-red-500 text-sm mt-1">
-                  {licenseErrors[index]?.licenseType?.message}
+                  {licenseErrors?.[index]?.licenseType?.message}
                 </p>
               )}
             </div>
 
-            {/* Expiry */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 {t("form.fields.licenseExpiry")}
@@ -247,16 +267,17 @@ export default function LicenseSection() {
                 type="date"
                 {...register(`licenses.${index}.licenseExpiry`)}
                 className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
+                data-field={`licenses.${index}.licenseExpiry`}
               />
               {licenseErrors?.[index]?.licenseExpiry && (
                 <p className="text-red-500 text-sm mt-1">
-                  {licenseErrors[index]?.licenseExpiry?.message}
+                  {licenseErrors?.[index]?.licenseExpiry?.message}
                 </p>
               )}
             </div>
           </div>
 
-          {/* Photo Uploads (Only for AZ license - index 0) */}
+          {/* Photo upload fields - only show for first license */}
           {index === 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
               {/* License Front Photo Upload */}
@@ -321,17 +342,17 @@ export default function LicenseSection() {
                   )}
 
                 {frontPhotoStatus === "uploading" && (
-                  <p className="text-yellow-600 text-sm mt-1 flex items-center">
-                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-600 mr-2"></div>
+                  <div className="text-yellow-600 text-sm mt-1 flex items-center">
+                    <p className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-600 mr-2"></p>
                     Uploading...
-                  </p>
+                  </div>
                 )}
 
                 {frontPhotoStatus === "deleting" && (
-                  <p className="text-yellow-600 text-sm mt-1 flex items-center">
-                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-600 mr-2"></div>
+                  <div className="text-yellow-600 text-sm mt-1 flex items-center">
+                    <p className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-600 mr-2"></p>
                     Deleting...
-                  </p>
+                  </div>
                 )}
 
                 {frontPhotoStatus === "error" && (
@@ -411,17 +432,17 @@ export default function LicenseSection() {
                   )}
 
                 {backPhotoStatus === "uploading" && (
-                  <p className="text-yellow-600 text-sm mt-1 flex items-center">
-                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-600 mr-2"></div>
+                  <div className="text-yellow-600 text-sm mt-1 flex items-center">
+                    <p className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-600 mr-2"></p>
                     Uploading...
-                  </p>
+                  </div>
                 )}
 
                 {backPhotoStatus === "deleting" && (
-                  <p className="text-yellow-600 text-sm mt-1 flex items-center">
-                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-600 mr-2"></div>
+                  <div className="text-yellow-600 text-sm mt-1 flex items-center">
+                    <p className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-600 mr-2"></p>
                     Deleting...
-                  </p>
+                  </div>
                 )}
 
                 {backPhotoStatus === "error" && (
@@ -464,72 +485,5 @@ export default function LicenseSection() {
         </button>
       )}
     </section>
-  );
-}
-
-/**
- * PhotoUpload – abstracted inline component to render a license photo input
- */
-function PhotoUpload({
-  id,
-  label,
-  preview,
-  onClear,
-  onSelect,
-  register,
-  error,
-}: {
-  id: string;
-  label: string;
-  preview: string | null;
-  onClear: () => void;
-  onSelect: (f: File | null) => void;
-  register: any;
-  error?: string;
-}) {
-  return (
-    <div data-field={id}>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
-        {label}
-      </label>
-      {preview ? (
-        <div className="relative">
-          <Image
-            src={preview}
-            alt="License Preview"
-            width={400}
-            height={128}
-            className="w-full h-32 object-cover rounded-lg border border-gray-300"
-          />
-          <button
-            type="button"
-            onClick={onClear}
-            className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
-          >
-            <X size={12} />
-          </button>
-        </div>
-      ) : (
-        <label
-          htmlFor={id}
-          className="cursor-pointer flex flex-col items-center justify-center py-6 px-4 mt-1 w-full text-sm text-gray-600 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 hover:border-gray-400 transition-all duration-200 group"
-        >
-          <Camera className="w-8 h-8 text-gray-400 mb-2 group-hover:text-gray-600" />
-          <span className="font-medium text-gray-400">
-            License photo (front or back)
-          </span>
-        </label>
-      )}
-      <input
-        id={id}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        {...register(`licenses.0.${id}`)}
-        onChange={(e) => onSelect(e.target.files?.[0] || null)}
-        className="hidden"
-      />
-      {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
-    </div>
   );
 }

@@ -9,7 +9,7 @@ import {
 
 // Components
 import EmploymentSection from "./components/EmploymentSection";
-import ContinueButton from "@/app/onboarding/application-form/ContinueButton";
+import ContinueButton from "@/app/onboarding/[id]/ContinueButton";
 
 // Config
 import { page2Config } from "@/lib/frontendConfigs/applicationFormConfigs/page2Config";

@@ -1,4 +1,4 @@
-// /hooks/useLanguageStore.ts
+// main/src/hooks/useLanguageStore.ts
 import { create } from "zustand";
 
 interface LanguageStore {
@@ -6,18 +6,20 @@ interface LanguageStore {
   setLanguage: (lang: string) => void;
 }
 
-// Helper function to safely get language from localStorage
+const SUPPORTED_LANGUAGES = ["en", "fr", "es"]; // Updated
+
 const getInitialLanguage = (): string => {
   if (typeof window === "undefined") return "en";
-  return localStorage.getItem("drivedock_lang") || "en";
+  const stored = localStorage.getItem("drivedock_lang") || "en";
+  return SUPPORTED_LANGUAGES.includes(stored) ? stored : "en";
 };
 
 export const useLanguageStore = create<LanguageStore>((set) => ({
   language: getInitialLanguage(),
   setLanguage: (lang: string) => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && SUPPORTED_LANGUAGES.includes(lang)) {
       localStorage.setItem("drivedock_lang", lang);
+      set({ language: lang });
     }
-    set({ language: lang });
   },
 }));

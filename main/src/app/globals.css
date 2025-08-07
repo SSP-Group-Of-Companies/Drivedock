@@ -81,20 +81,20 @@
   .bg-flag-us {
     background: linear-gradient(
       to right,
-      #3c3b6e 33%,
-      #ffffff 33%,
-      #ffffff 66%,
-      #b22234 66%
+      #3c3b6e 30%,
+      #ffffff 30%,
+      #ffffff 65%,
+      #b22234 65%
     );
   }
 
-  .bg-flag-in {
+  .bg-flag-es {
     background: linear-gradient(
-      to right,
-      #ff9933 33%,
-      #ffffff 33%,
-      #ffffff 66%,
-      #138808 66%
+      to bottom,
+      #aa151b 33.33%,
+      #f1bf00 33.33%,
+      #f1bf00 66.66%,
+      #aa151b 66.66%
     );
   }
 }
