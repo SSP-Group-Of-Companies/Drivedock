@@ -35,12 +35,8 @@ export async function PATCH(
     if (!hasCompletedStep(onboardingDoc.status, EStepPath.APPLICATION_PAGE_5))
       return errorResponse(400, "Please complete previous step first");
 
-    const payload = await parseJsonBody<IPoliciesConsents>(req);
-    const tempSignature = payload.signature;
-
-    if (!tempSignature?.s3Key?.startsWith(S3_TEMP_FOLDER)) {
-      return errorResponse(400, "Temporary signature photo is required");
-    }
+    const { signature, sendPoliciesByEmail } = await parseJsonBody<IPoliciesConsents>(req);
+    const tempSignature = signature;
 
     const existingId = onboardingDoc.forms?.policiesConsents;
     const existingDoc = existingId
@@ -69,7 +65,7 @@ export async function PATCH(
     const updatedDoc = existingDoc
       ? await PoliciesConsents.findByIdAndUpdate(
         existingDoc._id,
-        { signature: finalizedSignature, signedAt },
+        { signature: finalizedSignature, signedAt, sendPoliciesByEmail },
         { new: true }
       )
       : await PoliciesConsents.create({

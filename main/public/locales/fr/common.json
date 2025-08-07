@@ -43,6 +43,11 @@
     "step2": {
       "title": "Formulaire de candidature"
     },
+    "step3": {
+      "title": "Politiques et Consentements",
+      "disclaimer": "En signant ci-dessous, vous acceptez tous les contrats présents et futurs. Veuillez lire attentivement tous les      documents. Les informations que vous fournissez seront automatiquement préremplies dans les champs requis.", 
+      "sendToEmail": "Envoyez-moi une copie de ces documents de politique par courriel une fois ma candidature complétée."
+  },
     "over23Local": "Avez-vous plus de 23 ans (pour les trajets locaux) ?",
     "over25CrossBorder": "Avez-vous plus de 25 ans (pour les trajets transfrontaliers) ?",
     "canDriveManual": "Pouvez-vous conduire une transmission manuelle ?",
@@ -147,7 +152,11 @@
       "addAddress": "Ajouter une autre adresse",
       "removeAddress": "Supprimer l’adresse",
       "cancel": "Annuler",
-      "ok": "OK"
+      "ok": "OK", 
+      "upload": "Téléverser",
+      "save": "Enregistrer",
+      "clear": "Effacer"
+
     },
     "placeholders": {
       "firstName": "Entrez votre prénom",

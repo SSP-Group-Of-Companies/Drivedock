@@ -47,9 +47,11 @@
     "step2": {
       "title": "Application Form"
     },
-    "step3": {
-      "title": "Policies and Consents"
-    },
+     "step3": {
+    "title": "Policies and Consents",
+    "disclaimer": "By signing below, you agree to all the contract here and future contracts. Please read all documents carefully. Your   provided information will automatically prefill required fields.",
+    "sendToEmail": "Send me a copy of these policy documents to my email after completing the application."
+  },
     "over23Local": "Are you over the age of 23 (for Local)?",
     "over25CrossBorder": "Are you over the age of 25 (for Cross Border)?",
     "canDriveManual": "Can you Drive Manual Transmission?",
@@ -155,7 +157,10 @@
       "addAddress": "Add Another Address",
       "removeAddress": "Remove Address",
       "cancel": "Cancel",
-      "ok": "OK"
+      "ok": "OK", 
+      "upload": "Upload",
+      "save": "Save",
+      "clear": "Clear"
     },
     "placeholders": {
       "firstName": "Enter your first name",

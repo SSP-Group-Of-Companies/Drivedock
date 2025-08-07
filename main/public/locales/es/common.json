@@ -47,6 +47,12 @@
     "step2": {
       "title": "Formulario de solicitud"
     },
+    "step3": {
+      "title": "Políticas y Consentimientos",
+      "disclaimer": "Al firmar a continuación, acepta todos los contratos presentes y futuros. Lea todos los documentos detenidamente. La  información que proporcione se completará automáticamente en los campos requeridos.", 
+      "sendToEmail": "Envíame una copia de estos documentos de políticas a mi correo electrónico después de completar la solicitud."
+    },
+
     "over23Local": "¿Tienes más de 23 años (para local)?",
     "over25CrossBorder": "¿Tienes más de 25 años (para cruce de frontera)?",
     "canDriveManual": "¿Puedes conducir transmisión manual?",
@@ -152,7 +158,11 @@
       "addAddress": "Agregar otra dirección",
       "removeAddress": "Eliminar dirección",
       "cancel": "Cancelar",
-      "ok": "Aceptar"
+      "ok": "Aceptar", 
+      "upload": "Subir",
+      "save": "Guardar",
+      "clear": "Borrar"
+
     },
     "placeholders": {
       "firstName": "Ingresa tu nombre",

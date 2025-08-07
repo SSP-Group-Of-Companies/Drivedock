@@ -14,7 +14,9 @@ export const onboardingStepFlow: EStepPath[] = [
   EStepPath.APPLICATION_PAGE_4,
   EStepPath.APPLICATION_PAGE_5,
   EStepPath.POLICIES_CONSENTS,
-  // Add more steps here if needed
+  EStepPath.DRIVING_TEST,
+  EStepPath.CARRIER_EDGE,
+
 ];
 
 /**
