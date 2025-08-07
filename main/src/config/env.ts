@@ -9,3 +9,4 @@ export const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID!;
 export const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY!;
 export const CRON_SECRET = process.env.CRON_SECRET!;
 export const IS_PRODUCTION = process.env.NODE_ENV === "production";
+export const NEXT_PUBLIC_BASE_URL = process.env.NEXT_PUBLIC_BASE_URL!;
