@@ -1,4 +1,4 @@
-import { IS_PRODUCTION } from "@/config/env";
+
 import { COMPANIES } from "@/constants/companies";
 import { differenceInDays } from "date-fns";
 import { IEmploymentEntry } from "@/types/applicationForm.types";
@@ -171,21 +171,22 @@ export function isValidSIN(
 
   if (!/^\d{9}$/.test(sin)) return false;
 
-  if (!IS_PRODUCTION) return true;
+  // if (!IS_PRODUCTION) return true;
 
-  const digits = sin.split("").map(Number);
-  let sum = 0;
+  // const digits = sin.split("").map(Number);
+  // let sum = 0;
 
-  for (let i = 0; i < digits.length; i++) {
-    let digit = digits[i];
-    if (i % 2 === 1) {
-      digit *= 2;
-      if (digit > 9) digit -= 9;
-    }
-    sum += digit;
-  }
+  // for (let i = 0; i < digits.length; i++) {
+  //   let digit = digits[i];
+  //   if (i % 2 === 1) {
+  //     digit *= 2;
+  //     if (digit > 9) digit -= 9;
+  //   }
+  //   sum += digit;
+  // }
 
-  return sum % 10 === 0;
+  // return sum % 10 === 0;
+  return true;
 }
 
 /**
