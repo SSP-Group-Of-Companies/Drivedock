@@ -28,7 +28,7 @@ export default function FormLayout({
   // ✅ Smart back navigation that preserves tracker ID
   const handleBackClick = () => {
     const trackerId = params.id as string;
-    
+
     // If we're in onboarding with tracker ID, navigate to previous step
     if (trackerId && pathname.includes('/onboarding/')) {
       if (pathname.includes('/page-2')) {

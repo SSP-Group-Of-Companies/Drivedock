@@ -140,9 +140,10 @@ export default function PoliciesConsentsClient({
             {/* PDF Grid */}
             <div className="flex flex-wrap gap-4 justify-center">
                 {[hiringPdf, ...pdfList].filter(Boolean).map((pdf) => pdf && (
-                    <div
+                    <button
                         key={pdf.label}
                         onClick={() => setModalUrl(pdf.path)}
+                        title={`View ${pdf.label}`}
                         className="relative w-full sm:w-[180px] h-[72px] sm:h-[100px] rounded-xl bg-white hover:shadow-md ring-1 ring-gray-200 px-4 py-3 cursor-pointer transition-all flex items-center justify-center text-center overflow-hidden"
                     >
                         <div className="absolute top-[0px] left-[-24px] transform -rotate-45 bg-red-500 text-white text-[12px] px-6 py-[3px] font-bold shadow-sm rounded-sm pointer-events-none select-none overflow-hidden">
@@ -152,7 +153,7 @@ export default function PoliciesConsentsClient({
                         <span className="text-sm text-gray-700 font-medium leading-tight">
                             {pdf.label}
                         </span>
-                    </div>
+                    </button>
                 ))}
             </div>
 
@@ -258,7 +259,7 @@ export default function PoliciesConsentsClient({
                                 className="bg-white w-full max-w-3xl h-[80vh] rounded-lg shadow-xl overflow-hidden"
                             >
                                 <div className="relative w-full h-full">
-                                    <div className="absolute top-0 left-0 right-0 z-10 bg-white flex justify-end items-center p-2">
+                                    <div className=" z-10 bg-white flex justify-end items-center p-2">
                                         <button
                                             onClick={() => setModalUrl(null)}
                                             className="bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 cursor-pointer"
@@ -269,7 +270,7 @@ export default function PoliciesConsentsClient({
                                     <iframe
                                         src={modalUrl}
                                         title="PDF Preview"
-                                        className="w-full h-full border-none "
+                                        className="w-full h-full border-none"
                                     />
                                 </div>
 
