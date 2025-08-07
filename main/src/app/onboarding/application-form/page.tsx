@@ -7,7 +7,6 @@ import {
   ApplicationFormPage1Schema,
 } from "@/lib/zodSchemas/applicationFormPage1.schema";
 import { ELicenseType } from "@/types/shared.types";
-import { useCompanySelection } from "@/hooks/useCompanySelection";
 
 // Components
 import PersonalDetails from "../[id]/application-form/page-1/components/PersonalDetails";
@@ -20,7 +19,6 @@ import ContinueButton from "./ContinueButton";
 import { page1Config } from "@/lib/frontendConfigs/applicationFormConfigs/page1Config";
 
 export default function ApplicationFormPage1() {
-  const { selectedCompany } = useCompanySelection();
 
   const methods = useForm<ApplicationFormPage1Schema>({
     resolver: zodResolver(applicationFormPage1Schema),

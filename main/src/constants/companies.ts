@@ -8,6 +8,12 @@ export enum ECompanyId {
   NESH = "nesh",
 }
 
+export type CanadianCompanyId =
+  | ECompanyId.SSP_CA
+  | ECompanyId.FELLOW_TRANS
+  | ECompanyId.NESH
+  | ECompanyId.WEB_FREIGHT;
+
 export interface Company {
   id: string;
   name: string;
@@ -101,3 +107,13 @@ export const COMPANIES: Company[] = [
       "bg-gradient-to-r from-purple-700 via-purple-500 to-pink-400",
   },
 ];
+
+
+export function getCompanyById(companyId: string): Company | undefined {
+  return COMPANIES.find((company) => company.id === companyId);
+}
+
+export function isCanadianCompany(companyId: string): boolean {
+  const company = getCompanyById(companyId);
+  return company ? company.countryCode === ECountryCode.CA : false;
+}

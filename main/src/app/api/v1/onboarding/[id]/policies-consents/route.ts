@@ -3,138 +3,103 @@ import { errorResponse, successResponse } from "@/lib/utils/apiResponse";
 import connectDB from "@/lib/utils/connectDB";
 import PoliciesConsents from "@/mongoose/models/PoliciesConsents";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
-import { uploadImageToS3, deleteS3Objects } from "@/lib/utils/s3Upload";
+import { deleteS3Objects, finalizePhoto } from "@/lib/utils/s3Upload";
+import { EStepPath } from "@/types/onboardingTracker.type";
+import { isValidObjectId } from "mongoose";
+import { NextRequest } from "next/server";
 import { IPhoto } from "@/types/shared.types";
+import { IPoliciesConsents } from "@/types/policiesConsents.types";
+import { parseJsonBody } from "@/lib/utils/reqParser";
 import {
   advanceStatus,
   buildTrackerContext,
   hasCompletedStep,
   onboardingExpired,
 } from "@/lib/utils/onboardingUtils";
-import { EStepPath } from "@/types/onboardingTracker.type";
-import { isValidObjectId } from "mongoose";
-import { NextRequest } from "next/server";
-import { parseFormData } from "@/lib/utils/reqParser";
+import { S3_SUBMISSIONS_FOLDER, S3_TEMP_FOLDER } from "@/constants/aws";
+import { ES3Folder } from "@/types/aws.types";
 
-export const config = {
-  api: { bodyParser: false },
-};
-
-const MAX_FILE_SIZE_MB = 10;
-const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
-const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];
-
-export const PATCH = async (
+export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
-) => {
-  let uploadedKey: string | null = null;
-
+) {
   try {
     await connectDB();
     const { id } = await params;
+    if (!isValidObjectId(id)) return errorResponse(400, "Invalid onboarding ID");
 
-    if (!isValidObjectId(id)) return errorResponse(400, "not a valid id");
-
-    const formData = await parseFormData(req);
-    const file = formData.get("signature") as File;
-
-    if (!file) return errorResponse(400, "Missing signature file");
-
-    // Validate file type
-    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
-      return errorResponse(
-        400,
-        "Invalid file type. Only JPG, PNG, or WEBP images are allowed."
-      );
-    }
-
-    // Validate file size
-    if (file.size > MAX_FILE_SIZE_BYTES) {
-      return errorResponse(
-        400,
-        `File is too large. Maximum allowed size is ${MAX_FILE_SIZE_MB}MB.`
-      );
-    }
-
-    // Check onboarding doc
     const onboardingDoc = await OnboardingTracker.findById(id);
     if (!onboardingDoc)
       return errorResponse(404, "Onboarding document not found");
 
-    // check completed step
     if (!hasCompletedStep(onboardingDoc.status, EStepPath.APPLICATION_PAGE_5))
-      return errorResponse(400, "please complete previous step first");
+      return errorResponse(400, "Please complete previous step first");
+
+    const payload = await parseJsonBody<IPoliciesConsents>(req);
+    const tempSignature = payload.signature;
+
+    if (!tempSignature?.s3Key?.startsWith(S3_TEMP_FOLDER)) {
+      return errorResponse(400, "Temporary signature photo is required");
+    }
 
     const existingId = onboardingDoc.forms?.policiesConsents;
     const existingDoc = existingId
       ? await PoliciesConsents.findById(existingId)
       : null;
 
-    // Delete previous signature from S3
-    if (existingDoc?.signature?.s3Key) {
-      await deleteS3Objects([existingDoc.signature.s3Key]);
+    // Check for deletion of previous finalized signature if being replaced
+    const previousSigKey = existingDoc?.signature?.s3Key;
+    const isReplacingFinalized =
+      previousSigKey &&
+      !previousSigKey.startsWith(S3_TEMP_FOLDER) &&
+      previousSigKey !== tempSignature.s3Key;
+
+    if (isReplacingFinalized) {
+      await deleteS3Objects([previousSigKey]);
     }
 
-    // Upload new signature to S3
-    const arrayBuffer = await file.arrayBuffer();
-    const fileBuffer = Buffer.from(arrayBuffer);
-    const fileType = file.type;
+    // Finalize signature photo
+    const finalizedSignature: IPhoto = await finalizePhoto(
+      tempSignature,
+      `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.SIGNATURES}/${onboardingDoc.id}`
+    );
 
-    const { url, key } = await uploadImageToS3({
-      fileBuffer,
-      fileType,
-      folder: `signatures/${onboardingDoc.id}`,
-    });
-
-    uploadedKey = key;
-
-    const signature: IPhoto = { url, s3Key: key };
     const signedAt = new Date();
 
-    // Create or update PoliciesConsents document
     const updatedDoc = existingDoc
       ? await PoliciesConsents.findByIdAndUpdate(
         existingDoc._id,
-        { signature, signedAt },
+        { signature: finalizedSignature, signedAt },
         { new: true }
       )
-      : await PoliciesConsents.create({ signature, signedAt });
+      : await PoliciesConsents.create({
+        signature: finalizedSignature,
+        signedAt,
+      });
 
     if (!updatedDoc) {
-      await deleteS3Objects([uploadedKey]);
-      return errorResponse(404, "policies consents document not found");
+      return errorResponse(500, "Failed to save policies & consents");
     }
 
-    // Update onboarding doc if not already linked
     if (!existingId) {
       onboardingDoc.forms.policiesConsents = updatedDoc.id;
     }
 
-    // Update onboarding tracker steps
-    onboardingDoc.status = advanceStatus(
-      onboardingDoc.status,
-      EStepPath.POLICIES_CONSENTS
-    );
-    onboardingDoc.resumeExpiresAt = new Date(
-      Date.now() + Number(FORM_RESUME_EXPIRES_AT_IN_MILSEC)
-    );
+    onboardingDoc.status = advanceStatus(onboardingDoc.status, EStepPath.POLICIES_CONSENTS);
+    onboardingDoc.resumeExpiresAt = new Date(Date.now() + Number(FORM_RESUME_EXPIRES_AT_IN_MILSEC));
     await onboardingDoc.save();
 
     return successResponse(200, "Policies & Consents updated", {
-      onboardingContext: buildTrackerContext(
-        onboardingDoc,
-        EStepPath.POLICIES_CONSENTS
-      ),
+      onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.POLICIES_CONSENTS),
       policiesConsents: updatedDoc.toObject(),
     });
   } catch (error) {
-    if (uploadedKey) {
-      await deleteS3Objects([uploadedKey]);
-    }
+    console.error("PATCH /policies-consents error:", error);
     return errorResponse(error);
   }
-};
+}
+
+
 
 export const GET = async (
   _: NextRequest,
