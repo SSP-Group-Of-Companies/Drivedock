@@ -1,3 +1,16 @@
+/**
+ * Page1Client.tsx
+ *
+ *   Client-side Page 1 of the Driver Application Form
+ * - Uses RHF + Zod for form context and validation
+ * - Renders personal info, place of birth, licenses, and address sections
+ * - Submits via a shared config-driven <ContinueButton> component
+ *
+ * Props:
+ * - defaultValues: hydrated form data from server
+ * - trackerId: resume tracker used for PATCH requests
+ */
+
 "use client";
 
 import { useForm, FormProvider } from "react-hook-form";
@@ -12,7 +25,7 @@ import PersonalDetails from "./components/PersonalDetails";
 import PlaceOfBirth from "./components/PlaceOfBirth";
 import LicenseSection from "./components/LicenseSection";
 import AddressSection from "./components/AddressSection";
-import ContinueButton from "../../../application-form/ContinueButton";
+import ContinueButton from "@/app/onboarding/[id]/ContinueButton";
 
 // Config
 import { page1Config } from "@/lib/frontendConfigs/applicationFormConfigs/page1Config";
@@ -32,17 +45,9 @@ export default function Page1Client({
     defaultValues,
   });
 
-  const onSubmit = () => {
-    // Not used — handled by ContinueButton
-  };
-
   return (
     <FormProvider {...methods}>
-      <form
-        className="space-y-8"
-        onSubmit={methods.handleSubmit(onSubmit)}
-        noValidate
-      >
+      <form className="space-y-8" noValidate>
         <PersonalDetails />
         <PlaceOfBirth />
         <LicenseSection />

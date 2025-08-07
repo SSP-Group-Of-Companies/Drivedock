@@ -1,7 +1,15 @@
+/**
+ * PlaceOfBirth.tsx
+ *
+ * 🌍 Captures the driver's city, state/province, and country of birth.
+ * Uses modular <TextInput /> with translations and validation errors.
+ */
+
 "use client";
 
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import TextInput from "@/app/onboarding/components/TextInput";
 
 export default function PlaceOfBirth() {
   const {
@@ -15,64 +23,31 @@ export default function PlaceOfBirth() {
       <h2 className="text-center text-lg font-semibold text-gray-800">
         {t("form.page1.sections.birth")}
       </h2>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* City of Birth */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            {t("form.fields.birthCity")}
-          </label>
-          <input
-            {...register("birthCity")}
-            type="text"
-            name="birthCity"
-            data-field="birthCity"
-            placeholder={t("form.placeholders.birthCity")}
-            className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
-          />
-          {errors.birthCity && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.birthCity.message?.toString()}
-            </p>
-          )}
-        </div>
-        {/* State / Province */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            {t("form.fields.birthStateOrProvince")}
-          </label>
-          <input
-            {...register("birthStateOrProvince")}
-            type="text"
-            name="birthStateOrProvince"
-            data-field="birthStateOrProvince"
-            placeholder={t("form.placeholders.birthStateOrProvince")}
-            className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
-          />
-          {errors.birthStateOrProvince && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.birthStateOrProvince.message?.toString()}
-            </p>
-          )}
-        </div>
-        {/* Country */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            {t("form.fields.birthCountry")}
-          </label>
-          <input
-            {...register("birthCountry")}
-            type="text"
-            name="birthCountry"
-            data-field="birthCountry"
-            placeholder={t("form.placeholders.birthCountry")}
-            className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
-          />
-          {errors.birthCountry && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.birthCountry.message?.toString()}
-            </p>
-          )}
-        </div>
+        <TextInput
+          name="birthCity"
+          label={t("form.fields.birthCity")}
+          placeholder={t("form.placeholders.birthCity")}
+          register={register}
+          error={errors.birthCity}
+        />
+
+        <TextInput
+          name="birthStateOrProvince"
+          label={t("form.fields.birthStateOrProvince")}
+          placeholder={t("form.placeholders.birthStateOrProvince")}
+          register={register}
+          error={errors.birthStateOrProvince}
+        />
+
+        <TextInput
+          name="birthCountry"
+          label={t("form.fields.birthCountry")}
+          placeholder={t("form.placeholders.birthCountry")}
+          register={register}
+          error={errors.birthCountry}
+        />
       </div>
     </section>
   );

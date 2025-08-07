@@ -107,6 +107,17 @@ export default function AddressSection() {
         </h2>
         <p className={getSubtitleClassName()}>{getSubtitleText()}</p>
       </div>
+
+      {/* Invisible anchor for scroll-to-error on array root */}
+      {errors.addresses?.message && (
+        <p
+          className="text-red-500 text-sm text-center mt-1"
+          data-field="addresses.root"
+        >
+          {errors.addresses.message.toString()}
+        </p>
+      )}
+
       {/* Always show the first address entry */}
       <div
         key={hasFirst ? fields[0].id : "first-address"}

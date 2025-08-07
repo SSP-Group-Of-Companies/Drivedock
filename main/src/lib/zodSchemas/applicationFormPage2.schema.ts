@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { validateEmploymentHistory } from "@/lib/utils/validationUtils";
 
+// Schema for a single employment entry
 export const employmentEntrySchema = z.object({
   employerName: z.string().min(1, "Employer name is required"),
   supervisorName: z.string().min(1, "Supervisor name is required"),
@@ -24,39 +25,81 @@ export const employmentEntrySchema = z.object({
     .refine((val) => val !== undefined, {
       message: "Please specify FMCSR applicability",
     }),
-
   safetySensitiveFunction: z
     .boolean()
     .optional()
     .refine((val) => val !== undefined, {
       message: "Please specify safety-sensitive status",
     }),
-
   gapExplanationBefore: z.string().optional(),
 });
 
-export const applicationFormPage2Schema = z.object({
-  employments: z
-    .array(employmentEntrySchema)
-    .min(1, "At least one employment entry is required")
-    .refine(
-      (employments) => {
-        // Convert to the format expected by validateEmploymentHistory
-        const employmentData = employments.map((emp) => ({
-          ...emp,
-          subjectToFMCSR: emp.subjectToFMCSR ?? false,
-          safetySensitiveFunction: emp.safetySensitiveFunction ?? false,
-        }));
+// Main schema for Page 2 (with custom validation applied)
+export const applicationFormPage2Schema = z
+  .object({
+    employments: z
+      .array(employmentEntrySchema)
+      .min(1, "At least one employment entry is required"),
+  })
+  .superRefine(({ employments }, ctx) => {
+    // Perform backend-style validation in frontend
+    const entries = employments.map((emp) => ({
+      ...emp,
+      subjectToFMCSR: emp.subjectToFMCSR ?? false,
+      safetySensitiveFunction: emp.safetySensitiveFunction ?? false,
+    }));
 
-        const error = validateEmploymentHistory(employmentData);
-        return !error; // Return true if no error (validation passes)
-      },
-      {
-        message:
-          "Employment history must cover at least 2 years of driving experience",
+    // Run validation check
+    const errorMessage = validateEmploymentHistory(entries);
+
+    if (!errorMessage) return;
+
+    // Inject errors dynamically based on returned message
+    // Gap explanation example:
+    const gapMatch = errorMessage.match(
+      /Missing gap explanation before employment at (.+)/
+    );
+    if (gapMatch) {
+      const supervisor = gapMatch[1];
+      const index = employments.findIndex(
+        (e) => e.supervisorName.toLowerCase() === supervisor.toLowerCase()
+      );
+      if (index !== -1) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Please explain the gap in your employment history.",
+          path: ["employments", index, "gapExplanationBefore"],
+        });
+        return;
       }
-    ),
-});
+    }
+
+    // Overlap message
+    const overlapMatch = errorMessage.match(
+      /Job at (.+) overlaps with job at (.+)/
+    );
+    if (overlapMatch) {
+      const supervisor = overlapMatch[1];
+      const index = employments.findIndex(
+        (e) => e.supervisorName.toLowerCase() === supervisor.toLowerCase()
+      );
+      if (index !== -1) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Employment dates overlap with another job entry.",
+          path: ["employments", index, "from"],
+        });
+        return;
+      }
+    }
+
+    // Fallback if nothing matched above
+    ctx.addIssue({
+      code: "custom",
+      message: errorMessage,
+      path: ["employments"],
+    });
+  });
 
 // For React Hook Form usage
 export type ApplicationFormPage2Schema = z.infer<

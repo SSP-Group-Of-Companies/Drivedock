@@ -4,16 +4,16 @@ import { useTranslation } from "react-i18next";
 
 type QuestionGroupProps = {
   question: string;
-  value: string;
+  value: string; // Can be "form.yes" or "Yes"
   onChange: (val: string) => void;
-  options?: string[];
+  options?: string[]; // Defaults to ["form.yes", "form.no"]
 };
 
 export default function QuestionGroup({
   question,
   value,
   onChange,
-  options = ["Yes", "No"],
+  options = ["form.yes", "form.no"],
 }: QuestionGroupProps) {
   const { t } = useTranslation("common");
 
@@ -23,22 +23,27 @@ export default function QuestionGroup({
         <p className="font-medium text-gray-800 text-sm">{question}</p>
 
         <div className="inline-flex w-full sm:w-auto rounded-full border border-gray-300 overflow-hidden">
-          {options.map((opt, idx) => {
-            const isSelected = value === opt;
+          {options.map((optKey, idx) => {
+            const optLabel = t(optKey);
+            const isSelected = value === optKey || value === optLabel;
 
             return (
               <button
-                key={opt}
+                key={optKey}
                 type="button"
-                onClick={() => onChange(isSelected && options.length === 1 ? "" : opt)}
+                onClick={() =>
+                  onChange(isSelected && options.length === 1 ? "" : optKey)
+                }
                 className={`w-full sm:w-auto px-4 py-1.5 text-sm font-medium transition-all
-                  ${isSelected
-                    ? "bg-[#0071BC] text-white"
-                    : "bg-white text-gray-800 hover:bg-red-50"}
+                  ${
+                    isSelected
+                      ? "bg-[#0071BC] text-white"
+                      : "bg-white text-gray-800 hover:bg-red-50"
+                  }
                   ${idx > 0 ? "border-l border-gray-300" : ""}
                 `}
               >
-                {t(opt)}
+                {optLabel}
               </button>
             );
           })}

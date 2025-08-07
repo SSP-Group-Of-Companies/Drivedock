@@ -33,7 +33,10 @@ export default function EmploymentCard({ index }: Props) {
     )}`;
   };
 
-  const handlePhoneChange = (fieldName: `employments.${number}.phone1` | `employments.${number}.phone2`, value: string) => {
+  const handlePhoneChange = (
+    fieldName: `employments.${number}.phone1` | `employments.${number}.phone2`,
+    value: string
+  ) => {
     const raw = value.replace(/\D/g, "").slice(0, 10);
     setValue(fieldName, raw, { shouldValidate: true });
   };
@@ -173,7 +176,7 @@ export default function EmploymentCard({ index }: Props) {
           )}
         </div>
 
-                 {/* Phone 1 */}
+        {/* Phone 1 */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             {t("form.fields.phone1")}
@@ -188,11 +191,13 @@ export default function EmploymentCard({ index }: Props) {
               {/* Phone Input */}
               <input
                 type="tel"
-                placeholder="(555) 123-4567"
+                placeholder="(519) 123-4567"
                 value={getDisplayPhone(
                   useWatch({ control, name: field("phone1") }) || ""
                 )}
-                onChange={(e) => handlePhoneChange(field("phone1"), e.target.value)}
+                onChange={(e) =>
+                  handlePhoneChange(field("phone1"), e.target.value)
+                }
                 data-field={field("phone1")}
                 className="flex-1 py-2 px-3 border border-gray-300 rounded-r-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md focus:border-transparent"
               />
@@ -218,11 +223,13 @@ export default function EmploymentCard({ index }: Props) {
               {/* Phone Input */}
               <input
                 type="tel"
-                placeholder="(555) 987-6543"
+                placeholder="(226) 987-6543"
                 value={getDisplayPhone(
                   useWatch({ control, name: field("phone2") }) || ""
                 )}
-                onChange={(e) => handlePhoneChange(field("phone2"), e.target.value)}
+                onChange={(e) =>
+                  handlePhoneChange(field("phone2"), e.target.value)
+                }
                 data-field={field("phone2")}
                 className="flex-1 py-2 px-3 border border-gray-300 rounded-r-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md focus:border-transparent"
               />
@@ -242,15 +249,13 @@ export default function EmploymentCard({ index }: Props) {
             {...register(field("email"))}
             data-field={field("email")}
             type="email"
-            placeholder="jquanedeo@AcmeCorp.com"
+            placeholder="Johndeo@sspgroup.com"
             className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
           />
           {getError("email") && (
             <p className="text-red-500 text-sm mt-1">{getError("email")}</p>
           )}
         </div>
-
-       
 
         {/* Position Held */}
         <div>
@@ -360,7 +365,7 @@ export default function EmploymentCard({ index }: Props) {
 
                 // Use centralized timeline calculation
                 const currentEmployments = watch("employments");
-                const { totalDays, totalMonths, timeline } =
+                const { totalDays, timeline } =
                   calculateTimelineFromCurrent(currentEmployments);
 
                 // Find this employment in the timeline
@@ -391,18 +396,16 @@ export default function EmploymentCard({ index }: Props) {
                   } else if (totalDays >= 730 && totalDays <= 760) {
                     // Exactly 2 years or 2 years + buffer (≤30 days) - green success
                     const isExactly2Years = totalDays === 730;
-                    const message = isExactly2Years 
+                    const message = isExactly2Years
                       ? `You have entered exactly 2 years of employment history in this location. Success!`
                       : `You have entered ${thisEmploymentMonths} months (${thisEmploymentDays} days) of employment history in this location. Success!`;
-                    
+
                     return (
                       <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded-lg">
                         <p className="text-sm font-medium text-green-800">
                           Employment History Valid
                         </p>
-                        <p className="text-xs text-green-700 mt-1">
-                          {message}
-                        </p>
+                        <p className="text-xs text-green-700 mt-1">{message}</p>
                       </div>
                     );
                   } else if (totalDays > 760 && totalDays < 3650) {
@@ -422,7 +425,9 @@ export default function EmploymentCard({ index }: Props) {
                     );
                   } else {
                     // 10+ years total - green success
-                    const thisEmploymentYears = Math.floor(thisEmploymentDays / 365);
+                    const thisEmploymentYears = Math.floor(
+                      thisEmploymentDays / 365
+                    );
                     const thisEmploymentMonthsOnly = thisEmploymentMonths % 12;
                     return (
                       <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded-lg">
@@ -430,7 +435,9 @@ export default function EmploymentCard({ index }: Props) {
                           Employment History Complete
                         </p>
                         <p className="text-xs text-green-700 mt-1">
-                          {thisEmploymentYears} years ({thisEmploymentMonthsOnly} months) of work in this location. 10 year history complete.
+                          {thisEmploymentYears} years (
+                          {thisEmploymentMonthsOnly} months) of work in this
+                          location. 10 year history complete.
                         </p>
                       </div>
                     );
@@ -443,14 +450,12 @@ export default function EmploymentCard({ index }: Props) {
                   const remainingMonths = Math.floor(remainingDays / 30.44);
                   const remainingYears = Math.floor(remainingDays / 365);
                   const remainingMonthsOnly = remainingMonths % 12;
-                  const yearsNeededText =
-                    remainingDays > 0
-                      ? `${remainingYears} years, ${remainingMonthsOnly} months`
-                      : "0 years, 0 months";
 
                   if (totalDays >= 3650 || remainingDays === 0) {
                     // 10+ years total OR no remaining days needed - green success for all entries
-                    const thisEmploymentYears = Math.floor(thisEmploymentDays / 365);
+                    const thisEmploymentYears = Math.floor(
+                      thisEmploymentDays / 365
+                    );
                     const thisEmploymentMonthsOnly = thisEmploymentMonths % 12;
                     return (
                       <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded-lg">
@@ -458,32 +463,43 @@ export default function EmploymentCard({ index }: Props) {
                           Employment History Complete
                         </p>
                         <p className="text-xs text-green-700 mt-1">
-                          {thisEmploymentYears} years ({thisEmploymentMonthsOnly} months) of work in this location. 10 year history complete.
+                          {thisEmploymentYears} years (
+                          {thisEmploymentMonthsOnly} months) of work in this
+                          location. 10 year history complete.
                         </p>
                       </div>
                     );
                   } else {
                     // Incomplete - show years/months format with days when close to 10 years
-                    const thisEmploymentYears = Math.floor(thisEmploymentDays / 365);
+                    const thisEmploymentYears = Math.floor(
+                      thisEmploymentDays / 365
+                    );
                     const thisEmploymentMonthsOnly = thisEmploymentMonths % 12;
-                    
+
                     // When remaining time is less than 1 month, show days
                     let remainingText;
                     if (remainingDays < 30 && remainingDays > 0) {
                       remainingText = `${remainingDays} days`;
-                    } else if (remainingYears === 0 && remainingMonthsOnly === 0 && remainingDays > 0) {
+                    } else if (
+                      remainingYears === 0 &&
+                      remainingMonthsOnly === 0 &&
+                      remainingDays > 0
+                    ) {
                       remainingText = `${remainingDays} days`;
                     } else {
                       remainingText = `${remainingYears} years (${remainingMonthsOnly} months)`;
                     }
-                    
+
                     return (
                       <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                         <p className="text-sm font-medium text-blue-800">
                           Previous Employment Entry
                         </p>
                         <p className="text-xs text-blue-700 mt-1">
-                          {thisEmploymentYears} years ({thisEmploymentMonthsOnly} months) of work in this location, {remainingText} history needed to make up for the 10 years.
+                          {thisEmploymentYears} years (
+                          {thisEmploymentMonthsOnly} months) of work in this
+                          location, {remainingText} history needed to make up
+                          for the 10 years.
                         </p>
                       </div>
                     );
@@ -567,7 +583,7 @@ export default function EmploymentCard({ index }: Props) {
           <textarea
             {...register(field("reasonForLeaving"))}
             data-field={field("reasonForLeaving")}
-            placeholder={t("form.placeholders.reasonForLeaving")}
+            placeholder="Enter reason for leaving..."
             className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
             rows={2}
           />
@@ -584,13 +600,16 @@ export default function EmploymentCard({ index }: Props) {
             question={t("form.fields.subjectToFMCSR")}
             value={
               watch(`employments.${index}.subjectToFMCSR`) === true
-                ? "Yes"
+                ? "form.yes"
                 : watch(`employments.${index}.subjectToFMCSR`) === false
-                ? "No"
+                ? "form.no"
                 : ""
             }
             onChange={(val) =>
-              setValue(`employments.${index}.subjectToFMCSR`, val === "Yes")
+              setValue(
+                `employments.${index}.subjectToFMCSR`,
+                val === "form.yes"
+              )
             }
           />
           {getError("subjectToFMCSR") && (
@@ -606,16 +625,16 @@ export default function EmploymentCard({ index }: Props) {
             question={t("form.fields.safetySensitiveFunction")}
             value={
               watch(`employments.${index}.safetySensitiveFunction`) === true
-                ? "Yes"
+                ? "form.yes"
                 : watch(`employments.${index}.safetySensitiveFunction`) ===
                   false
-                ? "No"
+                ? "form.no"
                 : ""
             }
             onChange={(val) =>
               setValue(
                 `employments.${index}.safetySensitiveFunction`,
-                val === "Yes"
+                val === "form.yes"
               )
             }
           />

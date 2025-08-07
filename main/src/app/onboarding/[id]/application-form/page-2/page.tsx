@@ -1,23 +1,24 @@
 import { ApplicationFormPage2Schema } from "@/lib/zodSchemas/applicationFormPage2.schema";
-
-// Components
 import Page2Client from "./Page2Client";
 
-// Server-side data fetching function
+// 🧠 Utility: Normalize ISO date to YYYY-MM-DD
+function formatDate(dateString: string): string {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  return isNaN(date.getTime()) ? "" : date.toISOString().split("T")[0];
+}
+
+// 🔍 Fetch Page 2 Data
 async function fetchPage2Data(trackerId: string) {
   try {
     const response = await fetch(
       `${
         process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
       }/api/v1/onboarding/${trackerId}/application-form/page-2`,
-      {
-        cache: "no-store",
-      }
+      { cache: "no-store" }
     );
 
-    if (!response.ok) {
-      return null;
-    }
+    if (!response.ok) return null;
 
     const data = await response.json();
     return data.data?.page2 || null;
@@ -27,6 +28,7 @@ async function fetchPage2Data(trackerId: string) {
   }
 }
 
+// 🔁 Server Component Wrapper
 export default async function ApplicationFormPage2({
   params,
 }: {
@@ -34,10 +36,8 @@ export default async function ApplicationFormPage2({
 }) {
   const { id: trackerId } = await params;
 
-  // ✅ Server-side data fetching
   const pageData = await fetchPage2Data(trackerId);
 
-  // ✅ Transform data for form
   const defaultValues: ApplicationFormPage2Schema = pageData
     ? {
         employments: pageData.employments?.length
@@ -52,8 +52,8 @@ export default async function ApplicationFormPage2({
               phone2: employment.phone2 || "",
               email: employment.email || "",
               positionHeld: employment.positionHeld || "",
-              from: employment.from || "",
-              to: employment.to || "",
+              from: formatDate(employment.from),
+              to: formatDate(employment.to),
               salary: employment.salary || "",
               reasonForLeaving: employment.reasonForLeaving || "",
               subjectToFMCSR: employment.subjectToFMCSR,

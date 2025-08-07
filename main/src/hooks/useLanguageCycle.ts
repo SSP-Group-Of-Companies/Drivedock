@@ -1,10 +1,11 @@
+// main/src/hooks/useLanguageCycle.ts
 import { useEffect, useState } from "react";
 import useMounted from "./useMounted";
 
 const phrases = [
   { start: "Start Application", resume: "Resume Application" },
-  { start: "ਆਵेदਨ ਸ਼ੁਰੂ ਕਰੋ", resume: "ਅਨੁਵਾਦ ਜਾਰੀ ਰੱਖੋ" },
-  { start: "Démarrer la candidature", resume: "Reprendre la candidature" },
+  { start: "Iniciar solicitud", resume: "Reanudar solicitud" }, //  Spanish
+  { start: "Démarrer la candidature", resume: "Reprendre la candidature" }, // French
 ];
 
 export function useLanguageCycle(interval = 2500) {

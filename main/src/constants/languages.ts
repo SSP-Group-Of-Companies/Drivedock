@@ -3,18 +3,18 @@ export const LANGUAGES = [
     code: "fr",
     label: "Français",
     flagStyle: "bg-flag-fr",
-    english: "French"
+    english: "French",
   },
   {
     code: "en",
     label: "English",
     flagStyle: "bg-flag-us",
-    english: "English"
+    english: "English",
   },
   {
-    code: "pa",
-    label: "ਪੰਜਾਬੀ",
-    flagStyle: "bg-flag-in",
-    english: "Punjabi"
-  }
+    code: "es",
+    label: "Español",
+    flagStyle: "bg-flag-es",
+    english: "Spanish",
+  },
 ];

@@ -14,7 +14,7 @@ export default function GapBlock({ index, days }: Props) {
     formState: { errors },
   } = useFormContext();
 
-  const field = `employments[${index}].gapExplanationBefore`;
+  const field = `employments.${index}.gapExplanationBefore`;
   const employmentErrors =
     errors?.employments as FieldErrors<ApplicationFormPage2Schema>["employments"];
   const error = employmentErrors?.[index]?.gapExplanationBefore;
@@ -28,11 +28,15 @@ export default function GapBlock({ index, days }: Props) {
         {...register(field)}
         data-field={field}
         rows={2}
-        className="block w-full rounded-md border border-red-400 px-3 py-2 shadow-sm focus:outline-none focus:ring-red-400"
+        className="block w-full rounded-md border px-3 py-2 shadow-sm focus:outline-none focus:ring-red-400"
         placeholder="Please explain the gap in your employment history..."
+        aria-invalid={!!error ? "true" : "false"}
+        aria-describedby={`gap-error-${index}`}
       />
       {error && (
-        <p className="text-red-600 text-sm mt-1">{error.message?.toString()}</p>
+        <p className="text-red-600 text-sm mt-1" id={`gap-error-${index}`}>
+          {error.message?.toString()}
+        </p>
       )}
     </div>
   );

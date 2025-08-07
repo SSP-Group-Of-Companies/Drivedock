@@ -77,17 +77,17 @@ export const categoryQuestions = [
   {
     name: "preferLocalDriving",
     label: "form.preferLocalDriving",
-    options: ["form.yes", "form.no"],
+    options: ["yes", "no"],
   },
   {
     name: "preferSwitching",
     label: "form.preferSwitching",
-    options: ["form.yes", "form.no"],
+    options: ["yes", "no"],
   },
   {
     name: "flatbedExperience",
     label: "form.flatbedExperience",
-    options: ["form.yes", "form.no"],
+    options: ["yes", "no"],
   },
   // flatbedExperience is not in IPreQualifications, so we leave it out for backend mapping
 ];
