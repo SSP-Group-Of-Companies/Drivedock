@@ -66,6 +66,7 @@ export const page1Config: Page1FormPageConfig = {
       fields.push(`licenses.${index}.licenseNumber`);
       fields.push(`licenses.${index}.licenseStateOrProvince`);
       fields.push(`licenses.${index}.licenseExpiry`);
+      fields.push(`licenses.${index}.licenseType`);
       if (index === 0) {
         fields.push(`licenses.${index}.licenseFrontPhoto`);
         fields.push(`licenses.${index}.licenseBackPhoto`);

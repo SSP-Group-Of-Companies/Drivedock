@@ -244,14 +244,31 @@ export default function LicenseSection() {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 {t("form.fields.licenseType")}
               </label>
-              <input
-                type="text"
-                {...register(`licenses.${index}.licenseType`)}
-                value={index === 0 ? "AZ" : ""}
-                readOnly={index === 0}
-                className="py-2 px-3 mt-1 block w-full rounded-md bg-gray-100 text-gray-700 border border-gray-300"
-                data-field={`licenses.${index}.licenseType`}
-              />
+
+              {index === 0 ? (
+                <input
+                  type="text"
+                  value="AZ"
+                  readOnly
+                  {...register(`licenses.${index}.licenseType`)}
+                  className="py-2 px-3 mt-1 block w-full rounded-md bg-gray-100 text-gray-700 border border-gray-300"
+                  data-field={`licenses.${index}.licenseType`}
+                />
+              ) : (
+                <select
+                  {...register(`licenses.${index}.licenseType`)}
+                  defaultValue={ELicenseType.Other}
+                  className="py-2 px-3 mt-1 block w-full rounded-md bg-gray-100 text-gray-700 border border-gray-300"
+                  data-field={`licenses.${index}.licenseType`}
+                >
+                  {Object.values(ELicenseType).map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </select>
+              )}
+
               {licenseErrors?.[index]?.licenseType && (
                 <p className="text-red-500 text-sm mt-1">
                   {licenseErrors?.[index]?.licenseType?.message}

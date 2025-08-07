@@ -8,18 +8,14 @@ export const photoSchema = z.object({
   url: z.string(),
 });
 
-// License Entry
+// License Entry — relaxed: no required photo here
 export const licenseEntrySchema = z.object({
   licenseNumber: z.string().min(1, "License number is required"),
   licenseStateOrProvince: z.string().min(1, "Province is required"),
   licenseType: z.nativeEnum(ELicenseType),
   licenseExpiry: z.string().min(1, "Expiry date is required"),
-  licenseFrontPhoto: photoSchema.refine((p) => p.s3Key && p.url, {
-    message: "Front photo is required",
-  }),
-  licenseBackPhoto: photoSchema.refine((p) => p.s3Key && p.url, {
-    message: "Back photo is required",
-  }),
+  licenseFrontPhoto: photoSchema.optional(),
+  licenseBackPhoto: photoSchema.optional(),
 });
 
 // Address Entry
@@ -71,6 +67,7 @@ export const addressEntrySchema = z
     }
   );
 
+// Main Application Form Page 1 Schema
 export const applicationFormPage1Schema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
@@ -81,6 +78,7 @@ export const applicationFormPage1Schema = z.object({
   sinPhoto: photoSchema.refine((p) => p.s3Key && p.url, {
     message: "SIN photo is required",
   }),
+
   dob: z
     .string()
     .min(1, "Date of birth is required")
@@ -126,12 +124,35 @@ export const applicationFormPage1Schema = z.object({
     .min(1, "At least one license is required")
     .refine((licenses) => licenses[0]?.licenseType === ELicenseType.AZ, {
       message: "The first license must be of type AZ",
-    }),
+    })
+    .refine(
+      (licenses) => {
+        const first = licenses[0];
+        return !!(
+          first?.licenseFrontPhoto?.s3Key && first?.licenseFrontPhoto?.url
+        );
+      },
+      {
+        message: "Front license photo is required for the first license",
+        path: ["0", "licenseFrontPhoto"],
+      }
+    )
+    .refine(
+      (licenses) => {
+        const first = licenses[0];
+        return !!(
+          first?.licenseBackPhoto?.s3Key && first?.licenseBackPhoto?.url
+        );
+      },
+      {
+        message: "Back license photo is required for the first license",
+        path: ["0", "licenseBackPhoto"],
+      }
+    ),
 
   addresses: z
     .array(addressEntrySchema)
     .min(1, "Address history is required")
-    // No overlaps or >2-year gaps
     .refine(
       (addresses) => {
         const sorted = [...addresses].sort(
@@ -151,7 +172,6 @@ export const applicationFormPage1Schema = z.object({
           "Addresses cannot overlap and gaps between addresses cannot exceed 2 years",
       }
     )
-    // Must cover last 6 months
     .refine(
       (addresses) => {
         const sorted = [...addresses].sort(
@@ -167,7 +187,6 @@ export const applicationFormPage1Schema = z.object({
           "Your most recent address must extend to within the last 6 months",
       }
     )
-    //  Must span at least 5 years
     .refine((addresses) => hasRecentAddressCoverage(addresses, 5), {
       message:
         "You must provide at least 5 years of address history. If you haven't lived in one place for 5 years, please add additional addresses to cover the full 5-year period.",

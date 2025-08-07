@@ -27,9 +27,9 @@ export default function Navbar() {
 
       if (currentStepIndex > 0) {
         const previousStep = onboardingStepFlow[currentStepIndex - 1];
-        router.replace(`/onboarding/${trackerId}/${previousStep}`);
+        router.push(`/onboarding/${trackerId}/${previousStep}`);
       } else if (currentStepIndex === 0) {
-        router.replace("/start");
+        router.push("/start");
       } else {
         router.back(); // Fallback if not in known steps
       }
