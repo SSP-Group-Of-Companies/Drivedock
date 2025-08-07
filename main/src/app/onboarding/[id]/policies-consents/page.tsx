@@ -1,3 +1,4 @@
+import { NEXT_PUBLIC_BASE_URL } from "@/config/env";
 import PoliciesConsentsClient, { PoliciesConsentsClientProps } from "./PoliciesConsentsClient";
 
 type PageDataResponse = {
@@ -9,7 +10,7 @@ type PageDataResponse = {
 async function fetchPageData(trackerId: string): Promise<PageDataResponse> {
     try {
         const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
+            `${NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
             }/api/v1/onboarding/${trackerId}/policies-consents`,
             {
                 cache: "no-store",

@@ -1,5 +1,6 @@
 import { ApplicationFormPage2Schema } from "@/lib/zodSchemas/applicationFormPage2.schema";
 import Page2Client from "./Page2Client";
+import { NEXT_PUBLIC_BASE_URL } from "@/config/env";
 
 // 🧠 Utility: Normalize ISO date to YYYY-MM-DD
 function formatDate(dateString: string): string {
@@ -12,8 +13,7 @@ function formatDate(dateString: string): string {
 async function fetchPage2Data(trackerId: string) {
   try {
     const response = await fetch(
-      `${
-        process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
+      `${NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
       }/api/v1/onboarding/${trackerId}/application-form/page-2`,
       { cache: "no-store" }
     );
@@ -40,50 +40,27 @@ export default async function ApplicationFormPage2({
 
   const defaultValues: ApplicationFormPage2Schema = pageData
     ? {
-        employments: pageData.employments?.length
-          ? pageData.employments.map((employment: any) => ({
-              employerName: employment.employerName || "",
-              supervisorName: employment.supervisorName || "",
-              address: employment.address || "",
-              postalCode: employment.postalCode || "",
-              city: employment.city || "",
-              stateOrProvince: employment.stateOrProvince || "",
-              phone1: employment.phone1 || "",
-              phone2: employment.phone2 || "",
-              email: employment.email || "",
-              positionHeld: employment.positionHeld || "",
-              from: formatDate(employment.from),
-              to: formatDate(employment.to),
-              salary: employment.salary || "",
-              reasonForLeaving: employment.reasonForLeaving || "",
-              subjectToFMCSR: employment.subjectToFMCSR,
-              safetySensitiveFunction: employment.safetySensitiveFunction,
-              gapExplanationBefore: employment.gapExplanationBefore || "",
-            }))
-          : [
-              {
-                employerName: "",
-                supervisorName: "",
-                address: "",
-                postalCode: "",
-                city: "",
-                stateOrProvince: "",
-                phone1: "",
-                phone2: "",
-                email: "",
-                positionHeld: "",
-                from: "",
-                to: "",
-                salary: "",
-                reasonForLeaving: "",
-                subjectToFMCSR: undefined,
-                safetySensitiveFunction: undefined,
-                gapExplanationBefore: "",
-              },
-            ],
-      }
-    : {
-        employments: [
+      employments: pageData.employments?.length
+        ? pageData.employments.map((employment: any) => ({
+          employerName: employment.employerName || "",
+          supervisorName: employment.supervisorName || "",
+          address: employment.address || "",
+          postalCode: employment.postalCode || "",
+          city: employment.city || "",
+          stateOrProvince: employment.stateOrProvince || "",
+          phone1: employment.phone1 || "",
+          phone2: employment.phone2 || "",
+          email: employment.email || "",
+          positionHeld: employment.positionHeld || "",
+          from: formatDate(employment.from),
+          to: formatDate(employment.to),
+          salary: employment.salary || "",
+          reasonForLeaving: employment.reasonForLeaving || "",
+          subjectToFMCSR: employment.subjectToFMCSR,
+          safetySensitiveFunction: employment.safetySensitiveFunction,
+          gapExplanationBefore: employment.gapExplanationBefore || "",
+        }))
+        : [
           {
             employerName: "",
             supervisorName: "",
@@ -104,7 +81,30 @@ export default async function ApplicationFormPage2({
             gapExplanationBefore: "",
           },
         ],
-      };
+    }
+    : {
+      employments: [
+        {
+          employerName: "",
+          supervisorName: "",
+          address: "",
+          postalCode: "",
+          city: "",
+          stateOrProvince: "",
+          phone1: "",
+          phone2: "",
+          email: "",
+          positionHeld: "",
+          from: "",
+          to: "",
+          salary: "",
+          reasonForLeaving: "",
+          subjectToFMCSR: undefined,
+          safetySensitiveFunction: undefined,
+          gapExplanationBefore: "",
+        },
+      ],
+    };
 
   return <Page2Client defaultValues={defaultValues} trackerId={trackerId} />;
 }
