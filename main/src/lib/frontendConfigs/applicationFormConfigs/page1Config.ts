@@ -35,8 +35,8 @@ import { IOnboardingTracker } from "@/types/onboardingTracker.type";
 type Page1FormPageConfig = FormPageConfig<ApplicationFormPage1Schema> & {
   buildPayload: (
     values: ApplicationFormPage1Schema,
-    prequalifications: IPreQualifications,
-    companyId: string,
+    prequalifications?: IPreQualifications,
+    companyId?: string,
     tracker?: IOnboardingTracker
   ) => Record<string, unknown>;
 };
@@ -91,24 +91,24 @@ export const page1Config: Page1FormPageConfig = {
     companyId,
     tracker
   ): Record<string, unknown> => {
+    const cleanedSin = values.sin?.replace(/\D/g, "") || "";
+
     const cleaned = {
       ...values,
-      sin: values.sin?.replace(/\D/g, "") || "",
+      sin: cleanedSin,
     };
 
     if (!tracker) {
-      // First-time POST
       return {
         applicationFormPage1: cleaned,
         prequalifications,
         companyId,
       };
-    } else {
-      // PATCH update
-      return {
-        page1: cleaned,
-      };
     }
+
+    return {
+      page1: cleaned,
+    };
   },
 
   nextRoute: "/onboarding/[id]/application-form/page-2",

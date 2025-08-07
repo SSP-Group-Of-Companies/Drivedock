@@ -26,6 +26,19 @@ export default function AddressSection() {
     name: "addresses",
   });
 
+  useEffect(() => {
+    if (fields.length === 0) {
+      append({
+        address: "",
+        city: "",
+        stateOrProvince: "",
+        postalCode: "",
+        from: "",
+        to: "",
+      });
+    }
+  }, [fields, append]);
+
   const watchedAddresses = watch("addresses");
   const addressErrors = errors.addresses as any[] | undefined;
 
