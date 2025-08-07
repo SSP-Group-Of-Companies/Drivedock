@@ -60,6 +60,8 @@ export enum EStepPath {
   APPLICATION_PAGE_4 = "application-form/page-4",
   APPLICATION_PAGE_5 = "application-form/page-5",
   POLICIES_CONSENTS = "policies-consents",
+  DRIVING_TEST = "driving-test",
+  CARRIER_EDGE = "carrier-edge",
 }
 
 // tracker context (public-facing)

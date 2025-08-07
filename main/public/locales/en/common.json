@@ -47,6 +47,9 @@
     "step2": {
       "title": "Application Form"
     },
+    "step3": {
+      "title": "Policies and Consents"
+    },
     "over23Local": "Are you over the age of 23 (for Local)?",
     "over25CrossBorder": "Are you over the age of 25 (for Cross Border)?",
     "canDriveManual": "Can you Drive Manual Transmission?",

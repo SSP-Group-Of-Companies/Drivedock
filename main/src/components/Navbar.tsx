@@ -8,6 +8,7 @@ import { useRouter, usePathname, useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 import LanguageDropdown from "@/components/LanguageDropdown";
+import { onboardingStepFlow } from "@/lib/utils/onboardingUtils";
 
 export default function Navbar() {
   const mounted = useMounted();
@@ -16,20 +17,21 @@ export default function Navbar() {
   const pathname = usePathname();
   const params = useParams();
 
-  // ✅ Smart back navigation that preserves tracker ID
   const handleBackClick = () => {
     const trackerId = params.id as string;
 
-    // If we're in onboarding with tracker ID, navigate to previous step
     if (trackerId && pathname.includes("/onboarding/")) {
-      if (pathname.includes("/page-2")) {
-        router.push(`/onboarding/${trackerId}/application-form/page-1`);
-      } else if (pathname.includes("/page-1")) {
-        router.push(`/onboarding/${trackerId}/prequalifications`);
-      } else if (pathname.includes("/prequalifications")) {
-        router.push("/start");
+      const currentStepIndex = onboardingStepFlow.findIndex((step) =>
+        pathname.includes(`/${step}`)
+      );
+
+      if (currentStepIndex > 0) {
+        const previousStep = onboardingStepFlow[currentStepIndex - 1];
+        router.replace(`/onboarding/${trackerId}/${previousStep}`);
+      } else if (currentStepIndex === 0) {
+        router.replace("/start");
       } else {
-        router.back(); // Fallback
+        router.back(); // Fallback if not in known steps
       }
     } else {
       router.back(); // Fallback for other pages
