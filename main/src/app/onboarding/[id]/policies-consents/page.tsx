@@ -19,6 +19,7 @@ async function fetchPageData(trackerId: string): Promise<PageDataResponse> {
 
         if (!response.ok) {
             const errorData = await response.json();
+            console.error("Failed to fetch policies-consents:", errorData);
             return { error: errorData?.message || "Failed to fetch data." };
         }
 
