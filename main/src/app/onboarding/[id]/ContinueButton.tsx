@@ -105,11 +105,11 @@ export default function ContinueButton<T extends FieldValues>({
       // Cleaned payload is built by calling page-specific config (handled outside this file)
       const jsonPayload = isPost
         ? {
-            applicationFormPage1: values,
-            prequalifications,
-            companyId: selectedCompany?.id,
-            applicationType: EApplicationType.FLAT_BED,
-          }
+          applicationFormPage1: values,
+          prequalifications,
+          companyId: selectedCompany?.id,
+          applicationType: EApplicationType.FLAT_BED,
+        }
         : values;
 
       const { trackerContext } = await submitFormStep({
@@ -147,10 +147,9 @@ export default function ContinueButton<T extends FieldValues>({
         disabled={submitting}
         onClick={onSubmit}
         className={`px-8 py-2 mt-6 rounded-full font-semibold transition-colors shadow-md flex items-center gap-2
-          ${
-            submitting
-              ? "bg-gray-400 text-white cursor-not-allowed"
-              : "bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 text-white hover:opacity-90"
+          ${submitting
+            ? "bg-gray-400 text-white cursor-not-allowed"
+            : "bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 text-white hover:opacity-90"
           }
         `}
       >
