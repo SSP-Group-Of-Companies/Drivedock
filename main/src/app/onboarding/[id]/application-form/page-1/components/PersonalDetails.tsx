@@ -84,11 +84,13 @@ export default function PersonalDetails() {
   const [sinValidationMessage, setSinValidationMessage] = useState("");
 
   const calculatedAge = dobValue ? calculateAge(dobValue) : null;
-  const displaySIN = sinValue
-    ? sinValue
-        .replace(/^(\d{3})(\d)/, "$1-$2")
-        .replace(/^(\d{3})-(\d{3})(\d)/, "$1-$2-$3")
-    : "";
+  const [displaySIN, setDisplaySIN] = useState(() =>
+    sinValue
+      ? sinValue
+          .replace(/^(\d{3})(\d)/, "$1-$2")
+          .replace(/^(\d{3})-(\d{3})(\d)/, "$1-$2-$3")
+      : ""
+  );
 
   const validateSIN = useCallback(async (sin: string) => {
     if (sin.length !== 9) return;
@@ -126,12 +128,18 @@ export default function PersonalDetails() {
   }, [validateSIN])();
 
   const handleSINChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const raw = e.target.value.replace(/\D/g, "").slice(0, 9); // Only digits, max 9
-    setValue("sin", raw, { shouldValidate: true });
-    setValue("sinEncrypted", raw, { shouldValidate: true });
+    const input = e.target.value;
 
-    if (raw.length === 9) {
-      debouncedValidateSIN(raw);
+    //  Update formatted display state
+    setDisplaySIN(input);
+
+    //  Clean value to store in RHF
+    const cleaned = input.replace(/\D/g, "").slice(0, 9);
+    setValue("sin", cleaned, { shouldValidate: true });
+    setValue("sinEncrypted", cleaned, { shouldValidate: true });
+
+    if (cleaned.length === 9) {
+      debouncedValidateSIN(cleaned);
     } else {
       setSinValidationStatus("idle");
       setSinValidationMessage("");

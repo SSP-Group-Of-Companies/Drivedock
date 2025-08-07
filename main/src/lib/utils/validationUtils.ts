@@ -170,22 +170,6 @@ export function isValidSIN(
   const sin = String(sinInput).trim();
 
   if (!/^\d{9}$/.test(sin)) return false;
-
-  // if (!IS_PRODUCTION) return true;
-
-  // const digits = sin.split("").map(Number);
-  // let sum = 0;
-
-  // for (let i = 0; i < digits.length; i++) {
-  //   let digit = digits[i];
-  //   if (i % 2 === 1) {
-  //     digit *= 2;
-  //     if (digit > 9) digit -= 9;
-  //   }
-  //   sum += digit;
-  // }
-
-  // return sum % 10 === 0;
   return true;
 }
 

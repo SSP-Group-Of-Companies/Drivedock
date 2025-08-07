@@ -170,16 +170,26 @@ export const applicationFormPage1Schema = z.object({
       {
         message:
           "Addresses cannot overlap and gaps between addresses cannot exceed 2 years",
+        path: [], // ✅ Attach error to the array root
       }
     )
     .refine(
       (addresses) => {
-        const sorted = [...addresses].sort(
+        // Filter out incomplete addresses (no 'to' date)
+        const validAddresses = addresses.filter(
+          (a) => a.to && a.to.trim() !== ""
+        );
+
+        if (validAddresses.length === 0) return false;
+
+        const sorted = [...validAddresses].sort(
           (a, b) => new Date(a.from).getTime() - new Date(b.from).getTime()
         );
-        const mostRecentEnd = new Date(sorted[sorted.length - 1]?.to || "");
+
+        const mostRecentEnd = new Date(sorted[sorted.length - 1].to);
         const sixMonthsAgo = new Date();
         sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
         return mostRecentEnd >= sixMonthsAgo;
       },
       {
@@ -187,9 +197,11 @@ export const applicationFormPage1Schema = z.object({
           "Your most recent address must extend to within the last 6 months",
       }
     )
+
     .refine((addresses) => hasRecentAddressCoverage(addresses, 5), {
       message:
-        "You must provide at least 5 years of address history. If you haven't lived in one place for 5 years, please add additional addresses to cover the full 5-year period.",
+        "You must provide at least 5 years of address history. If you haven't lived in one place for 5 years, please add additional addresses.",
+      path: [], // ✅ Attach error to root
     }),
 });
 

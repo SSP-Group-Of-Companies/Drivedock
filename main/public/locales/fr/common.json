@@ -76,7 +76,9 @@
         "license": "Informations sur le permis",
         "address": {
           "title": "Historique des adresses",
-          "subtitle": "Veuillez fournir votre historique d'adresse des 5 dernières années"
+          "subtitle": "Veuillez fournir votre historique d'adresse des 5 dernières années",
+          "current": "Adresse actuelle",
+          "previous": "Adresse précédente"
         }
       }
     },

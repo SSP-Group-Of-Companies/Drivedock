@@ -81,7 +81,9 @@
         "license": "Información de licencia",
         "address": {
           "title": "Historial de direcciones",
-          "subtitle": "Por favor proporciona tu historial de direcciones de los últimos 5 años"
+          "subtitle": "Por favor proporciona tu historial de direcciones de los últimos 5 años",
+          "current": "Dirección actual",
+          "previous": "Dirección anterior"
         }
       }
     },

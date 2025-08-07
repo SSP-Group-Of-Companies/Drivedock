@@ -1,16 +1,3 @@
-/**
- * Page1Client.tsx
- *
- *   Client-side Page 1 of the Driver Application Form
- * - Uses RHF + Zod for form context and validation
- * - Renders personal info, place of birth, licenses, and address sections
- * - Submits via a shared config-driven <ContinueButton> component
- *
- * Props:
- * - defaultValues: hydrated form data from server
- * - trackerId: resume tracker used for PATCH requests
- */
-
 "use client";
 
 import { useForm, FormProvider } from "react-hook-form";
@@ -39,10 +26,15 @@ export default function Page1Client({
   defaultValues,
   trackerId,
 }: Page1ClientProps) {
+  const cleanedDefaults: ApplicationFormPage1Schema = {
+    ...defaultValues,
+    sin: defaultValues.sin?.replace(/\D/g, "") || "",
+  };
+
   const methods = useForm<ApplicationFormPage1Schema>({
     resolver: zodResolver(applicationFormPage1Schema),
     mode: "onChange",
-    defaultValues,
+    defaultValues: cleanedDefaults,
   });
 
   return (

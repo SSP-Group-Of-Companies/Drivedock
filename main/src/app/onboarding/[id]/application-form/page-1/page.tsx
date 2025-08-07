@@ -63,7 +63,8 @@ const emptyFormDefaults: ApplicationFormPage1Schema = {
 async function fetchPage1Data(trackerId: string) {
   try {
     const res = await fetch(
-      `${NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
+      `${
+        NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
       }/api/v1/onboarding/${trackerId}/application-form/page-1`,
       { cache: "no-store" }
     );
@@ -91,44 +92,48 @@ export default async function Page1ServerWrapper({
 
   const defaultValues: ApplicationFormPage1Schema = pageData
     ? {
-      firstName: pageData.firstName || "",
-      lastName: pageData.lastName || "",
-      sin: pageData.sin || "",
-      sinPhoto: pageData.sinPhoto || getEmptyS3Photo(),
-      dob: formatDate(pageData.dob),
-      phoneHome: pageData.phoneHome || "",
-      phoneCell: pageData.phoneCell || "",
-      canProvideProofOfAge: pageData.canProvideProofOfAge || false,
-      email: pageData.email || "",
-      emergencyContactName: pageData.emergencyContactName || "",
-      emergencyContactPhone: pageData.emergencyContactPhone || "",
-      birthCity: pageData.birthCity || "",
-      birthCountry: pageData.birthCountry || "",
-      birthStateOrProvince: pageData.birthStateOrProvince || "",
-      licenses: pageData.licenses?.length
-        ? pageData.licenses.map((license: any) => ({
-          licenseNumber: license.licenseNumber || "",
-          licenseStateOrProvince: license.licenseStateOrProvince || "",
-          licenseType: license.licenseType || ELicenseType.AZ,
-          licenseExpiry: formatDate(license.licenseExpiry),
-          licenseFrontPhoto: {
-            s3Key: license.licenseFrontPhoto?.s3Key || "",
-            url: license.licenseFrontPhoto?.url || "",
-          },
-          licenseBackPhoto: {
-            s3Key: license.licenseBackPhoto?.s3Key || "",
-            url: license.licenseBackPhoto?.url || "",
-          },
-        }))
-        : emptyFormDefaults.licenses,
+        firstName: pageData.firstName || "",
+        lastName: pageData.lastName || "",
+        sin:
+          typeof pageData.sin === "string" && /^\d{9}$/.test(pageData.sin)
+            ? pageData.sin // Clean, real SIN (e.g., from first-time POST)
+            : "", // Mask it, so driver must retype if it's encrypted
 
-      addresses:
-        pageData.addresses?.map((addr: any) => ({
-          ...addr,
-          from: formatDate(addr.from),
-          to: formatDate(addr.to),
-        })) || [],
-    }
+        sinPhoto: pageData.sinPhoto || getEmptyS3Photo(),
+        dob: formatDate(pageData.dob),
+        phoneHome: pageData.phoneHome || "",
+        phoneCell: pageData.phoneCell || "",
+        canProvideProofOfAge: pageData.canProvideProofOfAge || false,
+        email: pageData.email || "",
+        emergencyContactName: pageData.emergencyContactName || "",
+        emergencyContactPhone: pageData.emergencyContactPhone || "",
+        birthCity: pageData.birthCity || "",
+        birthCountry: pageData.birthCountry || "",
+        birthStateOrProvince: pageData.birthStateOrProvince || "",
+        licenses: pageData.licenses?.length
+          ? pageData.licenses.map((license: any) => ({
+              licenseNumber: license.licenseNumber || "",
+              licenseStateOrProvince: license.licenseStateOrProvince || "",
+              licenseType: license.licenseType || ELicenseType.AZ,
+              licenseExpiry: formatDate(license.licenseExpiry),
+              licenseFrontPhoto: {
+                s3Key: license.licenseFrontPhoto?.s3Key || "",
+                url: license.licenseFrontPhoto?.url || "",
+              },
+              licenseBackPhoto: {
+                s3Key: license.licenseBackPhoto?.s3Key || "",
+                url: license.licenseBackPhoto?.url || "",
+              },
+            }))
+          : emptyFormDefaults.licenses,
+
+        addresses:
+          pageData.addresses?.map((addr: any) => ({
+            ...addr,
+            from: formatDate(addr.from),
+            to: formatDate(addr.to),
+          })) || [],
+      }
     : emptyFormDefaults;
 
   return <Page1Client defaultValues={defaultValues} trackerId={trackerId} />;

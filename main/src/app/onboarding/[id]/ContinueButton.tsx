@@ -9,7 +9,7 @@
  * Supports:
  * - Dynamic form field validation
  * - Resume flow using tracker ID
- * - Company + Prequalification validation for POST
+ * - Delegates JSON payload construction to page-level config
  * - Auto PATCH if tracker ID exists (via Zustand or URL)
  * - Redirect + router.refresh() to reload server-rendered form pages
  */
@@ -25,11 +25,16 @@ import { useCompanySelection } from "@/hooks/useCompanySelection";
 import { useFormErrorScroll } from "@/hooks/useFormErrorScroll";
 import { COMPANIES } from "@/constants/companies";
 import { submitFormStep } from "@/lib/frontendUtils/submitFormStep";
-import { EApplicationType } from "@/types/onboardingTracker.type";
 
 type ContinueButtonProps<T extends FieldValues> = {
   config: {
     validationFields: (values: T) => string[];
+    buildPayload: (
+      values: T,
+      prequalifications?: any,
+      companyId?: string,
+      tracker?: any
+    ) => Record<string, unknown>;
     nextRoute: string;
     submitSegment: string;
     validateBusinessRules?: (values: T) => string | null;
@@ -60,7 +65,7 @@ export default function ContinueButton<T extends FieldValues>({
   const onSubmit = async () => {
     const values = getValues();
 
-    // Run frontend validations
+    // ✅ Validate RHF fields
     const fieldsToValidate = config.validationFields(values);
     const isValid = await trigger(
       fieldsToValidate as Parameters<typeof trigger>[0]
@@ -70,7 +75,7 @@ export default function ContinueButton<T extends FieldValues>({
       return;
     }
 
-    // Custom business rule validations (e.g. Page 2 employment logic)
+    // ✅ Business rules (e.g. employment gap rules)
     if (config.validateBusinessRules) {
       const ruleError = config.validateBusinessRules(values);
       if (ruleError) {
@@ -79,11 +84,11 @@ export default function ContinueButton<T extends FieldValues>({
       }
     }
 
-    // Tracker + Company logic
     const urlTrackerId = params?.id as string;
     const effectiveTrackerId = trackerId || urlTrackerId;
     const isPost = !effectiveTrackerId;
 
+    // ✅ Validate POST requirements (Page 1 only)
     if (isPost) {
       if (!prequalifications?.completed) {
         alert(
@@ -102,15 +107,13 @@ export default function ContinueButton<T extends FieldValues>({
     try {
       setSubmitting(true);
 
-      // Cleaned payload is built by calling page-specific config (handled outside this file)
-      const jsonPayload = isPost
-        ? {
-            applicationFormPage1: values,
-            prequalifications,
-            companyId: selectedCompany?.id,
-            applicationType: EApplicationType.FLAT_BED,
-          }
-        : values;
+      // ✅ Build payload from config (includes sin cleanup, page keys, etc.)
+      const jsonPayload = config.buildPayload(
+        values,
+        prequalifications,
+        selectedCompany?.id,
+        tracker
+      );
 
       const { trackerContext } = await submitFormStep({
         json: jsonPayload,
@@ -119,7 +122,7 @@ export default function ContinueButton<T extends FieldValues>({
         submitSegment: config.submitSegment,
       });
 
-      // Redirect to next route
+      // Redirect and refresh
       if (isPost) {
         if (trackerContext?.id) {
           setTracker(trackerContext);
@@ -130,7 +133,7 @@ export default function ContinueButton<T extends FieldValues>({
         }
       } else {
         router.push(config.nextRoute.replace("[id]", effectiveTrackerId));
-        router.refresh(); // ✅ force server re-fetch when navigating back
+        router.refresh();
       }
     } catch (err) {
       console.error("Submission error:", err);
