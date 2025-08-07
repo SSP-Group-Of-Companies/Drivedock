@@ -1,10 +1,11 @@
 "use client";
 
 import { useTranslation } from "react-i18next";
+import { useEffect, useState } from "react";
 
 type QuestionGroupProps = {
   question: string;
-  value: string; // Can be "form.yes" or "Yes"
+  value: string; // Should always be a translation key like "form.yes"
   onChange: (val: string) => void;
   options?: string[]; // Defaults to ["form.yes", "form.no"]
 };
@@ -16,6 +17,11 @@ export default function QuestionGroup({
   options = ["form.yes", "form.no"],
 }: QuestionGroupProps) {
   const { t } = useTranslation("common");
+  const [selectedKey, setSelectedKey] = useState<string>(value);
+
+  useEffect(() => {
+    setSelectedKey(value);
+  }, [value]);
 
   return (
     <div className="w-full bg-gray-50 rounded-xl px-4 py-3 shadow-sm">
@@ -24,16 +30,19 @@ export default function QuestionGroup({
 
         <div className="inline-flex w-full sm:w-auto rounded-full border border-gray-300 overflow-hidden">
           {options.map((optKey, idx) => {
+            const isSelected = selectedKey === optKey;
             const optLabel = t(optKey);
-            const isSelected = value === optKey || value === optLabel;
 
             return (
               <button
                 key={optKey}
                 type="button"
-                onClick={() =>
-                  onChange(isSelected && options.length === 1 ? "" : optKey)
-                }
+                onClick={() => {
+                  const newValue =
+                    isSelected && options.length === 1 ? "" : optKey;
+                  setSelectedKey(newValue);
+                  onChange(newValue);
+                }}
                 className={`w-full sm:w-auto px-4 py-1.5 text-sm font-medium transition-all
                   ${
                     isSelected

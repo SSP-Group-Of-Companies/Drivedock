@@ -29,8 +29,8 @@ export default function CompanyCard({
   if (!mounted) return null;
   return (
     <motion.div
-      whileHover={{ y: -2, boxShadow: "0 8px 32px 0 rgba(0,0,0,0.10)" }}
-      className="bg-white rounded-2xl shadow-md p-6 flex flex-col items-start justify-between min-h-[260px] transition-shadow duration-200"
+      whileHover={{ y: -1, boxShadow: "0 8px 32px 0 rgba(0,0,0,0.10)" }}
+      className=" rounded-2xl shadow-md p-6 flex flex-col items-start justify-between min-h-[260px] transition-shadow duration-200"
     >
       <div className="flex items-center gap-3 mb-3">
         <Image

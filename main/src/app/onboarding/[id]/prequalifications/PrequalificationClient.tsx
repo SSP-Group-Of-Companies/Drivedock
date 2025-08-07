@@ -11,7 +11,7 @@
 
 "use client";
 
-import { useForm, Controller, useWatch } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { useEffect, useState, useMemo } from "react";
 import QuestionGroup from "@/app/onboarding/components/QuestionGroup";
 import FlatbedPopup from "@/app/onboarding/components/FlatbedPopup";
@@ -54,9 +54,7 @@ export default function PreQualificationClient({
 
   // Hydrate Zustand tracker
   useEffect(() => {
-    if (trackerContext?.id) {
-      setTracker(trackerContext);
-    }
+    if (trackerContext?.id) setTracker(trackerContext);
   }, [trackerContext, setTracker]);
 
   const filteredPreQualificationQuestions = useMemo(() => {
@@ -73,13 +71,6 @@ export default function PreQualificationClient({
     mode: "onChange",
     defaultValues,
   });
-
-  const flatbedExperience = useWatch({ control, name: "flatbedExperience" });
-
-  useEffect(() => {
-    if (flatbedExperience === "form.yes") setShowFlatbedPopup("yes");
-    else if (flatbedExperience === "form.no") setShowFlatbedPopup("no");
-  }, [flatbedExperience]);
 
   const watchAllFields = watch();
   const allAnswered = Object.keys(watchAllFields).every((key) => {
@@ -145,7 +136,6 @@ export default function PreQualificationClient({
 
       if (!nextUrl) throw new Error("nextUrl missing from onboardingContext");
 
-      // Route forward
       router.push(nextUrl);
     } catch (err) {
       console.error("Prequalification submit error:", err);
@@ -162,19 +152,30 @@ export default function PreQualificationClient({
               key={q.name}
               control={control}
               name={q.name}
-              render={({ field }) => (
-                <QuestionGroup
-                  question={
-                    q.name === "legalRightToWorkCanada"
-                      ? selectedCompany?.countryCode === "US"
-                        ? t("form.legalRightToWorkUS")
-                        : t(q.label)
-                      : t(q.label)
+              render={({ field }) => {
+                const handleChange = (val: string) => {
+                  field.onChange(val);
+                  if (q.name === "flatbedExperience") {
+                    if (val === "form.yes") setShowFlatbedPopup("yes");
+                    else if (val === "form.no") setShowFlatbedPopup("no");
                   }
-                  options={q.options}
-                  {...field}
-                />
-              )}
+                };
+
+                return (
+                  <QuestionGroup
+                    question={
+                      q.name === "legalRightToWorkCanada"
+                        ? selectedCompany?.countryCode === "US"
+                          ? t("form.legalRightToWorkUS")
+                          : t(q.label)
+                        : t(q.label)
+                    }
+                    options={q.options}
+                    value={field.value}
+                    onChange={handleChange}
+                  />
+                );
+              }}
             />
           ))}
         </div>
