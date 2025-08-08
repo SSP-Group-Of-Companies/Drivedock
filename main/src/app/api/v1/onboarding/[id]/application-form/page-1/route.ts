@@ -39,8 +39,10 @@ export async function PATCH(
   try {
     await connectDB();
     const { id: onboardingId } = await params;
-    if (!isValidObjectId(onboardingId))
+
+    if (!isValidObjectId(onboardingId)) {
       return errorResponse(400, "Invalid onboarding ID");
+    }
 
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
     if (!onboardingDoc)
@@ -48,10 +50,15 @@ export async function PATCH(
 
     const oldSin = decryptString(onboardingDoc.sinEncrypted);
 
-    const page1 = await parseJsonBody<IApplicationFormPage1>(req);
+    // 🔴 FIX: unwrap the payload
+    const body = await parseJsonBody<any>(req);
+    const page1 = body?.page1 as IApplicationFormPage1 | undefined;
+    if (!page1) return errorResponse(400, "Missing 'page1' in request body");
 
-    const newSin = page1?.sin;
+    // 🔒 Sanitize SIN (accepts formatted input just in case)
+    const newSin = String(page1.sin ?? "").replace(/\D/g, "");
     if (!isValidSIN(newSin)) return errorResponse(400, "Invalid SIN");
+
     if (!isValidEmail(page1.email)) return errorResponse(400, "Invalid email");
     if (page1.phoneHome && !isValidPhoneNumber(page1.phoneHome))
       return errorResponse(400, "Invalid home phone");
@@ -70,23 +77,27 @@ export async function PATCH(
     const appFormDoc = await ApplicationForm.findById(appFormId);
     if (!appFormDoc) return errorResponse(404, "ApplicationForm not found");
 
+    if (!Array.isArray(page1.licenses)) {
+      return errorResponse(400, "'licenses' must be an array");
+    }
+
+    const firstLicense = page1.licenses[0];
+    if (!firstLicense || firstLicense.licenseType !== "AZ") {
+      return errorResponse(400, "First license must be of type AZ");
+    }
+    if (!firstLicense.licenseFrontPhoto || !firstLicense.licenseBackPhoto) {
+      return errorResponse(
+        400,
+        "First license must include both front and back photos"
+      );
+    }
+
     const sinChanged = oldSin !== newSin;
     const sinHash = hashString(newSin);
     const sinEncrypted = encryptString(newSin);
     const trackerId = onboardingDoc.id;
 
-    if (!Array.isArray(page1.licenses))
-      return errorResponse(400, "'licenses' must be an array");
-    const firstLicense = page1.licenses[0];
-    if (!firstLicense || firstLicense.licenseType !== "AZ")
-      return errorResponse(400, "First license must be of type AZ");
-    if (!firstLicense.licenseFrontPhoto || !firstLicense.licenseBackPhoto)
-      return errorResponse(
-        400,
-        "First license must include both front and back photos"
-      );
-
-    // Step 1 — Update with TEMP FILES FIRST
+    // Save temp refs first
     const tempLicenses: ILicenseEntry[] = page1.licenses.map((lic) => ({
       ...lic,
     }));
@@ -97,8 +108,7 @@ export async function PATCH(
       sinEncrypted,
       sinPhoto: tempSinPhoto,
       licenses: tempLicenses,
-    };
-    delete (page1ToSave as any).sin;
+    } as Omit<IApplicationFormPage1, "sin">;
 
     const updatedForm = await ApplicationForm.findByIdAndUpdate(
       appFormId,
@@ -222,7 +232,11 @@ export async function PATCH(
       onboardingDoc.sinEncrypted = sinEncrypted;
     }
 
-    // Update onboarding tracker
+    // Tracker updates
+    if (sinChanged) {
+      onboardingDoc.sinHash = sinHash;
+      onboardingDoc.sinEncrypted = sinEncrypted;
+    }
     onboardingDoc.status = advanceStatus(
       onboardingDoc.status,
       EStepPath.APPLICATION_PAGE_1
@@ -237,7 +251,7 @@ export async function PATCH(
         onboardingDoc,
         EStepPath.APPLICATION_PAGE_1
       ),
-      page1: finalSave.page1,
+      page1: updatedForm.page1,
     });
   } catch (error) {
     console.error("PATCH /application-form/page-1 error:", error);

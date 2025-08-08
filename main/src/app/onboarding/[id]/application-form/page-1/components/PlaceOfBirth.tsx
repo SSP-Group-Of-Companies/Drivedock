@@ -9,6 +9,9 @@
 
 import { useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+
+//components hooks and types imports
+import useMounted from "@/hooks/useMounted";
 import TextInput from "@/app/onboarding/components/TextInput";
 
 export default function PlaceOfBirth() {
@@ -16,8 +19,11 @@ export default function PlaceOfBirth() {
     register,
     formState: { errors },
   } = useFormContext();
+  const mounted = useMounted();
   const { t } = useTranslation("common");
 
+  // Prevent rendering until mounted to avoid hydration mismatch
+  if (!mounted) return null;
   return (
     <section className="space-y-6 border border-gray-200 p-6 rounded-lg bg-white/80 shadow-sm">
       <h2 className="text-center text-lg font-semibold text-gray-800">

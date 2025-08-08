@@ -1,44 +1,50 @@
 "use client";
 
 /**
+ * ===============================================================
  * <ContinueButton />
+ * ---------------------------------------------------------------
+ * Generic continue/next button for DriveDock multi-step forms.
  *
- * Generic continue button for multi-step DriveDock form pages.
- * Handles validation, business rule checks, and submits via POST or PATCH.
+ * Delegates all form-specific logic to a passed `config`:
+ *  - validationFields(values): string[]
+ *  - validateBusinessRules?(values): string | null
+ *  - buildPayload(values, prequalifications, companyId, tracker): any
+ *  - nextRoute: string (fallback)
+ *  - submitSegment: string
  *
- * Supports:
- * - Dynamic form field validation
- * - Resume flow using tracker ID
- * - Delegates JSON payload construction to page-level config
- * - Auto PATCH if tracker ID exists (via Zustand or URL)
- * - Redirect + router.refresh() to reload server-rendered form pages
+ * Flow:
+ *  - Validates specified fields via RHF
+ *  - Optional business rules (config)
+ *  - Determines POST vs PATCH based on presence of trackerId/URL param
+ *  - Submits via submitFormStep()
+ *  - Navigates using server `trackerContext.nextUrl` when present,
+ *    falling back to config.nextRoute
+ *
+ * Owner: SSP Tech Team – Faruq Adebayo Atanda
+ * ===============================================================
  */
+// main/src/app/onboarding/[id]/ContinueButton.tsx
+"use client";
 
 import { useFormContext, FieldValues } from "react-hook-form";
 import { useRouter, useParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useState, ReactNode } from "react";
 
+//components, hooks, and types
+import useMounted from "@/hooks/useMounted";
 import { usePrequalificationStore } from "@/store/usePrequalificationStore";
 import { useOnboardingTracker } from "@/store/useOnboardingTracker";
-import { useCompanySelection } from "@/hooks/useCompanySelection";
+import { useCompanySelection } from "@/hooks/frontendHooks/useCompanySelection";
 import { useFormErrorScroll } from "@/hooks/useFormErrorScroll";
 import { COMPANIES } from "@/constants/companies";
 import { submitFormStep } from "@/lib/frontendUtils/submitFormStep";
+import { ECompanyApplicationType } from "@/hooks/frontendHooks/useCompanySelection";
+import type { FormPageConfig } from "@/lib/frontendConfigs/formPageConfig.types";
 
 type ContinueButtonProps<T extends FieldValues> = {
-  config: {
-    validationFields: (values: T) => string[];
-    buildPayload: (
-      values: T,
-      prequalifications?: any,
-      companyId?: string,
-      tracker?: any
-    ) => Record<string, unknown>;
-    nextRoute: string;
-    submitSegment: string;
-    validateBusinessRules?: (values: T) => string | null;
-  };
+  config: FormPageConfig<T>;
   trackerId?: string;
 };
 
@@ -54,7 +60,10 @@ export default function ContinueButton<T extends FieldValues>({
 
   const router = useRouter();
   const params = useParams();
+
+  const mounted = useMounted();
   const { t } = useTranslation("common");
+
   const { data: prequalifications, clearData } = usePrequalificationStore();
   const { tracker, setTracker } = useOnboardingTracker();
   const { selectedCompany } = useCompanySelection();
@@ -65,7 +74,6 @@ export default function ContinueButton<T extends FieldValues>({
   const onSubmit = async () => {
     const values = getValues();
 
-    // ✅ Validate RHF fields
     const fieldsToValidate = config.validationFields(values);
     const isValid = await trigger(
       fieldsToValidate as Parameters<typeof trigger>[0]
@@ -75,7 +83,6 @@ export default function ContinueButton<T extends FieldValues>({
       return;
     }
 
-    // ✅ Business rules (e.g. employment gap rules)
     if (config.validateBusinessRules) {
       const ruleError = config.validateBusinessRules(values);
       if (ruleError) {
@@ -84,11 +91,10 @@ export default function ContinueButton<T extends FieldValues>({
       }
     }
 
-    const urlTrackerId = params?.id as string;
+    const urlTrackerId = params?.id as string | undefined;
     const effectiveTrackerId = trackerId || urlTrackerId;
     const isPost = !effectiveTrackerId;
 
-    // ✅ Validate POST requirements (Page 1 only)
     if (isPost) {
       if (!prequalifications?.completed) {
         alert(
@@ -96,7 +102,6 @@ export default function ContinueButton<T extends FieldValues>({
         );
         return;
       }
-
       const companyId = selectedCompany?.id;
       if (!companyId || !COMPANIES.some((c) => c.id === companyId)) {
         alert("Invalid company selection. Please restart the application.");
@@ -107,33 +112,37 @@ export default function ContinueButton<T extends FieldValues>({
     try {
       setSubmitting(true);
 
-      // ✅ Build payload from config (includes sin cleanup, page keys, etc.)
-      const jsonPayload = config.buildPayload(
-        values,
-        prequalifications,
-        selectedCompany?.id,
-        tracker
-      );
+      const jsonPayload = config.buildPayload(values, {
+        prequalifications: prequalifications ?? undefined,
+        companyId: selectedCompany?.id,
+        applicationType: selectedCompany?.type as
+          | ECompanyApplicationType
+          | undefined,
+        tracker,
+        isPatch: !isPost, // << NEW
+        effectiveTrackerId, // << NEW
+      });
 
-      const { trackerContext } = await submitFormStep({
+      const { trackerContext, nextUrl } = await submitFormStep({
         json: jsonPayload,
         tracker,
         urlTrackerId,
         submitSegment: config.submitSegment,
       });
 
-      // Redirect and refresh
       if (isPost) {
-        if (trackerContext?.id) {
-          setTracker(trackerContext);
-          clearData();
-          router.push(config.nextRoute.replace("[id]", trackerContext.id));
-        } else {
+        if (!trackerContext?.id)
           throw new Error("Tracker not returned from POST");
-        }
+        setTracker(trackerContext);
+        clearData();
+        router.push(
+          nextUrl ?? config.nextRoute.replace("[id]", trackerContext.id)
+        );
       } else {
-        router.push(config.nextRoute.replace("[id]", effectiveTrackerId));
-        router.refresh();
+        router.push(
+          nextUrl ?? config.nextRoute.replace("[id]", effectiveTrackerId!)
+        );
+        if (!nextUrl) router.refresh();
       }
     } catch (err) {
       console.error("Submission error:", err);
@@ -143,6 +152,8 @@ export default function ContinueButton<T extends FieldValues>({
     }
   };
 
+  // Only render button if mounted to avoid hydration mismatch
+  if (!mounted) return null;
   return (
     <div className="flex justify-center">
       <button

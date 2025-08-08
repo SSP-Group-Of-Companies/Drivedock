@@ -1,17 +1,27 @@
+// main/src/app/onboarding/[id]/application-form/page-2/Page2Client.tsx
 "use client";
 
-import { useForm, FormProvider } from "react-hook-form";
+/**
+ * ===============================================================
+ * DriveDock Onboarding — Page 2 Client (Employment History)
+ * ---------------------------------------------------------------
+ * - RHF + Zod for validation
+ * - Uses page2Config + <ContinueButton /> for PATCH flow
+ * - Form submit is prevented; ContinueButton handles submission
+ *
+ * Owner: SSP Tech Team — Faruq Adebayo Atanda
+ * ===============================================================
+ */
+
+import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   applicationFormPage2Schema,
   ApplicationFormPage2Schema,
 } from "@/lib/zodSchemas/applicationFormPage2.schema";
 
-// Components
 import EmploymentSection from "./components/EmploymentSection";
 import ContinueButton from "@/app/onboarding/[id]/ContinueButton";
-
-// Config
 import { page2Config } from "@/lib/frontendConfigs/applicationFormConfigs/page2Config";
 
 type Page2ClientProps = {
@@ -29,18 +39,16 @@ export default function Page2Client({
     defaultValues,
   });
 
-  const onSubmit = () => {
-    // Not used — handled by ContinueButton
-  };
-
   return (
     <FormProvider {...methods}>
       <form
         className="space-y-8"
-        onSubmit={methods.handleSubmit(onSubmit)}
+        // Prevent native form submit; ContinueButton drives the flow
+        onSubmit={(e) => e.preventDefault()}
         noValidate
       >
         <EmploymentSection />
+
         <ContinueButton<ApplicationFormPage2Schema>
           config={page2Config}
           trackerId={trackerId}

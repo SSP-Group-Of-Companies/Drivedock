@@ -15,15 +15,20 @@ import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
 import { ELicenseType } from "@/types/shared.types";
 import { FieldErrors } from "react-hook-form";
-import { ApplicationFormPage1Schema } from "@/lib/zodSchemas/applicationFormPage1.schema";
 import { Camera, Upload, X } from "lucide-react";
 import Image from "next/image";
 import { uploadToS3Presigned } from "@/lib/utils/s3Upload";
 import { ES3Folder } from "@/types/aws.types";
 import { useParams } from "next/navigation";
 
+//components, types and hooks imports
+import useMounted from "@/hooks/useMounted";
+import { ApplicationFormPage1Schema } from "@/lib/zodSchemas/applicationFormPage1.schema";
+
 export default function LicenseSection() {
+  const mounted = useMounted();
   const { t } = useTranslation("common");
+
   const {
     register,
     control,
@@ -177,6 +182,8 @@ export default function LicenseSection() {
     methods,
   ]);
 
+  // Prevent rendering until mounted to avoid hydration mismatch
+  if (!mounted) return null;
   return (
     <section className="space-y-6 border border-gray-200 p-6 rounded-lg bg-white/80 shadow-sm">
       <h2 className="text-center text-lg font-semibold text-gray-800">

@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * DriveDock Onboarding - Page 1 Initial Entry
  *
@@ -13,8 +15,6 @@
  * @owner SSP Tech Team - Faruq Adebayo
  */
 
-"use client";
-
 import { useForm, FormProvider } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -23,15 +23,26 @@ import {
 } from "@/lib/zodSchemas/applicationFormPage1.schema";
 import { ELicenseType } from "@/types/shared.types";
 
-// Components
+// Components, types and hooks imports
 import PersonalDetails from "../[id]/application-form/page-1/components/PersonalDetails";
 import PlaceOfBirth from "../[id]/application-form/page-1/components/PlaceOfBirth";
 import LicenseSection from "../[id]/application-form/page-1/components/LicenseSection";
 import AddressSection from "../[id]/application-form/page-1/components/AddressSection";
 import ContinueButton from "../[id]/ContinueButton";
-
-// Config
 import { page1Config } from "@/lib/frontendConfigs/applicationFormConfigs/page1Config";
+
+// Minimal placeholders that satisfy the zod shape (validation enforces non-empty on submit)
+const EMPTY_PHOTO = { s3Key: "", url: "" };
+
+// Seed one blank address so only "Current Address" shows on first render
+const BLANK_ADDRESS = {
+  address: "",
+  city: "",
+  stateOrProvince: "",
+  postalCode: "",
+  from: "",
+  to: "",
+};
 
 export default function ApplicationFormPage1() {
   const methods = useForm<ApplicationFormPage1Schema>({
@@ -41,7 +52,7 @@ export default function ApplicationFormPage1() {
       firstName: "",
       lastName: "",
       sin: "",
-      sinPhoto: undefined,
+      sinPhoto: EMPTY_PHOTO,
       dob: "",
       phoneHome: "",
       phoneCell: "",
@@ -58,11 +69,12 @@ export default function ApplicationFormPage1() {
           licenseStateOrProvince: "",
           licenseType: ELicenseType.AZ,
           licenseExpiry: "",
-          licenseFrontPhoto: undefined,
-          licenseBackPhoto: undefined,
+          licenseFrontPhoto: EMPTY_PHOTO,
+          licenseBackPhoto: EMPTY_PHOTO,
         },
       ],
-      addresses: [],
+      //  StrictMode-safe: start with exactly one address so "Previous 1" never appears on first load
+      addresses: [BLANK_ADDRESS],
     },
   });
 

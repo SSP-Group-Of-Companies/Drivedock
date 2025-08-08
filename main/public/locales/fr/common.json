@@ -1,282 +1,89 @@
 {
-  "company": {
-    "heading": "Rejoignez notre famille d'entreprises",
-    "subheading": "Choisissez l'entreprise où vous souhaitez bâtir votre carrière de conducteur",
-    "applyNow": "Postuler maintenant",
-    "selectType": "Sélectionnez le type de candidature",
-    "selectTypeDesc": "Veuillez choisir le type de poste pour lequel vous postulez :",
-    "flatbed": "Plateforme",
-    "dropdeck": "Fourgon sec",
-    "cancel": "Annuler"
+  "navbar": {
+    "backButton": "Retour"
   },
-  "features": {
-    "language": {
-      "title": "Multilingue",
-      "description": "Disponible en anglais, pendjabi et français pour accueillir tous les conducteurs confortablement"
-    },
-    "security": {
-      "title": "Sécurisé et sûr",
-      "description": "Vos informations sont protégées par une sécurité et un chiffrement de niveau entreprise"
-    },
-    "steps": {
-      "title": "Processus en 6 étapes",
-      "description": "Complétez tous les documents nécessaires à l'embauche grâce à notre assistant de formulaire en 6 étapes"
-    }
-  },
-  "flatbedPopup": {
-    "title": "Avis",
-    "yes": "Votre niveau de compétence en plateau sera testé pendant l’essai de conduite.",
-    "no": "Après votre essai de conduite, vous serez inscrit à une formation de 2 semaines en plateau.",
-    "ok": "OK"
-  },
+
   "footer": {
     "rights": "Tous droits réservés.",
-    "tagline": "DriveDock – Plateforme d'intégration numérique des conducteurs"
+    "tagline": "DriveDock – Plateforme numérique d’intégration des conducteurs"
   },
-  "form": {
-    "subtitle": "Toutes les informations doivent être exactes. La responsabilité incombe au candidat.",
-    "categories": "Catégories",
-    "next": "Suivant",
-    "step1": {
-      "title": "Formulaire de préqualification"
-    },
-    "step2": {
-      "title": "Formulaire de candidature"
-    },
-    "over23Local": "Avez-vous plus de 23 ans (pour les trajets locaux) ?",
-    "over25CrossBorder": "Avez-vous plus de 25 ans (pour les trajets transfrontaliers) ?",
-    "canDriveManual": "Pouvez-vous conduire une transmission manuelle ?",
-    "experienceDrivingTractorTrailer": "Avez-vous au moins 2 ans d'expérience vérifiable en conduite de tracteur/remorque ?",
-    "faultAccidentIn3Years": "Avez-vous eu un accident responsable au cours des 3 dernières années ?",
-    "zeroPointsOnAbstract": "Avez-vous plus de 0 point sur votre relevé de conducteur ?",
-    "noUnpardonedCriminalRecord": "Avez-vous un casier judiciaire pour lequel une grâce n’a pas été accordée ?",
-    "legalRightToWorkCanada": "Avez-vous le droit légal de travailler au Canada ?",
-    "legalRightToWorkUS": "Avez-vous le droit légal de travailler aux États-Unis ?",
-    "canCrossBorderUSA": "Pouvez-vous traverser la frontière vers les États-Unis ?",
-    "hasFASTCard": "Avez-vous une carte FAST ?",
-    "driverType": "Quel type de conducteur êtes-vous ?",
-    "haulPreference": "Que préférez-vous ?",
-    "teamStatus": "Faites-vous partie d'une équipe ?",
-    "preferLocalDriving": "Préférez-vous la conduite locale ?",
-    "preferSwitching": "Préférez-vous l’échange ?",
-    "flatbedExperience": "Avez-vous de l'expérience en plateau ?",
-    "yes": "Oui",
-    "no": "Non",
-    "company": "Entreprise",
-    "owneroperator": "Propriétaire-exploitant",
-    "ownerdriver": "Conducteur propriétaire",
-    "shorthaul": "Courte distance",
-    "longhaul": "Longue distance",
-    "team": "Équipe",
-    "single": "Individuel",
-    "page1": {
-      "sections": {
-        "personal": "Informations personnelles",
-        "birth": "Lieu de naissance",
-        "license": "Informations sur le permis",
-        "address": {
-          "title": "Historique des adresses",
-          "subtitle": "Veuillez fournir votre historique d'adresse des 5 dernières années",
-          "current": "Adresse actuelle",
-          "previous": "Adresse précédente"
-        }
+
+  "welcome": {
+    "heading": "Prenez la route avec SSP",
+    "description": "Votre plateforme numérique d’intégration pour rejoindre SSP Truck Line. Complétez vos documents d’embauche rapidement et en toute sécurité.",
+
+    "features": {
+      "language": {
+        "title": "Multilingue",
+        "description": "Disponible en anglais, espagnol et français pour servir tous les conducteurs confortablement"
+      },
+      "security": {
+        "title": "Sécurisé & Fiable",
+        "description": "Vos informations sont protégées avec une sécurité et un chiffrement de niveau professionnel"
+      },
+      "steps": {
+        "title": "Processus en 6 étapes",
+        "description": "Complétez tous les documents d’embauche requis grâce à notre assistant de formulaire en 6 étapes"
       }
     },
-    "page2": {
-      "sections": {
-        "employment": "Historique d'emploi"
-      },
-      "labels": {
-        "currentEmployer": "Employeur actuel",
-        "previousEmployer": "Employeur précédent"
-      },
-      "actions": {
-        "addPrevious": "Ajouter un employeur précédent",
-        "removePrevious": "Supprimer"
-      },
-      "requirements": "Les réglementations fédérales sur la sécurité des transporteurs routiers (49CFR391.21) exigent que tous les candidats souhaitant conduire un véhicule commercial listent tous leurs emplois des deux (2) dernières années. De plus, si vous avez déjà conduit un véhicule commercial, vous devez fournir un historique d'emploi supplémentaire de huit (8) ans, pour un total de dix (10) ans. Toute interruption de plus d'un mois doit être expliquée.",
-      "modal": {
-        "title": "Historique d'emploi supplémentaire requis",
-        "message": "Vous avez plus de 2 ans d'expérience. Veuillez ajouter votre historique d'emploi précédent pour compléter les informations requises."
-      },
-      "gapDetected": "Lacune de {days} jours détectée entre les emplois. Veuillez expliquer :"
-    },
-    "fields": {
-      "firstName": "Prénom",
-      "lastName": "Nom de famille",
-      "sin": "NAS (Numéro d'assurance sociale)",
-      "sinPhoto": "Photo de la carte NAS",
-      "sinPhotoDesc": "Cliquez pour capturer ou sélectionner une image",
-      "dob": "Date de naissance",
-      "canProvideProof": "Pouvez-vous fournir une preuve d'âge ?",
-      "phoneHome": "Téléphone (domicile)",
-      "phoneCell": "Téléphone (portable)",
-      "emergencyContactName": "Nom du contact d'urgence",
-      "emergencyContactPhone": "Téléphone du contact d'urgence",
-      "birthCity": "Ville de naissance",
-      "birthStateOrProvince": "Province ou État",
-      "birthCountry": "Pays de naissance",
-      "licenseNumber": "Numéro du permis",
-      "licenseProvince": "Province",
-      "licenseType": "Type de permis",
-      "licenseExpiry": "Date d'expiration",
-      "licenseFrontPhoto": "Photo avant du permis",
-      "licensePhotoDesc": "Cliquez pour capturer ou sélectionner une image",
-      "licenseBackPhoto": "Photo arrière du permis",
-      "address": "Adresse",
-      "city": "Ville",
-      "stateOrProvince": "État ou Province",
-      "postalCode": "Code postal",
-      "zipCode": "Code postal",
-      "from": "Date de début",
-      "to": "Date de fin",
-      "employerName": "Nom de l’employeur",
-      "supervisorName": "Nom du superviseur",
-      "phone1": "Téléphone 1",
-      "phone2": "Téléphone 2 (optionnel)",
-      "email": "Adresse email",
-      "positionHeld": "Poste occupé",
-      "salary": "Salaire",
-      "reasonForLeaving": "Raison du départ...",
-      "subjectToFMCSR": "Étiez-vous soumis aux réglementations FMCSR (Federal Motor Carrier Safety Regulations) ?",
-      "safetySensitiveFunction": "Avez-vous exercé des fonctions sensibles à la sécurité ?"
-    },
-    "actions": {
-      "addLicense": "Ajouter un autre permis",
-      "removeLicense": "Supprimer le permis",
-      "addAddress": "Ajouter une autre adresse",
-      "removeAddress": "Supprimer l’adresse",
-      "cancel": "Annuler",
-      "ok": "OK"
-    },
-    "placeholders": {
-      "firstName": "Entrez votre prénom",
-      "lastName": "Entrez votre nom de famille",
-      "phoneHome": "Entrez votre numéro de téléphone à domicile",
-      "phoneCell": "Entrez votre numéro de téléphone portable",
-      "email": "Entrez votre adresse email",
-      "emergencyContactName": "Entrez le nom du contact d’urgence",
-      "emergencyContactPhone": "Entrez le numéro du contact d’urgence",
-      "birthCity": "Entrez la ville de naissance",
-      "birthStateOrProvince": "Entrez la province ou l’état de naissance",
-      "birthCountry": "Entrez le pays de naissance",
-      "zipCode": "12345 ou 12345-6789",
-      "sin": "123-456-789",
-      "dob": "AAAA-mm-jj",
-      "select": "--Sélectionner--",
-      "employerName": "Entrez le nom de l’employeur",
-      "supervisorName": "Entrez le nom du superviseur",
-      "address": "Entrez l'adresse",
-      "city": "Entrez la ville",
-      "stateOrProvince": "Entrez l’état ou la province",
-      "postalCode": "Entrez le code postal",
-      "phone1": "Entrez le numéro de téléphone principal",
-      "phone2": "Entrez un deuxième numéro de téléphone (optionnel)",
-      "positionHeld": "Entrez le poste occupé",
-      "salary": "Entrez les informations sur le salaire",
-      "reasonForLeaving": "Entrez la raison du départ",
-      "gapExplanation": "Veuillez expliquer l'interruption dans votre historique d'emploi..."
-    },
-    "errors": {
-      "minimum5Years": "Vous devez fournir au moins 5 ans d'historique d'adresses.",
-      "addressDurationError": "L’adresse fournie doit couvrir les 5 dernières années. Veuillez ajouter une adresse précédente si vous avez vécu ailleurs."
-    },
-    "continue": "Continuer",
-    "submitting": "Envoi en cours..."
+
+    "steps": {
+      "title": "Processus de candidature",
+      "personal": "Informations personnelles",
+      "employment": "Historique d’emploi",
+      "driving": "Dossier de conduite",
+      "medical": "Informations médicales",
+      "references": "Références",
+      "review": "Relecture finale"
+    }
   },
-  "common": {
-    "yes": "Oui",
-    "no": "Non"
-  },
-  "navbar": {
-    "logoAlt": "Logo SSP"
-  },
-  "resume": {
-    "title": "Reprendre votre candidature",
-    "description": "Entrez votre NAS pour reprendre votre intégration là où vous vous êtes arrêté.",
-    "placeholder": "999-888-777",
-    "success": "Correspondance trouvée ! Redirection...",
-    "error": "Aucune candidature trouvée pour ce NAS.",
-    "cancel": "Annuler",
-    "continue": "Continuer"
-  },
+
   "start": {
     "heading": "Commencez votre candidature",
-    "subheading": "Commencez votre parcours avec le Groupe SSP",
+    "subheading": "Commencez votre parcours avec SSP Group of Companies",
     "languageLabel": "🌐 Sélectionnez la langue",
-    "selectLanguage": "Sélectionnez la langue",
     "beforeYouBegin": "Avant de commencer",
     "readAndAgree": "Veuillez lire et accepter ce qui suit :",
     "continue": "Continuer vers la candidature",
     "estimatedTime": "Temps estimé : 15–20 minutes",
-    "agreeToTerms": "J'accepte les conditions ci-dessus",
+    "agreeToTerms": "J’accepte les conditions ci-dessus",
+
     "checklist": {
       "accurateInfo": "Toutes les informations fournies doivent être exactes et véridiques",
-      "digitalProcess": "Vous comprenez qu'il s'agit d'un processus de candidature numérique",
-      "consentChecks": "Vous consentez aux vérifications de casier judiciaire et de dossier de conduite",
-      "termsAgreement": "Vous acceptez les conditions générales du Groupe SSP"
+      "digitalProcess": "Vous comprenez qu’il s’agit d’un processus de candidature numérique",
+      "consentChecks": "Vous consentez aux vérifications d’antécédents et de dossier de conduite",
+      "termsAgreement": "Vous acceptez les conditions générales de SSP Group of Companies"
     },
+
     "termsModal": {
       "title": "Conditions générales",
       "intro": "En continuant, vous acceptez que :",
       "items": {
         "subcontractor": "Vous postulez en tant que sous-traitant ou employé",
         "truthfulInfo": "Toutes les informations que vous soumettez sont exactes et véridiques",
-        "backgroundChecks": "Vous consentez aux vérifications de vos antécédents et de votre dossier de conduite",
+        "backgroundChecks": "Vous consentez aux vérifications d’antécédents et de dossier de conduite",
         "companyRules": {
-          "title": "Vous comprenez et acceptez les règles de l'entreprise concernant :",
-          "drugPolicy": "Les politiques en matière de drogues et d'alcool",
-          "dashCam": "L'enregistrement par caméra embarquée dans les véhicules",
-          "safetyRules": "La vitesse, les déclarations d’accidents, et l’usage du téléphone",
-          "seals": "Les scellés de remorque et les inspections transfrontalières"
+          "title": "Vous comprenez et acceptez les règles de l’entreprise concernant :",
+          "drugPolicy": "Politiques sur l’alcool et les drogues",
+          "dashCam": "Enregistrement par caméra embarquée dans les véhicules",
+          "safetyRules": "Excès de vitesse, déclaration d’accident et utilisation du téléphone",
+          "seals": "Scellés de remorque et inspections transfrontalières"
         },
-        "discipline": "Les mesures disciplinaires peuvent inclure des amendes, des suspensions ou un licenciement",
-        "laws": "Vous êtes responsable du respect des lois canadiennes et américaines sur le transport routier"
+        "discipline": "Des mesures disciplinaires peuvent inclure des amendes, une suspension ou un licenciement",
+        "laws": "Vous êtes responsable de respecter les lois canadiennes et américaines sur le transport routier"
       },
       "cancel": "Annuler",
-      "agree": "J'accepte"
+      "agree": "J’accepte"
     }
   },
-  "steps": {
-    "title": "Processus de candidature",
-    "personal": "Informations personnelles",
-    "employment": "Historique d’emploi",
-    "driving": "Dossier de conduite",
-    "medical": "Informations médicales",
-    "references": "Références",
-    "review": "Révision finale"
-  },
-  "welcome": {
-    "heading": "Rejoignez la route avec SSP",
-    "description": "Votre plateforme d'intégration numérique pour rejoindre SSP Truck Line. Complétez vos documents d’embauche rapidement et en toute sécurité."
-  },
-  "wizard": {
-    "infoTitle": "Que signifient les étapes ?",
-    "modalTitle": "Étapes de la candidature",
-    "close": "Fermer",
-    "step1": {
-      "label": "Étape 1",
-      "desc": "Pré-qualification"
-    },
-    "step2": {
-      "label": "Étape 2",
-      "desc": "Formulaire de candidature"
-    },
-    "step3": {
-      "label": "Étape 3",
-      "desc": "Politiques et consentements"
-    },
-    "step4": {
-      "label": "Étape 4",
-      "desc": "Formation CarrierEdge"
-    },
-    "step5": {
-      "label": "Étape 5",
-      "desc": "Essai de conduite"
-    },
-    "step6": {
-      "label": "Étape 6",
-      "desc": "Test de dépistage de drogue"
-    }
+  "company": {
+    "heading": "Rejoignez notre famille d’entreprises",
+    "subheading": "Choisissez l’entreprise où vous souhaitez bâtir votre carrière de conducteur",
+    "applyNow": "Postuler maintenant",
+    "selectType": "Sélectionnez le type de candidature",
+    "selectTypeDesc": "Veuillez choisir le type de poste pour lequel vous postulez :",
+    "flatbed": "Plateau",
+    "dropdeck": "Fourgon sec",
+    "cancel": "Annuler"
   }
 }

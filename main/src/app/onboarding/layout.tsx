@@ -1,8 +1,8 @@
 // src/app/onboarding/layout.tsx
 "use client";
 
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+import Navbar from "@/components/shared/Navbar";
+import Footer from "@/components/shared/Footer";
 import CompanyLogoHeader from "@/components/shared/CompanyLogoHeader";
 import FormWizardNav from "@/app/onboarding/components/FormWizardNav";
 import { usePathname, useRouter, useParams } from "next/navigation";
@@ -11,7 +11,7 @@ import { Dialog } from "@headlessui/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { AlertCircle, ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
-import LanguageDropdown from "@/components/LanguageDropdown";
+import LanguageDropdown from "@/components/shared/LanguageDropdown";
 
 export default function FormLayout({
   children,

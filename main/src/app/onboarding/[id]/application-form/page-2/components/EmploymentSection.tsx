@@ -4,6 +4,8 @@ import { useFieldArray, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useEffect, useState, useRef } from "react";
 
+//components, hooks, and types
+import useMounted from "@/hooks/useMounted";
 import EmploymentCard from "./EmploymentCard";
 import GapBlock from "./GapBlock";
 import { ApplicationFormPage2Schema } from "@/lib/zodSchemas/applicationFormPage2.schema";
@@ -17,6 +19,8 @@ type EmploymentEntry = ApplicationFormPage2Schema["employments"][number];
 
 export default function EmploymentSection() {
   const { control, watch } = useFormContext<ApplicationFormPage2Schema>();
+
+  const mounted = useMounted();
   const { t } = useTranslation("common");
 
   const { fields, append, remove } = useFieldArray({
@@ -25,8 +29,6 @@ export default function EmploymentSection() {
   });
 
   const employments = watch("employments");
-  const currentFrom = watch("employments.0.from");
-  const currentTo = watch("employments.0.to");
   const [showPrevious, setShowPrevious] = useState(false);
   const hasAutoAddedRef = useRef(false);
 
@@ -55,25 +57,20 @@ export default function EmploymentSection() {
     if (fields.length === 0) {
       append(createEmptyEmployment());
     }
-  }, [append, fields]);
+  }, [append, fields.length]);
 
   useEffect(() => {
     const current = employments[0];
     if (!current?.from || !current?.to) return;
 
-    // Use timeline calculation instead of individual employment duration
     const { totalMonths } = calculateTimelineFromCurrent(employments);
 
-    // Auto-display previous employment forms if total timeline > 24 months and we haven't auto-added yet
     if (totalMonths > 24 && !hasAutoAddedRef.current) {
-      // Auto-add previous employment forms immediately
       setShowPrevious(true);
       hasAutoAddedRef.current = true;
-
-      // Add only 1 additional employment entry (auto-added)
       append(createEmptyEmployment());
     }
-  }, [employments, currentFrom, currentTo, fields.length, append]);
+  }, [employments, append]);
 
   // Update add button logic to use timeline calculation
   const { timeline, totalMonths } = calculateTimelineFromCurrent(employments);
@@ -81,6 +78,8 @@ export default function EmploymentSection() {
   // Check for gaps between employment entries
   const gaps = getEmploymentGaps(timeline);
 
+  // If not mounted, return null to avoid hydration issues
+  if (!mounted) return null;
   return (
     <section className="space-y-6">
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6 relative">
@@ -119,7 +118,11 @@ export default function EmploymentSection() {
             {isPrevious && (
               <button
                 type="button"
-                onClick={() => remove(index)}
+                onClick={() => {
+                  remove(index);
+                  // if we just removed down to 1 row, hide previous section
+                  if (fields.length - 1 <= 1) setShowPrevious(false);
+                }}
                 className="absolute top-2 right-2 text-red-600 hover:text-red-800 text-sm font-medium"
                 title="Remove this employer"
               >

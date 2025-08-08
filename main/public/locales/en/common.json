@@ -1,4 +1,81 @@
 {
+  "navbar": {
+    "backButton": "Back"
+  },
+
+  "footer": {
+    "rights": "All rights reserved.",
+    "tagline": "DriveDock – Digital Driver Onboarding Platform"
+  },
+
+  "welcome": {
+    "heading": "Join the Road with SSP",
+    "description": "Your digital onboarding platform for joining SSP Truck Line. Complete your hiring documents quickly and securely.",
+
+    "features": {
+      "language": {
+        "title": "Multi-language",
+        "description": "Available in English, Spanish, and French to serve all drivers comfortably"
+      },
+      "security": {
+        "title": "Secure & Safe",
+        "description": "Your information is protected with enterprise-grade security and encryption"
+      },
+      "steps": {
+        "title": "6-Step Process",
+        "description": "Complete all required hiring documents through our guided 6-stage form wizard"
+      }
+    },
+
+    "steps": {
+      "title": "Application Process",
+      "personal": "Personal Information",
+      "employment": "Employment History",
+      "driving": "Driving Record",
+      "medical": "Medical Information",
+      "references": "References",
+      "review": "Final Review"
+    }
+  },
+
+  "start": {
+    "heading": "Start Your Application",
+    "subheading": "Begin your journey with SSP Group of Companies",
+    "languageLabel": "🌐 Select Language",
+    "beforeYouBegin": "Before You Begin",
+    "readAndAgree": "Please read and agree to the following:",
+    "continue": "Continue to Application",
+    "estimatedTime": "Estimated time: 15–20 minutes",
+    "agreeToTerms": "I agree to the terms above",
+
+    "checklist": {
+      "accurateInfo": "All information provided must be accurate and truthful",
+      "digitalProcess": "You understand this is a digital application process",
+      "consentChecks": "You consent to background and driving record checks",
+      "termsAgreement": "You agree to SSP Group of Companies terms and conditions"
+    },
+
+    "termsModal": {
+      "title": "Terms & Conditions",
+      "intro": "By continuing, you agree that:",
+      "items": {
+        "subcontractor": "You are applying as a subcontractor, or an employee",
+        "truthfulInfo": "All information you submit is true and accurate",
+        "backgroundChecks": "You consent to background checks and driving record verification",
+        "companyRules": {
+          "title": "You understand and agree to company rules on:",
+          "drugPolicy": "Drug & Alcohol policies",
+          "dashCam": "Dash cam recording in vehicles",
+          "safetyRules": "Speeding, accident reporting, and phone use",
+          "seals": "Trailer seals and cross-border inspections"
+        },
+        "discipline": "Disciplinary action may include fines, suspension, or termination",
+        "laws": "You are responsible for following Canadian and US trucking laws"
+      },
+      "cancel": "Cancel",
+      "agree": "I Agree"
+    }
+  },
   "company": {
     "heading": "Join Our Family of Companies",
     "subheading": "Choose the company where you want to build your driving career",
@@ -10,39 +87,50 @@
     "cancel": "Cancel"
   },
 
-  "features": {
-    "language": {
-      "title": "Multi-language",
-      "description": "Available in English, Punjabi, and French to serve all drivers comfortably"
-    },
-    "security": {
-      "title": "Secure & Safe",
-      "description": "Your information is protected with enterprise-grade security and encryption"
-    },
-    "steps": {
-      "title": "6-Step Process",
-      "description": "Complete all required hiring documents through our guided 6-stage form wizard"
-    }
-  },
-
-  "flatbedPopup": {
-    "title": "Notice",
-    "yes": "Your flatbed skill level will be tested during the Drive Test.",
-    "no": "After your Drive Test, you will be enrolled in a 2-week flatbed training.",
-    "ok": "OK"
-  },
-
-  "footer": {
-    "rights": "All rights reserved.",
-    "tagline": "DriveDock – Digital Driver Onboarding Platform"
-  },
-
   "form": {
     "subtitle": "All information must be answered truthfully. Liability falls on the applicant.",
-    "categories": "Categories",
-    "next": "Next",
     "step1": {
-      "title": "Pre-Qualification Form"
+      "title": "Pre-Qualification Form",
+      "questions": {
+        "over23Local": "Are you over the age of 23 (for Local)?",
+        "over25CrossBorder": "Are you over the age of 25 (for Cross Border)?",
+        "canDriveManual": "Can you Drive Manual Transmission?",
+        "experienceDrivingTractorTrailer": "Do you have at least 2 years of verifiable experience driving Tractor/Trailer?",
+        "faultAccidentIn3Years": "Do you have any at-fault accident in the past 3 years?",
+        "zeroPointsOnAbstract": "Do you have more than 0 points on your driver’s abstract?",
+        "noUnpardonedCriminalRecord": "Do you have any criminal record for which pardon has not been granted?",
+        "legalRightToWorkCanada": "Do you have legal right to work in Canada?",
+        "legalRightToWorkUS": "Do you have legal right to work in the US?",
+        "canCrossBorderUSA": "Can you cross borders into USA?",
+        "hasFASTCard": "Do you have a FAST card?",
+
+        "categories": "Categories",
+        "driverType": "Which type of driver are you?",
+        "haulPreference": "Which do you prefer?",
+        "teamStatus": "Are you part of a team or driving solo?",
+        "preferLocalDriving": "Do you prefer driving local?",
+        "preferSwitching": "Do you prefer switching (drop & hook)?",
+        "flatbedExperience": "Do you have flatbed experience?",
+
+        "yes": "Yes",
+        "no": "No",
+
+        "company": "Company",
+        "owneroperator": "Owner Operator",
+        "ownerdriver": "Owner Driver",
+        "shorthaul": "Short Haul",
+        "longhaul": "Long Haul",
+        "team": "Team",
+        "single": "Single",
+
+        "flatbedPopup": {
+          "title": "Notice",
+          "yes": "Your flatbed skill level will be tested during the Drive Test.",
+          "no": "After your Drive Test, you will be enrolled in a 2-week flatbed training.",
+          "ok": "OK"
+        }
+      },
+      "next": "Next"
     },
     "step2": {
       "title": "Application Form"
@@ -50,32 +138,6 @@
     "step3": {
       "title": "Policies and Consents"
     },
-    "over23Local": "Are you over the age of 23 (for Local)?",
-    "over25CrossBorder": "Are you over the age of 25 (for Cross Border)?",
-    "canDriveManual": "Can you Drive Manual Transmission?",
-    "experienceDrivingTractorTrailer": "Do you have at least 2 year of verifiable Experience driving Tractor/Trailer?",
-    "faultAccidentIn3Years": "Do you have any at fault accident in the past 3 years?",
-    "zeroPointsOnAbstract": "Do you have more than 0 points on your driver’s abstract?",
-    "noUnpardonedCriminalRecord": "Do you have any criminal record for which pardon has not been granted?",
-    "legalRightToWorkCanada": "Do you have legal right to work in Canada?",
-    "legalRightToWorkUS": "Do you have legal right to work in the US?",
-    "canCrossBorderUSA": "Can you cross borders into USA?",
-    "hasFASTCard": "Do you have FAST card?",
-    "driverType": "Which Driver are you?",
-    "haulPreference": "Which do you prefer?",
-    "teamStatus": "Are you part of a Team or No?",
-    "preferLocalDriving": "Do you prefer driving local?",
-    "preferSwitching": "Do you prefer Switching?",
-    "flatbedExperience": "Do you have a flatbed experience?",
-    "yes": "Yes",
-    "no": "No",
-    "company": "Company",
-    "owneroperator": "Owner Operator",
-    "ownerdriver": "Owner Driver",
-    "shorthaul": "Short Haul",
-    "longhaul": "Long Haul",
-    "team": "Team",
-    "single": "Single",
 
     "page1": {
       "sections": {
@@ -197,10 +259,6 @@
     "no": "No"
   },
 
-  "navbar": {
-    "logoAlt": "SSP Logo"
-  },
-
   "resume": {
     "title": "Resume Your Application",
     "description": "Enter your SIN to continue your onboarding from where you stopped.",
@@ -209,61 +267,6 @@
     "error": "No application found for that SIN.",
     "cancel": "Cancel",
     "continue": "Continue"
-  },
-
-  "start": {
-    "heading": "Start Your Application",
-    "subheading": "Begin your journey with SSP Group of Companies",
-    "languageLabel": "🌐 Select Language",
-    "selectLanguage": "Select Language",
-    "beforeYouBegin": "Before You Begin",
-    "readAndAgree": "Please read and agree to the following:",
-    "continue": "Continue to Application",
-    "estimatedTime": "Estimated time: 15–20 minutes",
-    "agreeToTerms": "I agree to the terms above",
-
-    "checklist": {
-      "accurateInfo": "All information provided must be accurate and truthful",
-      "digitalProcess": "You understand this is a digital application process",
-      "consentChecks": "You consent to background and driving record checks",
-      "termsAgreement": "You agree to SSP Group of Companies terms and conditions"
-    },
-
-    "termsModal": {
-      "title": "Terms & Conditions",
-      "intro": "By continuing, you agree that:",
-      "items": {
-        "subcontractor": "You are applying as a subcontractor, or an employee",
-        "truthfulInfo": "All information you submit is true and accurate",
-        "backgroundChecks": "You consent to background checks and driving record verification",
-        "companyRules": {
-          "title": "You understand and agree to company rules on:",
-          "drugPolicy": "Drug & Alcohol policies",
-          "dashCam": "Dash cam recording in vehicles",
-          "safetyRules": "Speeding, accident reporting, and phone use",
-          "seals": "Trailer seals and cross-border inspections"
-        },
-        "discipline": "Disciplinary action may include fines, suspension, or termination",
-        "laws": "You are responsible for following Canadian and US trucking laws"
-      },
-      "cancel": "Cancel",
-      "agree": "I Agree"
-    }
-  },
-
-  "steps": {
-    "title": "Application Process",
-    "personal": "Personal Information",
-    "employment": "Employment History",
-    "driving": "Driving Record",
-    "medical": "Medical Information",
-    "references": "References",
-    "review": "Final Review"
-  },
-
-  "welcome": {
-    "heading": "Join the Road with SSP",
-    "description": "Your digital onboarding platform for joining SSP Truck Line. Complete your hiring documents quickly and securely."
   },
 
   "wizard": {

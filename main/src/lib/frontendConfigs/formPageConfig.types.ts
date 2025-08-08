@@ -14,25 +14,32 @@
  * - page1Config.ts, page2Config.ts, etc.
  * - <ContinueButton /> component
  */
+/**
+ * formPageConfig.types.ts
+ *
+ * Generic contract used by all form pages to drive validation and submission.
+ */
+
+// main/src/lib/frontendConfigs/formPageConfig.types.ts
 
 import { FieldValues } from "react-hook-form";
 import { IPreQualifications } from "@/types/preQualifications.types";
-import { IOnboardingTracker } from "@/types/onboardingTracker.type";
+import { ITrackerContext } from "@/types/onboardingTracker.type"; // use the FE context we actually have
+
+export type BuildPayloadCtx = {
+  prequalifications?: IPreQualifications;
+  companyId?: string;
+  applicationType?: string;
+  tracker?: ITrackerContext | null;
+
+  isPatch?: boolean;
+  effectiveTrackerId?: string;
+};
 
 export interface FormPageConfig<T extends FieldValues> {
   validationFields: (values: T) => string[];
 
-  /**
-   * Builds JSON payload for POST or PATCH request
-   * - Tracker presence indicates PATCH
-   * - No tracker → POST (and include prequalifications + companyId)
-   */
-  buildPayload: (
-    values: T,
-    prequalification: IPreQualifications,
-    companyId: string,
-    tracker?: IOnboardingTracker
-  ) => Record<string, unknown>;
+  buildPayload: (values: T, ctx: BuildPayloadCtx) => Record<string, unknown>;
 
   nextRoute: string;
   submitSegment: string;

@@ -1,30 +1,18 @@
-// page2Config.ts
-
+// main/src/lib/frontendConfigs/applicationFormConfigs/page2Config.ts
 import { FormPageConfig } from "../formPageConfig.types";
 import { ApplicationFormPage2Schema } from "@/lib/zodSchemas/applicationFormPage2.schema";
-import { IOnboardingTracker } from "@/types/onboardingTracker.type";
 
-// 🔐 Custom config contract for Page 2 (no prequal/companyId required)
-type Page2FormPageConfig = Omit<
-  FormPageConfig<ApplicationFormPage2Schema>,
-  "buildPayload"
-> & {
-  buildPayload: (
-    values: ApplicationFormPage2Schema,
-    tracker?: IOnboardingTracker
-  ) => Record<string, unknown>;
-};
-
-export const page2Config: Page2FormPageConfig = {
+export const page2Config: FormPageConfig<ApplicationFormPage2Schema> = {
   validationFields: (values) => {
     const fields: string[] = [];
-
-    values.employments.forEach((employment, i) => {
-      const isRendered = document.querySelector(
-        `[data-field="employments.${i}.employerName"]`
-      );
-
-      if (!isRendered) return;
+    values.employments.forEach((emp, i) => {
+      // Only validate rendered rows (optional UX optimization)
+      if (
+        !document?.querySelector?.(
+          `[data-field="employments.${i}.employerName"]`
+        )
+      )
+        return;
 
       fields.push(
         `employments.${i}.employerName`,
@@ -44,19 +32,15 @@ export const page2Config: Page2FormPageConfig = {
         `employments.${i}.safetySensitiveFunction`
       );
 
-      if (employment.gapExplanationBefore !== undefined) {
+      if (emp.gapExplanationBefore !== undefined) {
         fields.push(`employments.${i}.gapExplanationBefore`);
       }
     });
-
     return fields;
   },
 
-  buildPayload: (values) => {
-    return {
-      page2: values,
-    };
-  },
+  //  Send the array at the root, not wrapped in { page2: ... }
+  buildPayload: (values) => ({ employments: values.employments }),
 
   nextRoute: "/onboarding/[id]/application-form/page-3",
   submitSegment: "page-2",

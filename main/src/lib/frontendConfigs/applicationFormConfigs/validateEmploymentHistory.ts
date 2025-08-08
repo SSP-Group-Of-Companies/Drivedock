@@ -38,7 +38,7 @@ export function validateEmploymentHistory(employments: any[]): string | null {
     if (next) {
       const nextTo = new Date(next.to);
 
-      // ❌ Overlap check: current.from must be >= next.to
+      //  Overlap check: current.from must be >= next.to
       if (from < nextTo) {
         return `Job at ${current.supervisorName} overlaps with job at ${next.supervisorName}`;
       }
@@ -60,7 +60,7 @@ export function validateEmploymentHistory(employments: any[]): string | null {
   const tenYearsInDays = 3650; // 10 years = 3650 days
 
   if (totalDays >= twoYearsInDays && totalDays <= 760) {
-    return null; // ✅ Exactly 2 years or more, but less than 2 years + 30 days buffer
+    return null; //  Exactly 2 years or more, but less than 2 years + 30 days buffer
   }
 
   if (totalDays > 760 && totalDays < tenYearsInDays) {
@@ -72,7 +72,7 @@ export function validateEmploymentHistory(employments: any[]): string | null {
   }
 
   if (totalDays >= tenYearsInDays) {
-    return null; // ✅ 10+ years
+    return null; //  10+ years
   }
 
   return "Employment history validation failed.";

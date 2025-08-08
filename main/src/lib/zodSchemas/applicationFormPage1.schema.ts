@@ -2,18 +2,29 @@ import { z } from "zod";
 import { ELicenseType } from "@/types/shared.types";
 import { hasRecentAddressCoverage } from "@/lib/utils/hasMinimumAddressDuration";
 
+// Helpers
+const dateYMD = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD");
+
+// Accepts digits, spaces, (), -, + but must contain at least 10 digits overall
+const phoneLoose = z
+  .string()
+  .min(7, "Enter a valid phone")
+  .refine((val) => (val.match(/\d/g)?.length ?? 0) >= 10, {
+    message: "Enter at least 10 digits",
+  });
+
 // S3 Photo Schema
 export const photoSchema = z.object({
-  s3Key: z.string(),
-  url: z.string(),
+  s3Key: z.string().min(1, "Photo is required"),
+  url: z.string().min(1, "Photo URL is required"),
 });
 
-// License Entry — relaxed: no required photo here
+// License Entry — photos optional here; first license requirement enforced below
 export const licenseEntrySchema = z.object({
   licenseNumber: z.string().min(1, "License number is required"),
   licenseStateOrProvince: z.string().min(1, "Province is required"),
   licenseType: z.nativeEnum(ELicenseType),
-  licenseExpiry: z.string().min(1, "Expiry date is required"),
+  licenseExpiry: dateYMD,
   licenseFrontPhoto: photoSchema.optional(),
   licenseBackPhoto: photoSchema.optional(),
 });
@@ -25,94 +36,53 @@ export const addressEntrySchema = z
     city: z.string().min(1, "City is required"),
     stateOrProvince: z.string().min(1, "Province is required"),
     postalCode: z.string().min(3, "Postal code is required"),
-    from: z
-      .string()
-      .min(1, "Start date required")
-      .refine(
-        (date) => {
-          const d = new Date(date);
-          const now = new Date();
-          const earliest = new Date(
-            now.getFullYear() - 50,
-            now.getMonth(),
-            now.getDate()
-          );
-          return !isNaN(d.getTime()) && d <= now && d >= earliest;
-        },
-        {
-          message:
-            "Start date cannot be in the future or more than 50 years ago",
-        }
-      ),
-    to: z
-      .string()
-      .min(1, "End date required")
-      .refine(
-        (date) => {
-          const d = new Date(date);
-          return !isNaN(d.getTime()) && d <= new Date();
-        },
-        { message: "End date cannot be in the future" }
-      ),
+    from: dateYMD,
+    to: dateYMD,
   })
   .refine(
     (data) => {
       const from = new Date(data.from);
       const to = new Date(data.to);
-      return !isNaN(from.getTime()) && !isNaN(to.getTime()) && to > from;
+      return to > from;
     },
-    {
-      message: "End date must be after start date",
-      path: ["to"],
-    }
+    { message: "End date must be after start date", path: ["to"] }
   );
 
-// Main Application Form Page 1 Schema
 export const applicationFormPage1Schema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
+
+  // Store only digits; server re-validates with Luhn/format anyway
   sin: z.string().refine((val) => /^\d{9}$/.test(val.replace(/\D/g, "")), {
     message: "SIN must be 9 digits",
   }),
 
-  sinPhoto: photoSchema.refine((p) => p.s3Key && p.url, {
-    message: "SIN photo is required",
-  }),
+  sinPhoto: photoSchema,
 
-  dob: z
-    .string()
-    .min(1, "Date of birth is required")
-    .refine(
-      (dob) => {
-        const birthDate = new Date(dob);
-        const today = new Date();
-        const age = today.getFullYear() - birthDate.getFullYear();
-        const monthDiff = today.getMonth() - birthDate.getMonth();
-        const dayDiff = today.getDate() - birthDate.getDate();
-        const actualAge =
-          monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
-        return actualAge >= 23 && actualAge <= 100;
-      },
-      { message: "Age must be between 23 and 100 years old" }
-    ),
+  dob: dateYMD.refine(
+    (dob) => {
+      const birthDate = new Date(dob);
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const m = today.getMonth() - birthDate.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
+      return age >= 23 && age <= 100;
+    },
+    { message: "Age must be between 23 and 100 years old" }
+  ),
 
-  phoneHome: z
-    .string()
-    .min(10)
-    .regex(/^\d+$/, "Phone number must contain only digits"),
-  phoneCell: z
-    .string()
-    .min(10)
-    .regex(/^\d+$/, "Phone number must contain only digits"),
+  // 🔧 Backend treats phoneHome as optional; mirror that here
+  phoneHome: phoneLoose.optional().or(z.literal("")),
+  phoneCell: phoneLoose,
+
   canProvideProofOfAge: z.boolean().refine((v) => v === true, {
     message: "You must confirm that you can provide proof of age",
   }),
+
   email: z.string().email().min(1, "Email is required"),
   emergencyContactName: z.string().min(1, "Emergency contact name is required"),
-  emergencyContactPhone: z
-    .string()
-    .min(10)
-    .regex(/^\d+$/, "Phone number must contain only digits"),
+  emergencyContactPhone: phoneLoose,
+
   birthCity: z.string().min(1, "City of birth is required"),
   birthCountry: z.string().min(1, "Country of birth is required"),
   birthStateOrProvince: z
@@ -122,13 +92,15 @@ export const applicationFormPage1Schema = z.object({
   licenses: z
     .array(licenseEntrySchema)
     .min(1, "At least one license is required")
+    // Backend requires first license = AZ; enforce here for UX
     .refine((licenses) => licenses[0]?.licenseType === ELicenseType.AZ, {
       message: "The first license must be of type AZ",
     })
+    // Require photos only for the first license (UX mirror of server rules)
     .refine(
       (licenses) => {
         const first = licenses[0];
-        return !!(
+        return Boolean(
           first?.licenseFrontPhoto?.s3Key && first?.licenseFrontPhoto?.url
         );
       },
@@ -140,7 +112,7 @@ export const applicationFormPage1Schema = z.object({
     .refine(
       (licenses) => {
         const first = licenses[0];
-        return !!(
+        return Boolean(
           first?.licenseBackPhoto?.s3Key && first?.licenseBackPhoto?.url
         );
       },
@@ -153,8 +125,17 @@ export const applicationFormPage1Schema = z.object({
   addresses: z
     .array(addressEntrySchema)
     .min(1, "Address history is required")
+
+    // ✅ Server requires 5-year coverage — keep this to match backend
+    .refine((addresses) => hasRecentAddressCoverage(addresses, 5), {
+      message:
+        "You must provide at least 5 years of address history. If you haven't lived in one place for 5 years, please add additional addresses.",
+      path: [],
+    })
+
     .refine(
       (addresses) => {
+        // No overlaps & no > 2yr gaps
         const sorted = [...addresses].sort(
           (a, b) => new Date(a.from).getTime() - new Date(b.from).getTime()
         );
@@ -170,39 +151,29 @@ export const applicationFormPage1Schema = z.object({
       {
         message:
           "Addresses cannot overlap and gaps between addresses cannot exceed 2 years",
-        path: [], // ✅ Attach error to the array root
+        path: [],
       }
     )
     .refine(
       (addresses) => {
-        // Filter out incomplete addresses (no 'to' date)
-        const validAddresses = addresses.filter(
-          (a) => a.to && a.to.trim() !== ""
+        // Most recent address ends within last 6 months
+        const valid = addresses.filter((a) => a.to?.trim());
+        if (!valid.length) return false;
+        const lastEnd = new Date(
+          valid
+            .sort((a, b) => new Date(a.to).getTime() - new Date(b.to).getTime())
+            .at(-1)!.to
         );
-
-        if (validAddresses.length === 0) return false;
-
-        const sorted = [...validAddresses].sort(
-          (a, b) => new Date(a.from).getTime() - new Date(b.from).getTime()
-        );
-
-        const mostRecentEnd = new Date(sorted[sorted.length - 1].to);
         const sixMonthsAgo = new Date();
         sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-
-        return mostRecentEnd >= sixMonthsAgo;
+        return lastEnd >= sixMonthsAgo;
       },
       {
         message:
           "Your most recent address must extend to within the last 6 months",
+        path: [],
       }
-    )
-
-    .refine((addresses) => hasRecentAddressCoverage(addresses, 5), {
-      message:
-        "You must provide at least 5 years of address history. If you haven't lived in one place for 5 years, please add additional addresses.",
-      path: [], // ✅ Attach error to root
-    }),
+    ),
 });
 
 export type ApplicationFormPage1Schema = z.infer<
