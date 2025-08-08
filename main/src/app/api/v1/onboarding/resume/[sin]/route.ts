@@ -17,25 +17,16 @@ export const GET = async (
     await connectDB();
     const { sin } = await params;
 
-    console.log("Resume API called with SIN:", sin);
-
     if (!isValidSIN(sin)) {
-      console.log("SIN validation failed for:", sin);
       return errorResponse(400, "Invalid SIN");
     }
 
-    console.log("SIN validation passed for:", sin);
-
     const sinHash = hashString(sin);
-    console.log("Looking for tracker with sinHash:", sinHash);
     const tracker = await OnboardingTracker.findOne({ sinHash });
 
     if (!tracker) {
-      console.log("No tracker found for sinHash:", sinHash);
       return errorResponse(404, "No onboarding record found");
     }
-
-    console.log("Tracker found:", tracker.id);
 
     // Check if resume session has expired
     if (onboardingExpired(tracker)) {

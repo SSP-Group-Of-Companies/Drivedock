@@ -1,5 +1,8 @@
+"use server";
+
 import { NEXT_PUBLIC_BASE_URL } from "@/config/env";
 import PoliciesConsentsClient, { PoliciesConsentsClientProps } from "./PoliciesConsentsClient";
+
 
 type PageDataResponse = {
     data?: PoliciesConsentsClientProps;
@@ -25,8 +28,7 @@ async function fetchPageData(trackerId: string): Promise<PageDataResponse> {
 
         const json = await response.json();
         return { data: json.data };
-    } catch (error) {
-        console.error("Error fetching policies-consents:", error);
+    } catch {
         return { error: "Unexpected server error. Please try again later." };
     }
 }

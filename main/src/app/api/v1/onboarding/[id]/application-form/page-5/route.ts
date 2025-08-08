@@ -114,7 +114,7 @@ export const PATCH = async (
         onboardingDoc,
         EStepPath.APPLICATION_PAGE_5
       ),
-      applicationForm: appFormDoc.toObject({ virtuals: true }),
+      page5: appFormDoc.page5,
     });
   } catch (error) {
     console.error("Error updating application form page 5:", error);
@@ -164,7 +164,7 @@ export const GET = async (
 
     return successResponse(200, "Page 5 data retrieved", {
       onboardingContext: buildTrackerContext(onboardingDoc),
-      page5: appFormDoc.page5,
+      page5: appFormDoc.page5 ?? {},
     });
   } catch (error) {
     return errorResponse(error);

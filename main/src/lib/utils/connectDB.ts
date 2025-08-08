@@ -20,7 +20,6 @@ const connectDB = async () => {
     });
     isConnected = true;
     // Optionally log connection success
-    // console.log('MongoDB connected');
   } catch (error) {
     isConnected = false;
     throw error;

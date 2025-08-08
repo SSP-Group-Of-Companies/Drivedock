@@ -59,7 +59,7 @@ export const PATCH = async (
         onboardingDoc,
         EStepPath.APPLICATION_PAGE_3
       ),
-      applicationForm: appFormDoc.toObject({ virtuals: true }),
+      page3: appFormDoc.page3,
     });
   } catch (error) {
     return errorResponse(error);

@@ -47,11 +47,24 @@
     "step2": {
       "title": "Application Form"
     },
-     "step3": {
-    "title": "Policies and Consents",
-    "disclaimer": "By signing below, you agree to all the contract here and future contracts. Please read all documents carefully. Your   provided information will automatically prefill required fields.",
-    "sendToEmail": "Send me a copy of these policy documents to my email after completing the application."
-  },
+    "step3": {
+      "title": "Policies and Consents",
+      "disclaimer": "By signing below, you agree to all the contract here and future contracts. Please read all documents carefully. Your provided information will automatically prefill required fields.",
+      "sendToEmail": "Send me a copy of these policy documents to my email after completing the application."
+    },
+    "step5": {
+      "title": "Pre Employment Competency Questions",
+      "note": "All incorrect answers have been explained to me and I now understand them better.",
+      "scoreLabel": "Your score is:",
+      "lockedNote": "You have already submitted your answers. Your responses are now locked and cannot be changed.",
+      "modal": {
+        "finalConfirmation": "Final Confirmation",
+        "cancel": "Cancel",
+        "confirm": "Yes, Submit",
+        "confirmMessage": "You cannot retake this competency test once submitted. Are you sure you want to proceed?"
+      }
+    },
+
     "over23Local": "Are you over the age of 23 (for Local)?",
     "over25CrossBorder": "Are you over the age of 25 (for Cross Border)?",
     "canDriveManual": "Can you Drive Manual Transmission?",
@@ -157,11 +170,14 @@
       "addAddress": "Add Another Address",
       "removeAddress": "Remove Address",
       "cancel": "Cancel",
-      "ok": "OK", 
+      "ok": "OK",
       "upload": "Upload",
       "save": "Save",
-      "clear": "Clear"
+      "clear": "Clear",
+      "submitAnswers": "Submit Answers",
+      "processing": "Processing..."
     },
+
     "placeholders": {
       "firstName": "Enter your first name",
       "lastName": "Enter your last name",

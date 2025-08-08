@@ -45,9 +45,21 @@
     },
     "step3": {
       "title": "Politiques et Consentements",
-      "disclaimer": "En signant ci-dessous, vous acceptez tous les contrats présents et futurs. Veuillez lire attentivement tous les      documents. Les informations que vous fournissez seront automatiquement préremplies dans les champs requis.", 
+      "disclaimer": "En signant ci-dessous, vous acceptez tous les contrats présents et futurs. Veuillez lire attentivement tous les      documents. Les informations que vous fournissez seront automatiquement préremplies dans les champs requis.",
       "sendToEmail": "Envoyez-moi une copie de ces documents de politique par courriel une fois ma candidature complétée."
-  },
+    },
+    "step5": {
+      "title": "Questions de Compétence Avant l’Embauche",
+      "note": "Toutes les réponses incorrectes m'ont été expliquées et je les comprends mieux maintenant.",
+      "scoreLabel": "Votre score est :",
+      "lockedNote": "Vous avez déjà soumis vos réponses. Vos réponses sont maintenant verrouillées et ne peuvent plus être modifiées.",
+      "modal": {
+        "finalConfirmation": "Confirmation finale",
+        "cancel": "Annuler",
+        "confirm": "Oui, soumettre",
+        "confirmMessage": "Vous ne pourrez pas repasser ce test de compétence une fois qu’il aura été soumis. Êtes-vous sûr de vouloir continuer ?"
+      }
+    },
     "over23Local": "Avez-vous plus de 23 ans (pour les trajets locaux) ?",
     "over25CrossBorder": "Avez-vous plus de 25 ans (pour les trajets transfrontaliers) ?",
     "canDriveManual": "Pouvez-vous conduire une transmission manuelle ?",
@@ -152,11 +164,12 @@
       "addAddress": "Ajouter une autre adresse",
       "removeAddress": "Supprimer l’adresse",
       "cancel": "Annuler",
-      "ok": "OK", 
+      "ok": "OK",
       "upload": "Téléverser",
       "save": "Enregistrer",
-      "clear": "Effacer"
-
+      "clear": "Effacer",
+      "submitAnswers": "Soumettre les réponses",
+      "processing": "Traitement en cours..."
     },
     "placeholders": {
       "firstName": "Entrez votre prénom",

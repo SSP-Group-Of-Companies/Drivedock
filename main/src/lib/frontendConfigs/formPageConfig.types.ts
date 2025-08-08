@@ -30,7 +30,7 @@ export interface FormPageConfig<T extends FieldValues> {
   buildPayload: (
     values: T,
     prequalification: IPreQualifications,
-    companyId: string,
+    companyId?: string,
     tracker?: IOnboardingTracker
   ) => Record<string, unknown>;
 

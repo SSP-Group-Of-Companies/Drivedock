@@ -71,6 +71,7 @@ export async function PATCH(
       : await PoliciesConsents.create({
         signature: finalizedSignature,
         signedAt,
+        sendPoliciesByEmail,
       });
 
     if (!updatedDoc) {
@@ -81,6 +82,7 @@ export async function PATCH(
       onboardingDoc.forms.policiesConsents = updatedDoc.id;
     }
 
+    onboardingDoc.forms.policiesConsents = updatedDoc.id;
     onboardingDoc.status = advanceStatus(onboardingDoc.status, EStepPath.POLICIES_CONSENTS);
     onboardingDoc.resumeExpiresAt = new Date(Date.now() + Number(FORM_RESUME_EXPIRES_AT_IN_MILSEC));
     await onboardingDoc.save();
@@ -135,7 +137,7 @@ export const GET = async (
 
     return successResponse(200, "Policies & Consents data retrieved", {
       onboardingContext: buildTrackerContext(onboardingDoc),
-      policiesConsents: policiesDoc?.toObject() ?? {},
+      policiesConsents: policiesDoc ?? {},
     });
   } catch (error) {
     return errorResponse(error);

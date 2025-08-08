@@ -49,10 +49,21 @@
     },
     "step3": {
       "title": "Políticas y Consentimientos",
-      "disclaimer": "Al firmar a continuación, acepta todos los contratos presentes y futuros. Lea todos los documentos detenidamente. La  información que proporcione se completará automáticamente en los campos requeridos.", 
+      "disclaimer": "Al firmar a continuación, acepta todos los contratos presentes y futuros. Lea todos los documentos detenidamente. La  información que proporcione se completará automáticamente en los campos requeridos.",
       "sendToEmail": "Envíame una copia de estos documentos de políticas a mi correo electrónico después de completar la solicitud."
     },
-
+    "step5": {
+      "title": "Preguntas de Competencia Previa al Empleo",
+      "note": "Todas las respuestas incorrectas me han sido explicadas y ahora las entiendo mejor.",
+      "scoreLabel": "Tu puntuación es:",
+      "lockedNote": "Ya has enviado tus respuestas. Tus respuestas están bloqueadas y no se pueden modificar.",
+      "modal": {
+        "finalConfirmation": "Confirmación final",
+        "cancel": "Cancelar",
+        "confirm": "Sí, enviar",
+        "confirmMessage": "No podrás volver a realizar esta prueba de competencia una vez enviada. ¿Estás seguro de que deseas continuar?"
+      }
+    },
     "over23Local": "¿Tienes más de 23 años (para local)?",
     "over25CrossBorder": "¿Tienes más de 25 años (para cruce de frontera)?",
     "canDriveManual": "¿Puedes conducir transmisión manual?",
@@ -158,12 +169,14 @@
       "addAddress": "Agregar otra dirección",
       "removeAddress": "Eliminar dirección",
       "cancel": "Cancelar",
-      "ok": "Aceptar", 
+      "ok": "Aceptar",
       "upload": "Subir",
       "save": "Guardar",
-      "clear": "Borrar"
-
+      "clear": "Borrar",
+      "submitAnswers": "Enviar respuestas",
+      "processing": "Procesando..."
     },
+
     "placeholders": {
       "firstName": "Ingresa tu nombre",
       "lastName": "Ingresa tu apellido",
