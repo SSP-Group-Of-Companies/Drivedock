@@ -1,36 +1,54 @@
+/**
+ * ===============================================================
+ * DriveDock - Onboarding Tracker Types
+ * ---------------------------------------------------------------
+ * Core shared types used to track and manage the driver's
+ * onboarding progress, state, and metadata.
+ *
+ * Uses `ECompanyApplicationType` enum imported from
+ * company selection to maintain a single source of truth.
+ * ===============================================================
+ */
+
 import { Document, ObjectId } from "mongoose";
 import { IApplicationFormPage1 } from "./applicationForm.types";
 import { IPreQualifications } from "./preQualifications.types";
+import { ECompanyApplicationType } from "@/hooks/frontendHooks/useCompanySelection"; // Adjust import path as needed
 import { ECompanyId } from "@/constants/companies";
 
-export enum EApplicationType {
-  FLAT_BED = "FLAT_BED",
-  DRY_VAN = "DRY_VAN",
-}
-
+/**
+ * Tracks the driver's current onboarding step status.
+ */
 export interface IOnboardingStatus {
   currentStep: EStepPath;
   completedStep: EStepPath;
-  completed: boolean;
+  completed: boolean; // true if onboarding is fully completed
 }
 
+/**
+ * Main document representing the entire onboarding session for a driver.
+ */
 export interface IOnboardingTracker {
-  // Encrypted and hashed SIN
+  // Encrypted and hashed SIN for privacy and resume logic
   sinHash: string;
   sinEncrypted: string;
 
-  // Derived virtual field (not stored in DB)
+  // Virtual (not stored) plain SIN, for runtime usage only
   sin?: string;
 
+  // Timestamp when resume link expires (usually 7-14 days after start)
   resumeExpiresAt: Date;
 
-  applicationType?: EApplicationType; // only applicable to ssp-canada
+  // Application type for companies like SSP Canada (Flatbed or Dry Van)
+  applicationType?: ECompanyApplicationType;
 
+  // Current progress status
   status: IOnboardingStatus;
 
-  // Selected company (e.g., 'ssp-ca', 'fellowstrans')
+  // Company this onboarding belongs to (e.g., "ssp-ca", "fellowstrans")
   companyId: string;
 
+  // References to stored form parts, for modular persistence
   forms: {
     preQualification?: ObjectId;
     driverApplication?: ObjectId;
@@ -45,13 +63,16 @@ export interface IOnboardingTracker {
   updatedAt: Date;
 }
 
-// Extends Mongoose's Document
+/**
+ * Mongoose Document interface extending the onboarding tracker model.
+ */
 export interface IOnboardingTrackerDoc extends IOnboardingTracker, Document {
-  // Virtual getter
-  sin?: string;
+  sin?: string; // virtual getter for plain SIN
 }
 
-// onboarding steps path
+/**
+ * Enum of all valid onboarding step routes/paths.
+ */
 export enum EStepPath {
   PRE_QUALIFICATIONS = "prequalifications",
   APPLICATION_PAGE_1 = "application-form/page-1",
@@ -64,11 +85,13 @@ export enum EStepPath {
   CARRIER_EDGE = "carrier-edge",
 }
 
-// tracker context (public-facing)
+/**
+ * Public-facing tracker context sent to frontend for navigation & UI.
+ */
 export interface ITrackerContext {
-  id: string; // tracker.id
+  id: string; // Tracker DB document ID
   companyId: string;
-  applicationType?: EApplicationType;
+  applicationType?: ECompanyApplicationType;
   status: {
     currentStep: EStepPath;
     completedStep: EStepPath;
@@ -78,9 +101,12 @@ export interface ITrackerContext {
   nextUrl: string | null;
 }
 
+/**
+ * Payload required to create a new onboarding session.
+ */
 export interface ICreateOnboardingPayload {
   applicationFormPage1: IApplicationFormPage1;
   prequalifications: IPreQualifications;
   companyId: ECompanyId;
-  applicationType?: EApplicationType;
+  applicationType?: ECompanyApplicationType;
 }

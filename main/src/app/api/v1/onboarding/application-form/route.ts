@@ -9,15 +9,18 @@ import { FORM_RESUME_EXPIRES_AT_IN_MILSEC } from "@/config/env";
 import { finalizePhoto } from "@/lib/utils/s3Upload";
 import { COMPANIES, ECompanyId } from "@/constants/companies";
 import {
-  EApplicationType,
   EStepPath,
   ICreateOnboardingPayload,
   IOnboardingTrackerDoc,
 } from "@/types/onboardingTracker.type";
+import { ECompanyApplicationType } from "@/hooks/frontendHooks/useCompanySelection";
 import { ILicenseEntry } from "@/types/applicationForm.types";
 import { HydratedDocument } from "mongoose";
 import { hasRecentAddressCoverage } from "@/lib/utils/hasMinimumAddressDuration";
-import { advanceStatus, buildTrackerContext } from "@/lib/utils/onboardingUtils";
+import {
+  advanceStatus,
+  buildTrackerContext,
+} from "@/lib/utils/onboardingUtils";
 import { S3_SUBMISSIONS_FOLDER, S3_TEMP_FOLDER } from "@/constants/aws";
 import { ES3Folder } from "@/types/aws.types";
 import { ECountryCode, ELicenseType } from "@/types/shared.types";
@@ -43,11 +46,20 @@ export async function POST(req: NextRequest) {
     }: ICreateOnboardingPayload = await req.json();
 
     if (!page1 || !prequalifications || !companyId)
-      return errorResponse(400, "Missing required fields. 'page1', 'prequalifications', and 'companyId' are required.");
+      return errorResponse(
+        400,
+        "Missing required fields. 'page1', 'prequalifications', and 'companyId' are required."
+      );
 
-    if (companyId === ECompanyId.SSP_CA &&
-      (!applicationType || !Object.values(EApplicationType).includes(applicationType))) {
-      return errorResponse(400, "Invalid or missing application type for SSP-Canada.");
+    if (
+      companyId === ECompanyId.SSP_CA &&
+      (!applicationType ||
+        !Object.values(ECompanyApplicationType).includes(applicationType))
+    ) {
+      return errorResponse(
+        400,
+        "Invalid or missing application type for SSP-Canada."
+      );
     }
 
     const company = COMPANIES.find((c) => c.id === companyId);
@@ -57,11 +69,15 @@ export async function POST(req: NextRequest) {
     if (!isValidSIN(sin)) return errorResponse(400, "Invalid SIN");
 
     if (!isValidEmail(page1.email)) return errorResponse(400, "Invalid email");
-    if (page1.phoneHome && !isValidPhoneNumber(page1.phoneHome)) return errorResponse(400, "Invalid home phone");
-    if (!isValidPhoneNumber(page1.phoneCell)) return errorResponse(400, "Invalid cell phone");
-    if (!isValidPhoneNumber(page1.emergencyContactPhone)) return errorResponse(400, "Invalid emergency contact phone");
+    if (page1.phoneHome && !isValidPhoneNumber(page1.phoneHome))
+      return errorResponse(400, "Invalid home phone");
+    if (!isValidPhoneNumber(page1.phoneCell))
+      return errorResponse(400, "Invalid cell phone");
+    if (!isValidPhoneNumber(page1.emergencyContactPhone))
+      return errorResponse(400, "Invalid emergency contact phone");
     if (!isValidDOB(page1.dob)) return errorResponse(400, "Invalid DOB");
-    if (!hasRecentAddressCoverage(page1.addresses)) return errorResponse(400, "Address history must cover 5 years");
+    if (!hasRecentAddressCoverage(page1.addresses))
+      return errorResponse(400, "Address history must cover 5 years");
 
     const licenses = page1.licenses;
     if (!Array.isArray(licenses) || licenses.length === 0)
@@ -72,24 +88,36 @@ export async function POST(req: NextRequest) {
       return errorResponse(400, "First license must be of type AZ");
 
     if (!firstLicense.licenseFrontPhoto || !firstLicense.licenseBackPhoto)
-      return errorResponse(400, "First license must include both front and back photos");
+      return errorResponse(
+        400,
+        "First license must include both front and back photos"
+      );
 
     if (company.countryCode === ECountryCode.CA) {
       const { canCrossBorderUSA, hasFASTCard } = prequalifications;
       if (typeof canCrossBorderUSA !== "boolean")
-        return errorResponse(400, "'canCrossBorderUSA' is required for Canadian applicants");
+        return errorResponse(
+          400,
+          "'canCrossBorderUSA' is required for Canadian applicants"
+        );
       if (typeof hasFASTCard !== "boolean")
-        return errorResponse(400, "'hasFASTCard' is required for Canadian applicants");
+        return errorResponse(
+          400,
+          "'hasFASTCard' is required for Canadian applicants"
+        );
     }
 
     const sinHash = hashString(sin);
     const existing = await OnboardingTracker.findOne({ sinHash });
-    if (existing) return errorResponse(400, "Application with this SIN already exists");
+    if (existing)
+      return errorResponse(400, "Application with this SIN already exists");
 
     onboardingDoc = await OnboardingTracker.create({
       sinHash,
       sinEncrypted: encryptString(sin),
-      resumeExpiresAt: new Date(Date.now() + Number(FORM_RESUME_EXPIRES_AT_IN_MILSEC)),
+      resumeExpiresAt: new Date(
+        Date.now() + Number(FORM_RESUME_EXPIRES_AT_IN_MILSEC)
+      ),
       status: {
         currentStep: EStepPath.PRE_QUALIFICATIONS,
         completedStep: EStepPath.PRE_QUALIFICATIONS,
@@ -109,13 +137,19 @@ export async function POST(req: NextRequest) {
     delete (page1ToSave as any).sin;
 
     appFormDoc = await ApplicationForm.create({ page1: page1ToSave });
-    preQualDoc = await PreQualifications.create({ ...prequalifications, completed: true });
+    preQualDoc = await PreQualifications.create({
+      ...prequalifications,
+      completed: true,
+    });
 
     onboardingDoc.forms = {
       driverApplication: appFormDoc.id,
       preQualification: preQualDoc.id,
     };
-    onboardingDoc.status = advanceStatus(onboardingDoc.status, EStepPath.APPLICATION_PAGE_1);
+    onboardingDoc.status = advanceStatus(
+      onboardingDoc.status,
+      EStepPath.APPLICATION_PAGE_1
+    );
     await onboardingDoc.save();
 
     // Finalize files only after successful DB save
@@ -168,15 +202,21 @@ export async function POST(req: NextRequest) {
     );
 
     return successResponse(200, "Onboarding created successfully", {
-      onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_1),
+      onboardingContext: buildTrackerContext(
+        onboardingDoc,
+        EStepPath.APPLICATION_PAGE_1
+      ),
       preQualifications: preQualDoc.toObject(),
       applicationForm: updatedForm?.toObject({ virtuals: true }),
     });
   } catch (error) {
     // Cleanup
-    if (appFormDoc?._id) await ApplicationForm.findByIdAndDelete(appFormDoc._id);
-    if (preQualDoc?._id) await PreQualifications.findByIdAndDelete(preQualDoc._id);
-    if (onboardingDoc?._id) await OnboardingTracker.findByIdAndDelete(onboardingDoc._id);
+    if (appFormDoc?._id)
+      await ApplicationForm.findByIdAndDelete(appFormDoc._id);
+    if (preQualDoc?._id)
+      await PreQualifications.findByIdAndDelete(preQualDoc._id);
+    if (onboardingDoc?._id)
+      await OnboardingTracker.findByIdAndDelete(onboardingDoc._id);
 
     console.error("POST /onboarding error:", error);
     return errorResponse(error);

@@ -1,35 +1,6 @@
 {
-  "company": {
-    "heading": "Join Our Family of Companies",
-    "subheading": "Choose the company where you want to build your driving career",
-    "applyNow": "Apply Now",
-    "selectType": "Select Application Type",
-    "selectTypeDesc": "Please choose the type of position you are applying for:",
-    "flatbed": "Flatbed",
-    "dropdeck": "Dry Van",
-    "cancel": "Cancel"
-  },
-
-  "features": {
-    "language": {
-      "title": "Multi-language",
-      "description": "Available in English, Punjabi, and French to serve all drivers comfortably"
-    },
-    "security": {
-      "title": "Secure & Safe",
-      "description": "Your information is protected with enterprise-grade security and encryption"
-    },
-    "steps": {
-      "title": "6-Step Process",
-      "description": "Complete all required hiring documents through our guided 6-stage form wizard"
-    }
-  },
-
-  "flatbedPopup": {
-    "title": "Notice",
-    "yes": "Your flatbed skill level will be tested during the Drive Test.",
-    "no": "After your Drive Test, you will be enrolled in a 2-week flatbed training.",
-    "ok": "OK"
+  "navbar": {
+    "backButton": "Back"
   },
 
   "footer": {
@@ -37,206 +8,40 @@
     "tagline": "DriveDock – Digital Driver Onboarding Platform"
   },
 
-  "form": {
-    "subtitle": "All information must be answered truthfully. Liability falls on the applicant.",
-    "categories": "Categories",
-    "next": "Next",
-    "step1": {
-      "title": "Pre-Qualification Form"
-    },
-    "step2": {
-      "title": "Application Form"
-    },
-    "step3": {
-      "title": "Policies and Consents",
-      "disclaimer": "By signing below, you agree to all the contract here and future contracts. Please read all documents carefully. Your provided information will automatically prefill required fields.",
-      "sendToEmail": "Send me a copy of these policy documents to my email after completing the application."
-    },
-    "step5": {
-      "title": "Pre Employment Competency Questions",
-      "note": "All incorrect answers have been explained to me and I now understand them better.",
-      "scoreLabel": "Your score is:",
-      "lockedNote": "You have already submitted your answers. Your responses are now locked and cannot be changed.",
-      "modal": {
-        "finalConfirmation": "Final Confirmation",
-        "cancel": "Cancel",
-        "confirm": "Yes, Submit",
-        "confirmMessage": "You cannot retake this competency test once submitted. Are you sure you want to proceed?"
+  "welcome": {
+    "heading": "Join the Road with SSP",
+    "description": "Your digital onboarding platform for joining SSP Truck Line. Complete your hiring documents quickly and securely.",
+
+    "features": {
+      "language": {
+        "title": "Multi-language",
+        "description": "Available in English, Spanish, and French to serve all drivers comfortably"
+      },
+      "security": {
+        "title": "Secure & Safe",
+        "description": "Your information is protected with enterprise-grade security and encryption"
+      },
+      "steps": {
+        "title": "6-Step Process",
+        "description": "Complete all required hiring documents through our guided 6-stage form wizard"
       }
     },
 
-    "over23Local": "Are you over the age of 23 (for Local)?",
-    "over25CrossBorder": "Are you over the age of 25 (for Cross Border)?",
-    "canDriveManual": "Can you Drive Manual Transmission?",
-    "experienceDrivingTractorTrailer": "Do you have at least 2 year of verifiable Experience driving Tractor/Trailer?",
-    "faultAccidentIn3Years": "Do you have any at fault accident in the past 3 years?",
-    "zeroPointsOnAbstract": "Do you have more than 0 points on your driver’s abstract?",
-    "noUnpardonedCriminalRecord": "Do you have any criminal record for which pardon has not been granted?",
-    "legalRightToWorkCanada": "Do you have legal right to work in Canada?",
-    "legalRightToWorkUS": "Do you have legal right to work in the US?",
-    "canCrossBorderUSA": "Can you cross borders into USA?",
-    "hasFASTCard": "Do you have FAST card?",
-    "driverType": "Which Driver are you?",
-    "haulPreference": "Which do you prefer?",
-    "teamStatus": "Are you part of a Team or No?",
-    "preferLocalDriving": "Do you prefer driving local?",
-    "preferSwitching": "Do you prefer Switching?",
-    "flatbedExperience": "Do you have a flatbed experience?",
-    "yes": "Yes",
-    "no": "No",
-    "company": "Company",
-    "owneroperator": "Owner Operator",
-    "ownerdriver": "Owner Driver",
-    "shorthaul": "Short Haul",
-    "longhaul": "Long Haul",
-    "team": "Team",
-    "single": "Single",
-
-    "page1": {
-      "sections": {
-        "personal": "Personal Information",
-        "birth": "Place of Birth",
-        "license": "License Information",
-        "address": {
-          "title": "Address History",
-          "subtitle": "Please provide your address history for the past 5 years",
-          "current": "Current Address",
-          "previous": "Previous Address"
-        }
-      }
-    },
-    "page2": {
-      "sections": {
-        "employment": "Employment History"
-      },
-      "labels": {
-        "currentEmployer": "Current Employer",
-        "previousEmployer": "Previous Employer"
-      },
-      "actions": {
-        "addPrevious": "Add Previous Employer",
-        "removePrevious": "Remove"
-      },
-      "requirements": "The Federal Motor Carrier Safety Regulations (49CFR391.21) require that all applicants wishing to drive a commercial vehicle list all employment for the last two (2) years. In addition, if you have driven a commercial vehicle previously, you must provide employment history for an additional eight (8) years for a total of ten (10) years. Any 1 month or more gaps in employment must be explained.",
-      "modal": {
-        "title": "Additional Employment History Required",
-        "message": "You have more than 2 years of experience. Please add your previous employment history to complete the required information."
-      },
-      "gapDetected": "Gap of {days} days detected between employments. Please explain:"
-    },
-    "fields": {
-      "firstName": "First Name",
-      "lastName": "Last Name",
-      "sin": "SIN (Social Insurance Number)",
-      "sinPhoto": "SIN Card Photo",
-      "sinPhotoDesc": "Click to capture or select an image",
-      "dob": "Date of Birth",
-      "canProvideProof": "Can you provide proof of age?",
-      "phoneHome": "Phone (Home)",
-      "phoneCell": "Phone (Cell)",
-      "emergencyContactName": "Emergency Contact Name",
-      "emergencyContactPhone": "Emergency Contact Phone",
-      "birthCity": "City of Birth",
-      "birthStateOrProvince": "State or Province",
-      "birthCountry": "Country of Birth",
-      "licenseNumber": "License Number",
-      "licenseProvince": "Province",
-      "licenseType": "License Type",
-      "licenseExpiry": "Expiry Date",
-      "licenseFrontPhoto": "License Front Photo",
-      "licensePhotoDesc": "Click to capture or select an image",
-      "licenseBackPhoto": "License Back Photo",
-      "address": "Address",
-      "city": "City",
-      "stateOrProvince": "State or Province",
-      "postalCode": "Postal Code",
-      "zipCode": "Zip Code",
-      "from": "From Date",
-      "to": "To Date",
-      "employerName": "Employer Name",
-      "supervisorName": "Supervisor Name",
-      "phone1": "Phone 1",
-      "phone2": "Phone 2 (optional)",
-      "email": "Email Address",
-      "positionHeld": "Position Held",
-      "salary": "Salary",
-      "reasonForLeaving": "Reason for Leaving...",
-      "subjectToFMCSR": "Were you subject to FMCSR (Federal Motor Carrier Safety Regulations)?",
-      "safetySensitiveFunction": "Did you perform safety-sensitive functions?"
-    },
-    "actions": {
-      "addLicense": "Add Another License",
-      "removeLicense": "Remove License",
-      "addAddress": "Add Another Address",
-      "removeAddress": "Remove Address",
-      "cancel": "Cancel",
-      "ok": "OK",
-      "upload": "Upload",
-      "save": "Save",
-      "clear": "Clear",
-      "submitAnswers": "Submit Answers",
-      "processing": "Processing..."
-    },
-
-    "placeholders": {
-      "firstName": "Enter your first name",
-      "lastName": "Enter your last name",
-      "phoneHome": "Enter your home phone number",
-      "phoneCell": "Enter your mobile phone number",
-      "email": "Enter your email address",
-      "emergencyContactName": "Enter emergency contact name",
-      "emergencyContactPhone": "Enter emergency contact phone",
-      "birthCity": "Enter city of birth",
-      "birthStateOrProvince": "Enter province or state of birth",
-      "birthCountry": "Enter country of birth",
-      "zipCode": "12345 or 12345-6789",
-      "sin": "123-456-789",
-      "dob": "YYYY-mm-dd",
-      "select": "--Select--",
-      "employerName": "Enter employer name",
-      "supervisorName": "Enter supervisor name",
-      "address": "Enter street address",
-      "city": "Enter city",
-      "stateOrProvince": "Enter state or province",
-      "postalCode": "Enter postal code",
-      "phone1": "Enter primary phone number",
-      "phone2": "Enter secondary phone number (optional)",
-      "positionHeld": "Enter position held",
-      "salary": "Enter salary information",
-      "reasonForLeaving": "Enter reason for leaving",
-      "gapExplanation": "Please explain the gap in your employment history..."
-    },
-    "errors": {
-      "minimum5Years": "You must provide at least 5 years of address history.",
-      "addressDurationError": "Address provided should span for the last 5 years. Please add previous address if you lived in more than one location."
-    },
-    "continue": "Continue",
-    "submitting": "Submitting..."
-  },
-  "common": {
-    "yes": "Yes",
-    "no": "No"
-  },
-
-  "navbar": {
-    "logoAlt": "SSP Logo"
-  },
-
-  "resume": {
-    "title": "Resume Your Application",
-    "description": "Enter your SIN to continue your onboarding from where you stopped.",
-    "placeholder": "999-888-777",
-    "success": "Match found! Redirecting...",
-    "error": "No application found for that SIN.",
-    "cancel": "Cancel",
-    "continue": "Continue"
+    "steps": {
+      "title": "Application Process",
+      "personal": "Personal Information",
+      "employment": "Employment History",
+      "driving": "Driving Record",
+      "medical": "Medical Information",
+      "references": "References",
+      "review": "Final Review"
+    }
   },
 
   "start": {
     "heading": "Start Your Application",
     "subheading": "Begin your journey with SSP Group of Companies",
     "languageLabel": "🌐 Select Language",
-    "selectLanguage": "Select Language",
     "beforeYouBegin": "Before You Begin",
     "readAndAgree": "Please read and agree to the following:",
     "continue": "Continue to Application",
@@ -271,20 +76,173 @@
       "agree": "I Agree"
     }
   },
-
-  "steps": {
-    "title": "Application Process",
-    "personal": "Personal Information",
-    "employment": "Employment History",
-    "driving": "Driving Record",
-    "medical": "Medical Information",
-    "references": "References",
-    "review": "Final Review"
+  "company": {
+    "heading": "Join Our Family of Companies",
+    "subheading": "Choose the company where you want to build your driving career",
+    "applyNow": "Apply Now",
+    "selectType": "Select Application Type",
+    "selectTypeDesc": "Please choose the type of position you are applying for:",
+    "flatbed": "Flatbed",
+    "dropdeck": "Dry Van",
+    "cancel": "Cancel"
   },
 
-  "welcome": {
-    "heading": "Join the Road with SSP",
-    "description": "Your digital onboarding platform for joining SSP Truck Line. Complete your hiring documents quickly and securely."
+  "form": {
+    "subtitle": "All information must be answered truthfully. Liability falls on the applicant.",
+    "step1": {
+      "title": "Pre-Qualification Form",
+      "questions": {
+        "over23Local": "Are you over the age of 23 (for Local)?",
+        "over25CrossBorder": "Are you over the age of 25 (for Cross Border)?",
+        "canDriveManual": "Can you Drive Manual Transmission?",
+        "experienceDrivingTractorTrailer": "Do you have at least 2 years of verifiable experience driving Tractor/Trailer?",
+        "faultAccidentIn3Years": "Do you have any at-fault accident in the past 3 years?",
+        "zeroPointsOnAbstract": "Do you have more than 0 points on your driver’s abstract?",
+        "noUnpardonedCriminalRecord": "Do you have any criminal record for which pardon has not been granted?",
+        "legalRightToWorkCanada": "Do you have legal right to work in Canada?",
+        "legalRightToWorkUS": "Do you have legal right to work in the US?",
+        "canCrossBorderUSA": "Can you cross borders into USA?",
+        "hasFASTCard": "Do you have a FAST card?",
+
+        "categories": "Categories",
+        "driverType": "Which type of driver are you?",
+        "haulPreference": "Which do you prefer?",
+        "teamStatus": "Are you part of a team or driving solo?",
+        "preferLocalDriving": "Do you prefer driving local?",
+        "preferSwitching": "Do you prefer switching (drop & hook)?",
+        "flatbedExperience": "Do you have flatbed experience?",
+
+        "yes": "Yes",
+        "no": "No",
+
+        "company": "Company",
+        "owneroperator": "Owner Operator",
+        "ownerdriver": "Owner Driver",
+        "shorthaul": "Short Haul",
+        "longhaul": "Long Haul",
+        "team": "Team",
+        "single": "Single",
+
+        "flatbedPopup": {
+          "title": "Notice",
+          "yes": "Your flatbed skill level will be tested during the Drive Test.",
+          "no": "After your Drive Test, you will be enrolled in a 2-week flatbed training.",
+          "ok": "OK"
+        }
+      },
+      "next": "Next"
+    },
+    "step2": {
+      "title": "Application Form",
+      "page1": {
+        "sections": {
+          "personal": "Personal Information",
+          "birth": "Place of Birth",
+          "license": "License Information",
+          "address": {
+            "title": "Address History",
+            "subtitle": "Please provide your address history for the past 5 years",
+            "current": "Current Address",
+            "previous": "Previous Address"
+          }
+        },
+        "fields": {
+          "firstName": "First Name",
+          "lastName": "Last Name",
+          "sin": "SIN (Social Insurance Number)",
+          "sinPhoto": "SIN Card Photo",
+          "sinPhotoDesc": "Click to capture or select an image",
+          "dob": "Date of Birth",
+          "canProvideProof": "Can you provide proof of age?",
+          "phoneHome": "Phone (Home)",
+          "email": "Email Address",
+          "phoneCell": "Phone (Cell)",
+          "emergencyContactName": "Emergency Contact Name",
+          "emergencyContactPhone": "Emergency Contact Phone",
+          "birthCity": "City of Birth",
+          "birthStateOrProvince": "State or Province",
+          "birthCountry": "Country of Birth",
+          "licenseNumber": "License Number",
+          "licenseProvince": "Province",
+          "licenseType": "License Type",
+          "licenseExpiry": "Expiry Date",
+          "licenseFrontPhoto": "License Front Photo",
+          "licensePhotoDesc": "Click to capture or select an image",
+          "licenseBackPhoto": "License Back Photo",
+          "address": "Address",
+          "city": "City",
+          "stateOrProvince": "State or Province",
+          "postalCode": "Postal Code",
+          "zipCode": "Zip Code",
+          "from": "From Date",
+          "to": "To Date"
+        },
+        "actions": {
+          "addLicense": "Add Another License",
+          "removeLicense": "Remove License",
+          "addAddress": "Add Another Address",
+          "removeAddress": "Remove Address"
+        }
+      },
+      "page2": {
+        "sections": {
+          "employment": "Employment History"
+        },
+        "requirements": "The Federal Motor Carrier Safety Regulations (49CFR391.21) require that all applicants wishing to drive a commercial vehicle list all employment for the last two (2) years. In addition, if you have driven a commercial vehicle previously, you must provide employment history for an additional eight (8) years for a total of ten (10) years. Any 1 month or more gaps in employment must be explained.",
+        "labels": {
+          "currentEmployer": "Current Employer",
+          "previousEmployer": "Previous Employer"
+        },
+        "fields": {
+          "employerName": "Employer Name",
+          "supervisorName": "Supervisor Name",
+          "address": "Street Address",
+          "city": "city",
+          "stateOrProvince": "Province or State",
+          "postalCode": "Postal code",
+          "phone1": "Phone 1",
+          "phone2": "Phone 2 (optional)",
+          "email": "Email Address",
+          "positionHeld": "Position Held",
+          "from": "From Date",
+          "to": "To Date",
+          "salary": "Salary",
+          "reasonForLeaving": "Reason for Leaving...",
+          "subjectToFMCSR": "Were you subject to FMCSR (Federal Motor Carrier Safety Regulations)?",
+          "safetySensitiveFunction": "Did you perform safety-sensitive functions?"
+        },
+        "actions": {
+          "addPrevious": "Add Previous Employer",
+          "removePrevious": "Remove"
+        },
+        "modal": {
+          "title": "Additional Employment History Required",
+          "message": "You have more than 2 years of experience. Please add your previous employment history to complete the required information."
+        },
+        "gapDetected": "Gap of {days} days detected between employments. Please explain:"
+      },
+      "page3": {},
+      "page4": {},
+      "page": {},
+      "page6": {}
+    },
+
+    "errors": {
+      "minimum5Years": "You must provide at least 5 years of address history.",
+      "addressDurationError": "Address provided should span for the last 5 years. Please add previous address if you lived in more than one location."
+    },
+    "continue": "Continue",
+    "submitting": "Submitting..."
+  },
+
+  "resume": {
+    "title": "Resume Your Application",
+    "description": "Enter your SIN to continue your onboarding from where you stopped.",
+    "placeholder": "999-888-777",
+    "success": "Match found! Redirecting...",
+    "error": "No application found for that SIN.",
+    "cancel": "Cancel",
+    "continue": "Continue"
   },
 
   "wizard": {

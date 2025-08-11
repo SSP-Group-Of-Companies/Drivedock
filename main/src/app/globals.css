@@ -1,17 +1,46 @@
+/**
+ * Global Styles — DriveDock
+ *
+ * Description:
+ * This file imports Tailwind CSS base styles and defines custom animations,
+ * component styles, and utility classes used throughout the DriveDock application.
+ *
+ * Sections:
+ * 1. Tailwind CSS import
+ * 2. Custom keyframes
+ * 3. Animation utility classes
+ * 4. SSP-branded animated ring styles
+ * 5. Country flag background utilities
+ * 6. Shine animation for highlight effects
+ *
+ * Author: Faruq Adebayo Atanda
+ * Created: 2025-08-08
+ */
+
+/* ------------------------------
+   1. Tailwind CSS Import
+------------------------------ */
 @import "tailwindcss";
 
+/* ------------------------------
+   2. Custom Keyframes
+------------------------------ */
+
+/* Rotates a full turn (used in SSP animated ring) */
 @keyframes rotate-ssp {
   100% {
     transform: rotate(1turn);
   }
 }
 
+/* Fades element out to 0 opacity */
 @keyframes fade-out {
   to {
     opacity: 0;
   }
 }
 
+/* Wiggle effect for playful or attention-grabbing UI elements */
 @keyframes wiggle {
   0%,
   100% {
@@ -25,10 +54,19 @@
   }
 }
 
+/* ------------------------------
+   3. Animation Utility Classes
+------------------------------ */
+
+/* Apply wiggle animation */
 .animate-wiggle {
   animation: wiggle 0.4s ease-in-out;
 }
 
+/* ------------------------------
+   4. SSP-Branded Animated Ring
+   Used to draw attention to language selector on first mount
+------------------------------ */
 .ssp-animated-ring {
   position: relative;
   z-index: 0;
@@ -66,7 +104,10 @@
   animation: fade-out 0.4s ease-out 2.2s forwards;
 }
 
-/* Flags Setup */
+/* ------------------------------
+   5. Country Flag Background Utilities
+   Used for language selection flags
+------------------------------ */
 @layer components {
   .bg-flag-fr {
     background: linear-gradient(
@@ -99,7 +140,10 @@
   }
 }
 
-
+/* ------------------------------
+   6. Shine Animation
+   Creates a moving light reflection effect
+------------------------------ */
 @keyframes shine {
   0% {
     transform: translateX(-100%);

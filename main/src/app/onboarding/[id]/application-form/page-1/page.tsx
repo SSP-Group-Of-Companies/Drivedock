@@ -1,13 +1,11 @@
 /**
  * DriveDock Onboarding - Page 1 Server Wrapper
  *
- * This server component is responsible for:
- * - Fetching existing application form Page 1 data using the tracker ID
- * - Mapping data into ApplicationFormPage1Schema-compliant structure
- * - Passing pre-filled `defaultValues` and `trackerId` to Page1Client
- *
- * If no data is found, it falls back to an empty schema.
- * Used when drivers revisit Page 1 after the initial POST.
+ * Responsibilities:
+ * - Fetch existing Page 1 data via tracker ID
+ * - Map response into ApplicationFormPage1Schema shape
+ * - Seed one blank address when none exist (StrictMode-safe)
+ * - Pass `defaultValues` + `trackerId` into the client component
  *
  * @route /onboarding/[id]/application-form/page-1
  * @owner SSP Tech Team - Faruq Adebayo Atanda
@@ -18,19 +16,29 @@ import { ELicenseType } from "@/types/shared.types";
 import Page1Client from "./Page1Client";
 import { NEXT_PUBLIC_BASE_URL } from "@/config/env";
 
-// Fix: Creates empty mock file to satisfy zod + TS
+// Minimal placeholders that satisfy the zod/photo shape
 function getEmptyS3Photo() {
   return { s3Key: "", url: "" };
 }
 
-// Utility: Normalize date to YYYY-MM-DD format
+// Single blank address row so only "Current Address" shows on first render
+const BLANK_ADDRESS = {
+  address: "",
+  city: "",
+  stateOrProvince: "",
+  postalCode: "",
+  from: "",
+  to: "",
+};
+
+// Normalize date -> YYYY-MM-DD
 function formatDate(dateString: string): string {
   if (!dateString) return "";
   const date = new Date(dateString);
   return isNaN(date.getTime()) ? "" : date.toISOString().split("T")[0];
 }
 
-// Empty fallback object for first-time render
+// Fallback defaults (used if no data is returned)
 const emptyFormDefaults: ApplicationFormPage1Schema = {
   firstName: "",
   lastName: "",
@@ -56,7 +64,8 @@ const emptyFormDefaults: ApplicationFormPage1Schema = {
       licenseBackPhoto: getEmptyS3Photo(),
     },
   ],
-  addresses: [],
+  // 👇 StrictMode-safe: always start with exactly one address
+  addresses: [BLANK_ADDRESS],
 };
 
 // 🔍 Server-side fetch
@@ -64,7 +73,7 @@ async function fetchPage1Data(trackerId: string) {
   try {
     const res = await fetch(
       `${
-        NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
+        NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"
       }/api/v1/onboarding/${trackerId}/application-form/page-1`,
       { cache: "no-store" }
     );
@@ -94,11 +103,11 @@ export default async function Page1ServerWrapper({
     ? {
         firstName: pageData.firstName || "",
         lastName: pageData.lastName || "",
+        // If server ever returns clear SIN (first-time POST), show it; otherwise require re-entry.
         sin:
           typeof pageData.sin === "string" && /^\d{9}$/.test(pageData.sin)
-            ? pageData.sin // Clean, real SIN (e.g., from first-time POST)
-            : "", // Mask it, so driver must retype if it's encrypted
-
+            ? pageData.sin
+            : "",
         sinPhoto: pageData.sinPhoto || getEmptyS3Photo(),
         dob: formatDate(pageData.dob),
         phoneHome: pageData.phoneHome || "",
@@ -126,13 +135,17 @@ export default async function Page1ServerWrapper({
               },
             }))
           : emptyFormDefaults.licenses,
-
-        addresses:
-          pageData.addresses?.map((addr: any) => ({
-            ...addr,
-            from: formatDate(addr.from),
-            to: formatDate(addr.to),
-          })) || [],
+        // If no addresses exist, seed one blank "Current Address"
+        addresses: pageData.addresses?.length
+          ? pageData.addresses.map((addr: any) => ({
+              address: addr.address || "",
+              city: addr.city || "",
+              stateOrProvince: addr.stateOrProvince || "",
+              postalCode: addr.postalCode || "",
+              from: formatDate(addr.from),
+              to: formatDate(addr.to),
+            }))
+          : [BLANK_ADDRESS],
       }
     : emptyFormDefaults;
 

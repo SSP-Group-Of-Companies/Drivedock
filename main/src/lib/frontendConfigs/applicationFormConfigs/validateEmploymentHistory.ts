@@ -1,16 +1,37 @@
-import { differenceInDays } from "date-fns";
+// main/src/lib/frontendConfigs/applicationFormConfigs/validateEmploymentHistory.ts
 
-// Frontend validation for real-time UI feedback
-export function validateEmploymentHistory(employments: any[]): string | null {
+import { differenceInDays } from "date-fns";
+import type { IEmploymentEntry } from "@/types/applicationForm.types";
+
+export type TimelineItem =
+  | {
+      type: "current";
+      from: Date;
+      to: Date;
+      durationDays: number;
+      durationMonths: number;
+    }
+  | {
+      type: "previous";
+      index: number; // 1-based previous index in UI
+      from: Date;
+      to: Date;
+      durationDays: number;
+      durationMonths: number;
+    };
+
+// ---------- Core validator used by Zod superRefine ----------
+export function validateEmploymentHistory(
+  employments: IEmploymentEntry[]
+): string | null {
   if (!Array.isArray(employments) || employments.length === 0) {
     return "At least one employment entry is required.";
   }
-
   if (employments.length > 5) {
     return "A maximum of 5 employment entries is allowed.";
   }
 
-  // Sort by `from` date descending (most recent first)
+  // sort newest first by 'from'
   const sorted = [...employments].sort(
     (a, b) => new Date(b.from).getTime() - new Date(a.from).getTime()
   );
@@ -18,170 +39,147 @@ export function validateEmploymentHistory(employments: any[]): string | null {
   let totalDays = 0;
 
   for (let i = 0; i < sorted.length; i++) {
-    const current = sorted[i];
-    const from = new Date(current.from);
-    const to = new Date(current.to);
+    const cur = sorted[i];
+    const from = new Date(cur.from);
+    const to = new Date(cur.to);
 
     if (isNaN(from.getTime()) || isNaN(to.getTime())) {
-      return `Invalid date format in employment entry for ${current.supervisorName}`;
+      return `Invalid date format in employment entry for ${cur.supervisorName}`;
     }
-
     if (to < from) {
-      return `End date cannot be before start date in job at ${current.supervisorName}`;
+      return `End date cannot be before start date in job at ${cur.supervisorName}`;
     }
 
-    // Calculate exact days for this employment period
-    const daysInThisJob = differenceInDays(to, from) + 1; // +1 to include both start and end dates
+    // include both endpoints
+    const daysInThisJob = differenceInDays(to, from) + 1;
     totalDays += daysInThisJob;
 
     const next = sorted[i + 1];
     if (next) {
       const nextTo = new Date(next.to);
 
-      // ❌ Overlap check: current.from must be >= next.to
+      // overlap: current.from must be >= next.to
       if (from < nextTo) {
-        return `Job at ${current.supervisorName} overlaps with job at ${next.supervisorName}`;
+        return `Job at ${cur.supervisorName} overlaps with job at ${next.supervisorName}`;
       }
 
-      // Gap check
+      // gap ≥ 30 days requires explanation on *current* row
       const gapDays = differenceInDays(from, nextTo);
       if (
         gapDays >= 30 &&
-        (!current.gapExplanationBefore ||
-          current.gapExplanationBefore.trim() === "")
+        (!cur.gapExplanationBefore || cur.gapExplanationBefore.trim() === "")
       ) {
-        return `Missing gap explanation before employment at ${current.supervisorName}`;
+        return `Missing gap explanation before employment at ${cur.supervisorName}`;
       }
     }
   }
 
-  const totalMonths = Math.round(totalDays / 30.44); // Average days per month
-  const twoYearsInDays = 730; // 2 years = 730 days
-  const tenYearsInDays = 3650; // 10 years = 3650 days
+  const months = Math.round(totalDays / 30.44);
+  const twoYears = 730; // days
+  const twoYearsPlus30 = 760; // days
+  const tenYears = 3650; // days
 
-  if (totalDays >= twoYearsInDays && totalDays <= 760) {
-    return null; // ✅ Exactly 2 years or more, but less than 2 years + 30 days buffer
+  // < 2 years → fail with explicit total
+  if (totalDays < twoYears) {
+    return `Employment history of 2 or more years is required. Total provided: ${months} months (${totalDays} days).`;
   }
 
-  if (totalDays > 760 && totalDays < tenYearsInDays) {
-    return "If experience is over 2 years + 30 days, a full 10 years of history must be entered.";
+  // ≥ 2y and ≤ 2y + 30d → pass
+  if (totalDays >= twoYears && totalDays <= twoYearsPlus30) {
+    return null;
   }
 
-  if (totalDays < twoYearsInDays) {
-    return `Employment duration of ${totalMonths} months (${totalDays} days) detected. You must provide 2 years of employment history.`;
+  // > 2y + 30d but < 10y → fail with explicit total
+  if (totalDays > twoYearsPlus30 && totalDays < tenYears) {
+    const yearsRough = Math.floor(totalDays / 365);
+    return `Extended Employment History Required. Total provided: ~${yearsRough} years (${months} months, ${totalDays} days). You must provide 10 years of employment history. Add previous employment entries.`;
   }
 
-  if (totalDays >= tenYearsInDays) {
-    return null; // ✅ 10+ years
-  }
-
-  return "Employment history validation failed.";
+  // ≥ 10y → pass
+  return null;
 }
 
-// Timeline calculation for real-time UI messages
+// ---------- UI helpers for live banners/gaps ----------
+
 export function calculateTimelineFromCurrent(employments: any[]) {
-  const current = employments[0];
-  if (!current?.to) {
+  const current = employments?.[0];
+  if (!current?.to || !current?.from) {
     return {
       totalDays: 0,
       totalMonths: 0,
       needsMore: false,
       monthsNeeded: 0,
-      timeline: [],
+      timeline: [] as TimelineItem[],
     };
   }
 
-  // The current employment's "to" date is our "wall" - everything is calculated backwards from here
-  const currentToDate = new Date(current.to);
+  const timeline: TimelineItem[] = [];
   let totalDays = 0;
-  const timeline = [];
 
-  // Calculate current employment duration (this is the "wall")
-  if (current.from && current.to) {
-    const currentFrom = new Date(current.from);
-    const currentDurationDays =
-      differenceInDays(currentToDate, currentFrom) + 1; // +1 to include both start and end dates
-    totalDays += currentDurationDays;
+  // current
+  {
+    const from = new Date(current.from);
+    const to = new Date(current.to);
+    if (!isNaN(from.getTime()) && !isNaN(to.getTime()) && to >= from) {
+      const d = differenceInDays(to, from) + 1;
+      totalDays += d;
+      timeline.push({
+        type: "current",
+        from,
+        to,
+        durationDays: d,
+        durationMonths: Math.floor(d / 30.44),
+      });
+    }
+  }
+
+  // previous in the order they appear in the UI (1..n)
+  for (let i = 1; i < (employments?.length ?? 0); i++) {
+    const emp = employments[i];
+    if (!emp?.from || !emp?.to) continue;
+    const from = new Date(emp.from);
+    const to = new Date(emp.to);
+    if (isNaN(from.getTime()) || isNaN(to.getTime()) || to < from) continue;
+
+    const d = differenceInDays(to, from) + 1;
+    totalDays += d;
     timeline.push({
-      from: currentFrom,
-      to: currentToDate,
-      durationDays: currentDurationDays,
-      durationMonths: Math.floor(currentDurationDays / 30.44),
-      type: "current",
+      type: "previous",
+      index: i,
+      from,
+      to,
+      durationDays: d,
+      durationMonths: Math.floor(d / 30.44),
     });
   }
 
-  // Calculate previous employments as one continuous timeline from current "to" backwards
-  for (let i = 1; i < employments.length; i++) {
-    const emp = employments[i];
-    if (emp.from && emp.to) {
-      const from = new Date(emp.from);
-      const to = new Date(emp.to);
-
-      // Calculate duration from this employment's "to" date backwards
-      const durationDays = differenceInDays(to, from) + 1; // +1 to include both start and end dates
-
-      totalDays += durationDays;
-      timeline.push({
-        from,
-        to,
-        durationDays,
-        durationMonths: Math.floor(durationDays / 30.44),
-        type: "previous",
-        index: i,
-      });
-    }
-  }
-
-  // Keep timeline in employment form order (current first, then previous employments)
-  // No sorting needed - timeline is already in correct order
-
   const totalMonths = Math.floor(totalDays / 30.44);
-  const tenYearsInDays = 3650; // 10 years = 3650 days
-  const daysNeeded = Math.max(0, tenYearsInDays - totalDays);
+  const twoYearsPlus30 = 760;
+  const tenYears = 3650;
+  const daysNeeded = Math.max(0, tenYears - totalDays);
   const monthsNeeded = Math.floor(daysNeeded / 30.44);
-  const needsMore = totalDays > 760 && totalDays < tenYearsInDays; // 760 days = 2 years + 30 days buffer
 
-  return {
-    totalDays,
-    totalMonths,
-    needsMore,
-    monthsNeeded,
-    timeline,
-  };
+  // “needsMore” means we’re past 2y+30d but shy of 10y → we must prompt for more rows
+  const needsMore = totalDays > twoYearsPlus30 && totalDays < tenYears;
+
+  return { totalDays, totalMonths, needsMore, monthsNeeded, timeline };
 }
 
-// Get gaps between employment entries for UI display
-export function getEmploymentGaps(timeline: any[]) {
-  const gaps: Array<{
-    index: number;
-    days: number;
-    beforeEmployment: string;
-    afterEmployment: string;
-  }> = [];
-
+export function getEmploymentGaps(timeline: TimelineItem[]) {
+  const gaps: Array<{ index: number; days: number }> = [];
   if (!timeline || timeline.length < 2) return gaps;
 
-  // Check gaps between consecutive employment entries
-  // Timeline is in order: current (index 0), previous1 (index 1), previous2 (index 2), etc.
   for (let i = 0; i < timeline.length - 1; i++) {
-    const current = timeline[i];
+    const cur = timeline[i];
     const next = timeline[i + 1];
-
-    // Gap = current.from - next.to (using differenceInDays for accuracy)
-    const gapDays = differenceInDays(current.from, next.to);
-
+    const gapDays = differenceInDays(cur.from, next.to);
     if (gapDays >= 30) {
+      // index of the employment that must explain the gap (the more recent one)
       gaps.push({
-        index: i, // Use the index of the current employment in the timeline
+        index: cur.type === "current" ? 0 : cur.index,
         days: gapDays,
-        beforeEmployment:
-          current.type === "current" ? "Current" : `Previous ${current.index}`,
-        afterEmployment:
-          next.type === "current" ? "Current" : `Previous ${next.index}`,
       });
     }
   }
-
   return gaps;
 }

@@ -1,47 +1,32 @@
 /**
- * page1Config.ts
+ * ===============================================================
+ * page1Config.ts — Application Form Page 1 (POST/PATCH payload builder)
+ * ---------------------------------------------------------------
+ * Powers <ContinueButton /> for Page 1.
  *
- * Configuration for Application Form Page 1 in the DriveDock Onboarding Flow.
+ * Responsibilities:
+ * - Provide RHF field paths for scroll-to-first-error UX
+ * - Build JSON payload for both POST (create) and PATCH (update)
+ * - Include `applicationType` when company is SSP-Canada (from store)
  *
- * This config powers the ContinueButton with:
- * - Zod validation field paths for RHF scroll-to-error
- * - Clean JSON payload builder for both POST and PATCH
- * - Dynamic route to the next onboarding step
+ * Notes:
+ * - Files are uploaded to S3 before submit; we only send { s3Key, url }
+ * - Zod handles all validation (including stricter address rules)
  *
- *  S3 Upload Flow:
- * - All files (sinPhoto, licenseFrontPhoto, licenseBackPhoto) are uploaded to S3 before submit
- * - The form only sends JSON containing s3Key + url per photo field
- *
- *  POST: /api/v1/onboarding/application-form
- * {
- *   applicationFormPage1: { ... },
- *   prequalifications: { ... },
- *   companyId: "..."
- * }
- *
- *  PATCH: /api/v1/onboarding/:trackerId/application-form/page-1
- * {
- *   page1: { ... }
- * }
+ * Owner: SSP Tech Team – Faruq Adebayo Atanda
+ * ===============================================================
  */
 
+/**
+ * page1Config.ts — Application Form Page 1 (POST/PATCH payload builder)
+ */
 "use client";
 
 import { ApplicationFormPage1Schema } from "@/lib/zodSchemas/applicationFormPage1.schema";
 import { FormPageConfig } from "@/lib/frontendConfigs/formPageConfig.types";
-import { IPreQualifications } from "@/types/preQualifications.types";
-import { IOnboardingTracker } from "@/types/onboardingTracker.type";
+import { ECompanyId } from "@/constants/companies";
 
-type Page1FormPageConfig = FormPageConfig<ApplicationFormPage1Schema> & {
-  buildPayload: (
-    values: ApplicationFormPage1Schema,
-    prequalifications?: IPreQualifications,
-    companyId?: string,
-    tracker?: IOnboardingTracker
-  ) => Record<string, unknown>;
-};
-
-export const page1Config: Page1FormPageConfig = {
+export const page1Config: FormPageConfig<ApplicationFormPage1Schema> = {
   validationFields: (values) => {
     const fields: string[] = [
       "firstName",
@@ -49,7 +34,6 @@ export const page1Config: Page1FormPageConfig = {
       "sin",
       "sinPhoto",
       "dob",
-      "phoneHome",
       "phoneCell",
       "canProvideProofOfAge",
       "email",
@@ -85,12 +69,9 @@ export const page1Config: Page1FormPageConfig = {
     return fields;
   },
 
-  buildPayload: (
-    values,
-    prequalifications,
-    companyId,
-    tracker
-  ): Record<string, unknown> => {
+  validateBusinessRules: () => null,
+
+  buildPayload: (values, ctx) => {
     const cleanedSin = values.sin?.replace(/\D/g, "") || "";
 
     const cleaned = {
@@ -98,16 +79,18 @@ export const page1Config: Page1FormPageConfig = {
       sin: cleanedSin,
     };
 
-    if (!tracker) {
-      return {
-        applicationFormPage1: cleaned,
-        prequalifications,
-        companyId,
-      };
+    // Decide shape by route—not store
+    if (ctx.isPatch) {
+      return { page1: cleaned };
     }
 
     return {
-      page1: cleaned,
+      applicationFormPage1: cleaned,
+      prequalifications: ctx.prequalifications,
+      companyId: ctx.companyId,
+      ...(ctx.companyId === ECompanyId.SSP_CA && ctx.applicationType
+        ? { applicationType: ctx.applicationType }
+        : {}),
     };
   },
 

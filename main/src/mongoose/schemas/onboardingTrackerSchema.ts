@@ -1,9 +1,9 @@
 import mongoose, { Schema } from "mongoose";
 import {
-  EApplicationType,
   EStepPath,
   IOnboardingTrackerDoc,
 } from "@/types/onboardingTracker.type";
+import { ECompanyApplicationType } from "@/hooks/frontendHooks/useCompanySelection";
 import PreQualifications from "../models/Prequalifications";
 import ApplicationForm from "../models/applicationForm";
 import { decryptString } from "@/lib/utils/cryptoUtils";
@@ -29,9 +29,9 @@ const onboardingTrackerSchema = new Schema<IOnboardingTrackerDoc>(
     applicationType: {
       type: String,
       enum: {
-        values: Object.values(EApplicationType),
+        values: Object.values(ECompanyApplicationType),
         message: `application type can only be one of ${Object.values(
-          EApplicationType
+          ECompanyApplicationType
         )}`,
       },
     },

@@ -1,14 +1,14 @@
+"use client";
+
 /**
  * PersonalDetails.tsx
  *
- *   Renders the first section of the Driver Application Form:
- * - Name, SIN, Date of Birth, Contact Info, and Proof of Age
- * - Includes SIN validation via debounce + server check
- * - Includes live age calculation and dynamic phone formatting
- * - Controlled via React Hook Form context
+ * Renders the first section of the Driver Application Form:
+ * - Name, SIN, DOB, contact info, proof of age checkbox
+ * - Debounced SIN availability check
+ * - Live age calc + phone formatting
+ * - Uses RHF context + i18n
  */
-
-"use client";
 
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -19,8 +19,11 @@ import { uploadToS3Presigned } from "@/lib/utils/s3Upload";
 import { ES3Folder } from "@/types/aws.types";
 import { useParams } from "next/navigation";
 
+// components, types and hooks
+import useMounted from "@/hooks/useMounted";
 import TextInput from "@/app/onboarding/components/TextInput";
 import PhoneInput from "@/app/onboarding/components/PhoneInput";
+import type { ApplicationFormPage1Schema } from "@/lib/zodSchemas/applicationFormPage1.schema";
 
 // Helpers
 const formatPhoneNumber = (value: string) => {
@@ -33,10 +36,8 @@ const formatPhoneNumber = (value: string) => {
   )}`;
 };
 
-const getDisplayPhone = (value: string) => {
-  if (!value) return "";
-  return formatPhoneNumber(value);
-};
+const getDisplayPhone = (value: string) =>
+  value ? formatPhoneNumber(value) : "";
 
 const calculateAge = (dob: string) => {
   if (!dob) return null;
@@ -54,25 +55,32 @@ export default function PersonalDetails() {
     setValue,
     formState: { errors },
     control,
-  } = useFormContext();
-  const { t } = useTranslation("common");
+  } = useFormContext<ApplicationFormPage1Schema>();
 
+  const mounted = useMounted();
+  const { t } = useTranslation("common");
   const { id } = useParams<{ id: string }>();
 
+  //  WATCH ALL FIELDS UP FRONT (no hooks in JSX, no conditional hooks)
   const sinValue = useWatch({ control, name: "sin" });
   const dobValue = useWatch({ control, name: "dob" });
   const canProvideProofChecked = useWatch({
     control,
     name: "canProvideProofOfAge",
   });
+  const sinPhoto = useWatch({ control, name: "sinPhoto" });
+  const phoneHomeRaw = useWatch({ control, name: "phoneHome" }) || "";
+  const phoneCellRaw = useWatch({ control, name: "phoneCell" }) || "";
+  const emergencyPhoneRaw =
+    useWatch({ control, name: "emergencyContactPhone" }) || "";
 
   const [showSIN, setShowSIN] = useState(false);
-  const sinPhoto = useWatch({ control, name: "sinPhoto" });
   const sinPhotoS3Key = sinPhoto?.s3Key || "";
   const sinPhotoUrl = sinPhoto?.url || "";
   const [sinPhotoPreview, setSinPhotoPreview] = useState<string | null>(
     sinPhotoUrl || null
   );
+
   const [sinValidationStatus, setSinValidationStatus] = useState<
     "idle" | "checking" | "valid" | "invalid"
   >("idle");
@@ -80,10 +88,10 @@ export default function PersonalDetails() {
     "idle" | "uploading" | "deleting" | "error"
   >("idle");
   const [sinPhotoMessage, setSinPhotoMessage] = useState("");
-
   const [sinValidationMessage, setSinValidationMessage] = useState("");
 
   const calculatedAge = dobValue ? calculateAge(dobValue) : null;
+
   const [displaySIN, setDisplaySIN] = useState(() =>
     sinValue
       ? sinValue
@@ -92,32 +100,34 @@ export default function PersonalDetails() {
       : ""
   );
 
-  const validateSIN = useCallback(async (sin: string) => {
-    if (sin.length !== 9) return;
+  const validateSIN = useCallback(
+    async (sin: string) => {
+      if (sin.length !== 9) return;
+      setSinValidationStatus("checking");
+      setSinValidationMessage("");
 
-    setSinValidationStatus("checking");
-    setSinValidationMessage("");
+      try {
+        const res = await fetch("/api/v1/onboarding/check-sin-availability", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sin, trackerId: id }),
+        });
 
-    try {
-      const res = await fetch("/api/v1/onboarding/validate-sin", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sin }),
-      });
-
-      if (res.ok) {
-        setSinValidationStatus("valid");
-        setSinValidationMessage("SIN is available");
-      } else {
-        const data = await res.json();
+        if (res.ok) {
+          setSinValidationStatus("valid");
+          setSinValidationMessage("SIN is available");
+        } else {
+          const data = await res.json();
+          setSinValidationStatus("invalid");
+          setSinValidationMessage(data.message || "SIN already exists");
+        }
+      } catch {
         setSinValidationStatus("invalid");
-        setSinValidationMessage(data.message || "SIN already exists");
+        setSinValidationMessage("Error checking SIN availability");
       }
-    } catch {
-      setSinValidationStatus("invalid");
-      setSinValidationMessage("Error checking SIN availability");
-    }
-  }, []);
+    },
+    [id]
+  );
 
   const debouncedValidateSIN = useCallback(() => {
     let timeout: NodeJS.Timeout;
@@ -129,14 +139,10 @@ export default function PersonalDetails() {
 
   const handleSINChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const input = e.target.value;
-
-    //  Update formatted display state
     setDisplaySIN(input);
 
-    //  Clean value to store in RHF
     const cleaned = input.replace(/\D/g, "").slice(0, 9);
     setValue("sin", cleaned, { shouldValidate: true });
-    setValue("sinEncrypted", cleaned, { shouldValidate: true });
 
     if (cleaned.length === 9) {
       debouncedValidateSIN(cleaned);
@@ -154,9 +160,11 @@ export default function PersonalDetails() {
     setValue(field, raw, { shouldValidate: true });
   };
 
+  const EMPTY_PHOTO = { s3Key: "", url: "" };
+
   const handleSinPhotoUpload = async (file: File | null) => {
     if (!file) {
-      setValue("sinPhoto", undefined, { shouldValidate: true });
+      setValue("sinPhoto", EMPTY_PHOTO, { shouldValidate: true });
       setSinPhotoPreview(null);
       setSinPhotoStatus("idle");
       setSinPhotoMessage("");
@@ -176,10 +184,8 @@ export default function PersonalDetails() {
       setValue("sinPhoto", result, { shouldValidate: true });
 
       const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        setSinPhotoPreview(result);
-      };
+      reader.onload = (ev) =>
+        setSinPhotoPreview(String(ev.target?.result || ""));
       reader.readAsDataURL(file);
 
       setSinPhotoStatus("idle");
@@ -202,7 +208,6 @@ export default function PersonalDetails() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ keys: [sinPhotoS3Key] }),
         });
-
         setSinPhotoMessage("Photo removed");
       } catch (err) {
         console.error("Failed to delete temp S3 file:", err);
@@ -211,23 +216,26 @@ export default function PersonalDetails() {
       }
     }
 
-    setValue("sinPhoto", undefined, { shouldValidate: true });
+    setValue("sinPhoto", EMPTY_PHOTO, { shouldValidate: true });
     setSinPhotoPreview(null);
     setSinPhotoStatus("idle");
   };
 
+  // 👇 early return AFTER all hooks
+  if (!mounted) return null;
+
   return (
     <section className="space-y-6 border border-gray-200 p-6 rounded-lg bg-white/80 shadow-sm">
       <h2 className="text-center text-lg font-semibold text-gray-800">
-        {t("form.page1.sections.personal")}
+        {t("form.step2.page1.sections.personal")}
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* First Name */}
         <TextInput
           name="firstName"
-          label={t("form.fields.firstName")}
-          placeholder={t("form.placeholders.firstName")}
+          label={t("form.step2.page1.fields.firstName")}
+          placeholder="John"
           error={errors.firstName}
           register={register}
         />
@@ -235,8 +243,8 @@ export default function PersonalDetails() {
         {/* Last Name */}
         <TextInput
           name="lastName"
-          label={t("form.fields.lastName")}
-          placeholder={t("form.placeholders.lastName")}
+          label={t("form.step2.page1.fields.lastName")}
+          placeholder="Deo"
           error={errors.lastName}
           register={register}
         />
@@ -244,15 +252,21 @@ export default function PersonalDetails() {
         {/* SIN Number */}
         <div className="relative">
           <label className="block text-sm font-medium text-gray-700">
-            {t("form.fields.sin")}
+            {t("form.step2.page1.fields.sin")}
           </label>
+
           <input
             type={showSIN ? "text" : "password"}
-            placeholder="123-456-789"
+            placeholder="963-456-789"
             value={displaySIN}
             inputMode="numeric"
             autoComplete="off"
-            onChange={handleSINChange}
+            maxLength={11}
+            onChange={(e) => {
+              const raw = e.target.value.replace(/\D/g, "");
+              if (raw.length <= 9) handleSINChange(e);
+            }}
+            pattern="\d{9}"
             data-field="sin"
             className={`py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md pr-10 ${
               sinValidationStatus === "valid"
@@ -264,6 +278,7 @@ export default function PersonalDetails() {
                 : ""
             }`}
           />
+
           <button
             type="button"
             onClick={() => setShowSIN((prev) => !prev)}
@@ -279,7 +294,6 @@ export default function PersonalDetails() {
               Checking SIN availability...
             </div>
           )}
-
           {sinValidationStatus === "valid" && (
             <p className="text-green-600 text-sm mt-1 flex items-center">
               <svg
@@ -296,7 +310,6 @@ export default function PersonalDetails() {
               {sinValidationMessage}
             </p>
           )}
-
           {sinValidationStatus === "invalid" && (
             <p className="text-red-500 text-sm mt-1 flex items-center">
               <svg
@@ -313,7 +326,6 @@ export default function PersonalDetails() {
               {sinValidationMessage}
             </p>
           )}
-
           {errors.sin && (
             <p className="text-red-500 text-sm mt-1">
               {errors.sin.message?.toString()}
@@ -324,7 +336,7 @@ export default function PersonalDetails() {
         {/* SIN Photo Upload */}
         <div data-field="sinPhoto">
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t("form.fields.sinPhoto")}
+            {t("form.step2.page1.fields.sinPhoto")}
           </label>
           {sinPhotoPreview || sinPhotoUrl ? (
             <div className="relative">
@@ -354,7 +366,7 @@ export default function PersonalDetails() {
             >
               <Camera className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
               <span className="font-medium text-gray-400 text-xs">
-                {t("form.fields.sinPhotoDesc")}
+                {t("form.step2.page1.fields.sinPhotoDesc")}
               </span>
             </label>
           )}
@@ -373,25 +385,21 @@ export default function PersonalDetails() {
               {errors.sinPhoto.message?.toString()}
             </p>
           )}
-
           {sinPhotoStatus === "uploading" && (
             <div className="text-yellow-600 text-sm mt-1 flex items-center">
               <p className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-600 mr-2"></p>
               Uploading...
             </div>
           )}
-
           {sinPhotoStatus === "deleting" && (
             <p className="text-yellow-600 text-sm mt-1 flex items-center">
               <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-600 mr-2"></div>
               Deleting...
             </p>
           )}
-
           {sinPhotoStatus === "error" && (
             <p className="text-red-500 text-sm mt-1">{sinPhotoMessage}</p>
           )}
-
           {!errors.sinPhoto && sinPhotoStatus === "idle" && sinPhotoMessage && (
             <p className="text-green-600 text-sm mt-1">{sinPhotoMessage}</p>
           )}
@@ -400,7 +408,7 @@ export default function PersonalDetails() {
         {/* Date of Birth */}
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            {t("form.fields.dob")}
+            {t("form.step2.page1.fields.dob")}
           </label>
           <input
             {...register("dob")}
@@ -462,7 +470,6 @@ export default function PersonalDetails() {
                 className="absolute w-6 h-6 pointer-events-none left-0 top-0"
                 viewBox="0 0 24 24"
                 fill="none"
-                xmlns="http://www.w3.org/2000/svg"
               >
                 <path
                   d="M20 6L9 17L4 12"
@@ -478,7 +485,7 @@ export default function PersonalDetails() {
                 dobValue ? "text-gray-700" : "text-gray-400"
               }`}
             >
-              {t("form.fields.canProvideProof")}
+              {t("form.step2.page1.fields.canProvideProof")}
             </label>
           </div>
           {errors.canProvideProofOfAge && (
@@ -488,23 +495,18 @@ export default function PersonalDetails() {
           )}
         </div>
 
-        {/* Phone Fields */}
-        {/* Home */}
+        {/* Phone: Home */}
         <PhoneInput
-          label={t("form.fields.phoneHome")}
-          value={getDisplayPhone(
-            useWatch({ control, name: "phoneHome" }) || ""
-          )}
+          label={t("form.step2.page1.fields.phoneHome")}
+          value={getDisplayPhone(phoneHomeRaw)}
           onChange={(v) => handlePhoneChange("phoneHome", v)}
           error={errors.phoneHome}
         />
 
-        {/* Cell */}
+        {/* Phone: Cell */}
         <PhoneInput
-          label={t("form.fields.phoneCell")}
-          value={getDisplayPhone(
-            useWatch({ control, name: "phoneCell" }) || ""
-          )}
+          label={t("form.step2.page1.fields.phoneCell")}
+          value={getDisplayPhone(phoneCellRaw)}
           onChange={(v) => handlePhoneChange("phoneCell", v)}
           error={errors.phoneCell}
         />
@@ -512,7 +514,7 @@ export default function PersonalDetails() {
         {/* Email */}
         <TextInput
           name="email"
-          label={t("form.fields.email")}
+          label={t("form.step2.page1.fields.email")}
           placeholder={t("form.placeholders.email")}
           error={errors.email}
           register={register}
@@ -521,16 +523,14 @@ export default function PersonalDetails() {
         {/* Emergency Contact */}
         <TextInput
           name="emergencyContactName"
-          label={t("form.fields.emergencyContactName")}
-          placeholder={t("form.placeholders.emergencyContactName")}
+          label={t("form.step2.page1.fields.emergencyContactName")}
           error={errors.emergencyContactName}
           register={register}
         />
+
         <PhoneInput
-          label={t("form.fields.emergencyContactPhone")}
-          value={getDisplayPhone(
-            useWatch({ control, name: "emergencyContactPhone" }) || ""
-          )}
+          label={t("form.step2.page1.fields.emergencyContactPhone")}
+          value={getDisplayPhone(emergencyPhoneRaw)}
           onChange={(v) => handlePhoneChange("emergencyContactPhone", v)}
           error={errors.emergencyContactPhone}
         />

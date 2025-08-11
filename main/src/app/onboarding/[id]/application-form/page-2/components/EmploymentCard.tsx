@@ -1,11 +1,13 @@
-// EMPLOYMENT CARD — Refactored like LicenseSection
+// EMPLOYMENT CARD — per-row fields + per-location duration line
 "use client";
 
 import { useFormContext, FieldErrors, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { differenceInDays } from "date-fns";
+
+import useMounted from "@/hooks/useMounted";
 import { ApplicationFormPage2Schema } from "@/lib/zodSchemas/applicationFormPage2.schema";
 import QuestionGroup from "@/app/onboarding/components/QuestionGroup";
-
 import { calculateTimelineFromCurrent } from "@/lib/frontendConfigs/applicationFormConfigs/validateEmploymentHistory";
 
 interface Props {
@@ -21,33 +23,10 @@ export default function EmploymentCard({ index }: Props) {
     formState: { errors },
   } = useFormContext<ApplicationFormPage2Schema>();
 
-  // Phone formatting functions (copied from page 1)
-  const formatPhoneNumber = (value: string) => {
-    const cleaned = value.replace(/\D/g, "");
-    if (cleaned.length <= 3) return cleaned;
-    if (cleaned.length <= 6)
-      return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
-    return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(
-      6,
-      10
-    )}`;
-  };
-
-  const handlePhoneChange = (
-    fieldName: `employments.${number}.phone1` | `employments.${number}.phone2`,
-    value: string
-  ) => {
-    const raw = value.replace(/\D/g, "").slice(0, 10);
-    setValue(fieldName, raw, { shouldValidate: true });
-  };
-
-  const getDisplayPhone = (value: string) => {
-    if (!value) return "";
-    return formatPhoneNumber(value);
-  };
-
   const { t } = useTranslation("common");
+  const mounted = useMounted();
 
+  // ---- errors helpers ----
   const employmentErrors =
     errors?.employments as FieldErrors<ApplicationFormPage2Schema>["employments"];
 
@@ -63,19 +42,110 @@ export default function EmploymentCard({ index }: Props) {
     name: T
   ): `employments.${number}.${T}` => `employments.${index}.${name}` as const;
 
+  // ---- phone formatting ----
+  const formatPhoneNumber = (value: string) => {
+    const cleaned = value.replace(/\D/g, "");
+    if (cleaned.length <= 3) return cleaned;
+    if (cleaned.length <= 6)
+      return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
+    return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(
+      6,
+      10
+    )}`;
+  };
+  const handlePhoneChange = (
+    fieldName: `employments.${number}.phone1` | `employments.${number}.phone2`,
+    value: string
+  ) => {
+    const raw = value.replace(/\D/g, "").slice(0, 10);
+    setValue(fieldName, raw, { shouldValidate: true });
+  };
+  const getDisplayPhone = (value: string) =>
+    value ? formatPhoneNumber(value) : "";
+
+  // watch dates + phones
+  const phone1Raw = useWatch({ control, name: field("phone1") }) || "";
+  const phone2Raw = useWatch({ control, name: field("phone2") }) || "";
+  const fromDate = watch(field("from"));
+  const toDate = watch(field("to"));
+
+  // per-location duration (years, months, days) for this row
+  const perLocationDuration = (() => {
+    if (!fromDate || !toDate) return null;
+    const from = new Date(fromDate);
+    const to = new Date(toDate);
+    if (isNaN(from.getTime()) || isNaN(to.getTime()) || to < from) return null;
+
+    const days = differenceInDays(to, from) + 1;
+    const months = Math.floor(days / 30.44);
+    const years = Math.floor(months / 12);
+    const monthsOnly = months % 12;
+    return { years, months, monthsOnly, days };
+  })();
+
+  // big status banner logic for current row (kept concise)
+  const currentStatusBanner = (() => {
+    const all = watch("employments");
+    if (!fromDate || !toDate) return null;
+
+    const { totalDays } = calculateTimelineFromCurrent(all);
+    const twoYears = 730;
+    const twoPlus30 = 760;
+    const tenYears = 3650;
+
+    if (index === 0) {
+      if (totalDays < twoYears) {
+        return (
+          <div
+            className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg"
+            data-field="employments.0.banner"
+          >
+            <p className="text-sm font-medium text-red-800">
+              Employment History Requirement
+            </p>
+            <p className="text-xs text-red-700 mt-1">
+              Employment history of 2 or more years is needed. Current duration
+              so far is below 2 years. Please add previous employment once you
+              finish this section.
+            </p>
+          </div>
+        );
+      }
+      if (totalDays > twoPlus30 && totalDays < tenYears) {
+        return (
+          <div
+            className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg"
+            data-field="employments.0.banner"
+          >
+            <p className="text-sm font-medium text-yellow-800">
+              Extended Employment History Required
+            </p>
+            <p className="text-xs text-yellow-700 mt-1">
+              You have more than 2 years + 30 days of history. You must provide
+              10 years of employment history by adding previous employers.
+            </p>
+          </div>
+        );
+      }
+    }
+    return null;
+  })();
+
+  if (!mounted) return null;
+
   return (
     <section className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Employer Name */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t("form.fields.employerName")}
+            {t("form.step2.page2.fields.employerName")}
           </label>
           <input
             {...register(field("employerName"))}
             data-field={field("employerName")}
             type="text"
-            placeholder="Acme Corp..."
+            placeholder="SSP Group of Comp..."
             className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
           />
           {getError("employerName") && (
@@ -88,13 +158,13 @@ export default function EmploymentCard({ index }: Props) {
         {/* Supervisor Name */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t("form.fields.supervisorName")}
+            {t("form.step2.page2.fields.supervisorName")}
           </label>
           <input
             {...register(field("supervisorName"))}
             data-field={field("supervisorName")}
             type="text"
-            placeholder="Jquane Doe"
+            placeholder="John Doe"
             className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
           />
           {getError("supervisorName") && (
@@ -107,7 +177,7 @@ export default function EmploymentCard({ index }: Props) {
         {/* Address */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t("form.fields.address")}
+            {t("form.step2.page2.fields.address")}
           </label>
           <input
             {...register(field("address"))}
@@ -124,7 +194,7 @@ export default function EmploymentCard({ index }: Props) {
         {/* Postal Code */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t("form.fields.postalCode")}
+            {t("form.step2.page2.fields.postalCode")}
           </label>
           <input
             {...register(field("postalCode"))}
@@ -143,7 +213,7 @@ export default function EmploymentCard({ index }: Props) {
         {/* City */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t("form.fields.city")}
+            {t("form.step2.page2.fields.city")}
           </label>
           <input
             {...register(field("city"))}
@@ -157,10 +227,10 @@ export default function EmploymentCard({ index }: Props) {
           )}
         </div>
 
-        {/* Province */}
+        {/* Province/State */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t("form.fields.stateOrProvince")}
+            {t("form.step2.page2.fields.stateOrProvince")}
           </label>
           <input
             {...register(field("stateOrProvince"))}
@@ -179,22 +249,17 @@ export default function EmploymentCard({ index }: Props) {
         {/* Phone 1 */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t("form.fields.phone1")}
+            {t("form.step2.page2.fields.phone1")}
           </label>
           <div className="relative mt-1">
             <div className="flex">
-              {/* Country Code */}
               <div className="flex items-center px-3 py-2 border border-r-0 border-gray-300 rounded-l-md bg-gray-50 text-sm font-medium text-gray-700">
                 +1
               </div>
-
-              {/* Phone Input */}
               <input
                 type="tel"
                 placeholder="(519) 123-4567"
-                value={getDisplayPhone(
-                  useWatch({ control, name: field("phone1") }) || ""
-                )}
+                value={getDisplayPhone(phone1Raw)}
                 onChange={(e) =>
                   handlePhoneChange(field("phone1"), e.target.value)
                 }
@@ -208,25 +273,20 @@ export default function EmploymentCard({ index }: Props) {
           )}
         </div>
 
-        {/* Phone 2 (Optional) */}
+        {/* Phone 2 (optional) */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t("form.fields.phone2")} (Optional)
+            {t("form.step2.page2.fields.phone2")}
           </label>
           <div className="relative mt-1">
             <div className="flex">
-              {/* Country Code */}
               <div className="flex items-center px-3 py-2 border border-r-0 border-gray-300 rounded-l-md bg-gray-50 text-sm font-medium text-gray-700">
                 +1
               </div>
-
-              {/* Phone Input */}
               <input
                 type="tel"
                 placeholder="(226) 987-6543"
-                value={getDisplayPhone(
-                  useWatch({ control, name: field("phone2") }) || ""
-                )}
+                value={getDisplayPhone(phone2Raw)}
                 onChange={(e) =>
                   handlePhoneChange(field("phone2"), e.target.value)
                 }
@@ -243,13 +303,13 @@ export default function EmploymentCard({ index }: Props) {
         {/* Email */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t("form.fields.email")}
+            {t("form.step2.page2.fields.email")}
           </label>
           <input
             {...register(field("email"))}
             data-field={field("email")}
             type="email"
-            placeholder="Johndeo@sspgroup.com"
+            placeholder="johndoe@company.com"
             className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
           />
           {getError("email") && (
@@ -260,7 +320,7 @@ export default function EmploymentCard({ index }: Props) {
         {/* Position Held */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t("form.fields.positionHeld")}
+            {t("form.step2.page2.fields.positionHeld")}
           </label>
           <input
             {...register(field("positionHeld"))}
@@ -278,254 +338,14 @@ export default function EmploymentCard({ index }: Props) {
 
         {/* From / To / Salary */}
         <div className="md:col-span-2">
-          {/* Timeline-based duration messages */}
-          {(() => {
-            const fromDate = watch(`employments.${index}.from`);
-            const toDate = watch(`employments.${index}.to`);
-
-            if (fromDate && toDate) {
-              try {
-                const from = new Date(fromDate);
-                const to = new Date(toDate);
-                const today = new Date();
-
-                // Check for invalid dates
-                if (isNaN(from.getTime()) || isNaN(to.getTime())) {
-                  return (
-                    <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                      <p className="text-sm font-medium text-red-800">
-                        Invalid Date Format
-                      </p>
-                      <p className="text-xs text-red-700 mt-1">
-                        Please enter valid dates in the correct format.
-                      </p>
-                    </div>
-                  );
-                }
-
-                // Check if to date is in the future
-                if (to > today) {
-                  return (
-                    <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                      <p className="text-sm font-medium text-red-800">
-                        Invalid End Date
-                      </p>
-                      <p className="text-xs text-red-700 mt-1">
-                        End date cannot be in the future. Please enter a valid
-                        end date.
-                      </p>
-                    </div>
-                  );
-                }
-
-                // Check if from date is in the future
-                if (from > today) {
-                  return (
-                    <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                      <p className="text-sm font-medium text-red-800">
-                        Invalid Start Date
-                      </p>
-                      <p className="text-xs text-red-700 mt-1">
-                        Start date cannot be in the future. Please enter a valid
-                        start date.
-                      </p>
-                    </div>
-                  );
-                }
-
-                // Check if from date is after to date
-                if (from > to) {
-                  return (
-                    <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                      <p className="text-sm font-medium text-red-800">
-                        Invalid Date Range
-                      </p>
-                      <p className="text-xs text-red-700 mt-1">
-                        Start date cannot be after end date. Please correct the
-                        date range.
-                      </p>
-                    </div>
-                  );
-                }
-
-                // Check if dates are the same (same day employment)
-                if (from.toDateString() === to.toDateString()) {
-                  return (
-                    <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <p className="text-sm font-medium text-yellow-800">
-                        Same Day Employment
-                      </p>
-                      <p className="text-xs text-yellow-700 mt-1">
-                        Start and end dates are the same. Please verify this is
-                        correct.
-                      </p>
-                    </div>
-                  );
-                }
-
-                // Use centralized timeline calculation
-                const currentEmployments = watch("employments");
-                const { totalDays, timeline } =
-                  calculateTimelineFromCurrent(currentEmployments);
-
-                // Find this employment in the timeline
-                const thisEmployment = timeline.find((emp) =>
-                  emp.type === "current" ? index === 0 : emp.index === index
-                );
-
-                const thisEmploymentMonths =
-                  thisEmployment?.durationMonths || 0;
-                const thisEmploymentDays = thisEmployment?.durationDays || 0;
-
-                // For current employment (index 0)
-                if (index === 0) {
-                  if (thisEmploymentDays < 730) {
-                    // Less than 2 years (730 days)
-                    return (
-                      <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                        <p className="text-sm font-medium text-red-800">
-                          Employment History Requirement
-                        </p>
-                        <p className="text-xs text-red-700 mt-1">
-                          Employment history of 2 or more years is needed.
-                          Current duration: {thisEmploymentMonths} months (
-                          {thisEmploymentDays} days).
-                        </p>
-                      </div>
-                    );
-                  } else if (totalDays >= 730 && totalDays <= 760) {
-                    // Exactly 2 years or 2 years + buffer (≤30 days) - green success
-                    const isExactly2Years = totalDays === 730;
-                    const message = isExactly2Years
-                      ? `You have entered exactly 2 years of employment history in this location. Success!`
-                      : `You have entered ${thisEmploymentMonths} months (${thisEmploymentDays} days) of employment history in this location. Success!`;
-
-                    return (
-                      <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                        <p className="text-sm font-medium text-green-800">
-                          Employment History Valid
-                        </p>
-                        <p className="text-xs text-green-700 mt-1">{message}</p>
-                      </div>
-                    );
-                  } else if (totalDays > 760 && totalDays < 3650) {
-                    // Greater than 2 years + 30 days but less than 10 years - yellow warning
-                    return (
-                      <div className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                        <p className="text-sm font-medium text-yellow-800">
-                          Extended Employment History Required
-                        </p>
-                        <p className="text-xs text-yellow-700 mt-1">
-                          Employment duration of {thisEmploymentMonths} months (
-                          {thisEmploymentDays} days) detected. You must provide
-                          10 years of employment history. Additional employment
-                          entries will be required.
-                        </p>
-                      </div>
-                    );
-                  } else {
-                    // 10+ years total - green success
-                    const thisEmploymentYears = Math.floor(
-                      thisEmploymentDays / 365
-                    );
-                    const thisEmploymentMonthsOnly = thisEmploymentMonths % 12;
-                    return (
-                      <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                        <p className="text-sm font-medium text-green-800">
-                          Employment History Complete
-                        </p>
-                        <p className="text-xs text-green-700 mt-1">
-                          {thisEmploymentYears} years (
-                          {thisEmploymentMonthsOnly} months) of work in this
-                          location. 10 year history complete.
-                        </p>
-                      </div>
-                    );
-                  }
-                }
-
-                // For previous employments (index > 0)
-                if (index > 0) {
-                  const remainingDays = Math.max(0, 3650 - totalDays); // 3650 days = 10 years
-                  const remainingMonths = Math.floor(remainingDays / 30.44);
-                  const remainingYears = Math.floor(remainingDays / 365);
-                  const remainingMonthsOnly = remainingMonths % 12;
-
-                  if (totalDays >= 3650 || remainingDays === 0) {
-                    // 10+ years total OR no remaining days needed - green success for all entries
-                    const thisEmploymentYears = Math.floor(
-                      thisEmploymentDays / 365
-                    );
-                    const thisEmploymentMonthsOnly = thisEmploymentMonths % 12;
-                    return (
-                      <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded-lg">
-                        <p className="text-sm font-medium text-green-800">
-                          Employment History Complete
-                        </p>
-                        <p className="text-xs text-green-700 mt-1">
-                          {thisEmploymentYears} years (
-                          {thisEmploymentMonthsOnly} months) of work in this
-                          location. 10 year history complete.
-                        </p>
-                      </div>
-                    );
-                  } else {
-                    // Incomplete - show years/months format with days when close to 10 years
-                    const thisEmploymentYears = Math.floor(
-                      thisEmploymentDays / 365
-                    );
-                    const thisEmploymentMonthsOnly = thisEmploymentMonths % 12;
-
-                    // When remaining time is less than 1 month, show days
-                    let remainingText;
-                    if (remainingDays < 30 && remainingDays > 0) {
-                      remainingText = `${remainingDays} days`;
-                    } else if (
-                      remainingYears === 0 &&
-                      remainingMonthsOnly === 0 &&
-                      remainingDays > 0
-                    ) {
-                      remainingText = `${remainingDays} days`;
-                    } else {
-                      remainingText = `${remainingYears} years (${remainingMonthsOnly} months)`;
-                    }
-
-                    return (
-                      <div className="mb-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                        <p className="text-sm font-medium text-blue-800">
-                          Previous Employment Entry
-                        </p>
-                        <p className="text-xs text-blue-700 mt-1">
-                          {thisEmploymentYears} years (
-                          {thisEmploymentMonthsOnly} months) of work in this
-                          location, {remainingText} history needed to make up
-                          for the 10 years.
-                        </p>
-                      </div>
-                    );
-                  }
-                }
-              } catch {
-                return (
-                  <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-sm font-medium text-red-800">
-                      Date Error
-                    </p>
-                    <p className="text-xs text-red-700 mt-1">
-                      Please check your date entries and try again.
-                    </p>
-                  </div>
-                );
-              }
-            }
-            return null;
-          })()}
+          {/* Status banner for current row (2y rule / 10y requirement nudges) */}
+          {currentStatusBanner}
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* From */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t("form.fields.from")}
+                {t("form.step2.page2.fields.from")}
               </label>
               <input
                 {...register(field("from"))}
@@ -541,7 +361,7 @@ export default function EmploymentCard({ index }: Props) {
             {/* To */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t("form.fields.to")}
+                {t("form.step2.page2.fields.to")}
               </label>
               <input
                 {...register(field("to"))}
@@ -557,7 +377,7 @@ export default function EmploymentCard({ index }: Props) {
             {/* Salary */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t("form.fields.salary")}
+                {t("form.step2.page2.fields.salary")}
               </label>
               <input
                 {...register(field("salary"))}
@@ -573,12 +393,26 @@ export default function EmploymentCard({ index }: Props) {
               )}
             </div>
           </div>
+
+          {/* Per-location duration line (always visible when dates valid) */}
+          {perLocationDuration && (
+            <p className="mt-2 text-xs text-gray-600">
+              You have submitted a date range that accounts for{" "}
+              <span className="font-medium">
+                {perLocationDuration.years} year
+                {perLocationDuration.years === 1 ? "" : "s"} (
+                {perLocationDuration.months} months, {perLocationDuration.days}{" "}
+                days)
+              </span>{" "}
+              in this location.
+            </p>
+          )}
         </div>
 
         {/* Reason for Leaving */}
         <div className="md:col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t("form.fields.reasonForLeaving")}
+            {t("form.step2.page2.fields.reasonForLeaving")}
           </label>
           <textarea
             {...register(field("reasonForLeaving"))}
@@ -594,22 +428,21 @@ export default function EmploymentCard({ index }: Props) {
           )}
         </div>
 
-        {/* FMCSR Question */}
+        {/* FMCSR */}
         <div className="md:col-span-2">
           <QuestionGroup
-            question={t("form.fields.subjectToFMCSR")}
+            question={t("form.step2.page2.fields.subjectToFMCSR")}
             value={
-              watch(`employments.${index}.subjectToFMCSR`) === true
+              watch(field("subjectToFMCSR")) === true
                 ? "form.yes"
-                : watch(`employments.${index}.subjectToFMCSR`) === false
+                : watch(field("subjectToFMCSR")) === false
                 ? "form.no"
                 : ""
             }
             onChange={(val) =>
-              setValue(
-                `employments.${index}.subjectToFMCSR`,
-                val === "form.yes"
-              )
+              setValue(field("subjectToFMCSR"), val === "form.yes", {
+                shouldValidate: true,
+              })
             }
           />
           {getError("subjectToFMCSR") && (
@@ -619,23 +452,21 @@ export default function EmploymentCard({ index }: Props) {
           )}
         </div>
 
-        {/* Safety Sensitive Question */}
+        {/* Safety Sensitive */}
         <div className="md:col-span-2">
           <QuestionGroup
-            question={t("form.fields.safetySensitiveFunction")}
+            question={t("form.step2.page2.fields.safetySensitiveFunction")}
             value={
-              watch(`employments.${index}.safetySensitiveFunction`) === true
+              watch(field("safetySensitiveFunction")) === true
                 ? "form.yes"
-                : watch(`employments.${index}.safetySensitiveFunction`) ===
-                  false
+                : watch(field("safetySensitiveFunction")) === false
                 ? "form.no"
                 : ""
             }
             onChange={(val) =>
-              setValue(
-                `employments.${index}.safetySensitiveFunction`,
-                val === "form.yes"
-              )
+              setValue(field("safetySensitiveFunction"), val === "form.yes", {
+                shouldValidate: true,
+              })
             }
           />
           {getError("safetySensitiveFunction") && (

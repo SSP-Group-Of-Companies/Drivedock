@@ -13,7 +13,7 @@ export const POST = async (req: NextRequest) => {
     const body = await req.json();
     const { sin, trackerId } = body;
 
-    // 🔒 Validate SIN
+    // Validate SIN
     if (!sin || typeof sin !== "string") {
       return errorResponse(400, "SIN is required");
     }
@@ -21,31 +21,30 @@ export const POST = async (req: NextRequest) => {
       return errorResponse(400, "Invalid SIN format");
     }
 
-    // 🔒 Validate trackerId
-    if (!trackerId || typeof trackerId !== "string") {
-      return errorResponse(400, "trackerId is required");
+    // If trackerId is provided, validate it
+    if (trackerId && typeof trackerId !== "string") {
+      return errorResponse(400, "Invalid trackerId");
     }
-    if (!isValidObjectId(trackerId)) {
+    if (trackerId && !isValidObjectId(trackerId)) {
       return errorResponse(400, "Invalid trackerId");
     }
 
-    // 🔍 Check if SIN is already in use
+    // Check if SIN is already in use
     const sinHash = hashString(sin);
     const existingTracker = await OnboardingTracker.findOne({ sinHash });
 
-    // ✅ No tracker found = available
+    // No tracker found = available
     if (!existingTracker) {
       return successResponse(200, "SIN is available", { available: true });
     }
 
-    // ✅ Tracker found and belongs to the same user
-    if (existingTracker.id === trackerId) {
+    // If trackerId is provided and matches the found one → allow
+    if (trackerId && existingTracker.id === trackerId) {
       return successResponse(200, "SIN is available", { available: true });
     }
 
-    // ❌ Tracker found and belongs to someone else
+    // SIN is already used by another applicant
     return errorResponse(400, "This SIN is already used by another applicant");
-
   } catch (error) {
     return errorResponse(error);
   }

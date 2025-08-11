@@ -1,10 +1,8 @@
 // page2Config.ts
-
 import { FormPageConfig } from "../formPageConfig.types";
 import { ApplicationFormPage2Schema } from "@/lib/zodSchemas/applicationFormPage2.schema";
 import { IOnboardingTracker } from "@/types/onboardingTracker.type";
 
-// 🔐 Custom config contract for Page 2 (no prequal/companyId required)
 type Page2FormPageConfig = Omit<
   FormPageConfig<ApplicationFormPage2Schema>,
   "buildPayload"
@@ -17,14 +15,15 @@ type Page2FormPageConfig = Omit<
 
 export const page2Config: Page2FormPageConfig = {
   validationFields: (values) => {
-    const fields: string[] = [];
+    // Include the array root so Zod superRefine runs and can emit the top summary error.
+    const fields: string[] = ["employments"];
 
-    values.employments.forEach((employment, i) => {
-      const isRendered = document.querySelector(
+    values.employments.forEach((e, i) => {
+      // Validate only rendered rows (optional optimization if you hide rows)
+      const rendered = document.querySelector(
         `[data-field="employments.${i}.employerName"]`
       );
-
-      if (!isRendered) return;
+      if (!rendered) return;
 
       fields.push(
         `employments.${i}.employerName`,
@@ -44,7 +43,7 @@ export const page2Config: Page2FormPageConfig = {
         `employments.${i}.safetySensitiveFunction`
       );
 
-      if (employment.gapExplanationBefore !== undefined) {
+      if (typeof e.gapExplanationBefore !== "undefined") {
         fields.push(`employments.${i}.gapExplanationBefore`);
       }
     });
@@ -52,10 +51,9 @@ export const page2Config: Page2FormPageConfig = {
     return fields;
   },
 
+  // Backend expects { employments: [...] } for PATCH page-2
   buildPayload: (values) => {
-    return {
-      page2: values,
-    };
+    return { employments: values.employments };
   },
 
   nextRoute: "/onboarding/[id]/application-form/page-3",

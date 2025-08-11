@@ -20,75 +20,40 @@
 
 import { ITrackerContext } from "@/types/onboardingTracker.type";
 
-type SubmitFormStepParams = {
-  json: any;
-  tracker: ITrackerContext | null;
-  submitSegment: string;
-  urlTrackerId?: string;
-};
+type Scope = "application-form" | "prequalifications" | "policies-consents";
 
 export async function submitFormStep({
   json,
   tracker,
   submitSegment,
   urlTrackerId,
-}: SubmitFormStepParams): Promise<{ trackerContext?: ITrackerContext }> {
-  const effectiveTrackerId = tracker?.id || urlTrackerId;
-  const isPatch = !!effectiveTrackerId;
+  scope = "application-form",
+}: {
+  json: any;
+  tracker: ITrackerContext | null;
+  submitSegment: string; // e.g. "page-1", "page-2"
+  urlTrackerId?: string;
+  scope?: Scope;
+}): Promise<{ trackerContext?: ITrackerContext; nextUrl?: string }> {
+  const id = tracker?.id || urlTrackerId;
+  const isPatch = !!id;
 
-  const url = isPatch
-    ? `/api/v1/onboarding/${effectiveTrackerId}/application-form/${submitSegment}`
-    : `/api/v1/onboarding/application-form`;
+  const url = !isPatch
+    ? `/api/v1/onboarding/application-form` // only scope that supports POST
+    : scope === "application-form"
+    ? `/api/v1/onboarding/${id}/application-form/${submitSegment}`
+    : `/api/v1/onboarding/${id}/${scope}`;
 
-  const options: RequestInit = {
+  const res = await fetch(url, {
     method: isPatch ? "PATCH" : "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(json),
-  };
+  });
 
-  const res = await fetch(url, options);
-
-  if (!res.ok) {
-    const errorText = await res.text();
-
-    // Handle "already exists" error on POST → Retry as PATCH
-    if (
-      !isPatch &&
-      res.status === 400 &&
-      errorText.includes("already exists")
-    ) {
-      try {
-        const errorData = JSON.parse(errorText);
-        const existingTrackerId = errorData.trackerId;
-
-        if (existingTrackerId) {
-          const patchUrl = `/api/v1/onboarding/${existingTrackerId}/application-form/${submitSegment}`;
-          const patchRes = await fetch(patchUrl, {
-            ...options,
-            method: "PATCH",
-          });
-
-          if (!patchRes.ok) {
-            throw new Error(await patchRes.text());
-          }
-
-          const patchData = await patchRes.json();
-          return {
-            trackerContext: patchData?.data?.onboardingContext,
-          };
-        }
-      } catch {
-        throw new Error(errorText);
-      }
-    }
-
-    throw new Error(errorText);
-  }
-
+  if (!res.ok) throw new Error((await res.text()) || "Submission failed");
   const data = await res.json();
   return {
     trackerContext: data?.data?.onboardingContext,
+    nextUrl: data?.data?.onboardingContext?.nextUrl,
   };
 }

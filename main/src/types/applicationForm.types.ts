@@ -1,34 +1,77 @@
+/**
+ * ===============================================================
+ * DriveDock - Application Form Types (Shared)
+ * ---------------------------------------------------------------
+ * Single source of truth for the multi-page Driver Application form.
+ *
+ * Scope:
+ *  - Shared by frontend (typing form payloads) and backend (validation & DB).
+ *  - Page 1 collects identity, contact, licenses, and address history.
+ *  - Later pages cover employment, incidents, education, documents, etc.
+ *
+ * Notes:
+ *  - Date-like fields are modeled as `string | Date` to accommodate
+ *    JSON payloads (`YYYY-MM-DD`) and server-side parsed Date objects.
+ *  - `sinEncrypted` is produced on the server. The client should send
+ *    plain `sin` on Page 1 POST; the backend will compute and store
+ *    `sinEncrypted` and strip `sin` prior to persistence.
+ *  - `IPhoto` represents an uploaded image reference (S3 key, etc.).
+ * ===============================================================
+ */
+
 import { Document } from "mongoose";
 import { ELicenseType, IPhoto } from "./shared.types";
 
-// Page 1
+/* =========================
+ * Page 1
+ * ========================= */
+
+/**
+ * Physical address entry for 5-year coverage validation.
+ * `from`/`to` should use `YYYY-MM-DD` in requests (client), while
+ * the server may coerce to Date on persistence.
+ */
 export interface Iaddress {
   address: string;
   city: string;
   stateOrProvince: string;
   postalCode: string;
-  from: string | Date; // Format: YYYY-MM-DD
-  to: string | Date; // Format: YYYY-MM-DD
+  from: string | Date; // Format: YYYY-MM-DD (client) or Date (server)
+  to: string | Date; // Format: YYYY-MM-DD (client) or Date (server)
 }
 
-
+/**
+ * Driver license entry. The first entry MUST be AZ (business rule),
+ * and must include both front and back photos.
+ */
 export interface ILicenseEntry {
   licenseNumber: string;
   licenseStateOrProvince: string;
-  licenseType: ELicenseType;
-  licenseExpiry: string | Date; // Format: YYYY-MM-DD
-  licenseFrontPhoto: IPhoto;
-  licenseBackPhoto: IPhoto;
+  licenseType: ELicenseType; // e.g., AZ, DZ, etc.
+  licenseExpiry: string | Date; // YYYY-MM-DD (client) or Date (server)
+  licenseFrontPhoto: IPhoto; // S3 temp ref on POST; finalized by server
+  licenseBackPhoto: IPhoto; // S3 temp ref on POST; finalized by server
 }
 
+/**
+ * Application - Page 1
+ * Personal details, place of birth, license(s), and address history.
+ *
+ * IMPORTANT:
+ * - Client sends `sin` (plain). Server computes `sinEncrypted` and removes `sin`
+ *   before saving. `sinEncrypted` appears in server-side data.
+ * - `sinPhoto` and license photos should be uploaded to TEMP S3 first; the
+ *   returned `IPhoto` objects are included in the JSON payload. The server
+ *   will finalize/move them after a successful save.
+ */
 export interface IApplicationFormPage1 {
   // Personal
   firstName: string;
   lastName: string;
-  sin?: string;
-  sinEncrypted: string;
+  sin?: string; // Client-provided on POST only
+  sinEncrypted: string; // Server-computed; client should omit
   sinPhoto: IPhoto;
-  dob: string | Date; // Format: YYYY-MM-DD
+  dob: string | Date; // YYYY-MM-DD (client) or Date (server)
   phoneHome: string;
   phoneCell: string;
   canProvideProofOfAge: boolean;
@@ -44,11 +87,21 @@ export interface IApplicationFormPage1 {
   // Licenses
   licenses: Array<ILicenseEntry>;
 
-  // Address
+  // Address (must cover at least 5 years)
   addresses: Array<Iaddress>;
 }
 
-// Page 2
+/* =========================
+ * Page 2
+ * ========================= */
+
+/**
+ * Prior employment entry with optional gap explanation if there is a
+ * >1 month gap before this job.
+ *
+ * NOTE: `salary` typed as `string | Date` in the original schema. If this is
+ * actually monetary, consider switching to `string` (or a numeric cents field).
+ */
 export interface IEmploymentEntry {
   employerName: string;
   supervisorName: string;
@@ -60,16 +113,17 @@ export interface IEmploymentEntry {
   phone2?: string;
   email: string;
   positionHeld: string;
-  from: string | Date; // Format: YYYY-MM-DD
-  to: string | Date; // Format: YYYY-MM-DD
-  salary: string | Date;
+  from: string | Date; // YYYY-MM-DD or Date
+  to: string | Date; // YYYY-MM-DD or Date
+  salary: string | Date; // TODO: confirm business intent for this field
   reasonForLeaving: string;
   subjectToFMCSR: boolean; // Yes/No
   safetySensitiveFunction: boolean; // Yes/No
 
   /**
    * Optional explanation for a gap in employment **before** this job.
-   * Used if there is >1 month gap between the previous job's `to` and this job's `from`.
+   * Used if there is >1 month gap between the previous job's `to`
+   * and this job's `from`.
    */
   gapExplanationBefore?: string;
 }
@@ -78,16 +132,19 @@ export interface IApplicationFormPage2 {
   employments: IEmploymentEntry[];
 }
 
-// Page 3
+/* =========================
+ * Page 3
+ * ========================= */
+
 export interface IAccidentEntry {
-  date: string | Date; // Format: YYYY-MM-DD
-  natureOfAccident: string; // e.g., "Rear end", "Head-On", etc.
+  date: string | Date; // YYYY-MM-DD or Date
+  natureOfAccident: string; // e.g., "Rear end", "Head-On"
   fatalities: number;
   injuries: number;
 }
 
 export interface ITrafficConvictionEntry {
-  date: string | Date; // Format: YYYY-MM-DD
+  date: string | Date; // YYYY-MM-DD or Date
   location: string;
   charge: string;
   penalty: string;
@@ -105,9 +162,9 @@ export interface ICanadianDailyHours {
 }
 
 export interface ICanadianHoursOfService {
-  dayOneDate: string | Date; // Format: YYYY-MM-DD
+  dayOneDate: string | Date; // YYYY-MM-DD or Date
   dailyHours: ICanadianDailyHours[];
-  totalHours?: number; // virtual
+  totalHours?: number; // Computed/virtual on server
 }
 
 export interface IApplicationFormPage3 {
@@ -117,25 +174,33 @@ export interface IApplicationFormPage3 {
   canadianHoursOfService: ICanadianHoursOfService;
 }
 
-// Page 4
+/* =========================
+ * Page 4
+ * ========================= */
+
 export interface ICriminalRecordEntry {
   offense: string;
-  dateOfSentence: string | Date; // Format: YYYY-MM-DD
+  dateOfSentence: string | Date; // YYYY-MM-DD or Date
   courtLocation: string;
 }
 
 export interface IFastCard {
   fastCardNumber: string;
-  fastCardExpiry: string | Date;
+  fastCardExpiry: string | Date; // YYYY-MM-DD or Date
   fastCardFrontPhoto?: IPhoto;
   fastCardBackPhoto?: IPhoto;
 }
 
+/**
+ * File-heavy page with conditional document requirements by country:
+ * - Canadian applicants: health card; Fast Card optional; etc.
+ * - US applicants: medical certification photos; either passport OR PR/citizenship.
+ */
 export interface IApplicationFormPage4 {
   // Criminal Record Table
   criminalRecords: ICriminalRecordEntry[];
 
-  // Incorporate Details
+  // Incorporation / Business Details (if any of these provided, enforce all)
   employeeNumber?: string;
   hstNumber?: string;
   businessNumber?: string;
@@ -143,14 +208,14 @@ export interface IApplicationFormPage4 {
   hstPhotos?: IPhoto[];
   bankingInfoPhotos?: IPhoto[];
 
-  // medical
-  healthCardPhotos?: IPhoto[]; // for canadian applicants
-  medicalCertificationPhotos?: IPhoto[]; // for US applicants
+  // Medical / Identity (country-specific)
+  healthCardPhotos?: IPhoto[]; // Canada
+  medicalCertificationPhotos?: IPhoto[]; // US
 
-  passportPhotos?: IPhoto[]; // optional for american
-  prPermitCitizenshipPhotos?: IPhoto[]; // optional for american
-  usVisaPhotos?: IPhoto[]; // not needed for american
-  fastCard?: IFastCard; // optional and only shows for canadian
+  passportPhotos?: IPhoto[]; // Optional for US
+  prPermitCitizenshipPhotos?: IPhoto[]; // Optional for US
+  usVisaPhotos?: IPhoto[]; // Not needed for US citizens
+  fastCard?: IFastCard; // Optional; typically Canada
 
   // Additional Info
   deniedLicenseOrPermit: boolean;
@@ -162,10 +227,13 @@ export interface IApplicationFormPage4 {
   hasAccidentalInsurance: boolean;
 }
 
-// page 5
+/* =========================
+ * Page 5
+ * ========================= */
+
 export interface ICompetencyQuestionOption {
-  id: string; // e.g., 1, 2, 3 etc.
-  value: string; // e.g., "30 km/h"
+  id: string; // e.g., "a", "b", "c" or "1","2","3"
+  value: string; // Display text, e.g., "30 km/h"
 }
 
 export interface ICompetencyQuestion {
@@ -185,13 +253,18 @@ export interface IApplicationFormPage5 {
   score: number;
 }
 
-// Placeholder structure for the other 11 pages (to be filled later)
+/* =========================
+ * Aggregate & Doc Types
+ * ========================= */
+
 export interface IApplicationForm {
   page1: IApplicationFormPage1;
   page2: IApplicationFormPage2;
   page3: IApplicationFormPage3;
   page4: IApplicationFormPage4;
   page5: IApplicationFormPage5;
+
+  // Placeholders for future pages (6–12)
   page6: Record<string, string>;
   page7: Record<string, string>;
   page8: Record<string, string>;
@@ -204,4 +277,7 @@ export interface IApplicationForm {
   updatedAt: Date;
 }
 
-export interface IApplicationFormDoc extends IApplicationForm, Document { }
+/**
+ * MongoDB hydrated document shape for ApplicationForm.
+ */
+export interface IApplicationFormDoc extends IApplicationForm, Document {}
