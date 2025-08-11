@@ -30,7 +30,7 @@ export const employmentEntrySchema = z
     to: z.string().trim().min(1, "End date is required"),
     salary: z.string().trim().min(1, "Salary is required"),
     reasonForLeaving: z.string().trim().min(1, "Reason is required"),
-    // keep tri-state UX: undefined until user chooses
+    // tri-state until the user chooses
     subjectToFMCSR: z
       .boolean()
       .optional()
@@ -45,7 +45,6 @@ export const employmentEntrySchema = z
       }),
     gapExplanationBefore: z.string().trim().optional(),
   })
-  // local sanity: from < to
   .refine(
     (e) => {
       const from = new Date(e.from);
@@ -110,10 +109,10 @@ export const applicationFormPage2Schema = z
       }
     }
 
-    // Fallback: attach to array root
+    // Fallback: attach to the banner anchor so scroll lands at the top message
     ctx.addIssue({
       code: "custom",
-      path: ["employments"],
+      path: ["employments", "totals", "root"], // 👈 matches the data-field anchor
       message: errorMessage,
     });
   });

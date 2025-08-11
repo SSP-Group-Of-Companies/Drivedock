@@ -187,7 +187,7 @@ export default function LicenseSection() {
   return (
     <section className="space-y-6 border border-gray-200 p-6 rounded-lg bg-white/80 shadow-sm">
       <h2 className="text-center text-lg font-semibold text-gray-800">
-        {t("form.page1.sections.license")}
+        {t("form.step2.page1.sections.license")}
       </h2>
 
       {fields.map((field, index) => (
@@ -198,16 +198,16 @@ export default function LicenseSection() {
           <div className="flex justify-between items-center">
             <h4 className="text-md font-medium text-gray-500">
               {index === 0
-                ? t("form.page1.sections.license")
-                : `${t("form.page1.sections.license")} ${index + 1}`}
+                ? t("form.step2.page1.sections.license")
+                : `${t("form.step2.page1.sections.license")} ${index + 1}`}
             </h4>
             {index > 0 && (
               <button
                 type="button"
                 onClick={() => remove(index)}
-                className="text-red-600 hover:text-red-800 text-sm font-medium"
+                className="absolute top-3 right-3 text-xs bg-red-50 text-red-600 hover:bg-red-100 px-2 py-1 rounded-md border border-red-200"
               >
-                {t("form.actions.removeLicense")}
+                {t("form.step2.page1.actions.removeLicense")}
               </button>
             )}
           </div>
@@ -215,7 +215,7 @@ export default function LicenseSection() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t("form.fields.licenseNumber")}
+                {t("form.step2.page1.fields.licenseNumber")}
               </label>
               <input
                 type="text"
@@ -232,7 +232,7 @@ export default function LicenseSection() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t("form.fields.licenseProvince")}
+                {t("form.step2.page1.fields.licenseProvince")}
               </label>
               <input
                 type="text"
@@ -249,7 +249,7 @@ export default function LicenseSection() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t("form.fields.licenseType")}
+                {t("form.step2.page1.fields.licenseType")}
               </label>
 
               {index === 0 ? (
@@ -285,7 +285,7 @@ export default function LicenseSection() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t("form.fields.licenseExpiry")}
+                {t("form.step2.page1.fields.licenseExpiry")}
               </label>
               <input
                 type="date"
@@ -307,7 +307,7 @@ export default function LicenseSection() {
               {/* License Front Photo Upload */}
               <div data-field="licenses.0.licenseFrontPhoto">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t("form.fields.licenseFrontPhoto")}
+                  {t("form.step2.page1.fields.licenseFrontPhoto")}
                 </label>
                 {frontPhotoPreview ? (
                   <div className="relative">
@@ -339,7 +339,7 @@ export default function LicenseSection() {
                   >
                     <Camera className="w-8 h-8 text-gray-400 mb-2 group-hover:text-gray-600" />
                     <span className="font-medium text-gray-400">
-                      {t("form.fields.licensePhotoDesc")}
+                      {t("form.step2.page1.fields.licensePhotoDesc")}
                     </span>
                   </label>
                 )}
@@ -397,7 +397,7 @@ export default function LicenseSection() {
               {/* License Back Photo Upload */}
               <div data-field="licenses.0.licenseBackPhoto">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t("form.fields.licenseBackPhoto")}
+                  {t("form.step2.page1.fields.licenseBackPhoto")}
                 </label>
                 {backPhotoPreview ? (
                   <div className="relative">
@@ -429,7 +429,7 @@ export default function LicenseSection() {
                   >
                     <Camera className="w-8 h-8 text-gray-400 mb-2 group-hover:text-gray-600" />
                     <span className="font-medium text-gray-400">
-                      {t("form.fields.licensePhotoDesc")}
+                      {t("form.step2.page1.fields.licensePhotoDesc")}
                     </span>
                   </label>
                 )}
@@ -505,7 +505,7 @@ export default function LicenseSection() {
           className="mt-6 mx-auto flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 rounded-md transition-colors duration-200 font-medium"
         >
           <Upload className="w-4 h-4" />
-          {t("form.actions.addLicense")}
+          {t("form.step2.page1.actions.addLicense")}
         </button>
       )}
     </section>

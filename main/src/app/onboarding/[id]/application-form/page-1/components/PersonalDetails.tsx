@@ -227,15 +227,15 @@ export default function PersonalDetails() {
   return (
     <section className="space-y-6 border border-gray-200 p-6 rounded-lg bg-white/80 shadow-sm">
       <h2 className="text-center text-lg font-semibold text-gray-800">
-        {t("form.page1.sections.personal")}
+        {t("form.step2.page1.sections.personal")}
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* First Name */}
         <TextInput
           name="firstName"
-          label={t("form.fields.firstName")}
-          placeholder={t("form.placeholders.firstName")}
+          label={t("form.step2.page1.fields.firstName")}
+          placeholder="John"
           error={errors.firstName}
           register={register}
         />
@@ -243,8 +243,8 @@ export default function PersonalDetails() {
         {/* Last Name */}
         <TextInput
           name="lastName"
-          label={t("form.fields.lastName")}
-          placeholder={t("form.placeholders.lastName")}
+          label={t("form.step2.page1.fields.lastName")}
+          placeholder="Deo"
           error={errors.lastName}
           register={register}
         />
@@ -252,12 +252,12 @@ export default function PersonalDetails() {
         {/* SIN Number */}
         <div className="relative">
           <label className="block text-sm font-medium text-gray-700">
-            {t("form.fields.sin")}
+            {t("form.step2.page1.fields.sin")}
           </label>
 
           <input
             type={showSIN ? "text" : "password"}
-            placeholder="123-456-789"
+            placeholder="963-456-789"
             value={displaySIN}
             inputMode="numeric"
             autoComplete="off"
@@ -336,7 +336,7 @@ export default function PersonalDetails() {
         {/* SIN Photo Upload */}
         <div data-field="sinPhoto">
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t("form.fields.sinPhoto")}
+            {t("form.step2.page1.fields.sinPhoto")}
           </label>
           {sinPhotoPreview || sinPhotoUrl ? (
             <div className="relative">
@@ -366,7 +366,7 @@ export default function PersonalDetails() {
             >
               <Camera className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
               <span className="font-medium text-gray-400 text-xs">
-                {t("form.fields.sinPhotoDesc")}
+                {t("form.step2.page1.fields.sinPhotoDesc")}
               </span>
             </label>
           )}
@@ -408,7 +408,7 @@ export default function PersonalDetails() {
         {/* Date of Birth */}
         <div>
           <label className="block text-sm font-medium text-gray-700">
-            {t("form.fields.dob")}
+            {t("form.step2.page1.fields.dob")}
           </label>
           <input
             {...register("dob")}
@@ -485,7 +485,7 @@ export default function PersonalDetails() {
                 dobValue ? "text-gray-700" : "text-gray-400"
               }`}
             >
-              {t("form.fields.canProvideProof")}
+              {t("form.step2.page1.fields.canProvideProof")}
             </label>
           </div>
           {errors.canProvideProofOfAge && (
@@ -497,7 +497,7 @@ export default function PersonalDetails() {
 
         {/* Phone: Home */}
         <PhoneInput
-          label={t("form.fields.phoneHome")}
+          label={t("form.step2.page1.fields.phoneHome")}
           value={getDisplayPhone(phoneHomeRaw)}
           onChange={(v) => handlePhoneChange("phoneHome", v)}
           error={errors.phoneHome}
@@ -505,7 +505,7 @@ export default function PersonalDetails() {
 
         {/* Phone: Cell */}
         <PhoneInput
-          label={t("form.fields.phoneCell")}
+          label={t("form.step2.page1.fields.phoneCell")}
           value={getDisplayPhone(phoneCellRaw)}
           onChange={(v) => handlePhoneChange("phoneCell", v)}
           error={errors.phoneCell}
@@ -514,7 +514,7 @@ export default function PersonalDetails() {
         {/* Email */}
         <TextInput
           name="email"
-          label={t("form.fields.email")}
+          label={t("form.step2.page1.fields.email")}
           placeholder={t("form.placeholders.email")}
           error={errors.email}
           register={register}
@@ -523,14 +523,13 @@ export default function PersonalDetails() {
         {/* Emergency Contact */}
         <TextInput
           name="emergencyContactName"
-          label={t("form.fields.emergencyContactName")}
-          placeholder={t("form.placeholders.emergencyContactName")}
+          label={t("form.step2.page1.fields.emergencyContactName")}
           error={errors.emergencyContactName}
           register={register}
         />
 
         <PhoneInput
-          label={t("form.fields.emergencyContactPhone")}
+          label={t("form.step2.page1.fields.emergencyContactPhone")}
           value={getDisplayPhone(emergencyPhoneRaw)}
           onChange={(v) => handlePhoneChange("emergencyContactPhone", v)}
           error={errors.emergencyContactPhone}

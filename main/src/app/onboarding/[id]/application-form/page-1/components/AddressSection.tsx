@@ -3,12 +3,10 @@
 import { useTranslation } from "react-i18next";
 import { useFormContext, useFieldArray, Path } from "react-hook-form";
 import { useEffect, useState } from "react";
-
 import { Upload } from "lucide-react";
 
-//component, types and hooks imports
 import useMounted from "@/hooks/useMounted";
-import { IApplicationFormPage1 } from "@/types/applicationForm.types";
+import { ApplicationFormPage1Schema } from "@/lib/zodSchemas/applicationFormPage1.schema";
 import { useCompanySelection } from "@/hooks/frontendHooks/useCompanySelection";
 
 // Narrow the valid address field names
@@ -20,24 +18,41 @@ type AddressFieldName =
   | "from"
   | "to";
 
-// Config array, now typed so AddressFieldName is actually used
+// Config array, typed so AddressFieldName is actually used
 const ADDRESS_FIELDS = [
-  { name: "address", labelKey: "form.fields.address" },
-  { name: "city", labelKey: "form.fields.city" },
-  { name: "stateOrProvince", labelKey: "form.fields.stateOrProvince" },
-  { name: "postalCode", labelKey: "form.fields.postalCode" }, // label adjusted below per country
-  { name: "from", labelKey: "form.fields.from", type: "date" as const },
-  { name: "to", labelKey: "form.fields.to", type: "date" as const },
+  { name: "address", labelKey: "form.step2.page1.fields.address" },
+  { name: "city", labelKey: "form.step2.page1.fields.city" },
+  {
+    name: "stateOrProvince",
+    labelKey: "form.step2.page1.fields.stateOrProvince",
+  },
+  { name: "postalCode", labelKey: "form.step2.page1.fields.postalCode" }, // label adjusted below per country
+  {
+    name: "from",
+    labelKey: "form.step2.page1.fields.from",
+    type: "date" as const,
+  },
+  { name: "to", labelKey: "form.step2.page1.fields.to", type: "date" as const },
 ] satisfies ReadonlyArray<{
   name: AddressFieldName;
   labelKey: string;
   type?: "date";
 }>;
 
+// Robustly extract array-root error message for RHF+Zod
+function getAddressesRootErrorMessage(errs: any): string | undefined {
+  const e = errs?.addresses;
+  if (!e) return undefined;
+  return (
+    e?.root?.message ??
+    (typeof e?.message === "string" ? e.message : undefined) ??
+    (Array.isArray(e?._errors) ? e._errors[0] : undefined)
+  );
+}
+
 export default function AddressSection() {
   const mounted = useMounted();
   const { t } = useTranslation("common");
-
   const { selectedCompany } = useCompanySelection();
 
   const {
@@ -46,7 +61,7 @@ export default function AddressSection() {
     trigger,
     watch,
     formState: { errors },
-  } = useFormContext<IApplicationFormPage1>();
+  } = useFormContext<ApplicationFormPage1Schema>();
 
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
@@ -71,28 +86,26 @@ export default function AddressSection() {
 
   const watchedAddresses = watch("addresses");
   const addressErrors = errors.addresses as any[] | undefined;
+  const rootErrorMessage = getAddressesRootErrorMessage(errors);
 
+  // Mark that we attempted submit once we see any array error
   useEffect(() => {
     if (errors.addresses) setHasSubmitted(true);
   }, [errors.addresses]);
 
-  // Re-validate the array after edits so root-level refinements show up
+  // Re-validate only after user edits following a submit attempt
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (errors.addresses) trigger("addresses");
-    }, 300);
-    return () => clearTimeout(timeout);
-  }, [watchedAddresses, errors.addresses, trigger]);
+    if (!hasSubmitted) return;
+    const id = setTimeout(() => {
+      trigger("addresses");
+    }, 200);
+    return () => clearTimeout(id);
+  }, [hasSubmitted, watchedAddresses, trigger]);
 
   const getPostalCodeLabel = () =>
     selectedCompany?.countryCode === "US"
-      ? t("form.fields.zipCode")
-      : t("form.fields.postalCode");
-
-  const getPostalCodePlaceholder = () =>
-    selectedCompany?.countryCode === "US"
-      ? t("form.placeholders.zipCode")
-      : t("form.placeholders.postalCode");
+      ? t("form.step2.page1.fields.zipCode")
+      : t("form.step2.page1.fields.postalCode");
 
   const handleAdd = () => {
     append({
@@ -105,33 +118,33 @@ export default function AddressSection() {
     });
   };
 
-  // Prevent rendering until mounted to avoid hydration mismatch
   if (!mounted) return null;
+
   return (
     <section className="space-y-6 border border-gray-200 p-6 rounded-lg bg-white/80 shadow-sm">
       <div className="text-center">
         <h2 className="text-lg font-semibold text-gray-800">
-          {t("form.page1.sections.address.title")}
+          {t("form.step2.page1.sections.address.title")}
         </h2>
         <p className="text-center text-sm mt-2 text-gray-600">
-          {t("form.page1.sections.address.subtitle")}
+          {t("form.step2.page1.sections.address.subtitle")}
         </p>
 
-        {/* Anchor for scrollToError + root array error */}
-        <div data-field="addresses.root">
-          {typeof errors.addresses?.message === "string" && hasSubmitted && (
-            <p className="text-red-500 text-sm text-center mt-1">
-              {errors.addresses.message}
-            </p>
-          )}
-        </div>
+        {/* Anchors for scrollToError + root array error */}
+        <div data-field="addresses" />
+        <div data-field="addresses.root" />
+        {rootErrorMessage && hasSubmitted && (
+          <p className="text-red-500 text-sm text-center mt-1">
+            {rootErrorMessage}
+          </p>
+        )}
       </div>
 
       {/* Current Address (first item) */}
       {fields.length > 0 && (
         <div className="space-y-4 border border-gray-300 p-4 rounded-lg bg-white relative">
           <h3 className="text-sm font-medium text-blue-700 mb-2">
-            {t("form.page1.sections.address.current")}
+            {t("form.step2.page1.sections.address.current")}
           </h3>
           {renderAddressFields(0)}
         </div>
@@ -150,10 +163,10 @@ export default function AddressSection() {
               onClick={() => remove(index)}
               className="absolute top-3 right-3 text-xs bg-red-50 text-red-600 hover:bg-red-100 px-2 py-1 rounded-md border border-red-200"
             >
-              {t("form.actions.removeAddress")}
+              {t("form.step2.page1.actions.removeAddress")}
             </button>
             <h3 className="text-sm font-medium text-gray-700 mb-2">
-              {t("form.page1.sections.address.previous")} {index}
+              {t("form.step2.page1.sections.address.previous")} {index}
             </h3>
             {renderAddressFields(index)}
           </div>
@@ -166,7 +179,7 @@ export default function AddressSection() {
         className="mt-6 mx-auto flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 rounded-md font-medium"
       >
         <Upload className="w-4 h-4" />
-        {t("form.actions.addAddress")}
+        {t("form.step2.page1.actions.addAddress")}
       </button>
     </section>
   );
@@ -184,14 +197,10 @@ export default function AddressSection() {
                 {label}
               </label>
               <input
-                // Use Path<T> to satisfy RHF typing for dynamic keys
                 {...register(
-                  `addresses.${index}.${name}` as Path<IApplicationFormPage1>
+                  `addresses.${index}.${name}` as Path<ApplicationFormPage1Schema>
                 )}
                 type={type ?? "text"}
-                placeholder={
-                  name === "postalCode" ? getPostalCodePlaceholder() : ""
-                }
                 data-field={`addresses.${index}.${name}`}
                 className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
               />

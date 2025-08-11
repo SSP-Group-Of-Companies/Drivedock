@@ -1,18 +1,29 @@
-// main/src/lib/frontendConfigs/applicationFormConfigs/page2Config.ts
+// page2Config.ts
 import { FormPageConfig } from "../formPageConfig.types";
 import { ApplicationFormPage2Schema } from "@/lib/zodSchemas/applicationFormPage2.schema";
+import { IOnboardingTracker } from "@/types/onboardingTracker.type";
 
-export const page2Config: FormPageConfig<ApplicationFormPage2Schema> = {
+type Page2FormPageConfig = Omit<
+  FormPageConfig<ApplicationFormPage2Schema>,
+  "buildPayload"
+> & {
+  buildPayload: (
+    values: ApplicationFormPage2Schema,
+    tracker?: IOnboardingTracker
+  ) => Record<string, unknown>;
+};
+
+export const page2Config: Page2FormPageConfig = {
   validationFields: (values) => {
-    const fields: string[] = [];
-    values.employments.forEach((emp, i) => {
-      // Only validate rendered rows (optional UX optimization)
-      if (
-        !document?.querySelector?.(
-          `[data-field="employments.${i}.employerName"]`
-        )
-      )
-        return;
+    // Include the array root so Zod superRefine runs and can emit the top summary error.
+    const fields: string[] = ["employments"];
+
+    values.employments.forEach((e, i) => {
+      // Validate only rendered rows (optional optimization if you hide rows)
+      const rendered = document.querySelector(
+        `[data-field="employments.${i}.employerName"]`
+      );
+      if (!rendered) return;
 
       fields.push(
         `employments.${i}.employerName`,
@@ -32,15 +43,18 @@ export const page2Config: FormPageConfig<ApplicationFormPage2Schema> = {
         `employments.${i}.safetySensitiveFunction`
       );
 
-      if (emp.gapExplanationBefore !== undefined) {
+      if (typeof e.gapExplanationBefore !== "undefined") {
         fields.push(`employments.${i}.gapExplanationBefore`);
       }
     });
+
     return fields;
   },
 
-  //  Send the array at the root, not wrapped in { page2: ... }
-  buildPayload: (values) => ({ employments: values.employments }),
+  // Backend expects { employments: [...] } for PATCH page-2
+  buildPayload: (values) => {
+    return { employments: values.employments };
+  },
 
   nextRoute: "/onboarding/[id]/application-form/page-3",
   submitSegment: "page-2",

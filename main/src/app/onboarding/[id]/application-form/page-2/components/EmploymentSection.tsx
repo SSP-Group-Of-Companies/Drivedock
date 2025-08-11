@@ -2,9 +2,8 @@
 
 import { useFieldArray, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
-//components, hooks, and types
 import useMounted from "@/hooks/useMounted";
 import EmploymentCard from "./EmploymentCard";
 import GapBlock from "./GapBlock";
@@ -14,7 +13,6 @@ import {
   getEmploymentGaps,
 } from "@/lib/frontendConfigs/applicationFormConfigs/validateEmploymentHistory";
 
-// Type alias for a single employment entry
 type EmploymentEntry = ApplicationFormPage2Schema["employments"][number];
 
 export default function EmploymentSection() {
@@ -32,7 +30,6 @@ export default function EmploymentSection() {
   const [showPrevious, setShowPrevious] = useState(false);
   const hasAutoAddedRef = useRef(false);
 
-  // Strictly typed employment factory
   const createEmptyEmployment = (): EmploymentEntry => ({
     employerName: "",
     supervisorName: "",
@@ -54,9 +51,7 @@ export default function EmploymentSection() {
   });
 
   useEffect(() => {
-    if (fields.length === 0) {
-      append(createEmptyEmployment());
-    }
+    if (fields.length === 0) append(createEmptyEmployment());
   }, [append, fields.length]);
 
   useEffect(() => {
@@ -72,36 +67,52 @@ export default function EmploymentSection() {
     }
   }, [employments, append]);
 
-  // Update add button logic to use timeline calculation
-  const { timeline, totalMonths } = calculateTimelineFromCurrent(employments);
+  const { timeline, totalDays, totalMonths } =
+    calculateTimelineFromCurrent(employments);
+  const needsMoreThan2yrsButLessThan10 = totalDays > 760 && totalDays < 3650;
+  const lessThan2Years = totalDays < 730;
 
-  // Check for gaps between employment entries
   const gaps = getEmploymentGaps(timeline);
 
-  // If not mounted, return null to avoid hydration issues
   if (!mounted) return null;
   return (
     <section className="space-y-6">
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6 relative">
-        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-white px-3">
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white px-3">
           <h2 className="text-sm font-bold text-gray-700">
-            {t("form.page2.sections.employment")}
+            {t("form.step2.page2.sections.employment")}
           </h2>
         </div>
-        <p className="text-sm text-gray-700 leading-relaxed">
-          {t("form.page2.requirements")}
-        </p>
+        <p>{t("form.step2.page2.requirements")}</p>
+        {/* Anchor for scrollToError: matches Zod error path */}
+        <div data-field="employments.totals.root" />
+
+        {/* Top banner message */}
+        {lessThan2Years && (
+          <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-md p-3">
+            Employment history of 2 or more years is needed. Current duration: ~
+            {totalMonths} months ({totalDays} days). Please add previous
+            employment.
+          </p>
+        )}
+
+        {needsMoreThan2yrsButLessThan10 && (
+          <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-md p-3">
+            You have ~{Math.floor(totalMonths / 12)} years ({totalMonths}{" "}
+            months,
+            {` ${totalDays} days`}). Please add previous employment until you
+            reach 10 years.
+          </p>
+        )}
       </div>
 
       {fields.map((field, index) => {
         const isCurrent = index === 0;
         const isPrevious = index > 0;
-
         if (isPrevious && !showPrevious) return null;
 
-        const blocks = [];
+        const blocks: React.ReactNode[] = [];
 
-        // Add the employment form first
         blocks.push(
           <div
             key={field.id}
@@ -110,8 +121,8 @@ export default function EmploymentSection() {
             <div className="absolute -top-3 left-6 bg-white px-3">
               <h3 className="text-sm font-bold text-gray-700">
                 {isCurrent
-                  ? t("form.page2.labels.currentEmployer")
-                  : `${t("form.page2.labels.previousEmployer")} ${index}`}
+                  ? t("form.step2.page2.labels.currentEmployer")
+                  : `${t("form.step2.page2.labels.previousEmployer")} ${index}`}
               </h3>
             </div>
 
@@ -120,21 +131,35 @@ export default function EmploymentSection() {
                 type="button"
                 onClick={() => {
                   remove(index);
-                  // if we just removed down to 1 row, hide previous section
                   if (fields.length - 1 <= 1) setShowPrevious(false);
                 }}
                 className="absolute top-2 right-2 text-red-600 hover:text-red-800 text-sm font-medium"
-                title="Remove this employer"
               >
-                {t("form.page2.actions.removePrevious")}
+                {t("form.step2.page2.actions.removePrevious")}
               </button>
             )}
 
             <EmploymentCard index={index} />
+
+            {/* Add button also on the current card */}
+            {isCurrent && (
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPrevious(true);
+                    if (fields.length < 5) append(createEmptyEmployment());
+                  }}
+                  className="mt-2 mx-auto flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 rounded-md transition-colors duration-200 font-medium"
+                >
+                  {t("form.step2.page2.actions.addPrevious")} (
+                  {Math.max(fields.length - 1, 0)}/4)
+                </button>
+              </div>
+            )}
           </div>
         );
 
-        // Add gap block AFTER this employment if there's a gap before the next employment
         const gapAfter = gaps.find((gap) => gap.index === index);
         if (gapAfter) {
           blocks.push(
@@ -153,15 +178,20 @@ export default function EmploymentSection() {
         <button
           type="button"
           onClick={() => {
-            if (fields.length < 5) {
-              append(createEmptyEmployment());
-            }
+            if (fields.length < 5) append(createEmptyEmployment());
           }}
           className="mt-6 mx-auto flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 rounded-md transition-colors duration-200 font-medium"
         >
-          {t("form.page2.actions.addPrevious")} ({fields.length - 1}/4)
+          {t("form.step2.page2.actions.addPrevious")} ({fields.length - 1}/4)
         </button>
       )}
+
+      {/* Tiny debug helper (optional) */}
+      {/* {process.env.NODE_ENV !== "production" && (
+        <p className="text-xs text-gray-500">
+          Debug: totalDays={totalDays} • totalMonths={totalMonths}
+        </p>
+      )} */}
     </section>
   );
 }

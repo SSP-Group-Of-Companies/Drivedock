@@ -1,7 +1,8 @@
-import path from "path";
+// next-i18next.config.js  (CommonJS)
+const path = require("path");
 
 /** @type {import('next-i18next').UserConfig} */
-const nextI18NextConfig = {
+module.exports = {
   i18n: {
     defaultLocale: "en",
     locales: ["en", "fr", "es"],
@@ -10,5 +11,3 @@ const nextI18NextConfig = {
   localePath: path.resolve("./public/locales"),
   reloadOnPrerender: process.env.NODE_ENV === "development",
 };
-
-export default nextI18NextConfig;
