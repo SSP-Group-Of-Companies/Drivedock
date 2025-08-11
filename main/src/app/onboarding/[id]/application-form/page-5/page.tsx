@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { NEXT_PUBLIC_BASE_URL } from "@/config/env";
 import Page5Client from "./Page5Client";
 
