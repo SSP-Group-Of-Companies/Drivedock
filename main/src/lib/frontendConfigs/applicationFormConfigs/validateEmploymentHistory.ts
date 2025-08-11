@@ -1,7 +1,6 @@
 // main/src/lib/frontendConfigs/applicationFormConfigs/validateEmploymentHistory.ts
 
 import { differenceInDays } from "date-fns";
-import type { IEmploymentEntry } from "@/types/applicationForm.types";
 
 export type TimelineItem =
   | {
@@ -20,86 +19,10 @@ export type TimelineItem =
       durationMonths: number;
     };
 
-// ---------- Core validator used by Zod superRefine ----------
-export function validateEmploymentHistory(
-  employments: IEmploymentEntry[]
-): string | null {
-  if (!Array.isArray(employments) || employments.length === 0) {
-    return "At least one employment entry is required.";
-  }
-  if (employments.length > 5) {
-    return "A maximum of 5 employment entries is allowed.";
-  }
-
-  // sort newest first by 'from'
-  const sorted = [...employments].sort(
-    (a, b) => new Date(b.from).getTime() - new Date(a.from).getTime()
-  );
-
-  let totalDays = 0;
-
-  for (let i = 0; i < sorted.length; i++) {
-    const cur = sorted[i];
-    const from = new Date(cur.from);
-    const to = new Date(cur.to);
-
-    if (isNaN(from.getTime()) || isNaN(to.getTime())) {
-      return `Invalid date format in employment entry for ${cur.supervisorName}`;
-    }
-    if (to < from) {
-      return `End date cannot be before start date in job at ${cur.supervisorName}`;
-    }
-
-    // include both endpoints
-    const daysInThisJob = differenceInDays(to, from) + 1;
-    totalDays += daysInThisJob;
-
-    const next = sorted[i + 1];
-    if (next) {
-      const nextTo = new Date(next.to);
-
-      // overlap: current.from must be >= next.to
-      if (from < nextTo) {
-        return `Job at ${cur.supervisorName} overlaps with job at ${next.supervisorName}`;
-      }
-
-      // gap ≥ 30 days requires explanation on *current* row
-      const gapDays = differenceInDays(from, nextTo);
-      if (
-        gapDays >= 30 &&
-        (!cur.gapExplanationBefore || cur.gapExplanationBefore.trim() === "")
-      ) {
-        return `Missing gap explanation before employment at ${cur.supervisorName}`;
-      }
-    }
-  }
-
-  const months = Math.round(totalDays / 30.44);
-  const twoYears = 730; // days
-  const twoYearsPlus30 = 760; // days
-  const tenYears = 3650; // days
-
-  // < 2 years → fail with explicit total
-  if (totalDays < twoYears) {
-    return `Employment history of 2 or more years is required. Total provided: ${months} months (${totalDays} days).`;
-  }
-
-  // ≥ 2y and ≤ 2y + 30d → pass
-  if (totalDays >= twoYears && totalDays <= twoYearsPlus30) {
-    return null;
-  }
-
-  // > 2y + 30d but < 10y → fail with explicit total
-  if (totalDays > twoYearsPlus30 && totalDays < tenYears) {
-    const yearsRough = Math.floor(totalDays / 365);
-    return `Extended Employment History Required. Total provided: ~${yearsRough} years (${months} months, ${totalDays} days). You must provide 10 years of employment history. Add previous employment entries.`;
-  }
-
-  // ≥ 10y → pass
-  return null;
-}
-
-// ---------- UI helpers for live banners/gaps ----------
+/**
+ * UI helpers for live banners & gap detection.
+ * The canonical validator lives in lib/utils/validationUtils.ts
+ */
 
 export function calculateTimelineFromCurrent(employments: any[]) {
   const current = employments?.[0];

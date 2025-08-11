@@ -515,7 +515,7 @@ export default function PersonalDetails() {
         <TextInput
           name="email"
           label={t("form.step2.page1.fields.email")}
-          placeholder={t("form.placeholders.email")}
+          placeholder="john@gmail.com"
           error={errors.email}
           register={register}
         />

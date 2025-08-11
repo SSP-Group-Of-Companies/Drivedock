@@ -14,6 +14,7 @@ import {
 } from "@/lib/frontendConfigs/applicationFormConfigs/validateEmploymentHistory";
 
 type EmploymentEntry = ApplicationFormPage2Schema["employments"][number];
+const MAX_ENTRIES = 5;
 
 export default function EmploymentSection() {
   const { control, watch } = useFormContext<ApplicationFormPage2Schema>();
@@ -54,6 +55,11 @@ export default function EmploymentSection() {
     if (fields.length === 0) append(createEmptyEmployment());
   }, [append, fields.length]);
 
+  // NEW: if server returned previous entries, show them immediately
+  useEffect(() => {
+    if (fields.length > 1) setShowPrevious(true);
+  }, [fields.length]);
+
   useEffect(() => {
     const current = employments[0];
     if (!current?.from || !current?.to) return;
@@ -63,9 +69,9 @@ export default function EmploymentSection() {
     if (totalMonths > 24 && !hasAutoAddedRef.current) {
       setShowPrevious(true);
       hasAutoAddedRef.current = true;
-      append(createEmptyEmployment());
+      if (fields.length < MAX_ENTRIES) append(createEmptyEmployment());
     }
-  }, [employments, append]);
+  }, [employments, append, fields.length]);
 
   const { timeline, totalDays, totalMonths } =
     calculateTimelineFromCurrent(employments);
@@ -73,6 +79,9 @@ export default function EmploymentSection() {
   const lessThan2Years = totalDays < 730;
 
   const gaps = getEmploymentGaps(timeline);
+
+  const canAddMore = fields.length < MAX_ENTRIES;
+  const previousCount = Math.max(fields.length - 1, 0);
 
   if (!mounted) return null;
   return (
@@ -148,12 +157,17 @@ export default function EmploymentSection() {
                   type="button"
                   onClick={() => {
                     setShowPrevious(true);
-                    if (fields.length < 5) append(createEmptyEmployment());
+                    if (canAddMore) append(createEmptyEmployment());
                   }}
-                  className="mt-2 mx-auto flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 rounded-md transition-colors duration-200 font-medium"
+                  disabled={!canAddMore}
+                  className={`mt-2 mx-auto flex items-center gap-2 px-4 py-2 border rounded-md transition-colors duration-200 font-medium ${
+                    canAddMore
+                      ? "bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200"
+                      : "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                  }`}
                 >
-                  {t("form.step2.page2.actions.addPrevious")} (
-                  {Math.max(fields.length - 1, 0)}/4)
+                  {t("form.step2.page2.actions.addPrevious")} ({previousCount}/
+                  {MAX_ENTRIES - 1})
                 </button>
               </div>
             )}
@@ -178,20 +192,19 @@ export default function EmploymentSection() {
         <button
           type="button"
           onClick={() => {
-            if (fields.length < 5) append(createEmptyEmployment());
+            if (canAddMore) append(createEmptyEmployment());
           }}
-          className="mt-6 mx-auto flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 rounded-md transition-colors duration-200 font-medium"
+          disabled={!canAddMore}
+          className={`mt-6 mx-auto flex items-center gap-2 px-4 py-2 border rounded-md transition-colors duration-200 font-medium ${
+            canAddMore
+              ? "bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200"
+              : "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+          }`}
         >
-          {t("form.step2.page2.actions.addPrevious")} ({fields.length - 1}/4)
+          {t("form.step2.page2.actions.addPrevious")} ({previousCount}/
+          {MAX_ENTRIES - 1})
         </button>
       )}
-
-      {/* Tiny debug helper (optional) */}
-      {/* {process.env.NODE_ENV !== "production" && (
-        <p className="text-xs text-gray-500">
-          Debug: totalDays={totalDays} • totalMonths={totalMonths}
-        </p>
-      )} */}
     </section>
   );
 }

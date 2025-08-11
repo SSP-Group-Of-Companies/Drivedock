@@ -1,99 +1,110 @@
-/**
- * ===============================================================
- * page1Config.ts — Application Form Page 1 (POST/PATCH payload builder)
- * ---------------------------------------------------------------
- * Powers <ContinueButton /> for Page 1.
- *
- * Responsibilities:
- * - Provide RHF field paths for scroll-to-first-error UX
- * - Build JSON payload for both POST (create) and PATCH (update)
- * - Include `applicationType` when company is SSP-Canada (from store)
- *
- * Notes:
- * - Files are uploaded to S3 before submit; we only send { s3Key, url }
- * - Zod handles all validation (including stricter address rules)
- *
- * Owner: SSP Tech Team – Faruq Adebayo Atanda
- * ===============================================================
- */
+// main/src/lib/frontendConfigs/applicationFormConfigs/page1Config.ts
 
 /**
- * page1Config.ts — Application Form Page 1 (POST/PATCH payload builder)
+ * page1ConfigFactory — Application Form Page 1 (POST/PATCH payload builder)
+ * - Factory receives runtime ctx (trackerId, company, prequal, etc.)
+ * - Returns a fully-resolved config (no [id] tokens)
  */
-"use client";
 
+import {
+  BuildPayloadCtx,
+  FormPageConfig,
+  FormPageConfigFactory,
+} from "@/lib/frontendConfigs/formPageConfig.types";
 import { ApplicationFormPage1Schema } from "@/lib/zodSchemas/applicationFormPage1.schema";
-import { FormPageConfig } from "@/lib/frontendConfigs/formPageConfig.types";
 import { ECompanyId } from "@/constants/companies";
 
-export const page1Config: FormPageConfig<ApplicationFormPage1Schema> = {
-  validationFields: (values) => {
-    const fields: string[] = [
-      "firstName",
-      "lastName",
-      "sin",
-      "sinPhoto",
-      "dob",
-      "phoneCell",
-      "canProvideProofOfAge",
-      "email",
-      "emergencyContactName",
-      "emergencyContactPhone",
-      "birthCity",
-      "birthCountry",
-      "birthStateOrProvince",
-      "licenses",
-      "addresses",
-    ];
+export const page1ConfigFactory: FormPageConfigFactory<
+  ApplicationFormPage1Schema
+> = (ctx: BuildPayloadCtx): FormPageConfig<ApplicationFormPage1Schema> => {
+  const id = ctx.effectiveTrackerId; // undefined on true fresh POST (first submit)
 
-    values.licenses?.forEach((_, index) => {
-      fields.push(`licenses.${index}.licenseNumber`);
-      fields.push(`licenses.${index}.licenseStateOrProvince`);
-      fields.push(`licenses.${index}.licenseExpiry`);
-      fields.push(`licenses.${index}.licenseType`);
-      if (index === 0) {
-        fields.push(`licenses.${index}.licenseFrontPhoto`);
-        fields.push(`licenses.${index}.licenseBackPhoto`);
+  return {
+    validationFields: (values) => {
+      const fields: string[] = [
+        // Personal
+        "firstName",
+        "lastName",
+        "sin",
+        // include nested photo keys so RHF can surface specific errors
+        "sinPhoto.s3Key",
+        "sinPhoto.url",
+        "dob",
+        "phoneCell",
+        "canProvideProofOfAge",
+        "email",
+        "emergencyContactName",
+        "emergencyContactPhone",
+
+        // Birth
+        "birthCity",
+        "birthCountry",
+        "birthStateOrProvince",
+
+        // Root collections for any superRefine banner placement
+        "licenses",
+        "addresses",
+      ];
+
+      // Validate each visible license row (ensure first has photos)
+      values.licenses?.forEach((_lic, index) => {
+        fields.push(
+          `licenses.${index}.licenseNumber`,
+          `licenses.${index}.licenseStateOrProvince`,
+          `licenses.${index}.licenseExpiry`,
+          `licenses.${index}.licenseType`
+        );
+        if (index === 0) {
+          fields.push(
+            `licenses.0.licenseFrontPhoto.s3Key`,
+            `licenses.0.licenseFrontPhoto.url`,
+            `licenses.0.licenseBackPhoto.s3Key`,
+            `licenses.0.licenseBackPhoto.url`
+          );
+        }
+      });
+
+      // Validate each visible address row
+      values.addresses?.forEach((_addr, index) => {
+        fields.push(
+          `addresses.${index}.address`,
+          `addresses.${index}.city`,
+          `addresses.${index}.stateOrProvince`,
+          `addresses.${index}.postalCode`,
+          `addresses.${index}.from`,
+          `addresses.${index}.to`
+        );
+      });
+
+      return fields;
+    },
+
+    validateBusinessRules: () => null,
+
+    buildPayload: (values, ctx2) => {
+      // Normalize SIN to digits only
+      const cleanedSin = values.sin?.replace(/\D/g, "") || "";
+      const cleaned = { ...values, sin: cleanedSin };
+
+      // POST (new): include prequalifications + company/appType + page1 slice
+      if (!ctx2.isPatch) {
+        return {
+          applicationFormPage1: cleaned,
+          prequalifications: ctx2.prequalifications,
+          companyId: ctx2.companyId,
+          ...(ctx2.companyId === ECompanyId.SSP_CA && ctx2.applicationType
+            ? { applicationType: ctx2.applicationType }
+            : {}),
+        };
       }
-    });
 
-    values.addresses?.forEach((_, index) => {
-      fields.push(`addresses.${index}.address`);
-      fields.push(`addresses.${index}.city`);
-      fields.push(`addresses.${index}.stateOrProvince`);
-      fields.push(`addresses.${index}.postalCode`);
-      fields.push(`addresses.${index}.from`);
-      fields.push(`addresses.${index}.to`);
-    });
-
-    return fields;
-  },
-
-  validateBusinessRules: () => null,
-
-  buildPayload: (values, ctx) => {
-    const cleanedSin = values.sin?.replace(/\D/g, "") || "";
-
-    const cleaned = {
-      ...values,
-      sin: cleanedSin,
-    };
-
-    // Decide shape by route—not store
-    if (ctx.isPatch) {
+      // PATCH (resume)
       return { page1: cleaned };
-    }
+    },
 
-    return {
-      applicationFormPage1: cleaned,
-      prequalifications: ctx.prequalifications,
-      companyId: ctx.companyId,
-      ...(ctx.companyId === ECompanyId.SSP_CA && ctx.applicationType
-        ? { applicationType: ctx.applicationType }
-        : {}),
-    };
-  },
+    // Fully resolved fallback; on POST we still prefer server nextUrl
+    nextRoute: id ? `/onboarding/${id}/application-form/page-2` : "/onboarding", // harmless fallback for first-time POST (no id yet)
 
-  nextRoute: "/onboarding/[id]/application-form/page-2",
-  submitSegment: "page-1",
+    submitSegment: "page-1",
+  };
 };
