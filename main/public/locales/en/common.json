@@ -89,6 +89,11 @@
 
   "form": {
     "subtitle": "All information must be answered truthfully. Liability falls on the applicant.",
+    
+    "helpPopups": {
+      "page2SafetySensitive": "As part of our regulatory compliance process, please confirm the following information:\n\nCross-Border Driving: Please indicate \"Yes\" if you have previously operated a commercial vehicle across the U.S.–Canada border. If not, please indicate \"No.\"\n\nDOT-Regulated Drug Testing: Please indicate \"Yes\" if your previous employer conducted drug and alcohol testing in accordance with U.S. Department of Transportation (DOT) regulations. If not, please indicate \"No.\"\n\nYour responses help us ensure compliance with applicable transportation and safety regulations. If you have any questions or need clarification, feel free to reach out.",
+      "page3CanadianHours": "As part of the Hours of Service (HOS) compliance requirements under Canadian regulations, please provide the number of on-duty hours (including driving) you completed in the last 14 days with your previous employer.\n\nKindly ensure the following:\n• Indicate the number of hours worked for each day in the 14-day period.\n• Include the total hours worked over the entire 14 days.\n• If you were on vacation, off-duty, or did not work on any day, please indicate that by entering \"0\" or \"nil\" for that day.\n\nThis information is essential for us to accurately track your compliance with Canadian HOS rules. Thank you for your cooperation."
+    },
     "step1": {
       "title": "Pre-Qualification Form",
       "questions": {
@@ -209,7 +214,7 @@
           "salary": "Salary",
           "reasonForLeaving": "Reason for Leaving...",
           "subjectToFMCSR": "Were you subject to FMCSR (Federal Motor Carrier Safety Regulations)?",
-          "safetySensitiveFunction": "Did you perform safety-sensitive functions?"
+          "safetySensitiveFunction": "Was your job designated as a safety sensitive function in any DOT regulated mode subject to the drug and alcohol testing requirement of 49 CFR part 40."
         },
         "actions": {
           "addPrevious": "Add Previous Employer",
@@ -221,7 +226,37 @@
         },
         "gapDetected": "Gap of {days} days detected between employments. Please explain:"
       },
-      "page3": {},
+      "page3": {
+        "sections": {
+          "accidentHistory": "Accident Report",
+          "trafficConvictions": "Traffic Convictions",
+          "education": "Education",
+          "canadianHours": "Canadian Hours of Service"
+        },
+        "instructionsCanadianHours": "INSTRUCTIONS: Motor carriers when using a driver for the first time or intermittently shall obtain from the driver a signed statement giving the driver's total time on –duty during the immediately preceding 14 days and time at which such driver was last relieved from duty prior to beginning work for such carrier (see Section 395.8(j)(2) Federal Motor Carrier Safety Regulations). NOTE: Hours for any compensated work during the preceding 14 days, including work for a non- motor carrier entity, must be recorded on this form.",
+        "instructionsAccidentHistory": "Please provide details of any accidents history you have been involved. If you have no accidents to report, you may leave all fields empty.",
+        "instructionsTrafficConvictions": "Please provide details of any traffic convictions you have received forfeitures, and Warnings for the past three years (other than parking violations). If you have no convictions to report, you may leave all fields empty.",
+        "instructionsEducation": "Please indicate the number of years completed in each education level. Select 0 if you did not attend that level.",
+        "fields": {
+          "date": "Date",
+          "natureOfAccident": "Nature of Accident (Head-on, Rear end, upset, NAF, etc...",
+          "fatalities": "Fatalities",
+          "injuries": "Injuries",
+          "location": "Location",
+          "charge": "Charge",
+          "penalty": "Penalty",
+          "gradeSchool": "Grade School (yrs)",
+          "college": "College (yrs)",
+          "postGraduate": "Post Graduate (yrs)",
+          "dayOneDate": "Date Day One (YYYY-MM-DD)",
+          "totalHours": "Total Hours"
+        },
+
+        "actions": {
+          "addRow": "Add Row",
+          "remove": "Remove"
+        }
+      },
       "page4": {},
       "page": {},
       "page6": {}

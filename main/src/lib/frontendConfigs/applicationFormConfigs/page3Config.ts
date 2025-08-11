@@ -1,36 +1,95 @@
-// src/lib/frontendConfigs/applicationFormConfigs/page3Config.ts
+// main/src/lib/frontendConfigs/applicationFormConfigs/page3Config.ts
 
-"use client";
-
-/**
- * page3Config.ts
- *
- * Placeholder config for Application Form Page 3 in DriveDock.
- * Should be replaced with real fields when the page is implemented.
- *
- * Required by the <ContinueButton /> component to support config-driven submission.
- */
-
+import { FormPageConfig, FormPageConfigFactory } from "../formPageConfig.types";
 import { ApplicationFormPage3Schema } from "@/lib/zodSchemas/applicationFormPage3.schema";
-import { FormPageConfig } from "../formPageConfig.types";
 
-export const page3Config: FormPageConfig<ApplicationFormPage3Schema> = {
-  validationFields: (_values) => {
-    const fields: string[] = [
-      "emergencyContactName",
-      "emergencyContactPhone",
-      "birthPlace",
-      "citizenshipStatus",
-    ];
-    return fields;
-  },
+export const page3ConfigFactory: FormPageConfigFactory<
+  ApplicationFormPage3Schema
+> = (ctx): FormPageConfig<ApplicationFormPage3Schema> => {
+  const id = ctx.effectiveTrackerId!; // Page 3 should always have an ID
 
-  buildPayload: (values) => {
-    return {
-      page3: values,
-    };
-  },
+  return {
+    validationFields: (values) => {
+      const fields: string[] = [
+        // Education
+        "education.gradeSchool",
+        "education.college", 
+        "education.postGraduate",
+        
+        // Canadian Hours of Service
+        "canadianHoursOfService.dayOneDate",
+        "canadianHoursOfService.dailyHours",
+      ];
 
-  nextRoute: "/onboarding/[id]/application-form/page-4",
-  submitSegment: "page-3",
+      // Validate accident entries - if any field has data, all fields become required
+      values.accidentHistory?.forEach((accident, index) => {
+        const hasAnyData = accident.date || accident.natureOfAccident || 
+                          accident.fatalities > 0 || accident.injuries > 0;
+        
+        if (hasAnyData) {
+          // If any field has data, all fields in this row must be completed
+          fields.push(
+            `accidentHistory.${index}.date`,
+            `accidentHistory.${index}.natureOfAccident`,
+            `accidentHistory.${index}.fatalities`,
+            `accidentHistory.${index}.injuries`
+          );
+        }
+      });
+
+      // Validate traffic conviction entries - if any field has data, all fields become required
+      values.trafficConvictions?.forEach((conviction, index) => {
+        const hasAnyData = conviction.date || conviction.location || 
+                          conviction.charge || conviction.penalty;
+        
+        if (hasAnyData) {
+          // If any field has data, all fields in this row must be completed
+          fields.push(
+            `trafficConvictions.${index}.date`,
+            `trafficConvictions.${index}.location`,
+            `trafficConvictions.${index}.charge`,
+            `trafficConvictions.${index}.penalty`
+          );
+        }
+      });
+
+      // Validate each daily hours entry (14 days as per backend schema)
+      values.canadianHoursOfService?.dailyHours?.forEach((_day, index) => {
+        fields.push(`canadianHoursOfService.dailyHours.${index}.hours`);
+      });
+
+      return fields;
+    },
+
+    validateBusinessRules: () => null,
+
+    buildPayload: (values) => {
+      // Filter out empty accident entries - only send entries with actual data
+      const filteredAccidentHistory = values.accidentHistory?.filter(accident => {
+        return accident.date || accident.natureOfAccident || 
+               accident.fatalities > 0 || accident.injuries > 0;
+      }) || [];
+
+      // Filter out empty traffic conviction entries - only send entries with actual data
+      const filteredTrafficConvictions = values.trafficConvictions?.filter(conviction => {
+        return conviction.date || conviction.location || 
+               conviction.charge || conviction.penalty;
+      }) || [];
+
+      // Build the payload with filtered arrays
+      const payload = {
+        page3: {
+          ...values,
+          accidentHistory: filteredAccidentHistory,
+          trafficConvictions: filteredTrafficConvictions,
+        }
+      };
+
+      return payload;
+    },
+
+    // Fully resolved fallback (no [id] token)
+    nextRoute: `/onboarding/${id}/application-form/page-4`,
+    submitSegment: "page-3",
+  };
 };

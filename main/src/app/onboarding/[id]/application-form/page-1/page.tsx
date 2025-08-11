@@ -94,9 +94,9 @@ const EMPTY_DEFAULTS: ApplicationFormPage1Schema = {
 export default async function Page1ServerWrapper({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const trackerId = params.id;
+  const { id: trackerId } = await params;
   const fetched = await fetchPage1Data(trackerId);
   const pageData = fetched?.page1;
   const trackerContextFromGet = fetched?.trackerContext ?? null;

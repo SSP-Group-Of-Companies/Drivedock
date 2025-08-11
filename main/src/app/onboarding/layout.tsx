@@ -12,6 +12,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { AlertCircle, ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 import LanguageDropdown from "@/components/shared/LanguageDropdown";
+import useMounted from "@/hooks/useMounted";
 
 export default function FormLayout({
   children,
@@ -24,6 +25,7 @@ export default function FormLayout({
   const params = useParams();
   const [showModal, setShowModal] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const mounted = useMounted();
 
   // ✅ Smart back navigation that preserves tracker ID
   const handleBackClick = () => {
@@ -68,6 +70,8 @@ export default function FormLayout({
   };
 
   const currentStep = getCurrentStep();
+
+  if (!mounted) return null;
 
   return (
     <>

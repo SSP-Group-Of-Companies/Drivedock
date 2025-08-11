@@ -52,6 +52,7 @@ export default function CompanyLogoHeader({ logoOnly = false }: Props) {
           alt={selectedCompany.name}
           width={160}
           height={60}
+          priority
           className="object-contain w-auto h-12 sm:h-16"
         />
         {/* Company name (optional) */}

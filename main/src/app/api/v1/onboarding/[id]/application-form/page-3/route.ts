@@ -41,7 +41,7 @@ export const PATCH = async (
       return errorResponse(400, "please complete previous step first");
 
     // update page 3
-    appFormDoc.page3 = body;
+    appFormDoc.page3 = body.page3 || body;
     await appFormDoc.save();
 
     // Update onboarding tracker

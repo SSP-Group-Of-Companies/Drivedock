@@ -68,9 +68,9 @@ function emptyEmploymentRow() {
 export default async function ApplicationFormPage2({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  const trackerId = params.id;
+  const { id: trackerId } = await params;
 
   const fetched = await fetchPage2Data(trackerId);
   const page2 = fetched?.page2;

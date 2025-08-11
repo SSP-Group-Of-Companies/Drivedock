@@ -166,12 +166,12 @@ export interface ICanadianHoursOfService {
   dailyHours: ICanadianDailyHours[];
   totalHours?: number; // Computed/virtual on server
 }
-
 export interface IApplicationFormPage3 {
   accidentHistory: IAccidentEntry[];
   trafficConvictions: ITrafficConvictionEntry[];
   education: IEducation;
   canadianHoursOfService: ICanadianHoursOfService;
+  // dateDayOne intentionally removed in favor of canadianHoursOfService.dayOneDate
 }
 
 /* =========================
