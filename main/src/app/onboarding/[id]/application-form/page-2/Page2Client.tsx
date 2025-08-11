@@ -2,15 +2,10 @@
 "use client";
 
 /**
- * ===============================================================
- * DriveDock Onboarding — Page 2 Client (Employment History)
- * ---------------------------------------------------------------
- * - RHF + Zod for validation
- * - Uses page2Config + <ContinueButton /> for PATCH flow
- * - Form submit is prevented; ContinueButton handles submission
- *
- * Owner: SSP Tech Team — Faruq Adebayo Atanda
- * ===============================================================
+ * Page 2 Client (Employment History)
+ * - RHF + Zod
+ * - Uses page2ConfigFactory + <ContinueButton />
+ * - Hydrates tracker store from GET for no-op continue
  */
 
 import { FormProvider, useForm } from "react-hook-form";
@@ -22,16 +17,21 @@ import {
 
 import EmploymentSection from "./components/EmploymentSection";
 import ContinueButton from "@/app/onboarding/[id]/ContinueButton";
-import { page2Config } from "@/lib/frontendConfigs/applicationFormConfigs/page2Config";
+import { page2ConfigFactory } from "@/lib/frontendConfigs/applicationFormConfigs/page2Config";
+import { useEffect } from "react";
+import { useOnboardingTracker } from "@/store/useOnboardingTracker";
+import type { ITrackerContext } from "@/types/onboardingTracker.type";
 
 type Page2ClientProps = {
   defaultValues: ApplicationFormPage2Schema;
   trackerId: string;
+  trackerContextFromGet?: ITrackerContext | null;
 };
 
 export default function Page2Client({
   defaultValues,
   trackerId,
+  trackerContextFromGet,
 }: Page2ClientProps) {
   const methods = useForm<ApplicationFormPage2Schema>({
     resolver: zodResolver(applicationFormPage2Schema),
@@ -39,18 +39,27 @@ export default function Page2Client({
     defaultValues,
   });
 
+  const { setTracker } = useOnboardingTracker();
+  useEffect(() => {
+    if (trackerContextFromGet) setTracker(trackerContextFromGet);
+  }, [trackerContextFromGet, setTracker]);
+
   return (
     <FormProvider {...methods}>
       <form
         className="space-y-8"
-        // Prevent native form submit; ContinueButton drives the flow
         onSubmit={(e) => e.preventDefault()}
         noValidate
       >
         <EmploymentSection />
 
         <ContinueButton<ApplicationFormPage2Schema>
-          config={page2Config}
+          config={(ctx) =>
+            page2ConfigFactory({
+              ...ctx,
+              effectiveTrackerId: trackerId,
+            })
+          }
           trackerId={trackerId}
         />
       </form>

@@ -1,23 +1,3 @@
-/**
- * submitFormStep.ts
- *
- * Submits a form step (POST or PATCH) to the appropriate API endpoint.
- * Automatically detects whether it's an initial submission or a resume/update.
- *
- * Features:
- * - POST to `/api/v1/onboarding/application-form` for new applicants
- * - PATCH to `/api/v1/onboarding/[trackerId]/application-form/page-X` for resumes
- * - Automatically handles file vs JSON payload formats
- * - Handles "resume with tracker" flow if record already exists
- *
- * Returns:
- * - `trackerContext` from server response (used to update Zustand + route forward)
- *
- * Used in:
- * - <ContinueButton /> component
- * - All form pages (Page 1–5, Policies, etc.)
- */
-
 import { ITrackerContext } from "@/types/onboardingTracker.type";
 
 type Scope = "application-form" | "prequalifications" | "policies-consents";
@@ -31,7 +11,7 @@ export async function submitFormStep({
 }: {
   json: any;
   tracker: ITrackerContext | null;
-  submitSegment: string; // e.g. "page-1", "page-2"
+  submitSegment: string;
   urlTrackerId?: string;
   scope?: Scope;
 }): Promise<{ trackerContext?: ITrackerContext; nextUrl?: string }> {
@@ -39,7 +19,7 @@ export async function submitFormStep({
   const isPatch = !!id;
 
   const url = !isPatch
-    ? `/api/v1/onboarding/application-form` // only scope that supports POST
+    ? "/api/v1/onboarding/application-form"
     : scope === "application-form"
     ? `/api/v1/onboarding/${id}/application-form/${submitSegment}`
     : `/api/v1/onboarding/${id}/${scope}`;

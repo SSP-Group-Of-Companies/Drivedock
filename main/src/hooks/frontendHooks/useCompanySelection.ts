@@ -53,8 +53,8 @@ import { persist } from "zustand/middleware";
  * This is the single source of truth for these values.
  */
 export enum ECompanyApplicationType {
-  FLATBED = "Flatbed",
-  DRY_VAN = "Dry Van",
+  FLATBED = "FLAT_BED",
+  DRY_VAN = "DRY_VAN",
 }
 
 /**

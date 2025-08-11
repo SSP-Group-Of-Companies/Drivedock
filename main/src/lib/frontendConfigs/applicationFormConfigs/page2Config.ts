@@ -1,61 +1,59 @@
-// page2Config.ts
-import { FormPageConfig } from "../formPageConfig.types";
+// main/src/lib/frontendConfigs/applicationFormConfigs/page2Config.ts
+
+import { FormPageConfig, FormPageConfigFactory } from "../formPageConfig.types";
 import { ApplicationFormPage2Schema } from "@/lib/zodSchemas/applicationFormPage2.schema";
-import { IOnboardingTracker } from "@/types/onboardingTracker.type";
 
-type Page2FormPageConfig = Omit<
-  FormPageConfig<ApplicationFormPage2Schema>,
-  "buildPayload"
-> & {
-  buildPayload: (
-    values: ApplicationFormPage2Schema,
-    tracker?: IOnboardingTracker
-  ) => Record<string, unknown>;
-};
+export const page2ConfigFactory: FormPageConfigFactory<
+  ApplicationFormPage2Schema
+> = (ctx): FormPageConfig<ApplicationFormPage2Schema> => {
+  const id = ctx.effectiveTrackerId!; // Page 2+ should always have an ID
 
-export const page2Config: Page2FormPageConfig = {
-  validationFields: (values) => {
-    // Include the array root so Zod superRefine runs and can emit the top summary error.
-    const fields: string[] = ["employments"];
+  return {
+    validationFields: (values) => {
+      // Include array root so Zod superRefine can attach a top-level error.
+      const fields: string[] = ["employments"];
 
-    values.employments.forEach((e, i) => {
-      // Validate only rendered rows (optional optimization if you hide rows)
-      const rendered = document.querySelector(
-        `[data-field="employments.${i}.employerName"]`
-      );
-      if (!rendered) return;
+      values.employments.forEach((e, i) => {
+        // (Optional) only validate rows currently rendered
+        const rendered =
+          typeof document !== "undefined"
+            ? document.querySelector(
+                `[data-field="employments.${i}.employerName"]`
+              )
+            : null;
+        if (!rendered) return;
 
-      fields.push(
-        `employments.${i}.employerName`,
-        `employments.${i}.supervisorName`,
-        `employments.${i}.address`,
-        `employments.${i}.postalCode`,
-        `employments.${i}.city`,
-        `employments.${i}.stateOrProvince`,
-        `employments.${i}.phone1`,
-        `employments.${i}.email`,
-        `employments.${i}.positionHeld`,
-        `employments.${i}.from`,
-        `employments.${i}.to`,
-        `employments.${i}.salary`,
-        `employments.${i}.reasonForLeaving`,
-        `employments.${i}.subjectToFMCSR`,
-        `employments.${i}.safetySensitiveFunction`
-      );
+        fields.push(
+          `employments.${i}.employerName`,
+          `employments.${i}.supervisorName`,
+          `employments.${i}.address`,
+          `employments.${i}.postalCode`,
+          `employments.${i}.city`,
+          `employments.${i}.stateOrProvince`,
+          `employments.${i}.phone1`,
+          `employments.${i}.email`,
+          `employments.${i}.positionHeld`,
+          `employments.${i}.from`,
+          `employments.${i}.to`,
+          `employments.${i}.salary`,
+          `employments.${i}.reasonForLeaving`,
+          `employments.${i}.subjectToFMCSR`,
+          `employments.${i}.safetySensitiveFunction`
+        );
 
-      if (typeof e.gapExplanationBefore !== "undefined") {
-        fields.push(`employments.${i}.gapExplanationBefore`);
-      }
-    });
+        if (typeof e.gapExplanationBefore !== "undefined") {
+          fields.push(`employments.${i}.gapExplanationBefore`);
+        }
+      });
 
-    return fields;
-  },
+      return fields;
+    },
 
-  // Backend expects { employments: [...] } for PATCH page-2
-  buildPayload: (values) => {
-    return { employments: values.employments };
-  },
+    // Backend expects { employments: [...] } for PATCH /page-2
+    buildPayload: (values) => ({ employments: values.employments }),
 
-  nextRoute: "/onboarding/[id]/application-form/page-3",
-  submitSegment: "page-2",
+    // Fully resolved fallback (no [id] token)
+    nextRoute: `/onboarding/${id}/application-form/page-3`,
+    submitSegment: "page-2",
+  };
 };
