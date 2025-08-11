@@ -223,8 +223,24 @@
       },
       "page3": {},
       "page4": {},
-      "page": {},
+      "page5": {
+        "title": "Pre-Employment Competency Questions",
+        "lockedNote": "You have already submitted your answers and this test cannot be retaken.",
+        "scoreLabel": "Your score is",
+        "note": "All incorrect answers have been explained to me and I now understand them better.",
+        "modal": {
+          "finalConfirmation": "Final Confirmation",
+          "confirmMessage": "Competency questions cannot be retaken. Are you sure you want to proceed?",
+          "cancel": "Cancel",
+          "confirm": "Confirm"
+        }
+      },
       "page6": {}
+    },
+
+    "step3": {
+      "title": "Policies & Consents",
+      "sendToEmail": "Send me the signed documents to my email when the application process is complete."
     },
 
     "errors": {

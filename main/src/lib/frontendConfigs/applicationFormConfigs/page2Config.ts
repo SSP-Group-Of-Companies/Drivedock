@@ -1,28 +1,16 @@
-// page2Config.ts
+// main/src/lib/frontendConfigs/applicationFormConfigs/page2Config.ts
+
 import { FormPageConfig } from "../formPageConfig.types";
 import { ApplicationFormPage2Schema } from "@/lib/zodSchemas/applicationFormPage2.schema";
-import { IOnboardingTracker } from "@/types/onboardingTracker.type";
 
-type Page2FormPageConfig = Omit<
-  FormPageConfig<ApplicationFormPage2Schema>,
-  "buildPayload"
-> & {
-  buildPayload: (
-    values: ApplicationFormPage2Schema,
-    tracker?: IOnboardingTracker
-  ) => Record<string, unknown>;
-};
-
-export const page2Config: Page2FormPageConfig = {
+export const page2Config: FormPageConfig<ApplicationFormPage2Schema> = {
   validationFields: (values) => {
-    // Include the array root so Zod superRefine runs and can emit the top summary error.
+    // Include array root so Zod superRefine can attach a top-level error.
     const fields: string[] = ["employments"];
 
     values.employments.forEach((e, i) => {
-      // Validate only rendered rows (optional optimization if you hide rows)
-      const rendered = document.querySelector(
-        `[data-field="employments.${i}.employerName"]`
-      );
+      // (Optional) only validate rows currently rendered
+      const rendered = document.querySelector(`[data-field="employments.${i}.employerName"]`);
       if (!rendered) return;
 
       fields.push(
@@ -51,8 +39,9 @@ export const page2Config: Page2FormPageConfig = {
     return fields;
   },
 
-  // Backend expects { employments: [...] } for PATCH page-2
-  buildPayload: (values) => {
+  // Backend expects { employments: [...] } for PATCH /page-2
+  // Keep the ctx param to satisfy the shared interface (even if unused here).
+  buildPayload: (values, _ctx) => {
     return { employments: values.employments };
   },
 

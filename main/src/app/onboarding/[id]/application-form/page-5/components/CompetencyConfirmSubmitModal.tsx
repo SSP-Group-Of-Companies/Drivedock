@@ -21,15 +21,15 @@ export default function CompetencyConfirmSubmitModal({ open, onCancel, onConfirm
             <Dialog.Panel className="w-full max-w-md rounded-lg shadow-xl overflow-hidden bg-white">
               <motion.div initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 30, opacity: 0 }} transition={{ duration: 0.2 }}>
                 <div className="p-6">
-                  <DialogTitle className="text-lg font-bold text-gray-800 mb-4">{t("form.step5.modal.finalConfirmation")}</DialogTitle>
-                  <Description className="text-sm text-gray-600 mb-6">{t("form.step5.modal.confirmMessage")}</Description>
+                  <DialogTitle className="text-lg font-bold text-gray-800 mb-4">{t("form.step2.page5.modal.finalConfirmation")}</DialogTitle>
+                  <Description className="text-sm text-gray-600 mb-6">{t("form.step2.page5.modal.confirmMessage")}</Description>
 
                   <div className="flex justify-end gap-4">
                     <button onClick={onCancel} className="px-4 py-2 text-sm font-semibold rounded-md border border-gray-300 hover:bg-gray-100">
-                      {t("form.step5.modal.cancel")}
+                      {t("form.step2.page5.modal.cancel")}
                     </button>
                     <button onClick={onConfirm} className="px-4 py-2 text-sm font-semibold rounded-md bg-green-600 text-white hover:bg-green-500">
-                      {t("form.step5.modal.confirm")}
+                      {t("form.step2.page5.modal.confirm")}
                     </button>
                   </div>
                 </div>

@@ -3,17 +3,14 @@ import { ApplicationFormPage5Schema } from "@/lib/zodSchemas/applicationFormPage
 
 // No onboardingTracker is needed in payload
 export const page5Config: FormPageConfig<ApplicationFormPage5Schema> = {
-    validationFields: (values) => {
-        return values.answers.map((_, i) => `answers.${i}.answerId`);
-    },
+  validationFields: (values) => {
+    return values.answers.map((_, i) => `answers.${i}.answerId`);
+  },
 
-    buildPayload: (values,
-        _prequalifications,
-        _companyId,
-        _tracker) => {
-        return values;
-    },
+  buildPayload: (values) => {
+    return values;
+  },
 
-    nextRoute: "/onboarding/[id]/policies-consents",
-    submitSegment: "page-5",
+  nextRoute: "/onboarding/[id]/policies-consents",
+  submitSegment: "page-5",
 };

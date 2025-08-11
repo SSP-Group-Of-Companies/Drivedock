@@ -50,14 +50,14 @@ export default function Page5Client({ data, trackerId }: Page5ClientProps) {
 
   return (
     <FormProvider {...methods}>
-      <h2 className="text-lg text-center font-semibold">{t("form.step5.title")}</h2>
-      {score !== null && <div className="text-sm text-center text-gray-500 bg-gray-50 border border-gray-200 rounded-md py-2 px-4 max-w-xl mx-auto">{t("form.step5.lockedNote")}</div>}
+      <h2 className="text-lg text-center font-semibold">{t("form.step2.page5.title")}</h2>
+      {score !== null && <div className="text-sm text-center text-gray-500 bg-gray-50 border border-gray-200 rounded-md py-2 px-4 max-w-xl mx-auto">{t("form.step2.page5.lockedNote")}</div>}
       <form className="space-y-8" noValidate>
         <CompetencyQuestionList disabled={score !== null} />
 
         {score !== null && (
           <p className="text-center text-green-700 font-semibold">
-            {t("form.step5.scoreLabel")} {score}/21 ({percentage}%)
+            {t("form.step2.page5.scoreLabel")} {score}/21 ({percentage}%)
           </p>
         )}
 
@@ -73,7 +73,7 @@ export default function Page5Client({ data, trackerId }: Page5ClientProps) {
                   setHighlightError(false); // remove error on check
                 }}
               />
-              <span>{t("form.step5.note")}</span>
+              <span>{t("form.step2.page5.note")}</span>
             </label>
           </div>
         )}

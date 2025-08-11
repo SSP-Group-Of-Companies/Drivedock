@@ -48,10 +48,7 @@ type ContinueButtonProps<T extends FieldValues> = {
   trackerId?: string;
 };
 
-export default function ContinueButton<T extends FieldValues>({
-  config,
-  trackerId,
-}: ContinueButtonProps<T>): ReactNode {
+export default function ContinueButton<T extends FieldValues>({ config, trackerId }: ContinueButtonProps<T>): ReactNode {
   const {
     getValues,
     trigger,
@@ -75,9 +72,7 @@ export default function ContinueButton<T extends FieldValues>({
     const values = getValues();
 
     const fieldsToValidate = config.validationFields(values);
-    const isValid = await trigger(
-      fieldsToValidate as Parameters<typeof trigger>[0]
-    );
+    const isValid = await trigger(fieldsToValidate as Parameters<typeof trigger>[0]);
     if (!isValid) {
       handleFormError(errors);
       return;
@@ -97,9 +92,7 @@ export default function ContinueButton<T extends FieldValues>({
 
     if (isPost) {
       if (!prequalifications?.completed) {
-        alert(
-          "Prequalification data is missing. Please restart the application."
-        );
+        alert("Prequalification data is missing. Please restart the application.");
         return;
       }
       const companyId = selectedCompany?.id;
@@ -115,9 +108,7 @@ export default function ContinueButton<T extends FieldValues>({
       const jsonPayload = config.buildPayload(values, {
         prequalifications: prequalifications ?? undefined,
         companyId: selectedCompany?.id,
-        applicationType: selectedCompany?.type as
-          | ECompanyApplicationType
-          | undefined,
+        applicationType: selectedCompany?.type as ECompanyApplicationType | undefined,
         tracker,
         isPatch: !isPost, // << NEW
         effectiveTrackerId, // << NEW
@@ -131,17 +122,12 @@ export default function ContinueButton<T extends FieldValues>({
       });
 
       if (isPost) {
-        if (!trackerContext?.id)
-          throw new Error("Tracker not returned from POST");
+        if (!trackerContext?.id) throw new Error("Tracker not returned from POST");
         setTracker(trackerContext);
         clearData();
-        router.push(
-          nextUrl ?? config.nextRoute.replace("[id]", trackerContext.id)
-        );
+        router.push(nextUrl ?? config.nextRoute.replace("[id]", trackerContext.id));
       } else {
-        router.push(
-          nextUrl ?? config.nextRoute.replace("[id]", effectiveTrackerId!)
-        );
+        router.push(nextUrl ?? config.nextRoute.replace("[id]", effectiveTrackerId!));
         if (!nextUrl) router.refresh();
       }
     } catch (err) {
@@ -161,10 +147,7 @@ export default function ContinueButton<T extends FieldValues>({
         disabled={submitting}
         onClick={onSubmit}
         className={`px-8 py-2 mt-6 rounded-full font-semibold transition-colors shadow-md flex items-center gap-2
-          ${submitting
-            ? "bg-gray-400 text-white cursor-not-allowed"
-            : "bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 text-white hover:opacity-90"
-          }
+          ${submitting ? "bg-gray-400 text-white cursor-not-allowed" : "bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 text-white hover:opacity-90"}
         `}
       >
         {submitting ? t("form.submitting") : t("form.continue")}
