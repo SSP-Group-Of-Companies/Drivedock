@@ -163,7 +163,7 @@ export default function FastCardSection({ isCanadian }: { isCanadian: boolean })
             {frontStatus === "error" && <p className="text-red-500 text-xs mt-1">{frontMsg}</p>}
             {frontStatus === "idle" && frontMsg && <p className="text-green-600 text-xs mt-1">{frontMsg}</p>}
 
-            {/* 🔴 show Zod error for front photo */}
+            {/* show Zod error for front photo */}
             {fcErr.fastCardFrontPhoto?.message && (
               <p className="text-red-500 text-xs mt-1" role="alert">
                 {fcErr.fastCardFrontPhoto.message}

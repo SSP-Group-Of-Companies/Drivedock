@@ -2,16 +2,13 @@
   "navbar": {
     "backButton": "Retour"
   },
-
   "footer": {
     "rights": "Tous droits réservés.",
     "tagline": "DriveDock – Plateforme numérique d’intégration des chauffeurs"
   },
-
   "welcome": {
     "heading": "Prenez la route avec SSP",
     "description": "Votre plateforme d’intégration numérique pour rejoindre SSP Truck Line. Remplissez vos documents d’embauche rapidement et en toute sécurité.",
-
     "features": {
       "language": {
         "title": "Multilingue",
@@ -26,7 +23,6 @@
         "description": "Complétez tous les documents d’embauche via notre assistant guidé en 6 étapes"
       }
     },
-
     "steps": {
       "title": "Processus de candidature",
       "personal": "Renseignements personnels",
@@ -37,7 +33,6 @@
       "review": "Vérification finale"
     }
   },
-
   "start": {
     "heading": "Commencez votre candidature",
     "subheading": "Commencez votre parcours avec SSP Group of Companies",
@@ -47,14 +42,12 @@
     "continue": "Continuer vers la candidature",
     "estimatedTime": "Temps estimé : 15–20 minutes",
     "agreeToTerms": "J’accepte les conditions ci-dessus",
-
     "checklist": {
       "accurateInfo": "Toutes les informations fournies doivent être exactes et véridiques",
       "digitalProcess": "Vous comprenez qu’il s’agit d’un processus de candidature numérique",
       "consentChecks": "Vous consentez aux vérifications des antécédents et du dossier de conduite",
       "termsAgreement": "Vous acceptez les conditions générales de SSP Group of Companies"
     },
-
     "termsModal": {
       "title": "Conditions générales",
       "intro": "En continuant, vous acceptez que :",
@@ -76,7 +69,6 @@
       "agree": "J’accepte"
     }
   },
-
   "company": {
     "heading": "Rejoignez notre famille d’entreprises",
     "subheading": "Choisissez l’entreprise où vous souhaitez bâtir votre carrière de chauffeur",
@@ -87,15 +79,12 @@
     "dropdeck": "Fourgon sec (Dry Van)",
     "cancel": "Annuler"
   },
-
   "form": {
     "subtitle": "Toutes les informations doivent être exactes et véridiques. La responsabilité incombe au candidat.",
-
     "helpPopups": {
       "page2SafetySensitive": "Dans le cadre de notre processus de conformité réglementaire, veuillez confirmer les informations suivantes :\n\nConduite transfrontalière : Indiquez « Oui » si vous avez déjà conduit un véhicule commercial à travers la frontière Canada–États-Unis. Sinon, indiquez « Non ».\n\nDépistage réglementé par le DOT : Indiquez « Oui » si votre ancien employeur effectuait des tests d’alcool et de drogues conformément aux règlements du U.S. Department of Transportation (DOT). Sinon, indiquez « Non ».\n\nVos réponses nous aident à assurer le respect des exigences applicables en matière de transport et de sécurité. Si vous avez des questions ou besoin de précisions, n’hésitez pas à nous contacter.",
       "page3CanadianHours": "Dans le cadre des exigences de conformité aux Heures de service (HOS) selon la réglementation canadienne, veuillez indiquer le nombre d’heures en service (y compris la conduite) que vous avez effectuées au cours des 14 derniers jours chez votre précédent employeur.\n\nVeuillez :\n• Indiquer le nombre d’heures travaillées pour chaque jour de la période de 14 jours.\n• Inclure le total des heures travaillées sur l’ensemble des 14 jours.\n• Si vous étiez en vacances, hors service ou n’avez pas travaillé un jour donné, saisissez « 0 » ou « néant » pour ce jour.\n\nCes renseignements sont essentiels pour vérifier votre conformité aux règles canadiennes des HOS. Merci de votre collaboration."
     },
-
     "step1": {
       "title": "Formulaire de présélection",
       "questions": {
@@ -104,13 +93,12 @@
         "canDriveManual": "Savez-vous conduire une transmission manuelle ?",
         "experienceDrivingTractorTrailer": "Avez-vous au moins 2 ans d’expérience vérifiable en conduite de tracteur/remorque ?",
         "faultAccidentIn3Years": "Avez-vous eu un accident responsable au cours des 3 dernières années ?",
-        "zeroPointsOnAbstract": "Avez-vous des points d’inaptitude sur votre dossier de conduite ?",
+        "zeroPointsOnAbstract": "Avez-vous plus de 0 point sur votre dossier de conduite ?",
         "noUnpardonedCriminalRecord": "Avez-vous un casier judiciaire pour lequel aucun pardon n’a été accordé ?",
         "legalRightToWorkCanada": "Avez-vous le droit légal de travailler au Canada ?",
         "legalRightToWorkUS": "Avez-vous le droit légal de travailler aux États-Unis ?",
         "canCrossBorderUSA": "Pouvez-vous franchir la frontière vers les États-Unis ?",
         "hasFASTCard": "Possédez-vous une carte FAST ?",
-
         "categories": "Catégories",
         "driverType": "Quel type de chauffeur êtes-vous ?",
         "haulPreference": "Que préférez-vous ?",
@@ -118,10 +106,8 @@
         "preferLocalDriving": "Préférez-vous la conduite locale ?",
         "preferSwitching": "Préférez-vous le switching (drop & hook) ?",
         "flatbedExperience": "Avez-vous de l’expérience en plateau (flatbed) ?",
-
         "yes": "Oui",
         "no": "Non",
-
         "company": "Chauffeur employé",
         "owneroperator": "Propriétaire-exploitant",
         "ownerdriver": "Propriétaire-conducteur",
@@ -129,7 +115,6 @@
         "longhaul": "Longue distance",
         "team": "Équipe",
         "single": "Solo",
-
         "flatbedPopup": {
           "title": "Avis",
           "yes": "Votre niveau en plateau sera évalué lors de l’essai de conduite.",
@@ -139,7 +124,6 @@
       },
       "next": "Suivant"
     },
-
     "step2": {
       "title": "Formulaire de candidature",
       "page1": {
@@ -192,7 +176,6 @@
           "removeAddress": "Supprimer l’adresse"
         }
       },
-
       "page2": {
         "sections": {
           "employment": "Historique d’emploi"
@@ -230,7 +213,6 @@
         },
         "gapDetected": "Écart de {days} jours détecté entre les emplois. Veuillez expliquer :"
       },
-
       "page3": {
         "sections": {
           "accidentHistory": "Rapport d’accidents",
@@ -257,18 +239,101 @@
           "totalHours": "Total des heures",
           "dateTitle": "Heures quotidiennes (0-24 heures par jour)"
         },
-
         "actions": {
           "addRow": "Ajouter une ligne",
           "remove": "Supprimer"
         }
       },
-
-      "page4": {},
-      "page5": {},
+      "page4": {
+        "sections": {
+          "criminalRecords": {
+            "title": "Vérification du casier judiciaire",
+            "subtitle": "Les candidats doivent déclarer toutes les condamnations pour des infractions relevant de la loi fédérale canadienne.",
+            "guidance": {
+              "intro": "Veuillez lire attentivement ce qui suit avant de remplir cette section :",
+              "dontDeclareTitle": "Ne déclarez pas les éléments suivants :",
+              "items": {
+                "item1": "Une condamnation pour laquelle vous avez obtenu une suspension du casier (anciennement pardon) conformément à la Loi sur le casier judiciaire ;",
+                "item2": "Une condamnation lorsque vous étiez un « jeune » en vertu de la Loi sur le système de justice pénale pour les adolescents ;",
+                "item3": "Une absolution inconditionnelle ou conditionnelle, conformément à l’article 730 du Code criminel ;",
+                "item4": "Une infraction pour laquelle vous n’avez pas été condamné ;",
+                "item5": "Toute infraction provinciale ou municipale ;",
+                "item6": "Toute accusation traitée à l’extérieur du Canada."
+              }
+            }
+          },
+          "business": {
+            "title": "Détails d’incorporation",
+            "disclaimer": {
+              "text": "Si vous fournissez un détail d’incorporation, vous devez remplir tous les champs et téléverser tous les documents associés. Cela inclut le numéro d’employé, le numéro de TVH, le numéro d’entreprise et les photos requises (incorporation, TVH, bancaire)."
+            }
+          },
+          "additionalInfo": {
+            "title": "Informations supplémentaires"
+          },
+          "fastCard": {
+            "title": "Carte FAST",
+            "disclaimer": "Cette section est facultative. Toutefois, si vous fournissez des informations sur la carte FAST, vous devez remplir tous les champs et téléverser les photos recto et verso."
+          }
+        },
+        "fields": {
+          "dateOfSentence": "Date de la sentence",
+          "offense": "Infraction",
+          "courtLocation": "Lieu du tribunal",
+          "employeeNumber": "Numéro d’employé",
+          "hstNumber": "Numéro de TVH",
+          "businessNumber": "Numéro d’entreprise",
+          "incorporatePhotos": "Photos d’incorporation",
+          "hstPhotos": "Photos du numéro de TVH",
+          "bankingInfoPhotos": "Photos des informations bancaires",
+          "denied": "Vous a-t-on déjà refusé un permis, une licence ou un privilège de conduire un véhicule motorisé ?",
+          "suspended": "Un permis, une licence ou un privilège a-t-il déjà été suspendu ou révoqué ?",
+          "suspensionNotes": "Notes",
+          "testedPositive": "Avez-vous déjà obtenu un résultat positif, ou refusé un test, lors d’un dépistage de drogues ou d’alcool préalable à l’embauche exigé par un employeur auprès duquel vous avez postulé pour un travail de transport sensible à la sécurité relevant des règles de dépistage du DOT au cours des deux dernières années ?",
+          "completedDOT": "Si vous avez répondu OUI, pouvez-vous fournir/obtenir la preuve que vous avez complété les exigences de retour au travail du DOT ?",
+          "hasInsurance": "Avez-vous votre propre assurance contre les accidents ?",
+          "fastNumber": "Numéro de carte FAST",
+          "fastExpiry": "Date d’expiration",
+          "fastFront": "Photo recto",
+          "fastBack": "Photo verso"
+        },
+        "placeholders": {
+          "optionalDetails": "Fournir des détails..."
+        }
+      },
+      "page5": {
+        "title": "Test de compétence",
+        "lockedNote": "Vous avez soumis vos réponses. Le test est maintenant verrouillé.",
+        "scoreLabel": "Score :",
+        "note": "Je confirme avoir examiné mon score et comprends que je ne peux pas repasser ce test.",
+        "modal": {
+          "finalConfirmation": "Confirmation finale",
+          "confirmMessage": "Vous ne pouvez pas repasser ce test de compétence une fois soumis. Êtes-vous sûr de vouloir continuer ?",
+          "cancel": "Annuler",
+          "confirm": "Oui, soumettre"
+        }
+      },
       "page6": {}
     },
-
+    "step3": {
+      "title": "Politiques et consentements",
+      "disclaimer": "En signant ci-dessous, vous acceptez tous les contrats présents et futurs. Veuillez lire attentivement tous les documents. Les informations que vous avez fournies rempliront automatiquement les champs requis.",
+      "sendToEmail": "Envoyez-moi les documents signés par courriel lorsque le processus de candidature est terminé.",
+      "helper": {
+        "drawOrUpload": "Veuillez dessiner votre signature ci-dessus ou téléverser une image de signature."
+      },
+      "status": {
+        "uploading": "Téléversement...",
+        "deleting": "Suppression..."
+      },
+      "messages": {
+        "uploadSuccess": "Téléversement réussi",
+        "deleteFailed": "Échec de la suppression",
+        "needSignature": "Veuillez dessiner ou téléverser une signature avant de continuer.",
+        "uploadFailed": "Échec du téléversement de votre signature. Veuillez réessayer.",
+        "submissionFailed": "Échec de l’envoi."
+      }
+    },
     "errors": {
       "minimum5Years": "Vous devez fournir au moins 5 années d’historique d’adresses.",
       "addressDurationError": "L’historique des adresses doit couvrir les 5 dernières années. Veuillez ajouter une adresse précédente si vous avez vécu à plus d’un endroit."
@@ -276,7 +341,6 @@
     "continue": "Continuer",
     "submitting": "Envoi en cours..."
   },
-
   "resume": {
     "title": "Reprendre votre candidature",
     "description": "Entrez votre NAS pour continuer votre intégration là où vous vous êtes arrêté.",
@@ -286,7 +350,6 @@
     "cancel": "Annuler",
     "continue": "Continuer"
   },
-
   "wizard": {
     "infoTitle": "Que signifient les étapes ?",
     "modalTitle": "Étapes de la candidature",
@@ -315,5 +378,26 @@
       "label": "Étape 6",
       "desc": "Test de dépistage"
     }
+  },
+  "actions": {
+    "addPhoto": "Ajouter une photo",
+    "remove": "Supprimer",
+    "addRow": "Ajouter une ligne",
+    "manage": "Gérer",
+    "close": "Fermer",
+    "done": "Terminé",
+    "replace": "Remplacer",
+    "delete": "Supprimer",
+    "upload": "Téléverser",
+    "clear": "Effacer",
+    "processing": "Traitement...",
+    "submitAnswers": "Soumettre les réponses",
+    "continue": "Continuer"
+  },
+  "photoGroup": {
+    "noPhotosYet": "Aucune photo pour le moment",
+    "managePhotos": "Gérer les photos",
+    "maxReached": "Maximum de {{count}} photos atteint",
+    "moreCount": "+{{count}}"
   }
 }

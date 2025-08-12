@@ -109,10 +109,6 @@ export const applicationFormPage3Schema = new Schema<IApplicationFormPage3>(
       type: canadianHoursSchema,
       required: [true, "Canadian Hours of Service section is required."],
     },
-    dateDayOne: {
-      type: Date,
-      required: [true, "Date for Day One is required."],
-    },
   },
   {
     toJSON: { virtuals: true },

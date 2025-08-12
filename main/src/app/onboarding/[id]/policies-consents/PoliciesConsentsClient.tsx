@@ -197,12 +197,14 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
     <div className="space-y-6">
       <PoliciesPdfGrid pdfs={[hiringPdf!, ...pdfList].filter(Boolean)} onOpenModal={setModalUrl} />
 
-      <p className="text-sm text-gray-600 text-center max-w-xl mx-auto">
-        {t(
-          "form.step3.disclaimer",
-          "By signing below, you agree to all the contract here and future contracts. Please read all documents carefully. Your provided information will automatically prefill required fields."
-        )}
-      </p>
+      <div className="rounded-xl bg-gray-50/60 ring-1 ring-gray-100 p-4">
+        <p className="text-sm text-gray-700 text-center">
+          {t(
+            "form.step3.disclaimer",
+            "By signing below, you agree to all the contract here and future contracts. Please read all documents carefully. Your provided information will automatically prefill required fields."
+          )}
+        </p>
+      </div>
 
       <PoliciesSignatureBox canvasRef={canvasRef} signaturePreview={signaturePreview} onDrawEnd={() => setIsDrawnSignature(true)} />
 

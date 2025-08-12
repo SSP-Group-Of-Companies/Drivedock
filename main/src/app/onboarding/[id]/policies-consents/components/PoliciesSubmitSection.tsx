@@ -18,7 +18,7 @@ export default function PoliciesSubmitSection({ onSubmit, submitting }: Props) {
           ${submitting ? "bg-gray-400 text-white cursor-not-allowed" : "bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 text-white hover:opacity-90"}
         `}
       >
-        {submitting ? t("form.submitting") : t("form.continue")}
+        {submitting ? t("form.submitting", "Submitting...") : t("form.continue", "Continue")}
       </button>
     </div>
   );

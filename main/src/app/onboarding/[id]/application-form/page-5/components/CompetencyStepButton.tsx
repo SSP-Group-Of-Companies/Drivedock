@@ -102,7 +102,7 @@ export default function CompetencyStepButton({ score, setScore, trackerId, justS
             ${loading ? "bg-gray-400 text-white cursor-not-allowed" : "bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 text-white hover:opacity-90"}
         `}
         >
-          {t(loading ? "form.actions.processing" : score === null ? "form.actions.submitAnswers" : "form.continue")}
+          {t(loading ? "actions.processing" : score === null ? "actions.submitAnswers" : "form.continue")}
         </button>
       </div>
 
