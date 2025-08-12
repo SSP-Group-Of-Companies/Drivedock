@@ -1,6 +1,7 @@
+// src/lib/zodSchemas/applicationFormPage4.Schema.ts
 import { z } from "zod";
 import { ECountryCode } from "@/types/shared.types";
-import { IApplicationFormPage4, IFastCard } from "@/types/applicationForm.types";
+import { IApplicationFormPage4 } from "@/types/applicationForm.types";
 
 // Reuse your common helpers
 const dateYMD = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD");
@@ -30,21 +31,14 @@ type FactoryOpts = {
   existing?: Partial<IApplicationFormPage4> | null; // page4 data returned by GET
 };
 
-function countWithExisting<T>(current: T[] | undefined, existing: T[] | undefined) {
-  return (current?.length ?? 0) + (existing?.length ?? 0);
-}
-
 export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
-  const { countryCode, existing } = opts ?? {};
+  const { countryCode } = opts ?? {};
   const isCanadian = countryCode === ECountryCode.CA;
   const isUS = countryCode === ECountryCode.US;
 
-  // The raw (unrefined) shape mirrors your Mongoose schema
   const base = z.object({
-    // Criminal Records (optional list; when present, entries must be valid)
     criminalRecords: z.array(criminalRecordEntrySchema).default([]),
 
-    // Business section
     employeeNumber: z
       .string()
       .optional()
@@ -61,158 +55,137 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
     incorporatePhotos: z.array(photoSchema).default([]),
     bankingInfoPhotos: z.array(photoSchema).default([]),
 
-    // ID / work eligibility photos
     healthCardPhotos: z.array(photoSchema).default([]),
     medicalCertificationPhotos: z.array(photoSchema).default([]),
     passportPhotos: z.array(photoSchema).default([]),
     usVisaPhotos: z.array(photoSchema).default([]),
     prPermitCitizenshipPhotos: z.array(photoSchema).default([]),
 
-    // Optional FAST card
-    fastCard: fastCardSchema.optional(),
+    // Optional FAST card (Canada only) — keep it optional + empty-string transforms
+    fastCard: z
+      .object({
+        fastCardNumber: z
+          .string()
+          .optional()
+          .transform((v) => v?.trim() ?? ""),
+        fastCardExpiry: z
+          .string()
+          .optional()
+          .transform((v) => v ?? ""),
+        fastCardFrontPhoto: photoSchema.optional(),
+        fastCardBackPhoto: photoSchema.optional(),
+      })
+      .optional(),
 
-    // Additional info
-    deniedLicenseOrPermit: z.boolean({
-      error: "Denial of license or permit must be specified.",
-    }),
-    suspendedOrRevoked: z.boolean({
-      error: "Suspension or revocation status must be specified.",
-    }),
+    deniedLicenseOrPermit: z.boolean().optional(),
+    suspendedOrRevoked: z.boolean().optional(),
     suspensionNotes: z
       .string()
       .optional()
-      .transform((v) => v ?? ""),
-    testedPositiveOrRefused: z.boolean({
-      error: "Drug test refusal or positive result must be specified.",
-    }),
-    completedDOTRequirements: z.boolean({
-      error: "DOT requirements completion must be specified.",
-    }),
-    hasAccidentalInsurance: z.boolean({
-      error: "Accidental insurance status must be specified.",
-    }),
+      .transform((v) => (v ?? "").trim()),
+    testedPositiveOrRefused: z.boolean().optional(),
+    completedDOTRequirements: z.boolean().optional(),
+    hasAccidentalInsurance: z.boolean().optional(),
   });
 
   type Out = z.infer<typeof base>;
 
-  // --- Refinements that depend on existing + country ---
   const schema = base
-    // Business section: if ANY provided, require ALL (numbers + each photo group ≥ 1 considering existing)
+    // Business all-or-nothing (unchanged)
     .superRefine((data: Out, ctx) => {
-      const anyProvided = !!data.employeeNumber || !!data.businessNumber || !!data.hstNumber || data.hstPhotos.length > 0 || data.incorporatePhotos.length > 0 || data.bankingInfoPhotos.length > 0;
+      const textProvided = !!data.employeeNumber?.trim() || !!data.hstNumber?.trim() || !!data.businessNumber?.trim();
+      const photosProvided = data.hstPhotos.length > 0 || data.incorporatePhotos.length > 0 || data.bankingInfoPhotos.length > 0;
+      if (!textProvided && !photosProvided) return;
 
-      if (!anyProvided) return;
-
-      const hstCount = countWithExisting(data.hstPhotos, existing?.hstPhotos as any);
-      const incCount = countWithExisting(data.incorporatePhotos, existing?.incorporatePhotos as any);
-      const bankCount = countWithExisting(data.bankingInfoPhotos, existing?.bankingInfoPhotos as any);
-
-      const allOk = data.employeeNumber && data.businessNumber && data.hstNumber && hstCount > 0 && incCount > 0 && bankCount > 0;
-
-      if (!allOk) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "All business section fields and files must be provided if any are.",
-          path: [], // form-level error, match backend message
-        });
+      let hadError = false;
+      if (!data.employeeNumber?.trim()) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["employeeNumber"], message: "Employee number is required when any business detail is provided." });
+        hadError = true;
+      }
+      if (!data.hstNumber?.trim()) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["hstNumber"], message: "HST number is required when any business detail is provided." });
+        hadError = true;
+      }
+      if (!data.businessNumber?.trim()) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["businessNumber"], message: "Business number is required when any business detail is provided." });
+        hadError = true;
+      }
+      if (data.incorporatePhotos.length === 0) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["incorporatePhotos"], message: "At least one Incorporate photo is required." });
+        hadError = true;
+      }
+      if (data.hstPhotos.length === 0) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["hstPhotos"], message: "At least one HST photo is required." });
+        hadError = true;
+      }
+      if (data.bankingInfoPhotos.length === 0) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["bankingInfoPhotos"], message: "At least one Banking Info photo is required." });
+        hadError = true;
+      }
+      if (hadError) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["business.root"], message: "All business section fields and files must be provided if any are." });
       }
     })
 
-    // Country-specific requirements
+    // Country-specific docs (unchanged logic, still use leaf paths and the eligibility section anchor)
     .superRefine((data: Out, ctx) => {
       if (isCanadian) {
-        const needs: Array<{
-          key: keyof Pick<Out, "healthCardPhotos" | "passportPhotos" | "usVisaPhotos" | "prPermitCitizenshipPhotos">;
-          label: string;
-          existing?: any[];
-        }> = [
-          {
-            key: "healthCardPhotos",
-            label: "Health card photo",
-            existing: (existing?.healthCardPhotos as any) ?? [],
-          },
-          {
-            key: "passportPhotos",
-            label: "Passport photo",
-            existing: (existing?.passportPhotos as any) ?? [],
-          },
-          {
-            key: "usVisaPhotos",
-            label: "US visa photo",
-            existing: (existing?.usVisaPhotos as any) ?? [],
-          },
-          {
-            key: "prPermitCitizenshipPhotos",
-            label: "PR/Citizenship photo",
-            existing: (existing?.prPermitCitizenshipPhotos as any) ?? [],
-          },
-        ];
-
-        for (const n of needs) {
-          const total = countWithExisting(data[n.key] as any[], n.existing as any[]);
-          if (total === 0) {
-            ctx.addIssue({
-              code: z.ZodIssueCode.custom,
-              message: `${n.label} required for Canadian applicants.`,
-              path: [n.key],
-            });
-          }
-        }
+        if (data.healthCardPhotos.length === 0) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["healthCardPhotos"], message: "Health card photo required for Canadian applicants." });
+        if (data.passportPhotos.length === 0) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["passportPhotos"], message: "Passport photo required for Canadian applicants." });
+        if (data.usVisaPhotos.length === 0) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["usVisaPhotos"], message: "US visa photo required for Canadian applicants." });
+        if (data.prPermitCitizenshipPhotos.length === 0)
+          ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["prPermitCitizenshipPhotos"], message: "PR/Citizenship photo required for Canadian applicants." });
       }
 
       if (isUS) {
-        const medTotal = countWithExisting(data.medicalCertificationPhotos, (existing?.medicalCertificationPhotos as any) ?? []);
-        if (medTotal === 0) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Medical certificate required for US drivers",
-            path: ["medicalCertificationPhotos"],
-          });
-        }
+        if (data.medicalCertificationPhotos.length === 0) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["medicalCertificationPhotos"], message: "Medical certificate required for US drivers" });
 
-        const passportTotal = countWithExisting(data.passportPhotos, (existing?.passportPhotos as any) ?? []);
-        const prTotal = countWithExisting(data.prPermitCitizenshipPhotos, (existing?.prPermitCitizenshipPhotos as any) ?? []);
-        if (passportTotal === 0 && prTotal === 0) {
+        if (data.passportPhotos.length === 0 && data.prPermitCitizenshipPhotos.length === 0) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
+            path: ["eligibilityDocs.root"], // section banner anchor
             message: "US drivers must provide passport or PR/citizenship photo",
-            path: [], // form-level like your backend
           });
         }
       }
     })
 
-    // FAST card (Canada only): If user provides a fastCard now, require number+expiry and BOTH photos,
-    // allowing either new or existing photos to satisfy the rule.
+    // FAST card (Canada only): validate **only if the form sends a fastCard object**,
+    // and validate strictly against the payload (ignore any existing on-file photos).
     .superRefine((data: Out, ctx) => {
       if (!isCanadian) return;
+      if (!data.fastCard) return; // no FAST card in payload → ignore entirely (optional)
 
-      const providedNow = !!data.fastCard;
-      const existingFast = existing?.fastCard as IFastCard | undefined;
+      const fc = data.fastCard;
+      const numOk = !!fc.fastCardNumber?.trim();
+      const expOk = !!fc.fastCardExpiry;
+      const hasFront = !!fc.fastCardFrontPhoto;
+      const hasBack = !!fc.fastCardBackPhoto;
 
-      if (!providedNow) return; // optional unless they provide it now
+      if (!numOk) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["fastCard.fastCardNumber"], message: "Fast card number is required" });
+      if (!expOk) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["fastCard.fastCardExpiry"], message: "Fast card expiry is required" });
+      if (!hasFront) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["fastCard.fastCardFrontPhoto"], message: "Front photo is required" });
+      if (!hasBack) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["fastCard.fastCardBackPhoto"], message: "Back photo is required" });
+    })
 
-      const numOk = !!data.fastCard?.fastCardNumber?.trim();
-      const expOk = !!data.fastCard?.fastCardExpiry;
+    .superRefine((data: Out, ctx) => {
+      // Force a selection for all Yes/No questions
+      (["deniedLicenseOrPermit", "suspendedOrRevoked", "testedPositiveOrRefused", "completedDOTRequirements", "hasAccidentalInsurance"] as const).forEach((key) => {
+        if (typeof data[key] !== "boolean") {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [key],
+            message: "Please select Yes or No.",
+          });
+        }
+      });
 
-      const frontTotal = countWithExisting(
-        data.fastCard?.fastCardFrontPhoto ? [data.fastCard.fastCardFrontPhoto] : [],
-        existingFast?.fastCardFrontPhoto ? [existingFast.fastCardFrontPhoto as any] : []
-      );
-      const backTotal = countWithExisting(data.fastCard?.fastCardBackPhoto ? [data.fastCard.fastCardBackPhoto] : [], existingFast?.fastCardBackPhoto ? [existingFast.fastCardBackPhoto as any] : []);
-
-      if (!numOk || !expOk) {
+      // If suspendedOrRevoked is Yes → notes required
+      if (data.suspendedOrRevoked === true && !data.suspensionNotes) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Fast card must have number and expiry if provided",
-          path: ["fastCard"],
-        });
-      }
-      if (frontTotal === 0 || backTotal === 0) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Fast card must include both front and back photo if provided",
-          path: ["fastCard"],
+          path: ["suspensionNotes"],
+          message: "Please provide details about the suspension/revocation.",
         });
       }
     });

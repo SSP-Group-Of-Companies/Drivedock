@@ -4,46 +4,42 @@ import { ELicenseType } from "@/types/shared.types";
 import { Schema } from "mongoose";
 import { photoSchema } from "../sharedSchemas";
 
-const addressSchema = new Schema<Iaddress>(
-  {
-    address: { type: String, required: [true, "Address is required."] },
-    city: { type: String, required: [true, "City is required."] },
-    stateOrProvince: {
-      type: String,
-      required: [true, "State or province is required."],
-    },
-    postalCode: { type: String, required: [true, "Postal code is required."] },
-    from: { type: Date, required: [true, "Address 'from' date is required."] },
-    to: { type: Date, required: [true, "Address 'to' date is required."] },
-  }
-);
+const addressSchema = new Schema<Iaddress>({
+  address: { type: String, required: [true, "Address is required."] },
+  city: { type: String, required: [true, "City is required."] },
+  stateOrProvince: {
+    type: String,
+    required: [true, "State or province is required."],
+  },
+  postalCode: { type: String, required: [true, "Postal code is required."] },
+  from: { type: Date, required: [true, "Address 'from' date is required."] },
+  to: { type: Date, required: [true, "Address 'to' date is required."] },
+});
 
-const licenseSchema = new Schema<ILicenseEntry>(
-  {
-    licenseNumber: {
-      type: String,
-      required: [true, "License number is required."],
+const licenseSchema = new Schema<ILicenseEntry>({
+  licenseNumber: {
+    type: String,
+    required: [true, "License number is required."],
+  },
+  licenseStateOrProvince: {
+    type: String,
+    required: [true, "License issuing province/state is required."],
+  },
+  licenseType: {
+    type: String,
+    enum: {
+      values: Object.values(ELicenseType),
+      message: "License type must be one of the predefined categories.",
     },
-    licenseStateOrProvince: {
-      type: String,
-      required: [true, "License issuing province/state is required."],
-    },
-    licenseType: {
-      type: String,
-      enum: {
-        values: Object.values(ELicenseType),
-        message: "License type must be one of the predefined categories.",
-      },
-      required: [true, "License type is required."],
-    },
-    licenseExpiry: {
-      type: Date,
-      required: [true, "License expiry date is required."],
-    },
-    licenseFrontPhoto: { type: photoSchema },
-    licenseBackPhoto: { type: photoSchema },
-  }
-);
+    required: [true, "License type is required."],
+  },
+  licenseExpiry: {
+    type: Date,
+    required: [true, "License expiry date is required."],
+  },
+  licenseFrontPhoto: { type: photoSchema },
+  licenseBackPhoto: { type: photoSchema },
+});
 
 export const applicationFormPage1Schema = new Schema<IApplicationFormPage1>(
   {
@@ -57,7 +53,7 @@ export const applicationFormPage1Schema = new Schema<IApplicationFormPage1>(
     sinPhoto: { type: photoSchema, required: [true, "Sin photo is required"] },
     dob: { type: Date, required: [true, "Date of birth is required."] },
     phoneHome: {
-      type: String
+      type: String,
     },
     phoneCell: {
       type: String,

@@ -6,11 +6,11 @@ import { useParams } from "next/navigation";
 import useMounted from "@/hooks/useMounted";
 import Image from "next/image";
 import { Camera, X } from "lucide-react";
-
 import { uploadToS3Presigned } from "@/lib/utils/s3Upload";
 import { ES3Folder } from "@/types/aws.types";
-import { ApplicationFormPage4Schema } from "@/lib/zodSchemas/applicationFormPage4.Schema";
 import type { IPhoto } from "@/types/shared.types";
+import type { ApplicationFormPage4Input } from "@/lib/zodSchemas/applicationFormPage4.Schema";
+import { useState } from "react";
 
 export default function FastCardSection({ isCanadian }: { isCanadian: boolean }) {
   const mounted = useMounted();
@@ -22,70 +22,130 @@ export default function FastCardSection({ isCanadian }: { isCanadian: boolean })
     setValue,
     control,
     formState: { errors },
-  } = useFormContext<ApplicationFormPage4Schema>();
+  } = useFormContext<ApplicationFormPage4Input>();
 
   const front = useWatch({ control, name: "fastCard.fastCardFrontPhoto" }) as IPhoto | undefined;
   const back = useWatch({ control, name: "fastCard.fastCardBackPhoto" }) as IPhoto | undefined;
 
-  if (!mounted) return null;
+  const [frontStatus, setFrontStatus] = useState<"idle" | "uploading" | "deleting" | "error">("idle");
+  const [backStatus, setBackStatus] = useState<"idle" | "uploading" | "deleting" | "error">("idle");
+  const [frontMsg, setFrontMsg] = useState("");
+  const [backMsg, setBackMsg] = useState("");
+
+  // handy alias to the nested error object
+  const fcErr = (errors.fastCard as any) || {};
 
   const uploadSide = async (file: File | null, side: "front" | "back") => {
+    const setStatus = side === "front" ? setFrontStatus : setBackStatus;
+    const setMsg = side === "front" ? setFrontMsg : setBackMsg;
     const field = side === "front" ? "fastCard.fastCardFrontPhoto" : "fastCard.fastCardBackPhoto";
+
     if (!file) {
-      setValue(field as any, undefined, { shouldValidate: true });
+      setValue(field as any, undefined, { shouldValidate: true, shouldDirty: true });
+      setStatus("idle");
+      setMsg("");
       return;
     }
-    const res = await uploadToS3Presigned({
-      file,
-      folder: (ES3Folder as any).FAST_CARD || "application/page4/fast-card",
-      trackerId: id,
-    } as any);
-    setValue(field as any, res, { shouldValidate: true });
+
+    try {
+      setStatus("uploading");
+      setMsg("");
+      const res = await uploadToS3Presigned({ file, folder: ES3Folder.FAST_CARD_PHOTOS, trackerId: id } as any);
+      setValue(field as any, res, { shouldValidate: true, shouldDirty: true });
+      setStatus("idle");
+      setMsg("Upload successful");
+    } catch (e: any) {
+      setStatus("error");
+      setMsg(e?.message || "Upload failed");
+    }
   };
 
   const removeSide = async (side: "front" | "back") => {
     const value = side === "front" ? front : back;
-    if (value?.s3Key?.startsWith("temp-files/")) {
-      try {
+    const setStatus = side === "front" ? setFrontStatus : setBackStatus;
+    const setMsg = side === "front" ? setFrontMsg : setBackMsg;
+    const field = side === "front" ? "fastCard.fastCardFrontPhoto" : "fastCard.fastCardBackPhoto";
+
+    try {
+      setStatus("deleting");
+      setMsg("");
+      if (value?.s3Key?.startsWith("temp-files/")) {
         await fetch("/api/v1/delete-temp-files", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ keys: [value.s3Key] }),
         });
-      } catch {}
+        setMsg("Photo removed");
+      }
+    } catch {
+      setStatus("error");
+      setMsg("Delete failed");
+    } finally {
+      setValue(field as any, undefined, { shouldValidate: true, shouldDirty: true });
+      setStatus("idle");
     }
-    setValue((side === "front" ? "fastCard.fastCardFrontPhoto" : "fastCard.fastCardBackPhoto") as any, undefined, { shouldValidate: true });
   };
 
+  // Don’t mount this section for US applicants
+  if (!mounted || !isCanadian) return null;
+
   return (
-    <section className="space-y-6 border border-gray-200 p-6 rounded-lg bg-white shadow-sm">
-      <h2 className="text-center text-lg font-semibold text-gray-800">{t("form.step2.page4.sections.fastCard.title", "Fast Card")}</h2>
+    <section className="space-y-6 border border-gray-200 p-6 rounded-lg bg-white shadow-sm" data-field="fastCard">
+      <h2 className="text-center text-lg font-semibold text-gray-800">{t("form.step2.page4.sections.fastCard.title", "FAST Card")}</h2>
 
-      {!isCanadian && <p className="text-xs text-gray-500 text-center">{t("form.step2.page4.sections.fastCard.note", "FAST card is optional for US applicants.")}</p>}
-
+      {/* Disclaimer block with same style as other sections */}
+      <div className="rounded-xl bg-gray-50/60 ring-1 ring-gray-100 p-4">
+        <p className="text-sm text-gray-700 text-center">
+          {t(
+            "form.step2.page4.sections.fastCard.disclaimer",
+            "This section is optional. However, if you provide any FAST Card information, you must complete all fields and upload both front and back photos."
+          )}
+        </p>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700">{t("form.step2.page4.fields.fastNumber", "Fast Card Number")}</label>
-          <input {...register("fastCard.fastCardNumber")} className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500" data-field="fastCard.fastCardNumber" />
-          {errors.fastCard?.fastCardNumber && <p className="text-red-500 text-xs mt-1">{errors.fastCard.fastCardNumber.message?.toString()}</p>}
+          <label className="block text-sm font-medium text-gray-700">{t("form.step2.page4.fields.fastNumber", "FAST Card Number")}</label>
+          <input
+            {...register("fastCard.fastCardNumber")}
+            className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500"
+            data-field="fastCard.fastCardNumber"
+            aria-invalid={!!fcErr.fastCardNumber}
+          />
+          {fcErr.fastCardNumber?.message && (
+            <p className="text-red-500 text-xs mt-1" role="alert">
+              {fcErr.fastCardNumber.message}
+            </p>
+          )}
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700">{t("form.step2.page4.fields.fastExpiry", "Expiry Date")}</label>
-          <input type="date" {...register("fastCard.fastCardExpiry")} className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500" data-field="fastCard.fastCardExpiry" />
-          {errors.fastCard?.fastCardExpiry && <p className="text-red-500 text-xs mt-1">{errors.fastCard.fastCardExpiry.message?.toString()}</p>}
+          <input
+            type="date"
+            {...register("fastCard.fastCardExpiry")}
+            className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500"
+            data-field="fastCard.fastCardExpiry"
+            aria-invalid={!!fcErr.fastCardExpiry}
+          />
+          {fcErr.fastCardExpiry?.message && (
+            <p className="text-red-500 text-xs mt-1" role="alert">
+              {fcErr.fastCardExpiry.message}
+            </p>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-6 md:col-span-1">
           {/* Front */}
           <div data-field="fastCard.fastCardFrontPhoto">
             <label className="block text-sm font-medium text-gray-700 mb-1">{t("form.step2.page4.fields.fastFront", "Photo Front")}</label>
+
             {front?.url ? (
               <div className="relative">
-                <Image src={front.url} alt="Fast card front" width={400} height={128} className="w-full h-32 object-cover rounded-lg border border-gray-300" />
+                <Image src={front.url} alt="FAST card front" width={400} height={128} className="w-full h-32 object-cover rounded-lg border border-gray-300" />
                 <button
                   type="button"
                   onClick={() => removeSide("front")}
+                  disabled={frontStatus === "uploading" || frontStatus === "deleting"}
                   className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
                 >
                   <X size={12} />
@@ -98,17 +158,30 @@ export default function FastCardSection({ isCanadian }: { isCanadian: boolean })
                 <input type="file" accept="image/*" className="hidden" onChange={(e) => uploadSide(e.target.files?.[0] || null, "front")} />
               </label>
             )}
+
+            {frontStatus === "uploading" && <p className="text-yellow-600 text-xs mt-1">Uploading...</p>}
+            {frontStatus === "error" && <p className="text-red-500 text-xs mt-1">{frontMsg}</p>}
+            {frontStatus === "idle" && frontMsg && <p className="text-green-600 text-xs mt-1">{frontMsg}</p>}
+
+            {/* 🔴 show Zod error for front photo */}
+            {fcErr.fastCardFrontPhoto?.message && (
+              <p className="text-red-500 text-xs mt-1" role="alert">
+                {fcErr.fastCardFrontPhoto.message}
+              </p>
+            )}
           </div>
 
           {/* Back */}
           <div data-field="fastCard.fastCardBackPhoto">
             <label className="block text-sm font-medium text-gray-700 mb-1">{t("form.step2.page4.fields.fastBack", "Photo Back")}</label>
+
             {back?.url ? (
               <div className="relative">
-                <Image src={back.url} alt="Fast card back" width={400} height={128} className="w-full h-32 object-cover rounded-lg border border-gray-300" />
+                <Image src={back.url} alt="FAST card back" width={400} height={128} className="w-full h-32 object-cover rounded-lg border border-gray-300" />
                 <button
                   type="button"
                   onClick={() => removeSide("back")}
+                  disabled={backStatus === "uploading" || backStatus === "deleting"}
                   className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
                 >
                   <X size={12} />
@@ -121,11 +194,22 @@ export default function FastCardSection({ isCanadian }: { isCanadian: boolean })
                 <input type="file" accept="image/*" className="hidden" onChange={(e) => uploadSide(e.target.files?.[0] || null, "back")} />
               </label>
             )}
+
+            {backStatus === "uploading" && <p className="text-yellow-600 text-xs mt-1">Uploading...</p>}
+            {backStatus === "error" && <p className="text-red-500 text-xs mt-1">{backMsg}</p>}
+            {backStatus === "idle" && backMsg && <p className="text-green-600 text-xs mt-1">{backMsg}</p>}
+
+            {/* 🔴 show Zod error for back photo */}
+            {fcErr.fastCardBackPhoto?.message && (
+              <p className="text-red-500 text-xs mt-1" role="alert">
+                {fcErr.fastCardBackPhoto.message}
+              </p>
+            )}
           </div>
         </div>
       </div>
 
-      {errors.fastCard && typeof (errors.fastCard as any).message === "string" && <p className="text-red-500 text-sm text-center">{(errors.fastCard as any).message}</p>}
+      {/* No banner here—schema now only emits granular FAST errors */}
     </section>
   );
 }

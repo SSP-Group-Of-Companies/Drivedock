@@ -124,9 +124,9 @@ export default function ContinueButton<T extends FieldValues>({ config, trackerI
         router.push(nextUrl ?? resolvedConfig.nextRoute);
         if (!nextUrl) router.refresh();
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Submission error:", err);
-      alert("An error occurred while submitting. Please try again.");
+      alert(err.message || "An error occurred while submitting. Please try again.");
     } finally {
       setSubmitting(false);
     }

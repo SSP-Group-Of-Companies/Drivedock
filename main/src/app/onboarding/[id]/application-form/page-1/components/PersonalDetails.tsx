@@ -30,14 +30,10 @@ const formatPhoneNumber = (value: string) => {
   const cleaned = value.replace(/\D/g, "");
   if (cleaned.length <= 3) return cleaned;
   if (cleaned.length <= 6) return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
-  return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(
-    6,
-    10
-  )}`;
+  return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6, 10)}`;
 };
 
-const getDisplayPhone = (value: string) =>
-  value ? formatPhoneNumber(value) : "";
+const getDisplayPhone = (value: string) => (value ? formatPhoneNumber(value) : "");
 
 const calculateAge = (dob: string) => {
   if (!dob) return null;
@@ -71,34 +67,21 @@ export default function PersonalDetails() {
   const sinPhoto = useWatch({ control, name: "sinPhoto" });
   const phoneHomeRaw = useWatch({ control, name: "phoneHome" }) || "";
   const phoneCellRaw = useWatch({ control, name: "phoneCell" }) || "";
-  const emergencyPhoneRaw =
-    useWatch({ control, name: "emergencyContactPhone" }) || "";
+  const emergencyPhoneRaw = useWatch({ control, name: "emergencyContactPhone" }) || "";
 
   const [showSIN, setShowSIN] = useState(false);
   const sinPhotoS3Key = sinPhoto?.s3Key || "";
   const sinPhotoUrl = sinPhoto?.url || "";
-  const [sinPhotoPreview, setSinPhotoPreview] = useState<string | null>(
-    sinPhotoUrl || null
-  );
+  const [sinPhotoPreview, setSinPhotoPreview] = useState<string | null>(sinPhotoUrl || null);
 
-  const [sinValidationStatus, setSinValidationStatus] = useState<
-    "idle" | "checking" | "valid" | "invalid"
-  >("idle");
-  const [sinPhotoStatus, setSinPhotoStatus] = useState<
-    "idle" | "uploading" | "deleting" | "error"
-  >("idle");
+  const [sinValidationStatus, setSinValidationStatus] = useState<"idle" | "checking" | "valid" | "invalid">("idle");
+  const [sinPhotoStatus, setSinPhotoStatus] = useState<"idle" | "uploading" | "deleting" | "error">("idle");
   const [sinPhotoMessage, setSinPhotoMessage] = useState("");
   const [sinValidationMessage, setSinValidationMessage] = useState("");
 
   const calculatedAge = dobValue ? calculateAge(dobValue) : null;
 
-  const [displaySIN, setDisplaySIN] = useState(() =>
-    sinValue
-      ? sinValue
-          .replace(/^(\d{3})(\d)/, "$1-$2")
-          .replace(/^(\d{3})-(\d{3})(\d)/, "$1-$2-$3")
-      : ""
-  );
+  const [displaySIN, setDisplaySIN] = useState(() => (sinValue ? sinValue.replace(/^(\d{3})(\d)/, "$1-$2").replace(/^(\d{3})-(\d{3})(\d)/, "$1-$2-$3") : ""));
 
   const validateSIN = useCallback(
     async (sin: string) => {
@@ -152,10 +135,7 @@ export default function PersonalDetails() {
     }
   };
 
-  const handlePhoneChange = (
-    field: "phoneHome" | "phoneCell" | "emergencyContactPhone",
-    value: string
-  ) => {
+  const handlePhoneChange = (field: "phoneHome" | "phoneCell" | "emergencyContactPhone", value: string) => {
     const raw = value.replace(/\D/g, "").slice(0, 10);
     setValue(field, raw, { shouldValidate: true });
   };
@@ -184,8 +164,7 @@ export default function PersonalDetails() {
       setValue("sinPhoto", result, { shouldValidate: true });
 
       const reader = new FileReader();
-      reader.onload = (ev) =>
-        setSinPhotoPreview(String(ev.target?.result || ""));
+      reader.onload = (ev) => setSinPhotoPreview(String(ev.target?.result || ""));
       reader.readAsDataURL(file);
 
       setSinPhotoStatus("idle");
@@ -226,34 +205,18 @@ export default function PersonalDetails() {
 
   return (
     <section className="space-y-6 border border-gray-200 p-6 rounded-lg bg-white/80 shadow-sm">
-      <h2 className="text-center text-lg font-semibold text-gray-800">
-        {t("form.step2.page1.sections.personal")}
-      </h2>
+      <h2 className="text-center text-lg font-semibold text-gray-800">{t("form.step2.page1.sections.personal")}</h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* First Name */}
-        <TextInput
-          name="firstName"
-          label={t("form.step2.page1.fields.firstName")}
-          placeholder="John"
-          error={errors.firstName}
-          register={register}
-        />
+        <TextInput name="firstName" label={t("form.step2.page1.fields.firstName")} placeholder="John" error={errors.firstName} register={register} />
 
         {/* Last Name */}
-        <TextInput
-          name="lastName"
-          label={t("form.step2.page1.fields.lastName")}
-          placeholder="Deo"
-          error={errors.lastName}
-          register={register}
-        />
+        <TextInput name="lastName" label={t("form.step2.page1.fields.lastName")} placeholder="Deo" error={errors.lastName} register={register} />
 
         {/* SIN Number */}
         <div className="relative">
-          <label className="block text-sm font-medium text-gray-700">
-            {t("form.step2.page1.fields.sin")}
-          </label>
+          <label className="block text-sm font-medium text-gray-700">{t("form.step2.page1.fields.sin")}</label>
 
           <input
             type={showSIN ? "text" : "password"}
@@ -279,11 +242,7 @@ export default function PersonalDetails() {
             }`}
           />
 
-          <button
-            type="button"
-            onClick={() => setShowSIN((prev) => !prev)}
-            className="absolute right-3 top-9 text-gray-500 hover:text-gray-700 focus:outline-none"
-          >
+          <button type="button" onClick={() => setShowSIN((prev) => !prev)} className="absolute right-3 top-9 text-gray-500 hover:text-gray-700 focus:outline-none">
             {showSIN ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
 
@@ -296,27 +255,15 @@ export default function PersonalDetails() {
           )}
           {sinValidationStatus === "valid" && (
             <p className="text-green-600 text-sm mt-1 flex items-center">
-              <svg
-                className="w-4 h-4 mr-1"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                  clipRule="evenodd"
-                />
+              <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
               </svg>
               {sinValidationMessage}
             </p>
           )}
           {sinValidationStatus === "invalid" && (
             <p className="text-red-500 text-sm mt-1 flex items-center">
-              <svg
-                className="w-4 h-4 mr-1"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
+              <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                 <path
                   fillRule="evenodd"
                   d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
@@ -326,34 +273,19 @@ export default function PersonalDetails() {
               {sinValidationMessage}
             </p>
           )}
-          {errors.sin && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.sin.message?.toString()}
-            </p>
-          )}
+          {errors.sin && <p className="text-red-500 text-sm mt-1">{errors.sin.message?.toString()}</p>}
         </div>
 
         {/* SIN Photo Upload */}
         <div data-field="sinPhoto">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            {t("form.step2.page1.fields.sinPhoto")}
-          </label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">{t("form.step2.page1.fields.sinPhoto")}</label>
           {sinPhotoPreview || sinPhotoUrl ? (
             <div className="relative">
-              <Image
-                src={sinPhotoPreview || sinPhotoUrl || ""}
-                alt="SIN Card Preview"
-                width={400}
-                height={128}
-                className="w-full h-32 object-cover rounded-lg border border-gray-300"
-              />
+              <Image src={sinPhotoPreview || sinPhotoUrl || ""} alt="SIN Card Preview" width={400} height={128} className="w-full h-32 object-cover rounded-lg border border-gray-300" />
               <button
                 type="button"
                 onClick={handleSinPhotoRemove}
-                disabled={
-                  sinPhotoStatus === "uploading" ||
-                  sinPhotoStatus === "deleting"
-                }
+                disabled={sinPhotoStatus === "uploading" || sinPhotoStatus === "deleting"}
                 className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
               >
                 <X size={12} />
@@ -365,26 +297,11 @@ export default function PersonalDetails() {
               className="cursor-pointer flex flex-col items-center justify-center h-10 px-4 mt-1 w-full text-sm text-gray-600 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 hover:border-gray-400 transition-all duration-200 group"
             >
               <Camera className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
-              <span className="font-medium text-gray-400 text-xs">
-                {t("form.step2.page1.fields.sinPhotoDesc")}
-              </span>
+              <span className="font-medium text-gray-400 text-xs">{t("form.step2.page1.fields.sinPhotoDesc")}</span>
             </label>
           )}
-          <input
-            id="sinPhoto"
-            type="file"
-            accept="image/*"
-            capture="environment"
-            {...register("sinPhoto")}
-            onChange={(e) => handleSinPhotoUpload(e.target.files?.[0] || null)}
-            data-field="sinPhoto"
-            className="hidden"
-          />
-          {sinPhotoStatus !== "uploading" && errors.sinPhoto && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.sinPhoto.message?.toString()}
-            </p>
-          )}
+          <input id="sinPhoto" type="file" accept="image/*" {...register("sinPhoto")} onChange={(e) => handleSinPhotoUpload(e.target.files?.[0] || null)} data-field="sinPhoto" className="hidden" />
+          {sinPhotoStatus !== "uploading" && errors.sinPhoto && <p className="text-red-500 text-sm mt-1">{errors.sinPhoto.message?.toString()}</p>}
           {sinPhotoStatus === "uploading" && (
             <div className="text-yellow-600 text-sm mt-1 flex items-center">
               <p className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-600 mr-2"></p>
@@ -397,19 +314,13 @@ export default function PersonalDetails() {
               Deleting...
             </p>
           )}
-          {sinPhotoStatus === "error" && (
-            <p className="text-red-500 text-sm mt-1">{sinPhotoMessage}</p>
-          )}
-          {!errors.sinPhoto && sinPhotoStatus === "idle" && sinPhotoMessage && (
-            <p className="text-green-600 text-sm mt-1">{sinPhotoMessage}</p>
-          )}
+          {sinPhotoStatus === "error" && <p className="text-red-500 text-sm mt-1">{sinPhotoMessage}</p>}
+          {!errors.sinPhoto && sinPhotoStatus === "idle" && sinPhotoMessage && <p className="text-green-600 text-sm mt-1">{sinPhotoMessage}</p>}
         </div>
 
         {/* Date of Birth */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">
-            {t("form.step2.page1.fields.dob")}
-          </label>
+          <label className="block text-sm font-medium text-gray-700">{t("form.step2.page1.fields.dob")}</label>
           <input
             {...register("dob")}
             type="date"
@@ -417,42 +328,24 @@ export default function PersonalDetails() {
             data-field="dob"
             max={(() => {
               const today = new Date();
-              const maxDate = new Date(
-                today.getFullYear() - 23,
-                today.getMonth(),
-                today.getDate()
-              );
+              const maxDate = new Date(today.getFullYear() - 23, today.getMonth(), today.getDate());
               return maxDate.toISOString().split("T")[0];
             })()}
             min={(() => {
               const today = new Date();
-              const minDate = new Date(
-                today.getFullYear() - 100,
-                today.getMonth(),
-                today.getDate()
-              );
+              const minDate = new Date(today.getFullYear() - 100, today.getMonth(), today.getDate());
               return minDate.toISOString().split("T")[0];
             })()}
             className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
           />
           {calculatedAge !== null && (
-            <p
-              className={`text-sm mt-1 ${
-                calculatedAge >= 23 && calculatedAge <= 100
-                  ? "text-green-600"
-                  : "text-red-500"
-              }`}
-            >
+            <p className={`text-sm mt-1 ${calculatedAge >= 23 && calculatedAge <= 100 ? "text-green-600" : "text-red-500"}`}>
               Age: {calculatedAge} years old
               {calculatedAge < 23 && " (Must be at least 23 years old)"}
               {calculatedAge > 100 && " (Age cannot exceed 100 years)"}
             </p>
           )}
-          {errors.dob && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.dob.message?.toString()}
-            </p>
-          )}
+          {errors.dob && <p className="text-red-500 text-sm mt-1">{errors.dob.message?.toString()}</p>}
         </div>
 
         {/* Can Provide Proof of Age */}
@@ -466,67 +359,26 @@ export default function PersonalDetails() {
               className="appearance-none w-6 h-6 border-2 border-gray-300 rounded-md bg-white focus:outline-none transition-all duration-150 cursor-pointer focus:shadow-[0_0_0_3px_rgba(56,189,248,0.25)] checked:shadow-[0_0_0_3px_rgba(56,189,248,0.25)] checked:bg-white relative"
             />
             {canProvideProofChecked && dobValue && (
-              <svg
-                className="absolute w-6 h-6 pointer-events-none left-0 top-0"
-                viewBox="0 0 24 24"
-                fill="none"
-              >
-                <path
-                  d="M20 6L9 17L4 12"
-                  stroke="#0071BC"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
+              <svg className="absolute w-6 h-6 pointer-events-none left-0 top-0" viewBox="0 0 24 24" fill="none">
+                <path d="M20 6L9 17L4 12" stroke="#0071BC" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             )}
-            <label
-              className={`text-sm font-medium ${
-                dobValue ? "text-gray-700" : "text-gray-400"
-              }`}
-            >
-              {t("form.step2.page1.fields.canProvideProof")}
-            </label>
+            <label className={`text-sm font-medium ${dobValue ? "text-gray-700" : "text-gray-400"}`}>{t("form.step2.page1.fields.canProvideProof")}</label>
           </div>
-          {errors.canProvideProofOfAge && (
-            <p className="text-red-500 text-sm mt-1">
-              {errors.canProvideProofOfAge.message?.toString()}
-            </p>
-          )}
+          {errors.canProvideProofOfAge && <p className="text-red-500 text-sm mt-1">{errors.canProvideProofOfAge.message?.toString()}</p>}
         </div>
 
         {/* Phone: Home */}
-        <PhoneInput
-          label={t("form.step2.page1.fields.phoneHome")}
-          value={getDisplayPhone(phoneHomeRaw)}
-          onChange={(v) => handlePhoneChange("phoneHome", v)}
-          error={errors.phoneHome}
-        />
+        <PhoneInput label={t("form.step2.page1.fields.phoneHome")} value={getDisplayPhone(phoneHomeRaw)} onChange={(v) => handlePhoneChange("phoneHome", v)} error={errors.phoneHome} />
 
         {/* Phone: Cell */}
-        <PhoneInput
-          label={t("form.step2.page1.fields.phoneCell")}
-          value={getDisplayPhone(phoneCellRaw)}
-          onChange={(v) => handlePhoneChange("phoneCell", v)}
-          error={errors.phoneCell}
-        />
+        <PhoneInput label={t("form.step2.page1.fields.phoneCell")} value={getDisplayPhone(phoneCellRaw)} onChange={(v) => handlePhoneChange("phoneCell", v)} error={errors.phoneCell} />
 
         {/* Email */}
-        <TextInput
-          name="email"
-          label={t("form.step2.page1.fields.email")}
-          placeholder="john@gmail.com"
-          error={errors.email}
-          register={register}
-        />
+        <TextInput name="email" label={t("form.step2.page1.fields.email")} placeholder="john@gmail.com" error={errors.email} register={register} />
 
         {/* Emergency Contact */}
-        <TextInput
-          name="emergencyContactName"
-          label={t("form.step2.page1.fields.emergencyContactName")}
-          error={errors.emergencyContactName}
-          register={register}
-        />
+        <TextInput name="emergencyContactName" label={t("form.step2.page1.fields.emergencyContactName")} error={errors.emergencyContactName} register={register} />
 
         <PhoneInput
           label={t("form.step2.page1.fields.emergencyContactPhone")}

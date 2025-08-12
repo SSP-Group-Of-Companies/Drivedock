@@ -7,17 +7,13 @@ import CompanyLogoHeader from "@/components/shared/CompanyLogoHeader";
 import FormWizardNav from "@/app/onboarding/components/FormWizardNav";
 import { usePathname, useRouter, useParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { Dialog } from "@headlessui/react";
+import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { AlertCircle, ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 import LanguageDropdown from "@/components/shared/LanguageDropdown";
 
-export default function FormLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function FormLayout({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation("common");
   const pathname = usePathname();
   const router = useRouter();
@@ -110,9 +106,7 @@ export default function FormLayout({
                     aria-label={t("navbar.back", "Go Back")}
                   >
                     <ArrowLeft size={18} />
-                    <span className="hidden sm:inline">
-                      {t("navbar.back", "Back")}
-                    </span>
+                    <span className="hidden sm:inline">{t("navbar.back", "Back")}</span>
                   </button>
                 </div>
               </div>
@@ -132,9 +126,7 @@ export default function FormLayout({
                       aria-label={t("navbar.back", "Go Back")}
                     >
                       <ArrowLeft size={14} />
-                      <span className="hidden sm:inline">
-                        {t("navbar.back", "Back")}
-                      </span>
+                      <span className="hidden sm:inline">{t("navbar.back", "Back")}</span>
                     </button>
                   </div>
                 </div>
@@ -150,12 +142,7 @@ export default function FormLayout({
       </AnimatePresence>
 
       <main className="relative min-h-[calc(100vh-120px)] bg-gradient-to-b from-slate-50 via-sky-100 to-sky-200 px-4 py-6 sm:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="max-w-3xl mx-auto bg-white p-6 rounded-2xl shadow-lg space-y-6 relative"
-        >
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="max-w-3xl mx-auto bg-white p-6 rounded-2xl shadow-lg space-y-6 relative">
           {/* Info Icon: absolute top right */}
           <button
             onClick={() => setShowModal(true)}
@@ -167,47 +154,25 @@ export default function FormLayout({
           {/* Info Modal */}
           <AnimatePresence>
             {showModal && (
-              <Dialog
-                open={showModal}
-                onClose={() => setShowModal(false)}
-                className="relative z-50"
-              >
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="fixed inset-0 bg-black/30"
-                  aria-hidden="true"
-                />
+              <Dialog open={showModal} onClose={() => setShowModal(false)} className="relative z-50">
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="fixed inset-0 bg-black/30" aria-hidden="true" />
                 <div className="fixed inset-0 flex items-center justify-center p-4">
-                  <motion.div
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: 20, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <Dialog.Panel className="max-w-md w-full bg-white rounded-xl p-6 shadow-xl space-y-4">
-                      <Dialog.Title className="text-lg font-bold text-gray-900">
-                        {t("wizard.modalTitle")}
-                      </Dialog.Title>
+                  <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} transition={{ duration: 0.2 }}>
+                    <DialogPanel className="max-w-md w-full bg-white rounded-xl p-6 shadow-xl space-y-4">
+                      <DialogTitle className="text-lg font-bold text-gray-900">{t("wizard.modalTitle")}</DialogTitle>
                       <ul className="list-disc pl-5 text-sm text-gray-700 space-y-1">
                         {[1, 2, 3, 4, 5, 6].map((step) => (
                           <li key={step}>
-                            <strong>{t(`wizard.step${step}.label`)}:</strong>{" "}
-                            {t(`wizard.step${step}.desc`)}
+                            <strong>{t(`wizard.step${step}.label`)}:</strong> {t(`wizard.step${step}.desc`)}
                           </li>
                         ))}
                       </ul>
                       <div className="text-right">
-                        <button
-                          onClick={() => setShowModal(false)}
-                          className="px-4 py-1.5 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
-                        >
+                        <button onClick={() => setShowModal(false)} className="px-4 py-1.5 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700">
                           {t("wizard.close")}
                         </button>
                       </div>
-                    </Dialog.Panel>
+                    </DialogPanel>
                   </motion.div>
                 </div>
               </Dialog>
@@ -219,9 +184,7 @@ export default function FormLayout({
           {/* Step Nav + Title */}
           <FormWizardNav currentStep={currentStep} totalSteps={6} />
           <div className="text-center">
-            <h1 className="text-xl font-bold text-gray-800">
-              {t(`form.step${currentStep}.title`)}
-            </h1>
+            <h1 className="text-xl font-bold text-gray-800">{t(`form.step${currentStep}.title`)}</h1>
             <p className="text-sm text-gray-600">{t("form.subtitle")}</p>
           </div>
 

@@ -10,8 +10,7 @@ import { FormPageConfig } from "@/lib/frontendConfigs/formPageConfig.types";
 export function makePage4Config(trackerId: string): FormPageConfig<ApplicationFormPage4Schema> {
   return {
     validationFields: (values) => {
-      const fields: string[] = [
-        // criminal records: validate all rows if present
+      const fields = [
         "criminalRecords",
         "deniedLicenseOrPermit",
         "suspendedOrRevoked",
@@ -20,7 +19,6 @@ export function makePage4Config(trackerId: string): FormPageConfig<ApplicationFo
         "completedDOTRequirements",
         "hasAccidentalInsurance",
 
-        // business (all-or-nothing enforced in Zod/server)
         "employeeNumber",
         "hstNumber",
         "businessNumber",
@@ -28,18 +26,19 @@ export function makePage4Config(trackerId: string): FormPageConfig<ApplicationFo
         "incorporatePhotos",
         "bankingInfoPhotos",
 
-        // docs (CA/US requirements enforced in Zod/server)
         "healthCardPhotos",
         "medicalCertificationPhotos",
         "passportPhotos",
         "usVisaPhotos",
         "prPermitCitizenshipPhotos",
 
-        // fast card (optional, but if provided -> both sides required in Zod/server)
-        "fastCard",
+        // validate leaves (not just "fastCard")
+        "fastCard.fastCardNumber",
+        "fastCard.fastCardExpiry",
+        "fastCard.fastCardFrontPhoto",
+        "fastCard.fastCardBackPhoto",
       ];
 
-      // expand criminal record children so RHF can scroll precisely
       values.criminalRecords?.forEach((_, i) => {
         fields.push(`criminalRecords.${i}.offense`);
         fields.push(`criminalRecords.${i}.dateOfSentence`);
@@ -54,7 +53,13 @@ export function makePage4Config(trackerId: string): FormPageConfig<ApplicationFo
 
     // Build PATCH payload (Page 4 is always PATCH in your flow)
     buildPayload: (values) => {
-      return values;
+      const fc = values.fastCard;
+      const hasFast = !!fc && !!(fc.fastCardNumber?.trim() || fc.fastCardExpiry || fc.fastCardFrontPhoto || fc.fastCardBackPhoto);
+
+      const payload = { ...values };
+      if (!hasFast) delete (payload as any).fastCard; // <- drop empty object
+
+      return payload;
     },
 
     // NOTE: bake the trackerId here so ContinueButton can route directly

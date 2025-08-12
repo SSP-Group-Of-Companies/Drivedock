@@ -222,7 +222,63 @@
         "gapDetected": "Gap of {days} days detected between employments. Please explain:"
       },
       "page3": {},
-      "page4": {},
+      "page4": {
+        "sections": {
+          "business": { "title": "Incorporate Details" },
+          "additionalInfo": { "title": "Additional Info" },
+          "eligibilityDocs": {
+            "title": "Health / Identity Documents",
+            "workAuth": "Proof of Work Authorization"
+          },
+          "fastCard": {
+            "title": "FAST Card",
+            "note": "FAST card is optional for US applicants."
+          },
+          "criminalRecords": {
+            "title": "Criminal Records",
+            "subtitle": "List any convictions. Leave blank if none.",
+            "guidance": {
+              "intro": "Applicants must declare all convictions for offenses under Canadian federal law.",
+              "dontDeclareTitle": "Do not declare the following:",
+              "items": {
+                "item1": "A conviction for which you have received a Record Suspension (formerly pardon) in accordance with the Criminal Records Act;",
+                "item2": "A conviction where you were a \"young person\" under the Youth Criminal Justice Act;",
+                "item3": "An Absolute or Conditional Discharge, pursuant to section 730 of the Criminal Code;",
+                "item4": "An offense for which you were not convicted;",
+                "item5": "Any provincial or municipal offense; and",
+                "item6": "Any charges dealt with outside of Canada."
+              }
+            }
+          }
+        },
+        "fields": {
+          "employeeNumber": "Employee Number",
+          "hstNumber": "HST Number",
+          "businessNumber": "Business Number",
+
+          "offense": "Offense",
+          "dateOfSentence": "Date Of Sentence",
+          "courtLocation": "Court Location",
+
+          "denied": "Have you ever been denied a license, permit or privilege to operate a motor vehicle?",
+          "suspended": "Has any license, permit or privilege ever been suspended or revoked?",
+          "suspensionNotes": "Notes",
+          "testedPositive": "Have you ever tested positive, or refused to test, on any pre-employment drug or alcohol test?",
+          "completedDOT": "If yes, can you provide proof that you successfully completed DOT return-to-duty requirements?",
+          "hasInsurance": "Do you have your own Accidental Benefit Insurance Coverage?",
+
+          "healthCard": "Health Card",
+          "passport": "Passport",
+          "usVisa": "US Visa",
+          "prCitizenship": "PR / Citizenship",
+          "medicalCert": "Medical Certification",
+
+          "fastNumber": "FAST Card Number",
+          "fastExpiry": "Expiry Date",
+          "fastFront": "Photo Front",
+          "fastBack": "Photo Back"
+        }
+      },
       "page5": {
         "title": "Pre-Employment Competency Questions",
         "lockedNote": "You have already submitted your answers and this test cannot be retaken.",
@@ -289,5 +345,22 @@
       "label": "Step 6",
       "desc": "Drug Test"
     }
+  },
+  "actions": {
+    "addPhoto": "Add Photo",
+    "remove": "Remove",
+    "addRow": "Add Row",
+    "manage": "Manage",
+    "close": "Close",
+    "done": "Done",
+    "replace": "Replace",
+    "delete": "Delete"
+  },
+
+  "photoGroup": {
+    "noPhotosYet": "No photos yet",
+    "managePhotos": "Manage Photos",
+    "maxReached": "Maximum of {{count}} photos reached",
+    "moreCount": "+{{count}}"
   }
 }

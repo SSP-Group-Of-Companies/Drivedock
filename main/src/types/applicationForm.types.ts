@@ -172,6 +172,7 @@ export interface IApplicationFormPage3 {
   trafficConvictions: ITrafficConvictionEntry[];
   education: IEducation;
   canadianHoursOfService: ICanadianHoursOfService;
+  dateDayOne: string | Date; // YYYY-MM-DD or Date
 }
 
 /* =========================

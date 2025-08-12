@@ -62,12 +62,12 @@ function mapDefaults(page4: IApplicationFormPage4 | null): ApplicationFormPage4I
         }
       : undefined,
 
-    deniedLicenseOrPermit: !!page4?.deniedLicenseOrPermit,
-    suspendedOrRevoked: !!page4?.suspendedOrRevoked,
+    deniedLicenseOrPermit: page4?.deniedLicenseOrPermit ?? undefined,
+    suspendedOrRevoked: page4?.suspendedOrRevoked ?? undefined,
     suspensionNotes: page4?.suspensionNotes ?? "",
-    testedPositiveOrRefused: !!page4?.testedPositiveOrRefused,
-    completedDOTRequirements: !!page4?.completedDOTRequirements,
-    hasAccidentalInsurance: !!page4?.hasAccidentalInsurance,
+    testedPositiveOrRefused: page4?.testedPositiveOrRefused ?? undefined,
+    completedDOTRequirements: page4?.completedDOTRequirements ?? undefined,
+    hasAccidentalInsurance: page4?.hasAccidentalInsurance ?? undefined,
   };
 }
 
@@ -106,7 +106,7 @@ export default function Page4Client({ trackerId, onboardingContext, page4 }: Pro
         <CriminalRecordsSection />
         <BusinessSection />
         <EligibilityDocsSection countryCode={countryCode} />
-        <FastCardSection isCanadian={countryCode === ECountryCode.CA} />
+        {countryCode === ECountryCode.CA && <FastCardSection isCanadian />}
         <AdditionalInfoSection />
         <ContinueButton<ApplicationFormPage4Input> config={config} trackerId={trackerId} />
       </form>

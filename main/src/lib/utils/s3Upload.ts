@@ -1,16 +1,5 @@
-import {
-  AWS_ACCESS_KEY_ID,
-  AWS_BUCKET_NAME,
-  AWS_REGION,
-  AWS_SECRET_ACCESS_KEY,
-} from "@/config/env";
-import {
-  S3Client,
-  PutObjectCommand,
-  DeleteObjectCommand,
-  CopyObjectCommand,
-  HeadObjectCommand,
-} from "@aws-sdk/client-s3";
+import { AWS_ACCESS_KEY_ID, AWS_BUCKET_NAME, AWS_REGION, AWS_SECRET_ACCESS_KEY } from "@/config/env";
+import { S3Client, PutObjectCommand, DeleteObjectCommand, CopyObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
 import { v4 as uuidv4 } from "uuid";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { DEFAULT_PRESIGN_EXPIRY_SECONDS } from "@/constants/aws";
@@ -29,15 +18,7 @@ const s3 = new S3Client({
  * Uploads a file buffer to S3 under the specified folder.
  * Returns the full URL and S3 key for tracking/rollback.
  */
-export async function uploadImageToS3({
-  fileBuffer,
-  fileType,
-  folder,
-}: {
-  fileBuffer: Buffer;
-  fileType: string;
-  folder: string;
-}): Promise<{ url: string; key: string }> {
+export async function uploadImageToS3({ fileBuffer, fileType, folder }: { fileBuffer: Buffer; fileType: string; folder: string }): Promise<{ url: string; key: string }> {
   const extension = fileType.split("/")[1] || "jpg";
   const key = `${folder}/${uuidv4()}.${extension}`;
 
@@ -80,13 +61,7 @@ export async function deleteS3Objects(keys: string[]): Promise<void> {
  * Moves an object from one key to another (e.g., from temp-uploads to final folder).
  * Returns the new key and URL.
  */
-export async function moveS3Object({
-  fromKey,
-  toKey,
-}: {
-  fromKey: string;
-  toKey: string;
-}): Promise<{ url: string; key: string }> {
+export async function moveS3Object({ fromKey, toKey }: { fromKey: string; toKey: string }): Promise<{ url: string; key: string }> {
   const Bucket = AWS_BUCKET_NAME;
 
   await s3.send(
@@ -129,15 +104,7 @@ export async function s3ObjectExists(key: string): Promise<boolean> {
  * Generates a presigned PUT URL for direct upload to S3.
  * Assumes the full S3 key (including folder/filename) is provided.
  */
-export async function getPresignedPutUrl({
-  key,
-  fileType,
-  expiresIn = DEFAULT_PRESIGN_EXPIRY_SECONDS,
-}: {
-  key: string;
-  fileType: string;
-  expiresIn?: number;
-}): Promise<{ url: string }> {
+export async function getPresignedPutUrl({ key, fileType, expiresIn = DEFAULT_PRESIGN_EXPIRY_SECONDS }: { key: string; fileType: string; expiresIn?: number }): Promise<{ url: string }> {
   const command = new PutObjectCommand({
     Bucket: AWS_BUCKET_NAME,
     Key: key,
@@ -149,15 +116,11 @@ export async function getPresignedPutUrl({
   return { url };
 }
 
-
 /**
  * Finalizes a photo by moving it from temp-files to the final folder.
  * Returns the updated photo object with the new S3 key.
  */
-export async function finalizePhoto(
-  photo: IPhoto,
-  finalFolder: string
-): Promise<IPhoto> {
+export async function finalizePhoto(photo: IPhoto, finalFolder: string): Promise<IPhoto> {
   if (!photo?.s3Key) throw new Error("Missing s3Key in photo");
 
   if (!photo.s3Key.startsWith("temp-files/")) {
@@ -187,22 +150,13 @@ export interface UploadResult {
   putUrl: string; // optional: useful for debugging
 }
 
-
 /**
  * Uploads a file to S3 using a presigned URL.
  * Returns the S3 key and public URL of the uploaded file.
  */
 
-export async function uploadToS3Presigned({
-  file,
-  folder,
-  trackerId = "unknown",
-}: UploadToS3Options): Promise<UploadResult> {
-  const allowedMimeTypes: EImageMimeType[] = [
-    EImageMimeType.JPEG,
-    EImageMimeType.PNG,
-    EImageMimeType.JPG,
-  ];
+export async function uploadToS3Presigned({ file, folder, trackerId = "unknown" }: UploadToS3Options): Promise<UploadResult> {
+  const allowedMimeTypes: EImageMimeType[] = [EImageMimeType.JPEG, EImageMimeType.PNG, EImageMimeType.JPG];
 
   const mimetype = file.type.toLowerCase() as EImageMimeType;
   if (!allowedMimeTypes.includes(mimetype)) {
@@ -243,7 +197,6 @@ export async function uploadToS3Presigned({
   return {
     s3Key: data.key,
     url: data.publicUrl, // this is now the GET URL
-    putUrl: data.url,    // optional: useful for debugging
+    putUrl: data.url, // optional: useful for debugging
   };
-
 }
