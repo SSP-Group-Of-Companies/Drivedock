@@ -1,9 +1,30 @@
-// src/app/onboarding/layout.tsx
+/**
+ * Onboarding Layout Component — DriveDock (SSP Portal)
+ *
+ * Description:
+ * Main layout wrapper for all onboarding pages. Provides navigation structure,
+ * form wizard progress indicator, and responsive design for the driver
+ * onboarding flow. Handles scroll-based header visibility and smart back navigation.
+ *
+ * Features:
+ * - Responsive navigation with scroll-based header
+ * - Form wizard progress indicator
+ * - Smart back navigation with tracker preservation
+ * - Global loading state integration
+ * - Info modal with step descriptions
+ * - Language selection dropdown
+ *
+ * Author: Faruq Adebayo Atanda
+ * Company: SSP Group of Companies
+ * Created: 2025-01-27
+ */
+
 "use client";
 
 import Navbar from "@/components/shared/Navbar";
 import Footer from "@/components/shared/Footer";
 import CompanyLogoHeader from "@/components/shared/CompanyLogoHeader";
+import GlobalLoader from "@/components/shared/GlobalLoader";
 import FormWizardNav from "@/app/onboarding/components/FormWizardNav";
 import { usePathname, useRouter, useParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
@@ -12,20 +33,33 @@ import { AnimatePresence, motion } from "framer-motion";
 import { AlertCircle, ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
 import LanguageDropdown from "@/components/shared/LanguageDropdown";
+import useMounted from "@/hooks/useMounted";
+import { useGlobalLoading } from "@/store/useGlobalLoading";
 
 export default function FormLayout({ children }: { children: React.ReactNode }) {
+  // Internationalization and routing
   const { t } = useTranslation("common");
   const pathname = usePathname();
   const router = useRouter();
   const params = useParams();
+
+  // Local state management
   const [showModal, setShowModal] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
-  // ✅ Smart back navigation that preserves tracker ID
+  // Client-side mounting check and global loading
+  const mounted = useMounted();
+  const { show, hide } = useGlobalLoading();
+
+  /**
+   * Smart back navigation that preserves tracker ID and navigates to correct previous step
+   * Shows loading state and handles navigation based on current pathname
+   */
   const handleBackClick = () => {
+    show(t("form.loading", "Loading..."));
     const trackerId = params.id as string;
 
-    // If we're in onboarding with tracker ID, navigate to previous step
+    // Navigate to previous step based on current location in onboarding flow
     if (trackerId && pathname.includes("/onboarding/")) {
       if (pathname.includes("/page-2")) {
         router.push(`/onboarding/${trackerId}/application-form/page-1`);
@@ -34,14 +68,16 @@ export default function FormLayout({ children }: { children: React.ReactNode }) 
       } else if (pathname.includes("/prequalifications")) {
         router.push("/start");
       } else {
-        router.back(); // Fallback
+        router.back(); // Fallback for unknown paths
       }
     } else {
-      router.back(); // Fallback for other pages
+      router.back(); // Fallback for non-onboarding pages
     }
+    // The store now handles minimum display time automatically
+    hide();
   };
 
-  // Scroll detection
+  // Scroll detection for sticky header visibility
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 100);
@@ -51,7 +87,10 @@ export default function FormLayout({ children }: { children: React.ReactNode }) 
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Step detection (simple mapping)
+  /**
+   * Determines current step in onboarding flow based on pathname
+   * Maps URL patterns to step numbers for progress indicator
+   */
   const getCurrentStep = (): number => {
     if (pathname.includes("prequalifications")) return 1;
     if (pathname.includes("application-form")) return 2;
@@ -64,6 +103,8 @@ export default function FormLayout({ children }: { children: React.ReactNode }) 
   };
 
   const currentStep = getCurrentStep();
+
+  if (!mounted) return null;
 
   return (
     <>
@@ -102,7 +143,7 @@ export default function FormLayout({ children }: { children: React.ReactNode }) 
                   <LanguageDropdown />
                   <button
                     onClick={handleBackClick}
-                    className="ml-2 flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 text-white font-medium shadow hover:opacity-90 transition focus:outline-none focus:ring-2 focus:ring-blue-300"
+                    className="ml-2 flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 text-white font-medium shadow hover:opacity-90 transition focus:outline-none focus:ring-2 focus:ring-blue-300 cursor-pointer active:translate-y-[1px] active:shadow"
                     aria-label={t("navbar.back", "Go Back")}
                   >
                     <ArrowLeft size={18} />
@@ -122,7 +163,7 @@ export default function FormLayout({ children }: { children: React.ReactNode }) 
                     <LanguageDropdown />
                     <button
                       onClick={handleBackClick}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 text-white text-xs font-medium shadow hover:opacity-90 transition focus:outline-none focus:ring-2 focus:ring-blue-300"
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 text-white text-xs font-medium shadow hover:opacity-90 transition focus:outline-none focus:ring-2 focus:ring-blue-300 cursor-pointer active:translate-y-[1px] active:shadow"
                       aria-label={t("navbar.back", "Go Back")}
                     >
                       <ArrowLeft size={14} />
@@ -142,7 +183,9 @@ export default function FormLayout({ children }: { children: React.ReactNode }) 
       </AnimatePresence>
 
       <main className="relative min-h-[calc(100vh-120px)] bg-gradient-to-b from-slate-50 via-sky-100 to-sky-200 px-4 py-6 sm:px-8">
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }} className="max-w-3xl mx-auto bg-white p-6 rounded-2xl shadow-lg space-y-6 relative">
+        {/* Global loader portal */}
+        <GlobalLoader />
+        <div className="max-w-3xl mx-auto bg-white p-6 rounded-2xl shadow-lg space-y-6 relative">
           {/* Info Icon: absolute top right */}
           <button
             onClick={() => setShowModal(true)}
@@ -190,7 +233,7 @@ export default function FormLayout({ children }: { children: React.ReactNode }) 
 
           {/* Page Content */}
           {children}
-        </motion.div>
+        </div>
       </main>
 
       <Footer />

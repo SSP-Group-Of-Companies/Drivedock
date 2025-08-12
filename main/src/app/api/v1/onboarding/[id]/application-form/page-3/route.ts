@@ -34,7 +34,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     // ---------------------------
     // Phase 1: write page3 only
     // ---------------------------
-    appFormDoc.set("page3", body);
+    appFormDoc.set("page3", body.page3 || body);
     // ✅ validate only page3 subtree
     await appFormDoc.validate(["page3"]);
     // Save without triggering full-document validation

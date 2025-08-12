@@ -4,7 +4,10 @@ import { Schema } from "mongoose";
 // Accident Entry Schema
 const accidentEntrySchema = new Schema<IAccidentEntry>({
   date: { type: Date, required: [true, "Accident date is required."] },
-  natureOfAccident: { type: String, required: [true, "Nature of accident is required."] },
+  natureOfAccident: {
+    type: String,
+    required: [true, "Nature of accident is required."],
+  },
   fatalities: {
     type: Number,
     min: [0, "Fatalities cannot be negative."],
@@ -20,7 +23,10 @@ const accidentEntrySchema = new Schema<IAccidentEntry>({
 // Conviction Entry Schema
 const convictionEntrySchema = new Schema<ITrafficConvictionEntry>({
   date: { type: Date, required: [true, "Conviction date is required."] },
-  location: { type: String, required: [true, "Conviction location is required."] },
+  location: {
+    type: String,
+    required: [true, "Conviction location is required."],
+  },
   charge: { type: String, required: [true, "Charge is required."] },
   penalty: { type: String, required: [true, "Penalty is required."] },
 });

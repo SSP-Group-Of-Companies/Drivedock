@@ -41,6 +41,7 @@
 
 import { useTranslation } from "react-i18next";
 import useMounted from "@/hooks/useMounted";
+import FormHelpPopUps from "@/components/shared/FormHelpPopUps";
 
 /**
  * A single selectable option in the group.
@@ -64,6 +65,7 @@ type QuestionGroupProps = {
   value: string;
   onChange: (val: string) => void;
   options?: Option[]; // defaults to Yes/No with step1 scope
+  helpContent?: string; // optional help popup content
 };
 
 /**
@@ -80,6 +82,7 @@ export default function QuestionGroup({
   value,
   onChange,
   options = defaultOptions,
+  helpContent,
 }: QuestionGroupProps) {
   // Avoid hydration mismatch by rendering only on client mount.
   const mounted = useMounted();
@@ -93,14 +96,19 @@ export default function QuestionGroup({
   return (
     <div className="w-full bg-gray-50 rounded-xl px-4 py-3 shadow-sm">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
-        {/* Question prompt (supports string or custom React node) */}
-        <p className="font-medium text-gray-800 text-sm">{question}</p>
+        {/* Question prompt with optional help popup */}
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <p className="font-medium text-gray-800 text-sm break-words">
+            {question}
+          </p>
+          {helpContent && <FormHelpPopUps content={helpContent} />}
+        </div>
 
         {/* Segmented control container with ARIA radiogroup for accessibility */}
         <div
           role="radiogroup"
           aria-label={typeof question === "string" ? question : undefined}
-          className="inline-flex w/full sm:w-auto rounded-full border border-gray-300 overflow-hidden"
+          className="inline-flex w-full sm:w-auto sm:flex-shrink-0 rounded-full border border-gray-300 overflow-hidden"
         >
           {options.map(({ labelKey, value: optValue }, idx) => {
             // Determine if this option is the current selection

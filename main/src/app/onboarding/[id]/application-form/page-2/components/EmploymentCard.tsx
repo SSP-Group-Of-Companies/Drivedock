@@ -468,6 +468,7 @@ export default function EmploymentCard({ index }: Props) {
                 shouldValidate: true,
               })
             }
+            helpContent={t("form.helpPopups.page2SafetySensitive")}
           />
           {getError("safetySensitiveFunction") && (
             <p className="text-red-500 text-sm mt-1">

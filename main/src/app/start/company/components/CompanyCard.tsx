@@ -66,6 +66,7 @@ export default function CompanyCard({
           width={0}
           height={0}
           sizes="40px"
+          priority
           className="w-[40px] h-auto rounded-md object-contain"
         />
         <span

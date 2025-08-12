@@ -89,6 +89,11 @@
 
   "form": {
     "subtitle": "All information must be answered truthfully. Liability falls on the applicant.",
+
+    "helpPopups": {
+      "page2SafetySensitive": "As part of our regulatory compliance process, please confirm the following information:\n\nCross-Border Driving: Please indicate \"Yes\" if you have previously operated a commercial vehicle across the U.S.–Canada border. If not, please indicate \"No.\"\n\nDOT-Regulated Drug Testing: Please indicate \"Yes\" if your previous employer conducted drug and alcohol testing in accordance with U.S. Department of Transportation (DOT) regulations. If not, please indicate \"No.\"\n\nYour responses help us ensure compliance with applicable transportation and safety regulations. If you have any questions or need clarification, feel free to reach out.",
+      "page3CanadianHours": "As part of the Hours of Service (HOS) compliance requirements under Canadian regulations, please provide the number of on-duty hours (including driving) you completed in the last 14 days with your previous employer.\n\nKindly ensure the following:\n• Indicate the number of hours worked for each day in the 14-day period.\n• Include the total hours worked over the entire 14 days.\n• If you were on vacation, off-duty, or did not work on any day, please indicate that by entering \"0\" or \"nil\" for that day.\n\nThis information is essential for us to accurately track your compliance with Canadian HOS rules. Thank you for your cooperation."
+    },
     "step1": {
       "title": "Pre-Qualification Form",
       "questions": {
@@ -209,7 +214,7 @@
           "salary": "Salary",
           "reasonForLeaving": "Reason for Leaving...",
           "subjectToFMCSR": "Were you subject to FMCSR (Federal Motor Carrier Safety Regulations)?",
-          "safetySensitiveFunction": "Did you perform safety-sensitive functions?"
+          "safetySensitiveFunction": "Was your job designated as a safety sensitive function in any DOT regulated mode subject to the drug and alcohol testing requirement of 49 CFR part 40."
         },
         "actions": {
           "addPrevious": "Add Previous Employer",
@@ -221,76 +226,40 @@
         },
         "gapDetected": "Gap of {days} days detected between employments. Please explain:"
       },
-      "page3": {},
-      "page4": {
+      "page3": {
         "sections": {
-          "business": { "title": "Incorporate Details" },
-          "additionalInfo": { "title": "Additional Info" },
-          "eligibilityDocs": {
-            "title": "Health / Identity Documents",
-            "workAuth": "Proof of Work Authorization"
-          },
-          "fastCard": {
-            "title": "FAST Card",
-            "note": "FAST card is optional for US applicants."
-          },
-          "criminalRecords": {
-            "title": "Criminal Records",
-            "subtitle": "List any convictions. Leave blank if none.",
-            "guidance": {
-              "intro": "Applicants must declare all convictions for offenses under Canadian federal law.",
-              "dontDeclareTitle": "Do not declare the following:",
-              "items": {
-                "item1": "A conviction for which you have received a Record Suspension (formerly pardon) in accordance with the Criminal Records Act;",
-                "item2": "A conviction where you were a \"young person\" under the Youth Criminal Justice Act;",
-                "item3": "An Absolute or Conditional Discharge, pursuant to section 730 of the Criminal Code;",
-                "item4": "An offense for which you were not convicted;",
-                "item5": "Any provincial or municipal offense; and",
-                "item6": "Any charges dealt with outside of Canada."
-              }
-            }
-          }
+          "accidentHistory": "Accident Report",
+          "trafficConvictions": "Traffic Convictions",
+          "education": "Education",
+          "canadianHours": "Canadian Hours of Service"
         },
+        "instructionsCanadianHours": "INSTRUCTIONS: Motor carriers when using a driver for the first time or intermittently shall obtain from the driver a signed statement giving the driver's total time on –duty during the immediately preceding 14 days and time at which such driver was last relieved from duty prior to beginning work for such carrier (see Section 395.8(j)(2) Federal Motor Carrier Safety Regulations). NOTE: Hours for any compensated work during the preceding 14 days, including work for a non- motor carrier entity, must be recorded on this form.",
+        "instructionsAccidentHistory": "Please provide details of any accidents history you have been involved. If you have no accidents to report, you may leave all fields empty.",
+        "instructionsTrafficConvictions": "Please provide details of any traffic convictions you have received forfeitures, and Warnings for the past three years (other than parking violations). If you have no convictions to report, you may leave all fields empty.",
+        "instructionsEducation": "Please indicate the number of years completed in each education level. Select 0 if you did not attend that level.",
         "fields": {
-          "employeeNumber": "Employee Number",
-          "hstNumber": "HST Number",
-          "businessNumber": "Business Number",
+          "date": "Date",
+          "natureOfAccident": "Nature of Accident (Head-on, Rear end, upset, NAF, etc...",
+          "fatalities": "Fatalities",
+          "injuries": "Injuries",
+          "location": "Location",
+          "charge": "Charge",
+          "penalty": "Penalty",
+          "gradeSchool": "Grade School (yrs)",
+          "college": "College (yrs)",
+          "postGraduate": "Post Graduate (yrs)",
+          "dayOneDate": "Date Day One (YYYY-MM-DD)",
+          "totalHours": "Total Hours",
+          "dateTitle": "Daily Hours (0-24 hours per day)"
+        },
 
-          "offense": "Offense",
-          "dateOfSentence": "Date Of Sentence",
-          "courtLocation": "Court Location",
-
-          "denied": "Have you ever been denied a license, permit or privilege to operate a motor vehicle?",
-          "suspended": "Has any license, permit or privilege ever been suspended or revoked?",
-          "suspensionNotes": "Notes",
-          "testedPositive": "Have you ever tested positive, or refused to test, on any pre-employment drug or alcohol test?",
-          "completedDOT": "If yes, can you provide proof that you successfully completed DOT return-to-duty requirements?",
-          "hasInsurance": "Do you have your own Accidental Benefit Insurance Coverage?",
-
-          "healthCard": "Health Card",
-          "passport": "Passport",
-          "usVisa": "US Visa",
-          "prCitizenship": "PR / Citizenship",
-          "medicalCert": "Medical Certification",
-
-          "fastNumber": "FAST Card Number",
-          "fastExpiry": "Expiry Date",
-          "fastFront": "Photo Front",
-          "fastBack": "Photo Back"
+        "actions": {
+          "addRow": "Add Row",
+          "remove": "Remove"
         }
       },
-      "page5": {
-        "title": "Pre-Employment Competency Questions",
-        "lockedNote": "You have already submitted your answers and this test cannot be retaken.",
-        "scoreLabel": "Your score is",
-        "note": "All incorrect answers have been explained to me and I now understand them better.",
-        "modal": {
-          "finalConfirmation": "Final Confirmation",
-          "confirmMessage": "Competency questions cannot be retaken. Are you sure you want to proceed?",
-          "cancel": "Cancel",
-          "confirm": "Confirm"
-        }
-      },
+      "page4": {},
+      "page5": {},
       "page6": {}
     },
 

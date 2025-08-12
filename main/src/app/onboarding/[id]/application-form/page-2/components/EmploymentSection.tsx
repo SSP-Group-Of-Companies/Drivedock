@@ -92,7 +92,9 @@ export default function EmploymentSection() {
             {t("form.step2.page2.sections.employment")}
           </h2>
         </div>
-        <p>{t("form.step2.page2.requirements")}</p>
+        <p className="text-sm text-gray-600">
+          {t("form.step2.page2.requirements")}
+        </p>
         {/* Anchor for scrollToError: matches Zod error path */}
         <div data-field="employments.totals.root" />
 

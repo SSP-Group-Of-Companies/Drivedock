@@ -9,13 +9,13 @@
   },
 
   "welcome": {
-    "heading": "Únete a la carretera con SSP",
+    "heading": "Únete a la ruta con SSP",
     "description": "Tu plataforma digital de incorporación para unirte a SSP Truck Line. Completa tus documentos de contratación de forma rápida y segura.",
 
     "features": {
       "language": {
-        "title": "Multilingüe",
-        "description": "Disponible en inglés, español y francés para servir cómodamente a todos los conductores"
+        "title": "Multilenguaje",
+        "description": "Disponible en inglés, español y francés para que todos los conductores se sientan cómodos"
       },
       "security": {
         "title": "Seguro y confiable",
@@ -23,7 +23,7 @@
       },
       "steps": {
         "title": "Proceso en 6 pasos",
-        "description": "Completa todos los documentos de contratación requeridos mediante nuestro asistente de formularios guiado en 6 etapas"
+        "description": "Completa todos los documentos de contratación con nuestro asistente guiado de 6 etapas"
       }
     },
 
@@ -31,7 +31,7 @@
       "title": "Proceso de solicitud",
       "personal": "Información personal",
       "employment": "Historial laboral",
-      "driving": "Registro de conducción",
+      "driving": "Historial de conducción",
       "medical": "Información médica",
       "references": "Referencias",
       "review": "Revisión final"
@@ -43,15 +43,15 @@
     "subheading": "Inicia tu camino con SSP Group of Companies",
     "languageLabel": "🌐 Seleccionar idioma",
     "beforeYouBegin": "Antes de comenzar",
-    "readAndAgree": "Por favor lee y acepta lo siguiente:",
-    "continue": "Continuar con la solicitud",
+    "readAndAgree": "Lee y acepta lo siguiente:",
+    "continue": "Continuar a la solicitud",
     "estimatedTime": "Tiempo estimado: 15–20 minutos",
     "agreeToTerms": "Acepto las condiciones anteriores",
 
     "checklist": {
       "accurateInfo": "Toda la información proporcionada debe ser precisa y veraz",
       "digitalProcess": "Entiendes que este es un proceso de solicitud digital",
-      "consentChecks": "Das tu consentimiento para las verificaciones de antecedentes y de registro de conducción",
+      "consentChecks": "Das tu consentimiento para las verificaciones de antecedentes y de historial de conducción",
       "termsAgreement": "Aceptas los términos y condiciones de SSP Group of Companies"
     },
 
@@ -60,30 +60,260 @@
       "intro": "Al continuar, aceptas que:",
       "items": {
         "subcontractor": "Estás solicitando como subcontratista o empleado",
-        "truthfulInfo": "Toda la información que envíes es verdadera y precisa",
-        "backgroundChecks": "Das tu consentimiento para las verificaciones de antecedentes y de registro de conducción",
+        "truthfulInfo": "Toda la información que envíes es verdadera y exacta",
+        "backgroundChecks": "Das tu consentimiento para verificaciones de antecedentes y de historial de conducción",
         "companyRules": {
-          "title": "Entiendes y aceptas las reglas de la empresa sobre:",
-          "drugPolicy": "Políticas de drogas y alcohol",
+          "title": "Comprendes y aceptas las normas de la empresa sobre:",
+          "drugPolicy": "Políticas de alcohol y drogas",
           "dashCam": "Grabación con cámara a bordo en los vehículos",
-          "safetyRules": "Exceso de velocidad, informes de accidentes y uso del teléfono",
+          "safetyRules": "Exceso de velocidad, reporte de accidentes y uso del teléfono",
           "seals": "Sellos de remolque e inspecciones transfronterizas"
         },
         "discipline": "Las medidas disciplinarias pueden incluir multas, suspensión o despido",
-        "laws": "Eres responsable de cumplir con las leyes de transporte por carretera de Canadá y Estados Unidos"
+        "laws": "Eres responsable de cumplir las leyes canadienses y estadounidenses de transporte por carretera"
       },
       "cancel": "Cancelar",
       "agree": "Acepto"
     }
   },
+
   "company": {
     "heading": "Únete a nuestra familia de empresas",
-    "subheading": "Elige la empresa donde quieres construir tu carrera como conductor",
+    "subheading": "Elige la empresa donde deseas construir tu carrera como conductor",
     "applyNow": "Postular ahora",
     "selectType": "Seleccionar tipo de solicitud",
-    "selectTypeDesc": "Por favor elige el tipo de puesto al que estás postulando:",
-    "flatbed": "Plataforma",
-    "dropdeck": "Furgón seco",
+    "selectTypeDesc": "Elige el tipo de puesto al que estás postulando:",
+    "flatbed": "Plataforma (Flatbed)",
+    "dropdeck": "Furgón seco (Dry Van)",
     "cancel": "Cancelar"
+  },
+
+  "form": {
+    "subtitle": "Toda la información debe ser veraz. La responsabilidad recae en el solicitante.",
+
+    "helpPopups": {
+      "page2SafetySensitive": "Como parte de nuestro proceso de cumplimiento normativo, confirma la siguiente información:\n\nConducción transfronteriza: Indica \"Sí\" si anteriormente operaste un vehículo comercial a través de la frontera entre EE. UU. y Canadá. Si no, indica \"No\".\n\nPruebas de drogas reguladas por el DOT: Indica \"Sí\" si tu empleador anterior realizó pruebas de alcohol y drogas de acuerdo con las regulaciones del Departamento de Transporte de EE. UU. (DOT). Si no, indica \"No\".\n\nTus respuestas nos ayudan a garantizar el cumplimiento de las normas de transporte y seguridad aplicables. Si tienes preguntas o necesitas aclaraciones, no dudes en contactarnos.",
+      "page3CanadianHours": "Como parte de los requisitos de cumplimiento de las Horas de Servicio (HOS) bajo la normativa canadiense, proporciona el número de horas en servicio (incluida la conducción) que realizaste en los últimos 14 días con tu empleador anterior.\n\nAsegúrate de lo siguiente:\n• Indica el número de horas trabajadas para cada día del período de 14 días.\n• Incluye el total de horas trabajadas durante los 14 días.\n• Si estuviste de vacaciones, fuera de servicio o no trabajaste algún día, indica \"0\" o \"ninguno\" para ese día.\n\nEsta información es esencial para verificar tu cumplimiento con las reglas canadienses de HOS. Gracias por tu colaboración."
+    },
+
+    "step1": {
+      "title": "Formulario de preselección",
+      "questions": {
+        "over23Local": "¿Tienes 23 años o más (para rutas locales)?",
+        "over25CrossBorder": "¿Tienes 25 años o más (para cruce fronterizo)?",
+        "canDriveManual": "¿Sabes conducir transmisión manual?",
+        "experienceDrivingTractorTrailer": "¿Tienes al menos 2 años de experiencia verificable conduciendo tractocamión/remolque?",
+        "faultAccidentIn3Years": "¿Has tenido algún accidente con culpa en los últimos 3 años?",
+        "zeroPointsOnAbstract": "¿Tienes más de 0 puntos en tu historial de conductor?",
+        "noUnpardonedCriminalRecord": "¿Tienes antecedentes penales por los que no se te haya concedido perdón?",
+        "legalRightToWorkCanada": "¿Tienes derecho legal a trabajar en Canadá?",
+        "legalRightToWorkUS": "¿Tienes derecho legal a trabajar en EE. UU.?",
+        "canCrossBorderUSA": "¿Puedes cruzar la frontera hacia EE. UU.?",
+        "hasFASTCard": "¿Tienes tarjeta FAST?",
+
+        "categories": "Categorías",
+        "driverType": "¿Qué tipo de conductor eres?",
+        "haulPreference": "¿Qué prefieres?",
+        "teamStatus": "¿Eres parte de un equipo o conduces solo?",
+        "preferLocalDriving": "¿Prefieres la conducción local?",
+        "preferSwitching": "¿Prefieres cambios (drop & hook)?",
+        "flatbedExperience": "¿Tienes experiencia en plataforma (flatbed)?",
+
+        "yes": "Sí",
+        "no": "No",
+
+        "company": "Conductor de empresa",
+        "owneroperator": "Propietario-operador",
+        "ownerdriver": "Conductor propietario",
+        "shorthaul": "Corta distancia",
+        "longhaul": "Larga distancia",
+        "team": "Equipo",
+        "single": "Individual",
+
+        "flatbedPopup": {
+          "title": "Aviso",
+          "yes": "Tu nivel en plataforma se evaluará durante la prueba de manejo.",
+          "no": "Después de tu prueba de manejo, se te inscribirá en una capacitación de plataforma de 2 semanas.",
+          "ok": "OK"
+        }
+      },
+      "next": "Siguiente"
+    },
+
+    "step2": {
+      "title": "Formulario de solicitud",
+      "page1": {
+        "sections": {
+          "personal": "Información personal",
+          "birth": "Lugar de nacimiento",
+          "license": "Información del permiso",
+          "address": {
+            "title": "Historial de direcciones",
+            "subtitle": "Proporciona tu historial de direcciones de los últimos 5 años",
+            "current": "Dirección actual",
+            "previous": "Dirección anterior"
+          }
+        },
+        "fields": {
+          "firstName": "Nombre",
+          "lastName": "Apellido",
+          "sin": "SIN (Número de Seguro Social)",
+          "sinPhoto": "Foto de la tarjeta SIN",
+          "sinPhotoDesc": "Haz clic para capturar o seleccionar una imagen",
+          "dob": "Fecha de nacimiento",
+          "canProvideProof": "¿Puedes proporcionar prueba de edad?",
+          "phoneHome": "Teléfono (fijo)",
+          "email": "Correo electrónico",
+          "phoneCell": "Teléfono (celular)",
+          "emergencyContactName": "Nombre del contacto de emergencia",
+          "emergencyContactPhone": "Teléfono del contacto de emergencia",
+          "birthCity": "Ciudad de nacimiento",
+          "birthStateOrProvince": "Estado o provincia",
+          "birthCountry": "País de nacimiento",
+          "licenseNumber": "Número de permiso",
+          "licenseProvince": "Provincia",
+          "licenseType": "Tipo de permiso",
+          "licenseExpiry": "Fecha de vencimiento",
+          "licenseFrontPhoto": "Foto frontal del permiso",
+          "licensePhotoDesc": "Haz clic para capturar o seleccionar una imagen",
+          "licenseBackPhoto": "Foto posterior del permiso",
+          "address": "Dirección",
+          "city": "Ciudad",
+          "stateOrProvince": "Estado o provincia",
+          "postalCode": "Código postal",
+          "zipCode": "Código ZIP",
+          "from": "Fecha de inicio",
+          "to": "Fecha de finalización"
+        },
+        "actions": {
+          "addLicense": "Agregar otro permiso",
+          "removeLicense": "Eliminar permiso",
+          "addAddress": "Agregar otra dirección",
+          "removeAddress": "Eliminar dirección"
+        }
+      },
+
+      "page2": {
+        "sections": {
+          "employment": "Historial laboral"
+        },
+        "requirements": "Los Federal Motor Carrier Safety Regulations (49CFR391.21) requieren que todos los solicitantes que deseen conducir un vehículo comercial enumeren todo empleo de los últimos dos (2) años. Además, si has conducido un vehículo comercial anteriormente, debes proporcionar historial laboral por ocho (8) años adicionales para un total de diez (10) años. Cualquier período sin empleo de 1 mes o más debe explicarse.",
+        "labels": {
+          "currentEmployer": "Empleador actual",
+          "previousEmployer": "Empleador anterior"
+        },
+        "fields": {
+          "employerName": "Nombre del empleador",
+          "supervisorName": "Nombre del supervisor",
+          "address": "Dirección",
+          "city": "Ciudad",
+          "stateOrProvince": "Provincia o Estado",
+          "postalCode": "Código postal",
+          "phone1": "Teléfono 1",
+          "phone2": "Teléfono 2 (opcional)",
+          "email": "Correo electrónico",
+          "positionHeld": "Puesto desempeñado",
+          "from": "Fecha de inicio",
+          "to": "Fecha de finalización",
+          "salary": "Salario",
+          "reasonForLeaving": "Motivo de salida...",
+          "subjectToFMCSR": "¿Estabas sujeto a los FMCSR (Federal Motor Carrier Safety Regulations)?",
+          "safetySensitiveFunction": "¿Tu puesto estaba designado como función sensible a la seguridad en algún modo regulado por el DOT y sujeto a los requisitos de pruebas de alcohol y drogas de la parte 40 del 49 CFR?"
+        },
+        "actions": {
+          "addPrevious": "Agregar empleador anterior",
+          "removePrevious": "Eliminar"
+        },
+        "modal": {
+          "title": "Se requiere historial laboral adicional",
+          "message": "Tienes más de 2 años de experiencia. Agrega tu empleo anterior para completar la información requerida."
+        },
+        "gapDetected": "Se detectó una brecha de {days} días entre empleos. Explica:"
+      },
+
+      "page3": {
+        "sections": {
+          "accidentHistory": "Reporte de accidentes",
+          "trafficConvictions": "Infracciones de tránsito",
+          "education": "Educación",
+          "canadianHours": "Horas de servicio canadienses"
+        },
+        "instructionsCanadianHours": "INSTRUCCIONES: Los transportistas, cuando utilizan a un conductor por primera vez o de forma intermitente, deben obtener del conductor una declaración firmada que indique el tiempo total en servicio del conductor durante los 14 días inmediatamente anteriores y la hora a la que fue relevado de sus funciones antes de comenzar a trabajar para dicho transportista (ver Sección 395.8(j)(2) de los Federal Motor Carrier Safety Regulations). NOTA: Las horas de cualquier trabajo remunerado durante los 14 días anteriores, incluido el trabajo para una entidad que no sea transportista, deben registrarse en este formulario.",
+        "instructionsAccidentHistory": "Proporciona detalles de cualquier accidente en el que hayas estado involucrado. Si no tienes accidentes para reportar, puedes dejar todos los campos vacíos.",
+        "instructionsTrafficConvictions": "Proporciona detalles de cualquier infracción/convicción de tránsito, decomiso o advertencia recibidos en los últimos tres años (que no sean infracciones de estacionamiento). Si no tienes nada que reportar, puedes dejar todos los campos vacíos.",
+        "instructionsEducation": "Indica el número de años completados en cada nivel educativo. Selecciona 0 si no cursaste ese nivel.",
+        "fields": {
+          "date": "Fecha",
+          "natureOfAccident": "Naturaleza del accidente (frontal, alcance, vuelco, no responsable [NAF], etc.)",
+          "fatalities": "Fallecidos",
+          "injuries": "Lesionados",
+          "location": "Lugar",
+          "charge": "Cargo",
+          "penalty": "Sanción",
+          "gradeSchool": "Escuela primaria (años)",
+          "college": "Universidad/Instituto (años)",
+          "postGraduate": "Posgrado (años)",
+          "dayOneDate": "Fecha día uno (AAAA-MM-DD)",
+          "totalHours": "Total de horas",
+          "dateTitle": "Horas diarias (0-24 horas por día)"
+        },
+
+        "actions": {
+          "addRow": "Agregar fila",
+          "remove": "Eliminar"
+        }
+      },
+
+      "page4": {},
+      "page5": {},
+      "page6": {}
+    },
+
+    "errors": {
+      "minimum5Years": "Debes proporcionar al menos 5 años de historial de direcciones.",
+      "addressDurationError": "El historial de direcciones debe abarcar los últimos 5 años. Agrega una dirección anterior si viviste en más de un lugar."
+    },
+    "continue": "Continuar",
+    "submitting": "Enviando..."
+  },
+
+  "resume": {
+    "title": "Reanudar tu solicitud",
+    "description": "Ingresa tu SIN para continuar tu incorporación desde donde te detuviste.",
+    "placeholder": "999-888-777",
+    "success": "¡Coincidencia encontrada! Redirigiendo...",
+    "error": "No se encontró ninguna solicitud para ese SIN.",
+    "cancel": "Cancelar",
+    "continue": "Continuar"
+  },
+
+  "wizard": {
+    "infoTitle": "¿Qué significan los pasos?",
+    "modalTitle": "Pasos de la solicitud",
+    "close": "Cerrar",
+    "step1": {
+      "label": "Paso 1",
+      "desc": "Preselección"
+    },
+    "step2": {
+      "label": "Paso 2",
+      "desc": "Formulario de solicitud del conductor"
+    },
+    "step3": {
+      "label": "Paso 3",
+      "desc": "Políticas y consentimientos"
+    },
+    "step4": {
+      "label": "Paso 4",
+      "desc": "Capacitación CarrierEdge"
+    },
+    "step5": {
+      "label": "Paso 5",
+      "desc": "Prueba de manejo"
+    },
+    "step6": {
+      "label": "Paso 6",
+      "desc": "Prueba de drogas"
+    }
   }
 }

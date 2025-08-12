@@ -47,6 +47,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { ArrowRight } from "lucide-react";
+import { useGlobalLoading } from "@/store/useGlobalLoading";
 
 //components, hooks, and types
 import useMounted from "@/hooks/useMounted";
@@ -93,6 +94,7 @@ export default function PreQualificationClient({
   const router = useRouter();
   const { selectedCompany } = useCompanySelection(); // Determines US/CA behavior
   const { setTracker } = useOnboardingTracker(); // Hydrate tracker into Zustand
+  const { show, hide } = useGlobalLoading(); // Global loading state
 
   // Controls visibility/content of the flatbed training popup
   const [showFlatbedPopup, setShowFlatbedPopup] = useState<null | "yes" | "no">(
@@ -168,6 +170,8 @@ export default function PreQualificationClient({
     }
 
     try {
+      show(t("form.loading", "Processing..."));
+      
       // PATCH to backend for this tracker
       const res = await fetch(
         `/api/v1/onboarding/${trackerId}/prequalifications`,
@@ -195,6 +199,8 @@ export default function PreQualificationClient({
         t("form.errors.saveFailed") ||
           "Failed to save your answers. Please try again."
       );
+    } finally {
+      hide();
     }
   };
 
@@ -268,7 +274,7 @@ export default function PreQualificationClient({
           <button
             disabled={!allAnswered}
             onClick={handleSubmit(onSubmit)}
-            className={`px-8 py-2 mt-4 rounded-full font-semibold transition-colors shadow-md flex items-center gap-2 ${
+            className={`px-8 py-2 mt-4 rounded-full font-semibold transition-all shadow-md flex items-center gap-2 cursor-pointer active:translate-y-[1px] active:shadow ${
               allAnswered
                 ? "bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 text-white hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-blue-300"
                 : "bg-gray-200 text-gray-400 cursor-not-allowed"

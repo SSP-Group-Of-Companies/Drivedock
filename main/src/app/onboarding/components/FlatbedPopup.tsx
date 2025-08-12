@@ -23,6 +23,7 @@
 import { Dialog } from "@headlessui/react";
 import { motion } from "framer-motion";
 import { useTranslation } from "react-i18next";
+import useMounted from "@/hooks/useMounted";
 
 type FlatbedPopupProps = {
   type: "yes" | "no";
@@ -31,6 +32,9 @@ type FlatbedPopupProps = {
 
 export default function FlatbedPopup({ type, onClose }: FlatbedPopupProps) {
   const { t } = useTranslation("common");
+  const mounted = useMounted();
+
+  if (!mounted) return null;
 
   return (
     <Dialog open={true} onClose={onClose} className="relative z-50">
