@@ -2,19 +2,18 @@
  * Global Loading State Management — DriveDock (SSP Portal)
  *
  * Description:
- * Zustand store for managing global loading state across the application.
- * Provides a centralized way to show/hide loading screens with minimum
- * display time to prevent jarring flashes during fast operations.
+ * Simple Zustand store for managing global loading state across the application.
+ * Provides immediate show/hide functionality without any minimum display time.
  *
  * Features:
- * - Minimum display time (100ms) to prevent loading screen flashes
- * - Automatic timeout management for smooth UX
- * - Centralized loading state for consistent user experience
+ * - Immediate show/hide without delays
+ * - Simple state management
+ * - Centralized loading state
  *
  * Usage:
  * const { show, hide } = useGlobalLoading();
- * show("Loading..."); // Shows loader with message
- * hide(); // Hides loader (respects minimum display time)
+ * show("Loading..."); // Shows loader immediately
+ * hide(); // Hides loader immediately
  *
  * Author: Faruq Adebayo Atanda
  * Company: SSP Group of Companies
@@ -30,55 +29,24 @@ type GlobalLoadingState = {
   hide: () => void;
 };
 
-export const useGlobalLoading = create<GlobalLoadingState>((set, get) => {
-  // Internal state for managing minimum display time
-  let hideTimeout: NodeJS.Timeout | null = null;
-  let showTime: number | null = null;
-  const MIN_DISPLAY_TIME = 100; // Minimum display time to prevent flash
-
+export const useGlobalLoading = create<GlobalLoadingState>((set) => {
   return {
     visible: false,
     message: undefined,
-    
+
     /**
      * Shows the global loading screen with optional message
      * @param message - Optional loading message to display
      */
     show: (message) => {
-      // Clear any pending hide timeout to prevent conflicts
-      if (hideTimeout) {
-        clearTimeout(hideTimeout);
-        hideTimeout = null;
-      }
-      
-      // Record when we started showing the loader
-      showTime = Date.now();
       set({ visible: true, message });
     },
-    
+
     /**
-     * Hides the global loading screen with minimum display time enforcement
-     * Prevents jarring flashes by ensuring loader shows for at least MIN_DISPLAY_TIME
+     * Hides the global loading screen immediately
      */
     hide: () => {
-      const currentTime = Date.now();
-      const timeShown = showTime ? currentTime - showTime : 0;
-      
-      // If we haven't shown the loader for minimum time, schedule the hide
-      if (timeShown < MIN_DISPLAY_TIME) {
-        const remainingTime = MIN_DISPLAY_TIME - timeShown;
-        hideTimeout = setTimeout(() => {
-          set({ visible: false, message: undefined });
-          hideTimeout = null;
-          showTime = null;
-        }, remainingTime);
-      } else {
-        // We've shown it long enough, hide immediately
-        set({ visible: false, message: undefined });
-        showTime = null;
-      }
+      set({ visible: false, message: undefined });
     },
   };
 });
-
-

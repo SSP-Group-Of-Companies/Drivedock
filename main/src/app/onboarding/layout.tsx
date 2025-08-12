@@ -24,17 +24,16 @@
 import Navbar from "@/components/shared/Navbar";
 import Footer from "@/components/shared/Footer";
 import CompanyLogoHeader from "@/components/shared/CompanyLogoHeader";
-import GlobalLoader from "@/components/shared/GlobalLoader";
 import FormWizardNav from "@/app/onboarding/components/FormWizardNav";
 import { usePathname, useRouter, useParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { Dialog } from "@headlessui/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { AlertCircle, ArrowLeft } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import LanguageDropdown from "@/components/shared/LanguageDropdown";
 import useMounted from "@/hooks/useMounted";
-import { useGlobalLoading } from "@/store/useGlobalLoading";
+import { handleBackNavigation } from "@/lib/utils/onboardingUtils";
 
 export default function FormLayout({
   children,
@@ -46,40 +45,22 @@ export default function FormLayout({
   const pathname = usePathname();
   const router = useRouter();
   const params = useParams();
-  
+
   // Local state management
   const [showModal, setShowModal] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  
-  // Client-side mounting check and global loading
+
+  // Client-side mounting check
   const mounted = useMounted();
-  const { show, hide } = useGlobalLoading();
 
   /**
-   * Smart back navigation that preserves tracker ID and navigates to correct previous step
-   * Shows loading state and handles navigation based on current pathname
+   * Smart back navigation using shared navigation logic
+   * Loading is handled by the router event listeners
    */
-  const handleBackClick = () => {
-    show(t("form.loading", "Loading..."));
+  const handleBackClick = useCallback(() => {
     const trackerId = params.id as string;
-
-    // Navigate to previous step based on current location in onboarding flow
-    if (trackerId && pathname.includes("/onboarding/")) {
-      if (pathname.includes("/page-2")) {
-        router.push(`/onboarding/${trackerId}/application-form/page-1`);
-      } else if (pathname.includes("/page-1")) {
-        router.push(`/onboarding/${trackerId}/prequalifications`);
-      } else if (pathname.includes("/prequalifications")) {
-        router.push("/start");
-      } else {
-        router.back(); // Fallback for unknown paths
-      }
-    } else {
-      router.back(); // Fallback for non-onboarding pages
-    }
-    // The store now handles minimum display time automatically
-    hide();
-  };
+    handleBackNavigation(pathname, trackerId, router);
+  }, [pathname, params.id, router]);
 
   // Scroll detection for sticky header visibility
   useEffect(() => {
@@ -191,8 +172,6 @@ export default function FormLayout({
       </AnimatePresence>
 
       <main className="relative min-h-[calc(100vh-120px)] bg-gradient-to-b from-slate-50 via-sky-100 to-sky-200 px-4 py-6 sm:px-8">
-        {/* Global loader portal */}
-        <GlobalLoader />
         <div className="max-w-3xl mx-auto bg-white p-6 rounded-2xl shadow-lg space-y-6 relative">
           {/* Info Icon: absolute top right */}
           <button

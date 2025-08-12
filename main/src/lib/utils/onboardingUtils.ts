@@ -5,6 +5,9 @@ import {
   ITrackerContext,
 } from "@/types/onboardingTracker.type";
 
+// Start flow routes (before onboarding)
+const START_FLOW = ["/start/start-info-page", "/start/company"] as const;
+
 // Canonical onboarding step flow
 export const onboardingStepFlow: EStepPath[] = [
   EStepPath.PRE_QUALIFICATIONS,
@@ -154,4 +157,60 @@ export function onboardingExpired(
 ): boolean {
   if (!tracker?.resumeExpiresAt) return true;
   return new Date() > tracker.resumeExpiresAt;
+}
+
+/**
+ * Builds the complete navigation flow including start pages and onboarding steps
+ * @param trackerId - Optional tracker ID for onboarding routes
+ * @returns Array of all possible routes in navigation order
+ */
+export function buildFullFlow(trackerId?: string): string[] {
+  const onboardingAbs = trackerId
+    ? onboardingStepFlow.map((seg) => `/onboarding/${trackerId}/${seg}`)
+    : [];
+  return [...START_FLOW, ...onboardingAbs];
+}
+
+/**
+ * Finds the index of the current pathname in the navigation flow
+ * @param flow - Array of routes in navigation order
+ * @param pathname - Current pathname to find
+ * @returns Index of the pathname in the flow, or -1 if not found
+ */
+export function findIndexInFlow(flow: string[], pathname: string): number {
+  // Exact match first
+  let idx = flow.findIndex((p) => p === pathname);
+  if (idx !== -1) return idx;
+  // Allow nested pages under a step (e.g., .../page-1/extra)
+  idx = flow.findIndex((p) => pathname.startsWith(p + "/"));
+  return idx;
+}
+
+/**
+ * Shared back navigation handler for the entire application
+ * Handles navigation from any page in the flow back to the previous step
+ * @param pathname - Current pathname
+ * @param trackerId - Optional tracker ID from URL params
+ * @param router - Next.js router instance
+ */
+export function handleBackNavigation(
+  pathname: string,
+  trackerId: string | undefined,
+  router: any
+): void {
+  // Build absolute flow: /start/* followed by /onboarding/:id/*
+  const fullFlow = buildFullFlow(trackerId);
+
+  // Where are we right now?
+  const currentIndex = findIndexInFlow(fullFlow, pathname);
+
+  // If not found, or we're already at the first step → go home
+  if (currentIndex <= 0) {
+    router.push("/");
+    return;
+  }
+
+  // Otherwise go to the previous absolute URL (works for both /start and /onboarding)
+  const previousUrl = fullFlow[currentIndex - 1];
+  router.push(previousUrl);
 }

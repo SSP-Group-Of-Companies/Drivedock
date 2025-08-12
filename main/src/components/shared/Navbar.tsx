@@ -44,7 +44,7 @@ import { motion } from "framer-motion";
 import useMounted from "@/hooks/useMounted";
 import LanguageDropdown from "@/components/shared/LanguageDropdown";
 
-import { onboardingStepFlow } from "@/lib/utils/onboardingUtils";
+import { handleBackNavigation } from "@/lib/utils/onboardingUtils";
 
 export default function Navbar() {
   const mounted = useMounted();
@@ -55,30 +55,11 @@ export default function Navbar() {
   const params = useParams();
 
   /**
-   * Handles back button click:
-   * - If inside `/onboarding/[trackerId]/[step]`, navigate to the previous step.
-   * - If on the first onboarding step, go back to `/start`.
-   * - Otherwise, use browser's history to go back.
+   * Handles back button click using shared navigation logic
    */
   const handleBackClick = () => {
-    const trackerId = params.id as string;
-
-    if (trackerId && pathname.includes("/onboarding/")) {
-      const currentStepIndex = onboardingStepFlow.findIndex((step) =>
-        pathname.includes(`/${step}`)
-      );
-
-      if (currentStepIndex > 0) {
-        const previousStep = onboardingStepFlow[currentStepIndex - 1];
-        router.push(`/onboarding/${trackerId}/${previousStep}`);
-      } else if (currentStepIndex === 0) {
-        router.push("/start");
-      } else {
-        router.back();
-      }
-    } else {
-      router.back();
-    }
+    const trackerId = (params?.id as string) || undefined;
+    handleBackNavigation(pathname, trackerId, router);
   };
 
   // UI control flags

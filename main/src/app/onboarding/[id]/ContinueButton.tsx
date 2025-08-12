@@ -40,6 +40,7 @@ import useMounted from "@/hooks/useMounted";
 import { usePrequalificationStore } from "@/store/usePrequalificationStore";
 import { useOnboardingTracker } from "@/store/useOnboardingTracker";
 import { useCompanySelection } from "@/hooks/frontendHooks/useCompanySelection";
+import { useGlobalLoading } from "@/store/useGlobalLoading";
 import { useFormErrorScroll } from "@/hooks/useFormErrorScroll";
 import { COMPANIES } from "@/constants/companies";
 import { submitFormStep } from "@/lib/frontendUtils/submitFormStep";
@@ -49,7 +50,6 @@ import type {
   FormPageConfig,
   FormPageConfigFactory,
 } from "@/lib/frontendConfigs/formPageConfig.types";
-import { useGlobalLoading } from "@/store/useGlobalLoading";
 
 type ContinueButtonProps<T extends FieldValues> = {
   config: FormPageConfig<T> | FormPageConfigFactory<T>;
@@ -64,7 +64,7 @@ export default function ContinueButton<T extends FieldValues>({
   const {
     getValues,
     trigger,
-    formState: { errors, isDirty },
+    formState: { errors, defaultValues },
   } = useFormContext<T>();
 
   // Next.js navigation and routing
@@ -83,7 +83,7 @@ export default function ContinueButton<T extends FieldValues>({
 
   // Local state for submission tracking
   const [submitting, setSubmitting] = useState(false);
-  const { show, hide } = useGlobalLoading();
+  const { show } = useGlobalLoading();
 
   /**
    * Handles form submission, validation, and navigation
@@ -148,15 +148,32 @@ export default function ContinueButton<T extends FieldValues>({
 
     try {
       setSubmitting(true);
-      show(t("form.loading", "Processing..."));
 
       // Step 4: No-op continue - skip PATCH if form hasn't changed
-      if (!isPost && !isDirty) {
+      // Use a more reliable dirty check that handles boolean fields and deep comparisons
+      const formValues = getValues();
+      const hasChanges = Object.keys(formValues).some((key) => {
+        const currentValue = formValues[key as keyof typeof formValues];
+        const defaultValue = defaultValues?.[key as keyof typeof defaultValues];
+
+        // Handle arrays (like employments)
+        if (Array.isArray(currentValue) && Array.isArray(defaultValue)) {
+          return JSON.stringify(currentValue) !== JSON.stringify(defaultValue);
+        }
+
+        // Handle primitive values
+        return currentValue !== defaultValue;
+      });
+
+      if (!isPost && !hasChanges) {
         router.push(tracker?.nextUrl ?? resolvedConfig.nextRoute);
         return;
       }
 
-      // Step 5: Build payload and submit to server
+      // Step 5: Show loading immediately for API operations
+      show(t("form.loading", "Processing..."));
+
+      // Step 6: Build payload and submit to server
       const jsonPayload = resolvedConfig.buildPayload(values, ctx);
 
       const { trackerContext, nextUrl } = await submitFormStep({
@@ -183,7 +200,6 @@ export default function ContinueButton<T extends FieldValues>({
       alert("An error occurred while submitting. Please try again.");
     } finally {
       setSubmitting(false);
-      hide();
     }
   };
 
