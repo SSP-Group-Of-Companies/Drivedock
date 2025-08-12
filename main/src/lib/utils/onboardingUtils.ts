@@ -169,7 +169,7 @@ export function onboardingExpired(
 export function buildFullFlow(trackerId?: string): string[] {
   const onboardingAbs = trackerId
     ? onboardingStepFlow.map((seg) => `/onboarding/${trackerId}/${seg}`)
-    : [];
+    : onboardingStepFlow.map((seg) => `/onboarding/${seg}`); // Pre-tracker routes
   return [...START_FLOW, ...onboardingAbs];
 }
 

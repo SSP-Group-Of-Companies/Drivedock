@@ -40,18 +40,25 @@ export function useSmartGlobalLoading(defaults: Opts = {}) {
     }
     // if visible, respect minVisible
     if (visibleRef.current && shownAtRef.current != null) {
-      const elapsed = performance.now() - shownAtRef.current;
-      const remaining = Math.max(0, minVisible - elapsed);
-      if (remaining > 0) {
-        setTimeout(() => {
-          hide();
-          visibleRef.current = false;
-          shownAtRef.current = null;
-        }, remaining);
-      } else {
+      if (minVisible === 0) {
+        // Hide immediately if no minimum visible time
         hide();
         visibleRef.current = false;
         shownAtRef.current = null;
+      } else {
+        const elapsed = performance.now() - shownAtRef.current;
+        const remaining = Math.max(0, minVisible - elapsed);
+        if (remaining > 0) {
+          setTimeout(() => {
+            hide();
+            visibleRef.current = false;
+            shownAtRef.current = null;
+          }, remaining);
+        } else {
+          hide();
+          visibleRef.current = false;
+          shownAtRef.current = null;
+        }
       }
     }
   }, [hide, minVisible]);

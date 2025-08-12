@@ -9,8 +9,8 @@ export function useNavigationLoadingSmart() {
   const pathname = usePathname();
   const router = useRouter();
   const { begin, end } = useSmartGlobalLoading({
-    delay: 100, // show only if nav is actually slow
-    minVisible: 400, // avoid flicker once shown
+    delay: 500, // show only if nav takes longer than 500ms (industry standard)
+    minVisible: 0, // no minimum visible time - hide immediately when done
     message: "Loading…",
   });
 
