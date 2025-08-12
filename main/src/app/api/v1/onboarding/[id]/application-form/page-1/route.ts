@@ -1,41 +1,22 @@
 import { NextRequest } from "next/server";
-import {
-  decryptString,
-  encryptString,
-  hashString,
-} from "@/lib/utils/cryptoUtils";
+import { decryptString, encryptString, hashString } from "@/lib/utils/cryptoUtils";
 import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
 import connectDB from "@/lib/utils/connectDB";
 import ApplicationForm from "@/mongoose/models/applicationForm";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import { FORM_RESUME_EXPIRES_AT_IN_MILSEC } from "@/config/env";
-import {
-  isValidSIN,
-  isValidPhoneNumber,
-  isValidEmail,
-  isValidDOB,
-} from "@/lib/utils/validationUtils";
+import { isValidSIN, isValidPhoneNumber, isValidEmail, isValidDOB } from "@/lib/utils/validationUtils";
 import { hasRecentAddressCoverage } from "@/lib/utils/hasMinimumAddressDuration";
-import {
-  onboardingExpired,
-  buildTrackerContext,
-  advanceStatus,
-} from "@/lib/utils/onboardingUtils";
+import { buildTrackerContext, advanceStatus, onboardingExpired } from "@/lib/utils/onboardingUtils";
 import { deleteS3Objects, finalizePhoto } from "@/lib/utils/s3Upload";
 import { ES3Folder } from "@/types/aws.types";
 import { S3_SUBMISSIONS_FOLDER, S3_TEMP_FOLDER } from "@/constants/aws";
-import {
-  IApplicationFormPage1,
-  ILicenseEntry,
-} from "@/types/applicationForm.types";
+import { IApplicationFormPage1, ILicenseEntry } from "@/types/applicationForm.types";
 import { EStepPath } from "@/types/onboardingTracker.type";
 import { isValidObjectId } from "mongoose";
 import { parseJsonBody } from "@/lib/utils/reqParser";
 
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
     const { id: onboardingId } = await params;
@@ -45,31 +26,25 @@ export async function PATCH(
     }
 
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
-    if (!onboardingDoc)
-      return errorResponse(404, "Onboarding document not found");
+    if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
 
     const oldSin = decryptString(onboardingDoc.sinEncrypted);
 
-    // 🔴 FIX: unwrap the payload
+    // unwrap the payload
     const body = await parseJsonBody<any>(req);
     const page1 = body?.page1 as IApplicationFormPage1 | undefined;
     if (!page1) return errorResponse(400, "Missing 'page1' in request body");
 
-    // 🔒 Sanitize SIN (accepts formatted input just in case)
+    // Sanitize + basic validations (business rules for page1 only)
     const newSin = String(page1.sin ?? "").replace(/\D/g, "");
     if (!isValidSIN(newSin)) return errorResponse(400, "Invalid SIN");
 
     if (!isValidEmail(page1.email)) return errorResponse(400, "Invalid email");
-    if (page1.phoneHome && !isValidPhoneNumber(page1.phoneHome))
-      return errorResponse(400, "Invalid home phone");
-    if (!isValidPhoneNumber(page1.phoneCell))
-      return errorResponse(400, "Invalid cell phone");
-    if (!isValidPhoneNumber(page1.emergencyContactPhone))
-      return errorResponse(400, "Invalid emergency contact phone");
-    if (!isValidDOB(page1.dob))
-      return errorResponse(400, "Invalid date of birth");
-    if (!hasRecentAddressCoverage(page1.addresses))
-      return errorResponse(400, "Address history must cover 5 years");
+    if (page1.phoneHome && !isValidPhoneNumber(page1.phoneHome)) return errorResponse(400, "Invalid home phone");
+    if (!isValidPhoneNumber(page1.phoneCell)) return errorResponse(400, "Invalid cell phone");
+    if (!isValidPhoneNumber(page1.emergencyContactPhone)) return errorResponse(400, "Invalid emergency contact phone");
+    if (!isValidDOB(page1.dob)) return errorResponse(400, "Invalid date of birth");
+    if (!hasRecentAddressCoverage(page1.addresses)) return errorResponse(400, "Address history must cover 5 years");
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) return errorResponse(404, "ApplicationForm not linked");
@@ -86,10 +61,7 @@ export async function PATCH(
       return errorResponse(400, "First license must be of type AZ");
     }
     if (!firstLicense.licenseFrontPhoto || !firstLicense.licenseBackPhoto) {
-      return errorResponse(
-        400,
-        "First license must include both front and back photos"
-      );
+      return errorResponse(400, "First license must include both front and back photos");
     }
 
     const sinChanged = oldSin !== newSin;
@@ -97,39 +69,36 @@ export async function PATCH(
     const sinEncrypted = encryptString(newSin);
     const trackerId = onboardingDoc.id;
 
-    // Save temp refs first
-    const tempLicenses: ILicenseEntry[] = page1.licenses.map((lic) => ({
-      ...lic,
-    }));
+    // ----------------------------------------------------------------
+    // Phase 1 — Write *only page1* subtree, validate *only page1*
+    // ----------------------------------------------------------------
+    const tempLicenses: ILicenseEntry[] = page1.licenses.map((lic) => ({ ...lic }));
     const tempSinPhoto = page1.sinPhoto;
 
-    const page1ToSave = {
+    const page1ToSave: Omit<IApplicationFormPage1, "sin"> = {
       ...page1,
       sinEncrypted,
       sinPhoto: tempSinPhoto,
       licenses: tempLicenses,
-    } as Omit<IApplicationFormPage1, "sin">;
+    };
 
-    const updatedForm = await ApplicationForm.findByIdAndUpdate(
-      appFormId,
-      { $set: { page1: page1ToSave } },
-      { new: true }
-    );
-    if (!updatedForm)
-      return errorResponse(500, "Failed to update ApplicationForm");
+    appFormDoc.set("page1", page1ToSave as any);
+    // ✅ validate only page1
+    await appFormDoc.validate(["page1"]);
+    // Save without triggering full-document validation
+    await appFormDoc.save({ validateBeforeSave: false });
 
-    // Step 2a — Delete old S3 keys if they exist
+    // ----------------------------------------------------------------
+    // Phase 2 — Finalize S3 files for page1 only
+    // ----------------------------------------------------------------
     const tempPrefix = `${S3_TEMP_FOLDER}/`;
     const previousSinPhoto = appFormDoc.page1?.sinPhoto;
     const previousLicensePhotos = appFormDoc.page1?.licenses || [];
 
     const s3KeysToDelete: string[] = [];
 
-    if (
-      previousSinPhoto?.s3Key &&
-      tempSinPhoto?.s3Key?.startsWith(tempPrefix) &&
-      previousSinPhoto.s3Key !== tempSinPhoto.s3Key
-    ) {
+    // Collect old keys to delete (only if *replaced* by a new temp key)
+    if (previousSinPhoto?.s3Key && tempSinPhoto?.s3Key?.startsWith(tempPrefix) && previousSinPhoto.s3Key !== tempSinPhoto.s3Key) {
       s3KeysToDelete.push(previousSinPhoto.s3Key);
     }
 
@@ -138,33 +107,22 @@ export async function PATCH(
       const prevLic = previousLicensePhotos[i];
 
       if (prevLic) {
-        if (
-          prevLic.licenseFrontPhoto?.s3Key &&
-          tempLic.licenseFrontPhoto?.s3Key?.startsWith(tempPrefix) &&
-          prevLic.licenseFrontPhoto.s3Key !== tempLic.licenseFrontPhoto.s3Key
-        ) {
+        if (prevLic.licenseFrontPhoto?.s3Key && tempLic.licenseFrontPhoto?.s3Key?.startsWith(tempPrefix) && prevLic.licenseFrontPhoto.s3Key !== tempLic.licenseFrontPhoto.s3Key) {
           s3KeysToDelete.push(prevLic.licenseFrontPhoto.s3Key);
         }
 
-        if (
-          prevLic.licenseBackPhoto?.s3Key &&
-          tempLic.licenseBackPhoto?.s3Key?.startsWith(tempPrefix) &&
-          prevLic.licenseBackPhoto.s3Key !== tempLic.licenseBackPhoto.s3Key
-        ) {
+        if (prevLic.licenseBackPhoto?.s3Key && tempLic.licenseBackPhoto?.s3Key?.startsWith(tempPrefix) && prevLic.licenseBackPhoto.s3Key !== tempLic.licenseBackPhoto.s3Key) {
           s3KeysToDelete.push(prevLic.licenseBackPhoto.s3Key);
         }
       }
     }
 
-    // Step 2 — Only now finalize photos
+    // Finalize page1 photos only
     const finalizeTasks: (() => Promise<void>)[] = [];
 
     if (tempSinPhoto?.s3Key?.startsWith(tempPrefix)) {
       finalizeTasks.push(async () => {
-        const finalized = await finalizePhoto(
-          tempSinPhoto,
-          `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.SIN_PHOTOS}/${trackerId}`
-        );
+        const finalized = await finalizePhoto(tempSinPhoto, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.SIN_PHOTOS}/${trackerId}`);
         page1.sinPhoto = finalized;
       });
     }
@@ -174,50 +132,35 @@ export async function PATCH(
 
       if (lic.licenseFrontPhoto?.s3Key?.startsWith(tempPrefix)) {
         finalizeTasks.push(async () => {
-          lic.licenseFrontPhoto = await finalizePhoto(
-            lic.licenseFrontPhoto!,
-            `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.LICENSES}/${trackerId}`
-          );
+          lic.licenseFrontPhoto = await finalizePhoto(lic.licenseFrontPhoto!, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.LICENSES}/${trackerId}`);
         });
       }
 
       if (lic.licenseBackPhoto?.s3Key?.startsWith(tempPrefix)) {
         finalizeTasks.push(async () => {
-          lic.licenseBackPhoto = await finalizePhoto(
-            lic.licenseBackPhoto!,
-            `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.LICENSES}/${trackerId}`
-          );
+          lic.licenseBackPhoto = await finalizePhoto(lic.licenseBackPhoto!, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.LICENSES}/${trackerId}`);
         });
       }
 
       if (i === 0 && (!lic.licenseFrontPhoto || !lic.licenseBackPhoto)) {
-        throw new Error(
-          "First license must include both front and back photos"
-        );
+        throw new Error("First license must include both front and back photos");
       }
     }
 
-    const finalizeResults = await Promise.allSettled(
-      finalizeTasks.map((task) => task())
-    );
+    const finalizeResults = await Promise.allSettled(finalizeTasks.map((task) => task()));
     const failed = finalizeResults.find((r) => r.status === "rejected");
     if (failed) return errorResponse(500, "Failed to finalize uploaded photos");
 
-    // Step 3 — Update with FINALIZED S3 KEYS
-    const finalSave = await ApplicationForm.findByIdAndUpdate(
-      appFormId,
-      {
-        $set: {
-          "page1.sinPhoto": page1.sinPhoto,
-          "page1.licenses": tempLicenses,
-        },
-      },
-      { new: true }
-    );
-    if (!finalSave)
-      return errorResponse(500, "Failed to update finalized photos");
+    // ----------------------------------------------------------------
+    // Phase 3 — Persist finalized page1 only (re-validate page1 only)
+    // ----------------------------------------------------------------
+    appFormDoc.set("page1.sinPhoto", page1.sinPhoto as any);
+    appFormDoc.set("page1.licenses", tempLicenses as any);
 
-    // Delete old S3 keys
+    await appFormDoc.validate(["page1"]);
+    await appFormDoc.save({ validateBeforeSave: false });
+
+    // Best-effort delete of old temp keys
     if (s3KeysToDelete.length > 0) {
       try {
         await deleteS3Objects(s3KeysToDelete);
@@ -226,32 +169,20 @@ export async function PATCH(
       }
     }
 
-    // Update Tracker
+    // ----------------------------------------------------------------
+    // Phase 4 — Tracker updates (no cross-page validation)
+    // ----------------------------------------------------------------
     if (sinChanged) {
       onboardingDoc.sinHash = sinHash;
       onboardingDoc.sinEncrypted = sinEncrypted;
     }
-
-    // Tracker updates
-    if (sinChanged) {
-      onboardingDoc.sinHash = sinHash;
-      onboardingDoc.sinEncrypted = sinEncrypted;
-    }
-    onboardingDoc.status = advanceStatus(
-      onboardingDoc.status,
-      EStepPath.APPLICATION_PAGE_1
-    );
-    onboardingDoc.resumeExpiresAt = new Date(
-      Date.now() + Number(FORM_RESUME_EXPIRES_AT_IN_MILSEC)
-    );
+    onboardingDoc.status = advanceStatus(onboardingDoc.status, EStepPath.APPLICATION_PAGE_1);
+    onboardingDoc.resumeExpiresAt = new Date(Date.now() + Number(FORM_RESUME_EXPIRES_AT_IN_MILSEC));
     await onboardingDoc.save();
 
     return successResponse(200, "ApplicationForm Page 1 updated", {
-      onboardingContext: buildTrackerContext(
-        onboardingDoc,
-        EStepPath.APPLICATION_PAGE_1
-      ),
-      page1: updatedForm.page1,
+      onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_1),
+      page1: appFormDoc.page1,
     });
   } catch (error) {
     console.error("PATCH /application-form/page-1 error:", error);
@@ -259,10 +190,7 @@ export async function PATCH(
   }
 }
 
-export const GET = async (
-  _: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) => {
+export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
     await connectDB();
 
@@ -278,8 +206,7 @@ export const GET = async (
       return errorResponse(404, "Onboarding document not found");
     }
 
-    if (onboardingExpired(onboardingDoc))
-      return errorResponse(400, "Onboarding session expired");
+    if (onboardingExpired(onboardingDoc)) return errorResponse(400, "Onboarding session expired");
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) {

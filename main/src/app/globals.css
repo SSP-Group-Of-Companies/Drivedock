@@ -84,11 +84,8 @@
   background-repeat: no-repeat;
   background-size: 50% 50%;
   background-position: 0 0, 100% 0, 100% 100%, 0 100%;
-  background-image: linear-gradient(#005baa, #005baa),
-    linear-gradient(#005baa, #005baa), linear-gradient(#e30613, #e30613),
-    linear-gradient(#e30613, #e30613);
-  animation: rotate-ssp 2.5s linear forwards,
-    fade-out 0.4s ease-out 2.2s forwards;
+  background-image: linear-gradient(#005baa, #005baa), linear-gradient(#005baa, #005baa), linear-gradient(#e30613, #e30613), linear-gradient(#e30613, #e30613);
+  animation: rotate-ssp 2.5s linear forwards, fade-out 0.4s ease-out 2.2s forwards;
 }
 
 .ssp-animated-ring::after {
@@ -110,33 +107,15 @@
 ------------------------------ */
 @layer components {
   .bg-flag-fr {
-    background: linear-gradient(
-      to right,
-      #0055a4 33%,
-      #ffffff 33%,
-      #ffffff 66%,
-      #ef4135 66%
-    );
+    background: linear-gradient(to right, #0055a4 33%, #ffffff 33%, #ffffff 66%, #ef4135 66%);
   }
 
   .bg-flag-us {
-    background: linear-gradient(
-      to right,
-      #3c3b6e 30%,
-      #ffffff 30%,
-      #ffffff 65%,
-      #b22234 65%
-    );
+    background: linear-gradient(to right, #3c3b6e 30%, #ffffff 30%, #ffffff 65%, #b22234 65%);
   }
 
   .bg-flag-es {
-    background: linear-gradient(
-      to bottom,
-      #aa151b 33.33%,
-      #f1bf00 33.33%,
-      #f1bf00 66.66%,
-      #aa151b 66.66%
-    );
+    background: linear-gradient(to bottom, #aa151b 33.33%, #f1bf00 33.33%, #f1bf00 66.66%, #aa151b 66.66%);
   }
 }
 
@@ -159,23 +138,32 @@
 
 /* Star color reveal (loader) */
 @keyframes star-reveal-fill {
-  0% { clip-path: inset(0 100% 0 0); filter: saturate(0.4) brightness(0.9); }
-  50% { clip-path: inset(0 50% 0 0); filter: saturate(0.8) brightness(1); }
-  100% { clip-path: inset(0 0 0 0); filter: saturate(1) brightness(1); }
+  0% {
+    clip-path: inset(0 100% 0 0);
+    filter: saturate(0.4) brightness(0.9);
+  }
+  50% {
+    clip-path: inset(0 50% 0 0);
+    filter: saturate(0.8) brightness(1);
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+    filter: saturate(1) brightness(1);
+  }
 }
 
 @keyframes star-reveal-radial {
-  0% { 
-    clip-path: circle(0% at center); 
-    filter: saturate(0.4) brightness(0.9); 
+  0% {
+    clip-path: circle(0% at center);
+    filter: saturate(0.4) brightness(0.9);
   }
-  50% { 
-    clip-path: circle(50% at center); 
-    filter: saturate(0.8) brightness(1); 
+  50% {
+    clip-path: circle(50% at center);
+    filter: saturate(0.8) brightness(1);
   }
-  100% { 
-    clip-path: circle(100% at center); 
-    filter: saturate(1) brightness(1); 
+  100% {
+    clip-path: circle(100% at center);
+    filter: saturate(1) brightness(1);
   }
 }
 
@@ -185,4 +173,13 @@
 
 .animate-star-reveal-radial {
   animation: star-reveal-radial 2s ease-in-out forwards;
+}
+
+/* PDF Viewer Custom Styles */
+.rpv-core__annotation {
+  display: none !important;
+}
+
+.rpv-core__tooltip-body {
+  display: none !important;
 }

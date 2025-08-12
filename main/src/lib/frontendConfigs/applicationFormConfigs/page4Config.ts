@@ -1,25 +1,71 @@
-// main/src/lib/frontendConfigs/applicationFormConfigs/page4Config.ts
+"use client";
 
-import { FormPageConfig, FormPageConfigFactory } from "../formPageConfig.types";
+import { ApplicationFormPage4Schema } from "@/lib/zodSchemas/applicationFormPage4.Schema";
+import { FormPageConfig } from "@/lib/frontendConfigs/formPageConfig.types";
 
-export const page4ConfigFactory: FormPageConfigFactory<any> = (ctx): FormPageConfig<any> => {
-  const id = ctx.effectiveTrackerId!; // Page 4 should always have an ID
-
+/**
+ * Page 4 needs the trackerId to build a concrete nextRoute.
+ * Usage in client: const config = useMemo(() => makePage4Config(trackerId), [trackerId])
+ */
+export function makePage4Config(trackerId: string): FormPageConfig<ApplicationFormPage4Schema> {
   return {
-    validationFields: () => {
-      // No validation for placeholder page
-      return [];
+    validationFields: (values) => {
+      const fields = [
+        "criminalRecords",
+        "deniedLicenseOrPermit",
+        "suspendedOrRevoked",
+        "suspensionNotes",
+        "testedPositiveOrRefused",
+        "completedDOTRequirements",
+        "hasAccidentalInsurance",
+
+        "employeeNumber",
+        "hstNumber",
+        "businessNumber",
+        "hstPhotos",
+        "incorporatePhotos",
+        "bankingInfoPhotos",
+
+        "healthCardPhotos",
+        "medicalCertificationPhotos",
+        "passportPhotos",
+        "usVisaPhotos",
+        "prPermitCitizenshipPhotos",
+
+        // validate leaves (not just "fastCard")
+        "fastCard.fastCardNumber",
+        "fastCard.fastCardExpiry",
+        "fastCard.fastCardFrontPhoto",
+        "fastCard.fastCardBackPhoto",
+      ];
+
+      values.criminalRecords?.forEach((_, i) => {
+        fields.push(`criminalRecords.${i}.offense`);
+        fields.push(`criminalRecords.${i}.dateOfSentence`);
+        fields.push(`criminalRecords.${i}.courtLocation`);
+      });
+
+      return fields;
     },
 
+    // Client-only extras if you want (kept null for parity with backend)
     validateBusinessRules: () => null,
 
+    // Build PATCH payload (Page 4 is always PATCH in your flow)
     buildPayload: (values) => {
-      // Simple payload for placeholder page
-      return { page4: values };
+      const fc = values.fastCard;
+      const hasFast = !!fc && !!(fc.fastCardNumber?.trim() || fc.fastCardExpiry || fc.fastCardFrontPhoto || fc.fastCardBackPhoto);
+
+      const payload = { ...values };
+      if (!hasFast) delete (payload as any).fastCard; // <- drop empty object
+
+      return payload;
     },
 
-    // Route to Page 5
-    nextRoute: `/onboarding/${id}/application-form/page-5`,
+    // NOTE: bake the trackerId here so ContinueButton can route directly
+    nextRoute: `/onboarding/${trackerId}/application-form/page-5`,
+
+    // Segment label for any analytics/logging you use
     submitSegment: "page-4",
   };
-};
+}

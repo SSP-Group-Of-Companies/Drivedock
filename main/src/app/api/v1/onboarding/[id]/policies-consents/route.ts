@@ -10,72 +10,47 @@ import { NextRequest } from "next/server";
 import { IPhoto } from "@/types/shared.types";
 import { IPoliciesConsents } from "@/types/policiesConsents.types";
 import { parseJsonBody } from "@/lib/utils/reqParser";
-import {
-  advanceStatus,
-  buildTrackerContext,
-  hasCompletedStep,
-  onboardingExpired,
-} from "@/lib/utils/onboardingUtils";
+import { advanceStatus, buildTrackerContext, hasCompletedStep, onboardingExpired } from "@/lib/utils/onboardingUtils";
 import { S3_SUBMISSIONS_FOLDER, S3_TEMP_FOLDER } from "@/constants/aws";
 import { ES3Folder } from "@/types/aws.types";
 
-export async function PATCH(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
     const { id } = await params;
     if (!isValidObjectId(id)) return errorResponse(400, "Invalid onboarding ID");
 
     const onboardingDoc = await OnboardingTracker.findById(id);
-    if (!onboardingDoc)
-      return errorResponse(404, "Onboarding document not found");
+    if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
 
-    if (!hasCompletedStep(onboardingDoc.status, EStepPath.APPLICATION_PAGE_5))
-      return errorResponse(400, "Please complete previous step first");
+    if (!hasCompletedStep(onboardingDoc.status, EStepPath.APPLICATION_PAGE_5)) return errorResponse(400, "Please complete previous step first");
 
-    const payload = await parseJsonBody<IPoliciesConsents>(req);
-    const tempSignature = payload.signature;
-
-    if (!tempSignature?.s3Key?.startsWith(S3_TEMP_FOLDER)) {
-      return errorResponse(400, "Temporary signature photo is required");
-    }
+    const { signature, sendPoliciesByEmail } = await parseJsonBody<IPoliciesConsents>(req);
+    const tempSignature = signature;
 
     const existingId = onboardingDoc.forms?.policiesConsents;
-    const existingDoc = existingId
-      ? await PoliciesConsents.findById(existingId)
-      : null;
+    const existingDoc = existingId ? await PoliciesConsents.findById(existingId) : null;
 
     // Check for deletion of previous finalized signature if being replaced
     const previousSigKey = existingDoc?.signature?.s3Key;
-    const isReplacingFinalized =
-      previousSigKey &&
-      !previousSigKey.startsWith(S3_TEMP_FOLDER) &&
-      previousSigKey !== tempSignature.s3Key;
+    const isReplacingFinalized = previousSigKey && !previousSigKey.startsWith(S3_TEMP_FOLDER) && previousSigKey !== tempSignature.s3Key;
 
     if (isReplacingFinalized) {
       await deleteS3Objects([previousSigKey]);
     }
 
     // Finalize signature photo
-    const finalizedSignature: IPhoto = await finalizePhoto(
-      tempSignature,
-      `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.SIGNATURES}/${onboardingDoc.id}`
-    );
+    const finalizedSignature: IPhoto = await finalizePhoto(tempSignature, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.SIGNATURES}/${onboardingDoc.id}`);
 
     const signedAt = new Date();
 
     const updatedDoc = existingDoc
-      ? await PoliciesConsents.findByIdAndUpdate(
-        existingDoc._id,
-        { signature: finalizedSignature, signedAt },
-        { new: true }
-      )
+      ? await PoliciesConsents.findByIdAndUpdate(existingDoc._id, { signature: finalizedSignature, signedAt, sendPoliciesByEmail }, { new: true })
       : await PoliciesConsents.create({
-        signature: finalizedSignature,
-        signedAt,
-      });
+          signature: finalizedSignature,
+          signedAt,
+          sendPoliciesByEmail,
+        });
 
     if (!updatedDoc) {
       return errorResponse(500, "Failed to save policies & consents");
@@ -85,6 +60,7 @@ export async function PATCH(
       onboardingDoc.forms.policiesConsents = updatedDoc.id;
     }
 
+    onboardingDoc.forms.policiesConsents = updatedDoc.id;
     onboardingDoc.status = advanceStatus(onboardingDoc.status, EStepPath.POLICIES_CONSENTS);
     onboardingDoc.resumeExpiresAt = new Date(Date.now() + Number(FORM_RESUME_EXPIRES_AT_IN_MILSEC));
     await onboardingDoc.save();
@@ -99,12 +75,7 @@ export async function PATCH(
   }
 }
 
-
-
-export const GET = async (
-  _: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) => {
+export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
     await connectDB();
     const { id } = await params;
@@ -119,8 +90,7 @@ export const GET = async (
       return errorResponse(404, "Onboarding document not found");
     }
 
-    if (onboardingExpired(onboardingDoc))
-      return errorResponse(400, "Onboarding session expired");
+    if (onboardingExpired(onboardingDoc)) return errorResponse(400, "Onboarding session expired");
 
     // Step 2: Get linked Policies & Consents doc
     const policiesId = onboardingDoc.forms?.policiesConsents;
@@ -133,13 +103,13 @@ export const GET = async (
       return errorResponse(403, "Please complete previous step first");
     }
 
-    // update tracker current step 
+    // update tracker current step
     onboardingDoc.status.currentStep = EStepPath.POLICIES_CONSENTS;
     await onboardingDoc.save();
 
     return successResponse(200, "Policies & Consents data retrieved", {
       onboardingContext: buildTrackerContext(onboardingDoc),
-      policiesConsents: policiesDoc?.toObject() ?? {},
+      policiesConsents: policiesDoc ?? {},
     });
   } catch (error) {
     return errorResponse(error);

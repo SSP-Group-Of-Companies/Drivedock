@@ -27,7 +27,7 @@ import CompanyLogoHeader from "@/components/shared/CompanyLogoHeader";
 import FormWizardNav from "@/app/onboarding/components/FormWizardNav";
 import { usePathname, useRouter, useParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { Dialog } from "@headlessui/react";
+import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { AlertCircle, ArrowLeft } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
@@ -50,7 +50,7 @@ export default function FormLayout({
   const [showModal, setShowModal] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
-  // Client-side mounting check
+  // Client-side mounting check and global loading
   const mounted = useMounted();
 
   /**
@@ -204,10 +204,10 @@ export default function FormLayout({
                     exit={{ y: 20, opacity: 0 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <Dialog.Panel className="max-w-md w-full bg-white rounded-xl p-6 shadow-xl space-y-4">
-                      <Dialog.Title className="text-lg font-bold text-gray-900">
+                    <DialogPanel className="max-w-md w-full bg-white rounded-xl p-6 shadow-xl space-y-4">
+                      <DialogTitle className="text-lg font-bold text-gray-900">
                         {t("wizard.modalTitle")}
-                      </Dialog.Title>
+                      </DialogTitle>
                       <ul className="list-disc pl-5 text-sm text-gray-700 space-y-1">
                         {[1, 2, 3, 4, 5, 6].map((step) => (
                           <li key={step}>
@@ -224,7 +224,7 @@ export default function FormLayout({
                           {t("wizard.close")}
                         </button>
                       </div>
-                    </Dialog.Panel>
+                    </DialogPanel>
                   </motion.div>
                 </div>
               </Dialog>

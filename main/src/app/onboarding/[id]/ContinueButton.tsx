@@ -50,6 +50,7 @@ import type {
   FormPageConfig,
   FormPageConfigFactory,
 } from "@/lib/frontendConfigs/formPageConfig.types";
+import { useGlobalLoading } from "@/store/useGlobalLoading";
 
 type ContinueButtonProps<T extends FieldValues> = {
   config: FormPageConfig<T> | FormPageConfigFactory<T>;
@@ -195,9 +196,11 @@ export default function ContinueButton<T extends FieldValues>({
         router.push(nextUrl ?? resolvedConfig.nextRoute);
         if (!nextUrl) router.refresh();
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Submission error:", err);
-      alert("An error occurred while submitting. Please try again.");
+      alert(
+        err.message || "An error occurred while submitting. Please try again."
+      );
     } finally {
       setSubmitting(false);
     }

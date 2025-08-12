@@ -2,16 +2,13 @@
   "navbar": {
     "backButton": "Volver"
   },
-
   "footer": {
     "rights": "Todos los derechos reservados.",
     "tagline": "DriveDock – Plataforma digital de incorporación de conductores"
   },
-
   "welcome": {
     "heading": "Únete a la ruta con SSP",
     "description": "Tu plataforma digital de incorporación para unirte a SSP Truck Line. Completa tus documentos de contratación de forma rápida y segura.",
-
     "features": {
       "language": {
         "title": "Multilenguaje",
@@ -26,7 +23,6 @@
         "description": "Completa todos los documentos de contratación con nuestro asistente guiado de 6 etapas"
       }
     },
-
     "steps": {
       "title": "Proceso de solicitud",
       "personal": "Información personal",
@@ -37,7 +33,6 @@
       "review": "Revisión final"
     }
   },
-
   "start": {
     "heading": "Comienza tu solicitud",
     "subheading": "Inicia tu camino con SSP Group of Companies",
@@ -47,14 +42,12 @@
     "continue": "Continuar a la solicitud",
     "estimatedTime": "Tiempo estimado: 15–20 minutos",
     "agreeToTerms": "Acepto las condiciones anteriores",
-
     "checklist": {
       "accurateInfo": "Toda la información proporcionada debe ser precisa y veraz",
       "digitalProcess": "Entiendes que este es un proceso de solicitud digital",
       "consentChecks": "Das tu consentimiento para las verificaciones de antecedentes y de historial de conducción",
       "termsAgreement": "Aceptas los términos y condiciones de SSP Group of Companies"
     },
-
     "termsModal": {
       "title": "Términos y condiciones",
       "intro": "Al continuar, aceptas que:",
@@ -76,7 +69,6 @@
       "agree": "Acepto"
     }
   },
-
   "company": {
     "heading": "Únete a nuestra familia de empresas",
     "subheading": "Elige la empresa donde deseas construir tu carrera como conductor",
@@ -87,15 +79,12 @@
     "dropdeck": "Furgón seco (Dry Van)",
     "cancel": "Cancelar"
   },
-
   "form": {
     "subtitle": "Toda la información debe ser veraz. La responsabilidad recae en el solicitante.",
-
     "helpPopups": {
       "page2SafetySensitive": "Como parte de nuestro proceso de cumplimiento normativo, confirma la siguiente información:\n\nConducción transfronteriza: Indica \"Sí\" si anteriormente operaste un vehículo comercial a través de la frontera entre EE. UU. y Canadá. Si no, indica \"No\".\n\nPruebas de drogas reguladas por el DOT: Indica \"Sí\" si tu empleador anterior realizó pruebas de alcohol y drogas de acuerdo con las regulaciones del Departamento de Transporte de EE. UU. (DOT). Si no, indica \"No\".\n\nTus respuestas nos ayudan a garantizar el cumplimiento de las normas de transporte y seguridad aplicables. Si tienes preguntas o necesitas aclaraciones, no dudes en contactarnos.",
       "page3CanadianHours": "Como parte de los requisitos de cumplimiento de las Horas de Servicio (HOS) bajo la normativa canadiense, proporciona el número de horas en servicio (incluida la conducción) que realizaste en los últimos 14 días con tu empleador anterior.\n\nAsegúrate de lo siguiente:\n• Indica el número de horas trabajadas para cada día del período de 14 días.\n• Incluye el total de horas trabajadas durante los 14 días.\n• Si estuviste de vacaciones, fuera de servicio o no trabajaste algún día, indica \"0\" o \"ninguno\" para ese día.\n\nEsta información es esencial para verificar tu cumplimiento con las reglas canadienses de HOS. Gracias por tu colaboración."
     },
-
     "step1": {
       "title": "Formulario de preselección",
       "questions": {
@@ -110,7 +99,6 @@
         "legalRightToWorkUS": "¿Tienes derecho legal a trabajar en EE. UU.?",
         "canCrossBorderUSA": "¿Puedes cruzar la frontera hacia EE. UU.?",
         "hasFASTCard": "¿Tienes tarjeta FAST?",
-
         "categories": "Categorías",
         "driverType": "¿Qué tipo de conductor eres?",
         "haulPreference": "¿Qué prefieres?",
@@ -118,10 +106,8 @@
         "preferLocalDriving": "¿Prefieres la conducción local?",
         "preferSwitching": "¿Prefieres cambios (drop & hook)?",
         "flatbedExperience": "¿Tienes experiencia en plataforma (flatbed)?",
-
         "yes": "Sí",
         "no": "No",
-
         "company": "Conductor de empresa",
         "owneroperator": "Propietario-operador",
         "ownerdriver": "Conductor propietario",
@@ -129,7 +115,6 @@
         "longhaul": "Larga distancia",
         "team": "Equipo",
         "single": "Individual",
-
         "flatbedPopup": {
           "title": "Aviso",
           "yes": "Tu nivel en plataforma se evaluará durante la prueba de manejo.",
@@ -139,7 +124,6 @@
       },
       "next": "Siguiente"
     },
-
     "step2": {
       "title": "Formulario de solicitud",
       "page1": {
@@ -192,7 +176,6 @@
           "removeAddress": "Eliminar dirección"
         }
       },
-
       "page2": {
         "sections": {
           "employment": "Historial laboral"
@@ -230,7 +213,6 @@
         },
         "gapDetected": "Se detectó una brecha de {days} días entre empleos. Explica:"
       },
-
       "page3": {
         "sections": {
           "accidentHistory": "Reporte de accidentes",
@@ -257,18 +239,101 @@
           "totalHours": "Total de horas",
           "dateTitle": "Horas diarias (0-24 horas por día)"
         },
-
         "actions": {
           "addRow": "Agregar fila",
           "remove": "Eliminar"
         }
       },
-
-      "page4": {},
-      "page5": {},
+      "page4": {
+        "sections": {
+          "criminalRecords": {
+            "title": "Verificación de antecedentes penales",
+            "subtitle": "Los solicitantes deben declarar todas las condenas por delitos bajo la ley federal canadiense.",
+            "guidance": {
+              "intro": "Lee lo siguiente con atención antes de completar esta sección:",
+              "dontDeclareTitle": "No declares lo siguiente:",
+              "items": {
+                "item1": "Una condena por la que hayas recibido una Suspensión de Registro (antes indulto) conforme a la Ley de Registros Penales;",
+                "item2": "Una condena cuando eras una “persona joven” bajo la Ley de Justicia Penal para Adolescentes;",
+                "item3": "Una Absolución o Descarga Condicional, conforme al artículo 730 del Código Penal;",
+                "item4": "Un delito por el que no fuiste condenado;",
+                "item5": "Cualquier infracción provincial o municipal; y",
+                "item6": "Cargos tramitados fuera de Canadá."
+              }
+            }
+          },
+          "business": {
+            "title": "Detalles de incorporación",
+            "disclaimer": {
+              "text": "Si proporcionas algún detalle de incorporación, debes completar todos los campos y subir todos los documentos relacionados en esta sección. Esto incluye Número de Empleado, Número HST, Número de Empresa y las fotos requeridas (Incorporación, HST, Bancaria)."
+            }
+          },
+          "additionalInfo": {
+            "title": "Información adicional"
+          },
+          "fastCard": {
+            "title": "Tarjeta FAST",
+            "disclaimer": "Esta sección es opcional. Sin embargo, si proporcionas información de la tarjeta FAST, debes completar todos los campos y subir las fotos del frente y dorso."
+          }
+        },
+        "fields": {
+          "dateOfSentence": "Fecha de la sentencia",
+          "offense": "Delito",
+          "courtLocation": "Lugar del tribunal",
+          "employeeNumber": "Número de empleado",
+          "hstNumber": "Número HST",
+          "businessNumber": "Número de empresa",
+          "incorporatePhotos": "Fotos de incorporación",
+          "hstPhotos": "Fotos del número HST",
+          "bankingInfoPhotos": "Fotos de información bancaria",
+          "denied": "¿Alguna vez te han negado una licencia, permiso o privilegio para operar un vehículo motorizado?",
+          "suspended": "¿Alguna vez se ha suspendido o revocado alguna licencia, permiso o privilegio?",
+          "suspensionNotes": "Notas",
+          "testedPositive": "¿Alguna vez diste positivo, o te negaste a realizar, alguna prueba de drogas o alcohol previa al empleo administrada por un empleador al que postulaste, pero no obtuviste, trabajo de transporte sensible a la seguridad cubierto por las normas de pruebas de drogas y alcohol de agencias del DOT durante los últimos dos años?",
+          "completedDOT": "Si respondiste SÍ, ¿puedes proporcionar/obtener prueba de que completaste con éxito los requisitos de reincorporación del DOT?",
+          "hasInsurance": "¿Tienes tu propia cobertura de seguro por beneficios accidentales?",
+          "fastNumber": "Número de tarjeta FAST",
+          "fastExpiry": "Fecha de vencimiento",
+          "fastFront": "Foto frontal",
+          "fastBack": "Foto posterior"
+        },
+        "placeholders": {
+          "optionalDetails": "Proporciona detalles..."
+        }
+      },
+      "page5": {
+        "title": "Prueba de competencia",
+        "lockedNote": "Has enviado tus respuestas. La prueba ahora está bloqueada.",
+        "scoreLabel": "Puntuación:",
+        "note": "Confirmo que he revisado mi puntuación y entiendo que no puedo volver a realizar esta prueba.",
+        "modal": {
+          "finalConfirmation": "Confirmación final",
+          "confirmMessage": "No podrás repetir esta prueba de competencia una vez enviada. ¿Seguro que deseas continuar?",
+          "cancel": "Cancelar",
+          "confirm": "Sí, enviar"
+        }
+      },
       "page6": {}
     },
-
+    "step3": {
+      "title": "Políticas y consentimientos",
+      "disclaimer": "Al firmar abajo, aceptas todos los contratos aquí y futuros. Lee todos los documentos con atención. La información que proporcionaste completará automáticamente los campos requeridos.",
+      "sendToEmail": "Envíenme los documentos firmados a mi correo cuando el proceso de solicitud esté completo.",
+      "helper": {
+        "drawOrUpload": "Dibuja tu firma arriba o sube una imagen de tu firma."
+      },
+      "status": {
+        "uploading": "Subiendo...",
+        "deleting": "Eliminando..."
+      },
+      "messages": {
+        "uploadSuccess": "Carga exitosa",
+        "deleteFailed": "Error al eliminar",
+        "needSignature": "Dibuja o sube una firma antes de continuar.",
+        "uploadFailed": "No se pudo subir tu firma. Inténtalo nuevamente.",
+        "submissionFailed": "Error al enviar."
+      }
+    },
     "errors": {
       "minimum5Years": "Debes proporcionar al menos 5 años de historial de direcciones.",
       "addressDurationError": "El historial de direcciones debe abarcar los últimos 5 años. Agrega una dirección anterior si viviste en más de un lugar."
@@ -276,7 +341,6 @@
     "continue": "Continuar",
     "submitting": "Enviando..."
   },
-
   "resume": {
     "title": "Reanudar tu solicitud",
     "description": "Ingresa tu SIN para continuar tu incorporación desde donde te detuviste.",
@@ -286,7 +350,6 @@
     "cancel": "Cancelar",
     "continue": "Continuar"
   },
-
   "wizard": {
     "infoTitle": "¿Qué significan los pasos?",
     "modalTitle": "Pasos de la solicitud",
@@ -315,5 +378,26 @@
       "label": "Paso 6",
       "desc": "Prueba de drogas"
     }
+  },
+  "actions": {
+    "addPhoto": "Agregar foto",
+    "remove": "Eliminar",
+    "addRow": "Agregar fila",
+    "manage": "Administrar",
+    "close": "Cerrar",
+    "done": "Listo",
+    "replace": "Reemplazar",
+    "delete": "Eliminar",
+    "upload": "Subir",
+    "clear": "Limpiar",
+    "processing": "Procesando...",
+    "submitAnswers": "Enviar respuestas",
+    "continue": "Continuar"
+  },
+  "photoGroup": {
+    "noPhotosYet": "Aún no hay fotos",
+    "managePhotos": "Administrar fotos",
+    "maxReached": "Máximo de {{count}} fotos alcanzado",
+    "moreCount": "+{{count}}"
   }
 }

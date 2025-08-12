@@ -1,74 +1,115 @@
 "use client";
 
+import { useMemo } from "react";
 import { FormProvider, useForm } from "react-hook-form";
-import { useTranslation } from "next-i18next";
-import useMounted from "@/hooks/useMounted";
-import ContinueButton from "../../ContinueButton";
-import { page4ConfigFactory } from "@/lib/frontendConfigs/applicationFormConfigs/page4Config";
+import { zodResolver } from "@hookform/resolvers/zod";
 
-interface Page4ClientProps {
-  trackerId: string;
-  initialData: any;
-  trackerContext: any;
+// Zod
+import { makeApplicationFormPage4Schema, ApplicationFormPage4Input } from "@/lib/zodSchemas/applicationFormPage4.Schema";
+
+import { ECountryCode } from "@/types/shared.types";
+import { IApplicationFormPage4 } from "@/types/applicationForm.types";
+import { ITrackerContext } from "@/types/onboardingTracker.type";
+
+// UI
+import ContinueButton from "@/app/onboarding/[id]/ContinueButton";
+import { makePage4Config } from "@/lib/frontendConfigs/applicationFormConfigs/page4Config";
+
+// Sections (assume you already have or will create these)
+import CriminalRecordsSection from "./components/CriminalRecordsSection";
+import BusinessSection from "./components/BusinessSection";
+import EligibilityDocsSection from "./components/EligibilityDocsSection";
+import FastCardSection from "./components/FastCardSection";
+import AdditionalInfoSection from "./components/AdditionalInfoSection";
+import { isCanadianCompany } from "@/constants/companies";
+
+// ---- helpers ----
+function formatDate(d?: string | Date | null) {
+  if (!d) return "";
+  const dt = new Date(d);
+  return isNaN(dt.getTime()) ? "" : dt.toISOString().split("T")[0];
 }
 
-export default function Page4Client({
-  trackerId,
-  initialData,
-}: Page4ClientProps) {
-  const { t } = useTranslation("common");
-  const mounted = useMounted();
+function mapDefaults(page4: IApplicationFormPage4 | null): ApplicationFormPage4Input {
+  return {
+    criminalRecords:
+      page4?.criminalRecords?.map((r) => ({
+        offense: r.offense || "",
+        dateOfSentence: formatDate(r.dateOfSentence),
+        courtLocation: r.courtLocation || "",
+      })) ?? [],
 
-  const methods = useForm({
-    defaultValues: initialData || {},
+    employeeNumber: page4?.employeeNumber ?? "",
+    hstNumber: page4?.hstNumber ?? "",
+    businessNumber: page4?.businessNumber ?? "",
+    hstPhotos: page4?.hstPhotos ?? [],
+    incorporatePhotos: page4?.incorporatePhotos ?? [],
+    bankingInfoPhotos: page4?.bankingInfoPhotos ?? [],
+
+    healthCardPhotos: page4?.healthCardPhotos ?? [],
+    medicalCertificationPhotos: page4?.medicalCertificationPhotos ?? [],
+    passportPhotos: page4?.passportPhotos ?? [],
+    usVisaPhotos: page4?.usVisaPhotos ?? [],
+    prPermitCitizenshipPhotos: page4?.prPermitCitizenshipPhotos ?? [],
+
+    fastCard: page4?.fastCard
+      ? {
+          fastCardNumber: page4.fastCard.fastCardNumber || "",
+          fastCardExpiry: formatDate(page4.fastCard.fastCardExpiry),
+          // leave undefined unless real photos exist
+          fastCardFrontPhoto: page4.fastCard.fastCardFrontPhoto ?? undefined,
+          fastCardBackPhoto: page4.fastCard.fastCardBackPhoto ?? undefined,
+        }
+      : undefined,
+
+    deniedLicenseOrPermit: page4?.deniedLicenseOrPermit ?? undefined,
+    suspendedOrRevoked: page4?.suspendedOrRevoked ?? undefined,
+    suspensionNotes: page4?.suspensionNotes ?? "",
+    testedPositiveOrRefused: page4?.testedPositiveOrRefused ?? undefined,
+    completedDOTRequirements: page4?.completedDOTRequirements ?? undefined,
+    hasAccidentalInsurance: page4?.hasAccidentalInsurance ?? undefined,
+  };
+}
+
+type Props = {
+  trackerId: string;
+  onboardingContext: ITrackerContext;
+  page4: IApplicationFormPage4 | null;
+};
+
+export default function Page4Client({ trackerId, onboardingContext, page4 }: Props) {
+  const defaultValues = useMemo(() => mapDefaults(page4), [page4]);
+
+  // derive country from companyId
+  const countryCode: ECountryCode = isCanadianCompany(onboardingContext.companyId) ? ECountryCode.CA : ECountryCode.US;
+
+  const schema = useMemo(
+    () =>
+      makeApplicationFormPage4Schema({
+        countryCode,
+        existing: page4 ?? undefined,
+      }),
+    [countryCode, page4]
+  );
+
+  const methods = useForm<ApplicationFormPage4Input>({
+    resolver: zodResolver(schema),
+    mode: "onChange",
+    defaultValues,
   });
 
-  if (!mounted) return null;
+  const config = useMemo(() => makePage4Config(trackerId), [trackerId]);
 
   return (
-    <div className="mx-auto max-w-4xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          {t("form.step2.page4.title", "Application Form - Page 4")}
-        </h1>
-        <p className="text-gray-600">
-          {t(
-            "form.step2.page4.description",
-            "Please complete the following information."
-          )}
-        </p>
-      </div>
-
-      <FormProvider {...methods}>
-        <form
-          className="space-y-8"
-          onSubmit={(e) => e.preventDefault()}
-          noValidate
-        >
-          {/* Placeholder content for Page 4 */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              {t("form.step2.page4.section", "Page 4 Section")}
-            </h2>
-            <p className="text-gray-600">
-              {t(
-                "form.step2.page4.placeholder",
-                "This is a placeholder for Page 4 content. Add your form fields here."
-              )}
-            </p>
-          </div>
-
-          <ContinueButton
-            config={(ctx) =>
-              page4ConfigFactory({
-                ...ctx,
-                effectiveTrackerId: trackerId,
-              })
-            }
-            trackerId={trackerId}
-          />
-        </form>
-      </FormProvider>
-    </div>
+    <FormProvider {...methods}>
+      <form className="space-y-8" noValidate>
+        <CriminalRecordsSection />
+        <BusinessSection />
+        <EligibilityDocsSection countryCode={countryCode} />
+        {countryCode === ECountryCode.CA && <FastCardSection isCanadian />}
+        <AdditionalInfoSection />
+        <ContinueButton<ApplicationFormPage4Input> config={config} trackerId={trackerId} />
+      </form>
+    </FormProvider>
   );
 }

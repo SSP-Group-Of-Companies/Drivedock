@@ -1,74 +1,93 @@
 "use client";
 
-import { FormProvider, useForm } from "react-hook-form";
-import { useTranslation } from "next-i18next";
+import { useForm, FormProvider } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ApplicationFormPage5Schema, applicationFormPage5Schema } from "@/lib/zodSchemas/applicationFormPage5.schema";
+import CompetencyQuestionList from "./components/CompetencyQuestionList";
 import useMounted from "@/hooks/useMounted";
-import ContinueButton from "../../ContinueButton";
-import { page5ConfigFactory } from "@/lib/frontendConfigs/applicationFormConfigs/page5Config";
+import { IApplicationFormPage5 } from "@/types/applicationForm.types";
+import { competencyQuestions } from "@/constants/competencyTestQuestions";
+import { useState } from "react";
+import CompetencyStepButton from "./components/CompetencyStepButton";
+import { useTranslation } from "react-i18next";
 
-interface Page5ClientProps {
+type Page5ClientProps = {
+  data: IApplicationFormPage5;
   trackerId: string;
-  initialData: any;
-  trackerContext: any;
-}
+};
 
-export default function Page5Client({
-  trackerId,
-  initialData,
-}: Page5ClientProps) {
+export default function Page5Client({ data, trackerId }: Page5ClientProps) {
   const { t } = useTranslation("common");
   const mounted = useMounted();
+  const [score, setScore] = useState<number | null>(data.score ?? null);
+  const [justSubmitted, setJustSubmitted] = useState(false);
+  const [checkboxChecked, setCheckboxChecked] = useState(false);
+  const [highlightError, setHighlightError] = useState(false);
 
-  const methods = useForm({
-    defaultValues: initialData || {},
+  const defaultValues: ApplicationFormPage5Schema = data.answers?.length
+    ? {
+        answers: data.answers.map((a) => ({
+          questionId: a.questionId || "",
+          answerId: a.answerId || "",
+        })),
+      }
+    : {
+        answers: competencyQuestions.map((q) => ({
+          questionId: q.questionId,
+          answerId: "",
+        })),
+      };
+
+  const methods = useForm<ApplicationFormPage5Schema>({
+    resolver: zodResolver(applicationFormPage5Schema),
+    mode: "onChange",
+    defaultValues,
   });
+
+  const percentage = score !== null ? Math.round((score / 21) * 100) : null;
 
   if (!mounted) return null;
 
   return (
-    <div className="mx-auto max-w-4xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
-          {t("form.step2.page5.title", "Application Form - Page 5")}
-        </h1>
-        <p className="text-gray-600">
-          {t(
-            "form.step2.page5.description",
-            "Please complete the following information."
-          )}
-        </p>
-      </div>
+    <FormProvider {...methods}>
+      <h2 className="text-lg text-center font-semibold">{t("form.step2.page5.title")}</h2>
+      {score !== null && <div className="text-sm text-center text-gray-500 bg-gray-50 border border-gray-200 rounded-md py-2 px-4 max-w-xl mx-auto">{t("form.step2.page5.lockedNote")}</div>}
+      <form className="space-y-8" noValidate>
+        <CompetencyQuestionList disabled={score !== null} />
 
-      <FormProvider {...methods}>
-        <form
-          className="space-y-8"
-          onSubmit={(e) => e.preventDefault()}
-          noValidate
-        >
-          {/* Placeholder content for Page 5 */}
-          <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              {t("form.step2.page5.section", "Page 5 Section")}
-            </h2>
-            <p className="text-gray-600">
-              {t(
-                "form.step2.page5.placeholder",
-                "This is a placeholder for Page 5 content. Add your form fields here."
-              )}
-            </p>
+        {score !== null && (
+          <p className="text-center text-green-700 font-semibold">
+            {t("form.step2.page5.scoreLabel")} {score}/21 ({percentage}%)
+          </p>
+        )}
+
+        {justSubmitted && score !== null && (
+          <div className={`max-w-xl mx-auto border rounded-lg p-4 transition-colors ${highlightError ? "border-red-500 bg-red-50" : "border-gray-300 bg-gray-50"}`}>
+            <label className="flex items-start gap-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                className="mt-1"
+                checked={checkboxChecked}
+                onChange={(e) => {
+                  setCheckboxChecked(e.target.checked);
+                  setHighlightError(false); // remove error on check
+                }}
+              />
+              <span>{t("form.step2.page5.note")}</span>
+            </label>
           </div>
+        )}
 
-          <ContinueButton
-            config={(ctx) =>
-              page5ConfigFactory({
-                ...ctx,
-                effectiveTrackerId: trackerId,
-              })
-            }
-            trackerId={trackerId}
-          />
-        </form>
-      </FormProvider>
-    </div>
+        <CompetencyStepButton
+          score={score}
+          setScore={setScore}
+          trackerId={trackerId}
+          justSubmitted={justSubmitted}
+          setJustSubmitted={setJustSubmitted}
+          checkboxChecked={checkboxChecked}
+          setHighlightError={setHighlightError}
+        />
+      </form>
+    </FormProvider>
   );
 }

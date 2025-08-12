@@ -1,51 +1,46 @@
-import { notFound, redirect } from "next/navigation";
+"use server";
+
 import { NEXT_PUBLIC_BASE_URL } from "@/config/env";
 import Page5Client from "./Page5Client";
+import { IApplicationFormPage5 } from "@/types/applicationForm.types";
 
-interface Page5Props {
-  params: Promise<{ id: string }>;
-}
+// Types
+type Page5DataResponse = {
+  data?: { page5?: IApplicationFormPage5 };
+  error?: string;
+};
 
-export default async function Page5({ params }: Page5Props) {
-  const { id } = await params;
-  
-  if (!id) {
-    notFound();
-  }
-
-  // Fetch Page 5 data
-  const data = await fetchPage5Data(id);
-  
-  return (
-    <Page5Client 
-      trackerId={id}
-      initialData={data?.page5}
-      trackerContext={data?.trackerContext}
-    />
-  );
-}
-
-async function fetchPage5Data(trackerId: string) {
-  const base = NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+// 🌐 Fetch Function
+async function fetchPage5Data(trackerId: string): Promise<Page5DataResponse> {
   try {
-    const res = await fetch(
-      `${base}/api/v1/onboarding/${trackerId}/application-form/page-5`,
-      { cache: "no-store" }
-    );
-    if (res.status === 403) {
-      redirect(`/onboarding/${trackerId}/application-form/page-4`);
+    const response = await fetch(`${NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/v1/onboarding/${trackerId}/application-form/page-5`, { cache: "no-store" });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      return { error: errorData?.message || "Failed to fetch Page 5 data." };
     }
-    if (!res.ok) {
-      console.warn("Page 5 fetch failed:", res.status);
-      return null;
-    }
-    const json = await res.json();
-    return {
-      page5: json?.data?.page5 ?? null,
-      trackerContext: json?.data?.onboardingContext ?? null,
-    };
-  } catch (error) {
-    console.error("Error fetching Page 5 data:", error);
-    return null;
+
+    const json = await response.json();
+    return { data: json.data };
+  } catch {
+    return { error: "Unexpected server error. Please try again later." };
   }
+}
+
+// Page Component
+export default async function ApplicationFormPage5({ params }: { params: Promise<{ id: string }> }) {
+  const { id: trackerId } = await params;
+  const { data, error } = await fetchPage5Data(trackerId);
+
+  if (error) {
+    return <div className="p-6 text-center text-red-600 font-semibold">{error}</div>;
+  }
+
+  const pageData = data?.page5;
+
+  if (!pageData) {
+    return <div className="p-6 text-center text-red-600 font-semibold">Failed to load competency test data.</div>;
+  }
+
+  return <Page5Client data={pageData} trackerId={trackerId} />;
 }

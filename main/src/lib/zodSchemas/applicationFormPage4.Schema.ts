@@ -1,0 +1,200 @@
+// src/lib/zodSchemas/applicationFormPage4.Schema.ts
+import { z } from "zod";
+import { ECountryCode } from "@/types/shared.types";
+import { IApplicationFormPage4 } from "@/types/applicationForm.types";
+
+// Reuse your common helpers
+const dateYMD = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD");
+
+export const photoSchema = z.object({
+  s3Key: z.string().min(1, "Photo is required"),
+  url: z.string().min(1, "Photo URL is required"),
+});
+
+// --- Atomic entries ---
+export const criminalRecordEntrySchema = z.object({
+  offense: z.string().min(1, "Offense is required."),
+  dateOfSentence: dateYMD,
+  courtLocation: z.string().min(1, "Court location is required."),
+});
+
+export const fastCardSchema = z.object({
+  fastCardNumber: z.string().min(1, "Fast card number is required"),
+  fastCardExpiry: dateYMD,
+  fastCardFrontPhoto: photoSchema.optional(),
+  fastCardBackPhoto: photoSchema.optional(),
+});
+
+// ---- Factory so we can consider existing values and country rules ----
+type FactoryOpts = {
+  countryCode: ECountryCode; // 'CA' | 'US'
+  existing?: Partial<IApplicationFormPage4> | null; // page4 data returned by GET
+};
+
+export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
+  const { countryCode } = opts ?? {};
+  const isCanadian = countryCode === ECountryCode.CA;
+  const isUS = countryCode === ECountryCode.US;
+
+  const base = z.object({
+    criminalRecords: z.array(criminalRecordEntrySchema).default([]),
+
+    employeeNumber: z
+      .string()
+      .optional()
+      .transform((v) => v?.trim() ?? ""),
+    hstNumber: z
+      .string()
+      .optional()
+      .transform((v) => v?.trim() ?? ""),
+    businessNumber: z
+      .string()
+      .optional()
+      .transform((v) => v?.trim() ?? ""),
+    hstPhotos: z.array(photoSchema).default([]),
+    incorporatePhotos: z.array(photoSchema).default([]),
+    bankingInfoPhotos: z.array(photoSchema).default([]),
+
+    healthCardPhotos: z.array(photoSchema).default([]),
+    medicalCertificationPhotos: z.array(photoSchema).default([]),
+    passportPhotos: z.array(photoSchema).default([]),
+    usVisaPhotos: z.array(photoSchema).default([]),
+    prPermitCitizenshipPhotos: z.array(photoSchema).default([]),
+
+    // Optional FAST card (Canada only) — keep it optional + empty-string transforms
+    fastCard: z
+      .object({
+        fastCardNumber: z
+          .string()
+          .optional()
+          .transform((v) => v?.trim() ?? ""),
+        fastCardExpiry: z
+          .string()
+          .optional()
+          .transform((v) => v ?? ""),
+        fastCardFrontPhoto: photoSchema.optional(),
+        fastCardBackPhoto: photoSchema.optional(),
+      })
+      .optional(),
+
+    deniedLicenseOrPermit: z.boolean().optional(),
+    suspendedOrRevoked: z.boolean().optional(),
+    suspensionNotes: z
+      .string()
+      .optional()
+      .transform((v) => (v ?? "").trim()),
+    testedPositiveOrRefused: z.boolean().optional(),
+    completedDOTRequirements: z.boolean().optional(),
+    hasAccidentalInsurance: z.boolean().optional(),
+  });
+
+  type Out = z.infer<typeof base>;
+
+  const schema = base
+    // Business all-or-nothing (unchanged)
+    .superRefine((data: Out, ctx) => {
+      const textProvided = !!data.employeeNumber?.trim() || !!data.hstNumber?.trim() || !!data.businessNumber?.trim();
+      const photosProvided = data.hstPhotos.length > 0 || data.incorporatePhotos.length > 0 || data.bankingInfoPhotos.length > 0;
+      if (!textProvided && !photosProvided) return;
+
+      let hadError = false;
+      if (!data.employeeNumber?.trim()) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["employeeNumber"], message: "Employee number is required when any business detail is provided." });
+        hadError = true;
+      }
+      if (!data.hstNumber?.trim()) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["hstNumber"], message: "HST number is required when any business detail is provided." });
+        hadError = true;
+      }
+      if (!data.businessNumber?.trim()) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["businessNumber"], message: "Business number is required when any business detail is provided." });
+        hadError = true;
+      }
+      if (data.incorporatePhotos.length === 0) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["incorporatePhotos"], message: "At least one Incorporate photo is required." });
+        hadError = true;
+      }
+      if (data.hstPhotos.length === 0) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["hstPhotos"], message: "At least one HST photo is required." });
+        hadError = true;
+      }
+      if (data.bankingInfoPhotos.length === 0) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["bankingInfoPhotos"], message: "At least one Banking Info photo is required." });
+        hadError = true;
+      }
+      if (hadError) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["business.root"], message: "All business section fields and files must be provided if any are." });
+      }
+    })
+
+    // Country-specific docs (unchanged logic, still use leaf paths and the eligibility section anchor)
+    .superRefine((data: Out, ctx) => {
+      if (isCanadian) {
+        if (data.healthCardPhotos.length === 0) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["healthCardPhotos"], message: "Health card photo required for Canadian applicants." });
+        if (data.passportPhotos.length === 0) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["passportPhotos"], message: "Passport photo required for Canadian applicants." });
+        if (data.usVisaPhotos.length === 0) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["usVisaPhotos"], message: "US visa photo required for Canadian applicants." });
+        if (data.prPermitCitizenshipPhotos.length === 0)
+          ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["prPermitCitizenshipPhotos"], message: "PR/Citizenship photo required for Canadian applicants." });
+      }
+
+      if (isUS) {
+        if (data.medicalCertificationPhotos.length === 0) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["medicalCertificationPhotos"], message: "Medical certificate required for US drivers" });
+
+        if (data.passportPhotos.length === 0 && data.prPermitCitizenshipPhotos.length === 0) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["eligibilityDocs.root"], // section banner anchor
+            message: "US drivers must provide passport or PR/citizenship photo",
+          });
+        }
+      }
+    })
+
+    // FAST card (Canada only): validate **only if the form sends a fastCard object**,
+    // and validate strictly against the payload (ignore any existing on-file photos).
+    .superRefine((data: Out, ctx) => {
+      if (!isCanadian) return;
+      if (!data.fastCard) return; // no FAST card in payload → ignore entirely (optional)
+
+      const fc = data.fastCard;
+      const numOk = !!fc.fastCardNumber?.trim();
+      const expOk = !!fc.fastCardExpiry;
+      const hasFront = !!fc.fastCardFrontPhoto;
+      const hasBack = !!fc.fastCardBackPhoto;
+
+      if (!numOk) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["fastCard.fastCardNumber"], message: "Fast card number is required" });
+      if (!expOk) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["fastCard.fastCardExpiry"], message: "Fast card expiry is required" });
+      if (!hasFront) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["fastCard.fastCardFrontPhoto"], message: "Front photo is required" });
+      if (!hasBack) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["fastCard.fastCardBackPhoto"], message: "Back photo is required" });
+    })
+
+    .superRefine((data: Out, ctx) => {
+      // Force a selection for all Yes/No questions
+      (["deniedLicenseOrPermit", "suspendedOrRevoked", "testedPositiveOrRefused", "completedDOTRequirements", "hasAccidentalInsurance"] as const).forEach((key) => {
+        if (typeof data[key] !== "boolean") {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: [key],
+            message: "Please select Yes or No.",
+          });
+        }
+      });
+
+      // If suspendedOrRevoked is Yes → notes required
+      if (data.suspendedOrRevoked === true && !data.suspensionNotes) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["suspensionNotes"],
+          message: "Please provide details about the suspension/revocation.",
+        });
+      }
+    });
+
+  return schema;
+}
+
+export type ApplicationFormPage4Input = z.input<ReturnType<typeof makeApplicationFormPage4Schema>>;
+export type ApplicationFormPage4Output = z.output<ReturnType<typeof makeApplicationFormPage4Schema>>;
+
+// If you were using this name elsewhere, re-alias it to INPUT (what RHF wants):
+export type ApplicationFormPage4Schema = ApplicationFormPage4Input;

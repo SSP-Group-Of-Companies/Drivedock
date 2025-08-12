@@ -258,9 +258,96 @@
           "remove": "Remove"
         }
       },
-      "page4": {},
-      "page5": {},
+      "page4": {
+        "sections": {
+          "criminalRecords": {
+            "title": "Criminal Record Verification",
+            "subtitle": "Applicants must declare all convictions for offenses under Canadian federal law.",
+            "guidance": {
+              "intro": "Please read the following carefully before completing this section:",
+              "dontDeclareTitle": "Do not declare the following:",
+              "items": {
+                "item1": "A conviction for which you have received a Record Suspension (formerly pardon) in accordance with the Criminal Records Act;",
+                "item2": "A conviction where you were a 'young person' under the Youth Criminal Justice Act;",
+                "item3": "An Absolute or Conditional Discharge, pursuant to section 730 of the Criminal Code;",
+                "item4": "An offense for which you were not convicted;",
+                "item5": "Any provincial or municipal offense; and",
+                "item6": "Any charges dealt with outside of Canada."
+              }
+            }
+          },
+          "business": {
+            "title": "Incorporate Details",
+            "disclaimer": {
+              "text": "If you provide any incorporation detail, you must complete every field and upload all related documents in this section. This includes Employee Number, HST Number, Business Number, and the required photos (Incorporation, HST, Banking)."
+            }
+          },
+          "additionalInfo": {
+            "title": "Additional Info"
+          },
+          "fastCard": {
+            "title": "FAST Card",
+            "disclaimer": "This section is optional. However, if you provide any FAST Card information, you must complete all fields and upload both front and back photos."
+          }
+        },
+        "fields": {
+          "dateOfSentence": "Date of Sentence",
+          "offense": "Offense",
+          "courtLocation": "Court Location",
+          "employeeNumber": "Employee Number",
+          "hstNumber": "HST Number",
+          "businessNumber": "Business Number",
+          "incorporatePhotos": "Incorporate Photos",
+          "hstPhotos": "HST Business Number Photos",
+          "bankingInfoPhotos": "Banking Info Photos",
+          "denied": "Have you ever been denied a license, permit or privilege to operate a motor vehicle?",
+          "suspended": "Has any license, permit or privilege ever been suspended or revoked?",
+          "suspensionNotes": "Notes",
+          "testedPositive": "Have you ever tested positive, or refused to test, on any pre-employment drug or alcohol test administered by an employer to which you applied for, but did not obtain, safety-sensitive transportation work covered by DOT agency drug and alcohol testing rules during the past two years?",
+          "completedDOT": "If you answered YES, can you provide/obtain proof that you’ve successfully completed the DOT return-to-duty requirements?",
+          "hasInsurance": "Do you have your own Accidental Benefit Insurance Coverage?",
+          "fastNumber": "FAST Card Number",
+          "fastExpiry": "Expiry Date",
+          "fastFront": "Photo Front",
+          "fastBack": "Photo Back"
+        },
+        "placeholders": {
+          "optionalDetails": "Provide details..."
+        }
+      },
+      "page5": {
+        "title": "Competency Test",
+        "lockedNote": "You have submitted your answers. The test is now locked.",
+        "scoreLabel": "Score:",
+        "note": "I confirm I have reviewed my score and understand I cannot retake this test.",
+        "modal": {
+          "finalConfirmation": "Final Confirmation",
+          "confirmMessage": "You cannot retake this competency test once submitted. Are you sure you want to proceed?",
+          "cancel": "Cancel",
+          "confirm": "Yes, Submit"
+        }
+      },
       "page6": {}
+    },
+
+    "step3": {
+      "title": "Policies & Consents",
+      "disclaimer": "By signing below, you agree to all the contract here and future contracts. Please read all documents carefully. Your provided information will automatically prefill required fields.",
+      "sendToEmail": "Send me the signed documents to my email when the application process is complete.",
+      "helper": {
+        "drawOrUpload": "Please draw your signature above or upload a signature image."
+      },
+      "status": {
+        "uploading": "Uploading...",
+        "deleting": "Deleting..."
+      },
+      "messages": {
+        "uploadSuccess": "Upload successful",
+        "deleteFailed": "Delete failed",
+        "needSignature": "Please draw or upload a signature before continuing.",
+        "uploadFailed": "Failed to upload your signature. Please try again.",
+        "submissionFailed": "Submission failed."
+      }
     },
 
     "errors": {
@@ -309,5 +396,27 @@
       "label": "Step 6",
       "desc": "Drug Test"
     }
+  },
+  "actions": {
+    "addPhoto": "Add Photo",
+    "remove": "Remove",
+    "addRow": "Add Row",
+    "manage": "Manage",
+    "close": "Close",
+    "done": "Done",
+    "replace": "Replace",
+    "delete": "Delete",
+    "upload": "Upload",
+    "clear": "Clear",
+    "processing": "Processing...",
+    "submitAnswers": "Submit Answers",
+    "continue": "Continue"
+  },
+
+  "photoGroup": {
+    "noPhotosYet": "No photos yet",
+    "managePhotos": "Manage Photos",
+    "maxReached": "Maximum of {{count}} photos reached",
+    "moreCount": "+{{count}}"
   }
 }

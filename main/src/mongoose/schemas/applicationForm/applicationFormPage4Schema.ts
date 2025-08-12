@@ -1,27 +1,24 @@
-import {
-  IApplicationFormPage4,
-  ICriminalRecordEntry,
-  IFastCard,
-} from "@/types/applicationForm.types";
+import { IApplicationFormPage4, ICriminalRecordEntry, IFastCard } from "@/types/applicationForm.types";
 import { Schema } from "mongoose";
 import { photoSchema } from "../sharedSchemas";
 
-// Criminal Record Entry Schema
-const criminalRecordEntrySchema = new Schema<ICriminalRecordEntry>(
-  {
-    offense: { type: String, required: [true, "Offense is required."] },
-    dateOfSentence: {
-      type: Date,
-      required: [true, "Date of sentence is required."],
-    },
-    courtLocation: {
-      type: String,
-      required: [true, "Court location is required."],
-    },
-  }
-);
+// Small helper for array length validation
+const maxArrayLen = (max: number) => (arr: unknown[]) => Array.isArray(arr) ? arr.length <= max : true;
 
-// fast card schema
+// Criminal Record Entry Schema
+const criminalRecordEntrySchema = new Schema<ICriminalRecordEntry>({
+  offense: { type: String, required: [true, "Offense is required."] },
+  dateOfSentence: {
+    type: Date,
+    required: [true, "Date of sentence is required."],
+  },
+  courtLocation: {
+    type: String,
+    required: [true, "Court location is required."],
+  },
+});
+
+// FAST Card schema
 const fastCardSchema = new Schema<IFastCard>({
   fastCardNumber: {
     type: String,
@@ -51,48 +48,76 @@ export const applicationFormPage4Schema = new Schema<IApplicationFormPage4>(
       default: [],
     },
 
-    // Incorporate, hst & Banking
-    employeeNumber: {
-      type: String,
-    },
-    hstNumber: {
-      type: String,
-    },
-    businessNumber: {
-      type: String,
-    },
+    // Incorporate, HST & Banking
+    employeeNumber: { type: String },
+    hstNumber: { type: String },
+    businessNumber: { type: String },
+
     hstPhotos: {
       type: [photoSchema],
       default: [],
+      validate: {
+        validator: maxArrayLen(2),
+        message: "HST photos cannot exceed 2 items.",
+      },
     },
     incorporatePhotos: {
       type: [photoSchema],
       default: [],
+      validate: {
+        validator: maxArrayLen(10),
+        message: "Incorporate photos cannot exceed 10 items.",
+      },
     },
     bankingInfoPhotos: {
       type: [photoSchema],
       default: [],
+      validate: {
+        validator: maxArrayLen(2),
+        message: "Banking info photos cannot exceed 2 items.",
+      },
     },
     healthCardPhotos: {
       type: [photoSchema],
       default: [],
+      validate: {
+        validator: maxArrayLen(2),
+        message: "Health card photos cannot exceed 2 items.",
+      },
     },
     medicalCertificationPhotos: {
       type: [photoSchema],
       default: [],
+      validate: {
+        validator: maxArrayLen(2),
+        message: "Medical certification photos cannot exceed 2 items.",
+      },
     },
     passportPhotos: {
       type: [photoSchema],
       default: [],
+      validate: {
+        validator: maxArrayLen(2),
+        message: "Passport photos cannot exceed 2 items.",
+      },
     },
     usVisaPhotos: {
       type: [photoSchema],
       default: [],
+      validate: {
+        validator: maxArrayLen(2),
+        message: "US VISA photos cannot exceed 2 items.",
+      },
     },
     prPermitCitizenshipPhotos: {
       type: [photoSchema],
       default: [],
+      validate: {
+        validator: maxArrayLen(2),
+        message: "PR/Permit/Citizenship photos cannot exceed 2 items.",
+      },
     },
+
     fastCard: {
       type: fastCardSchema,
       default: undefined,
@@ -113,10 +138,7 @@ export const applicationFormPage4Schema = new Schema<IApplicationFormPage4>(
     },
     testedPositiveOrRefused: {
       type: Boolean,
-      required: [
-        true,
-        "Drug test refusal or positive result must be specified.",
-      ],
+      required: [true, "Drug test refusal or positive result must be specified."],
     },
     completedDOTRequirements: {
       type: Boolean,

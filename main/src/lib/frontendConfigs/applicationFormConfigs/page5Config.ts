@@ -1,25 +1,16 @@
-// main/src/lib/frontendConfigs/applicationFormConfigs/page5Config.ts
+import { FormPageConfig } from "../formPageConfig.types";
+import { ApplicationFormPage5Schema } from "@/lib/zodSchemas/applicationFormPage5.schema";
 
-import { FormPageConfig, FormPageConfigFactory } from "../formPageConfig.types";
+// No onboardingTracker is needed in payload
+export const page5Config: FormPageConfig<ApplicationFormPage5Schema> = {
+  validationFields: (values) => {
+    return values.answers.map((_, i) => `answers.${i}.answerId`);
+  },
 
-export const page5ConfigFactory: FormPageConfigFactory<any> = (ctx): FormPageConfig<any> => {
-  const id = ctx.effectiveTrackerId!; // Page 5 should always have an ID
+  buildPayload: (values) => {
+    return values;
+  },
 
-  return {
-    validationFields: () => {
-      // No validation for placeholder page
-      return [];
-    },
-
-    validateBusinessRules: () => null,
-
-    buildPayload: (values) => {
-      // Simple payload for placeholder page
-      return { page5: values };
-    },
-
-    // Route to policies-consents (final step of application form)
-    nextRoute: `/onboarding/${id}/policies-consents`,
-    submitSegment: "page-5",
-  };
+  nextRoute: "/onboarding/[id]/policies-consents",
+  submitSegment: "page-5",
 };

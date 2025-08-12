@@ -12,6 +12,10 @@ const policiesConsentsSchema = new Schema<IPoliciesConsentsDoc>(
       type: Date,
       required: true,
     },
+    sendPoliciesByEmail: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true, // adds createdAt and updatedAt

@@ -4,342 +4,242 @@ import { CanadianCompanyId, getCompanyById } from "@/constants/companies";
 import { IPoliciesConsents } from "@/types/policiesConsents.types";
 import { ITrackerContext } from "@/types/onboardingTracker.type";
 import { ES3Folder } from "@/types/aws.types";
-import { uploadToS3Presigned } from "@/lib/utils/s3Upload";
+import { UploadResult, uploadToS3Presigned } from "@/lib/utils/s3Upload";
 
-import { Dialog } from "@headlessui/react";
-import { motion, AnimatePresence } from "framer-motion";
-
-import Image from "next/image";
 import { useRef, useState } from "react";
-import { ExternalLink, Signature, Trash, X } from "lucide-react";
-import { ECountryCode } from "@/types/shared.types";
-import {
-    CANADIAN_HIRING_PDFS,
-    CANADIAN_PDFS,
-    US_PDFS,
-} from "@/constants/policiesConsentsPdfs";
+import { useTranslation } from "react-i18next";
+import { useRouter } from "next/navigation";
 import SignatureCanvas from "react-signature-canvas";
 
+import PoliciesPdfGrid from "./components/PoliciesPdfGrid";
+import PoliciesSignatureBox from "./components/PoliciesSignatureBox";
+import PoliciesUploadButtons from "./components/PoliciesUploadButtons";
+import PoliciesConsentCheckbox from "./components/PoliciesConsentCheckbox";
+import PoliciesSubmitSection from "./components/PoliciesSubmitSection";
+import PoliciesPdfViewerModal from "./components/PoliciesPdfViewerModal";
+
+import { CANADIAN_HIRING_PDFS, CANADIAN_PDFS, US_PDFS } from "@/constants/policiesConsentsPdfs";
+import { ECountryCode } from "@/types/shared.types";
+import useMounted from "@/hooks/useMounted";
+
 export type PoliciesConsentsClientProps = {
-    policiesConsents: Partial<IPoliciesConsents>;
-    onboardingContext: ITrackerContext;
+  policiesConsents: Partial<IPoliciesConsents>;
+  onboardingContext: ITrackerContext;
 };
 
-export default function PoliciesConsentsClient({
-    policiesConsents,
-    onboardingContext,
-}: PoliciesConsentsClientProps) {
-    const company = getCompanyById(onboardingContext.companyId);
+export default function PoliciesConsentsClient({ policiesConsents, onboardingContext }: PoliciesConsentsClientProps) {
+  const mounted = useMounted();
+  const router = useRouter();
+  const { t } = useTranslation("common");
 
+  const company = getCompanyById(onboardingContext.companyId);
+  const isCanadianApplicant = company?.countryCode === ECountryCode.CA;
+  const pdfList = isCanadianApplicant ? CANADIAN_PDFS : US_PDFS;
+  const hiringPdf = isCanadianApplicant ? CANADIAN_HIRING_PDFS[company.id as CanadianCompanyId] : null;
 
-    const isCanadianApplicant = company?.countryCode === ECountryCode.CA;
+  const id = onboardingContext.id;
 
-    const pdfList = isCanadianApplicant ? CANADIAN_PDFS : US_PDFS;
-    const hiringPdf = isCanadianApplicant
-        ? CANADIAN_HIRING_PDFS[company.id as CanadianCompanyId]
-        : null;
+  const [modalUrl, setModalUrl] = useState<string | null>(null);
+  const [signaturePreview, setSignaturePreview] = useState<string | null>(policiesConsents.signature?.url || null);
 
-    const id = onboardingContext.id;
+  const [signatureData, setSignatureData] = useState(policiesConsents.signature);
+  const [sendPoliciesByEmail, setSendPoliciesByEmail] = useState<boolean>(policiesConsents.sendPoliciesByEmail || false);
+  const [uploadStatus, setUploadStatus] = useState<"idle" | "uploading" | "deleting" | "error">("idle");
+  const [uploadMessage, setUploadMessage] = useState<string>("");
+  const [isDrawnSignature, setIsDrawnSignature] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [initialSignatureKey] = useState(signatureData?.s3Key || null);
+  const [initialSendByEmail] = useState(policiesConsents.sendPoliciesByEmail || false);
 
-    const [modalUrl, setModalUrl] = useState<string | null>(null);
-    const [signaturePreview, setSignaturePreview] = useState<string | null>(
-        policiesConsents.signature?.url || null
-    );
-    const [signatureData, setSignatureData] = useState(policiesConsents.signature);
-    const [uploadStatus, setUploadStatus] = useState<
-        "idle" | "uploading" | "deleting" | "error"
-    >("idle");
-    const [uploadMessage, setUploadMessage] = useState<string>("");
+  const canvasRef = useRef<SignatureCanvas>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const [showDrawModal, setShowDrawModal] = useState(false);
-    const canvasRef = useRef<SignatureCanvas>(null);
+  const handleUpload = async (file: File | null) => {
+    if (!file) return;
+    setUploadStatus("uploading");
+    setUploadMessage("");
 
-    // Handler to convert drawn signature to image and upload
-    const handleSaveDrawnSignature = async () => {
-        const canvas = canvasRef.current;
-        if (!canvas || canvas.isEmpty()) {
-            alert("Please draw a signature first.");
-            return;
-        }
+    try {
+      const result = await uploadToS3Presigned({
+        file,
+        folder: ES3Folder.SIGNATURES,
+        trackerId: id,
+      });
 
-        const dataUrl = canvas.getTrimmedCanvas().toDataURL("image/png");
+      setSignatureData(result);
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        setSignaturePreview(result);
+      };
+      reader.readAsDataURL(file);
+
+      setUploadStatus("idle");
+      setUploadMessage("Upload successful");
+    } catch (err: any) {
+      console.error("Signature upload failed", err);
+      setUploadStatus("error");
+      setUploadMessage(err.message || "Upload failed");
+    }
+  };
+
+  const handleClear = async () => {
+    setUploadStatus("deleting");
+    setUploadMessage("");
+
+    const s3Key = signatureData?.s3Key;
+    if (s3Key?.startsWith("temp-files/")) {
+      try {
+        await fetch("/api/v1/delete-temp-files", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ keys: [s3Key] }),
+        });
+      } catch (err) {
+        console.error("Failed to delete temp file", err);
+        setUploadStatus("error");
+        setUploadMessage("Delete failed");
+      }
+    }
+
+    setSignaturePreview(null);
+    setSignatureData(undefined);
+    setIsDrawnSignature(false);
+    canvasRef.current?.clear();
+    setUploadStatus("idle");
+  };
+
+  const handleSubmit = async () => {
+    // Skip if nothing changed
+    if (!isDrawnSignature && signatureData?.s3Key === initialSignatureKey && sendPoliciesByEmail === initialSendByEmail) {
+      router.push(`/onboarding/${id}/drive-test`);
+      return;
+    }
+
+    setUploadStatus("uploading");
+    setUploadMessage("");
+
+    let result: UploadResult | null = null;
+
+    if (!signatureData?.s3Key && isDrawnSignature && canvasRef.current && !canvasRef.current.isEmpty()) {
+      try {
+        const dataUrl = canvasRef.current.getTrimmedCanvas().toDataURL("image/png");
         const blob = await (await fetch(dataUrl)).blob();
         const file = new File([blob], "drawn-signature.png", { type: "image/png" });
 
-        setShowDrawModal(false);
-        handleUpload(file);
-    };
+        result = await uploadToS3Presigned({
+          file,
+          folder: ES3Folder.SIGNATURES,
+          trackerId: id,
+        });
 
+        setSignatureData(result);
 
-    const handleUpload = async (file: File | null) => {
-        if (!file) return;
-        setUploadStatus("uploading");
-        setUploadMessage("");
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const result = e.target?.result as string;
+          setSignaturePreview(result);
+        };
+        reader.readAsDataURL(file);
 
-        try {
-            const result = await uploadToS3Presigned({
-                file,
-                folder: ES3Folder.SIGNATURES,
-                trackerId: id,
-            });
-
-            setSignatureData(result);
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const result = e.target?.result as string;
-                setSignaturePreview(result);
-            };
-            reader.readAsDataURL(file);
-
-            setUploadStatus("idle");
-            setUploadMessage("Upload successful");
-        } catch (err: any) {
-            console.error("Signature upload failed", err);
-            setUploadStatus("error");
-            setUploadMessage(err.message || "Upload failed");
-        }
-    };
-
-    const handleClear = async () => {
-        setUploadStatus("deleting");
-        setUploadMessage("");
-        const s3Key = signatureData?.s3Key;
-
-        if (s3Key?.startsWith("temp-files/")) {
-            try {
-                await fetch("/api/v1/delete-temp-files", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ keys: [s3Key] }),
-                });
-            } catch (err) {
-                console.error("Failed to delete temp file", err);
-                setUploadStatus("error");
-                setUploadMessage("Delete failed");
-            }
-        }
-
-        setSignaturePreview(null);
-        setSignatureData(undefined);
-        setUploadStatus("idle");
-    };
-
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
-    if (!company) {
-        return (
-            <div className="p-6 text-center text-red-600 font-semibold">
-                Invalid company ID. Please contact support.
-            </div>
-        );
+        setIsDrawnSignature(false);
+      } catch (err: any) {
+        console.error("Signature upload failed", err);
+        setUploadStatus("error");
+        setUploadMessage("Failed to upload your signature. Please try again.");
+        return;
+      }
     }
 
-    return (
-        <div className="space-y-6">
-            {/* PDF Grid */}
-            <div className="flex flex-wrap gap-4 justify-center">
-                {[hiringPdf, ...pdfList].filter(Boolean).map((pdf) => pdf && (
-                    <button
-                        key={pdf.label}
-                        onClick={() => setModalUrl(pdf.path)}
-                        title={`View ${pdf.label}`}
-                        className="relative w-full rounded-xl bg-white hover:shadow-md ring-1 ring-gray-200 px-4 py-3 cursor-pointer transition-all flex items-center text-center overflow-hidden"
-                    >
-                        <div className="absolute top-[1px] left-[-24px] transform -rotate-45 bg-red-500 text-white text-[12px] px-6 py-[3px] font-bold shadow-sm rounded-sm pointer-events-none select-none overflow-hidden">
-                            PDF
-                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/50 to-transparent animate-shine" />
-                        </div>
-                        <span className="text-sm text-gray-700 font-medium leading-tight flex-1">
-                            {pdf.label}
-                        </span>
-                        <ExternalLink />
-                    </button>
-                ))}
-            </div>
+    const finalSignature = signatureData || result;
 
+    if (!finalSignature?.s3Key || !finalSignature?.url) {
+      setUploadStatus("error");
+      setUploadMessage("Please draw or upload a signature before continuing.");
+      return;
+    }
 
-            {/* Info Text */}
-            <p className="text-sm text-gray-600 text-center max-w-xl mx-auto">
-                By signing below, you agree to all the contract here and future contracts.
-                Please read all documents carefully. Your provided information will
-                automatically prefill required fields.
-            </p>
+    setSubmitting(true);
 
-            {/* Signature Preview */}
-            <div className="border-2 border-black w-full max-w-xl h-48 mx-auto rounded-md bg-white relative">
-                {signaturePreview && (
-                    <Image
-                        src={signaturePreview}
-                        alt="Signature Preview"
-                        fill
-                        className="object-contain p-2"
-                    />
-                )}
-            </div>
+    try {
+      const response = await fetch(`/api/v1/onboarding/${id}/policies-consents`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          signature: {
+            s3Key: finalSignature.s3Key,
+            url: finalSignature.url,
+          },
+          sendPoliciesByEmail,
+        }),
+      });
 
-            {/* Buttons */}
-            <div className="flex justify-center gap-4">
-                <button
-                    onClick={() => {
-                        if (fileInputRef.current) {
-                            fileInputRef.current.value = "";
-                            fileInputRef.current.click();
-                        }
-                    }}
-                    disabled={uploadStatus === "uploading" || uploadStatus === "deleting"}
-                    className="px-4 py-2 rounded-md hover:bg-gray-100 transition text-sm flex items-center gap-1 cursor-pointer"
-                >
-                    <Signature className="inline-block w-4 h-4 mr-1" />
-                    Upload
-                </button>
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data?.message || "Failed to save signature.");
+      }
 
-                <button
-                    onClick={() => setShowDrawModal(true)}
-                    className="px-4 py-2 rounded-md border border-blue-500 text-blue-600 hover:bg-blue-50 transition text-sm"
-                    disabled={uploadStatus === "uploading" || uploadStatus === "deleting"}
-                >
-                    ✍️ Draw
-                </button>
+      router.push(`/onboarding/${id}/drive-test`);
+    } catch (error: any) {
+      console.error("Submit failed", error);
+      setUploadMessage(error.message || "Submission failed.");
+      setUploadStatus("error");
+    } finally {
+      setSubmitting(false);
+      setUploadStatus("idle");
+    }
+  };
 
-                <button
-                    onClick={handleClear}
-                    className="px-4 py-2 rounded-md bg-red-500 text-white hover:bg-red-600 transition text-sm flex items-center gap-1 cursor-pointer"
-                    disabled={!signatureData || uploadStatus === "uploading" || uploadStatus === "deleting"}
-                >
-                    <Trash className="inline-block w-4 h-4 mr-1" />
-                    Clear
-                </button>
-            </div>
+  if (!mounted) return null;
 
-            {/* Hidden file input */}
-            <input
-                type="file"
-                ref={fileInputRef}
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => handleUpload(e.target.files?.[0] || null)}
-            />
+  return (
+    <div className="space-y-6">
+      <PoliciesPdfGrid pdfs={[hiringPdf!, ...pdfList].filter(Boolean)} onOpenModal={setModalUrl} />
 
-            {/* Upload Feedback */}
-            {(uploadStatus === "uploading" || uploadStatus === "deleting") && (
-                <p className="text-yellow-600 text-sm text-center flex items-center justify-center gap-2">
-                    <span className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-600"></span>
-                    {uploadStatus === "uploading" ? "Uploading..." : "Deleting..."}
-                </p>
-            )}
-            {uploadStatus === "error" && (
-                <p className="text-red-500 text-sm text-center">{uploadMessage}</p>
-            )}
-            {uploadStatus === "idle" && uploadMessage && (
-                <p className="text-green-600 text-sm text-center">{uploadMessage}</p>
-            )}
+      <div className="rounded-xl bg-gray-50/60 ring-1 ring-gray-100 p-4">
+        <p className="text-sm text-gray-700 text-center">
+          {t(
+            "form.step3.disclaimer",
+            "By signing below, you agree to all the contract here and future contracts. Please read all documents carefully. Your provided information will automatically prefill required fields."
+          )}
+        </p>
+      </div>
 
-            {/* Modal */}
-            <AnimatePresence>
-                {modalUrl && (
-                    <Dialog
-                        open={true}
-                        onClose={() => setModalUrl(null)}
-                        className="relative z-50"
-                    >
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="fixed inset-0 bg-black/40"
-                            aria-hidden="true"
-                        />
-                        <div className="fixed inset-0 flex items-center justify-center p-4">
-                            <motion.div
-                                initial={{ y: 30, opacity: 0 }}
-                                animate={{ y: 0, opacity: 1 }}
-                                exit={{ y: 30, opacity: 0 }}
-                                transition={{ duration: 0.2 }}
-                                className="bg-white w-full max-w-3xl h-[80vh] rounded-lg shadow-xl overflow-hidden"
-                            >
-                                <div className="relative w-full h-full">
-                                    <div className=" z-10 bg-white flex justify-end items-center p-2">
-                                        <button
-                                            onClick={() => setModalUrl(null)}
-                                            className="bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 cursor-pointer"
-                                        >
-                                            <X size={12} />
-                                        </button>
-                                    </div>
-                                    <iframe
-                                        src={modalUrl}
-                                        title="PDF Preview"
-                                        className="w-full h-full border-none"
-                                    />
-                                </div>
+      <PoliciesSignatureBox canvasRef={canvasRef} signaturePreview={signaturePreview} onDrawEnd={() => setIsDrawnSignature(true)} />
 
-                            </motion.div>
-                        </div>
-                    </Dialog>
-                )}
-            </AnimatePresence>
-            <AnimatePresence>
-                {showDrawModal && (
-                    <Dialog open={true} onClose={() => setShowDrawModal(false)} className="relative z-50">
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="fixed inset-0 bg-black/40"
-                            aria-hidden="true"
-                        />
+      <p className="text-sm text-gray-600 text-center mt-2">
+        Please <strong>draw</strong> your signature above or <strong>upload</strong> a signature image.
+      </p>
 
-                        <div className="fixed inset-0 flex items-center justify-center p-4">
-                            <motion.div
-                                initial={{ y: 30, opacity: 0 }}
-                                animate={{ y: 0, opacity: 1 }}
-                                exit={{ y: 30, opacity: 0 }}
-                                transition={{ duration: 0.2 }}
-                                className="bg-white w-full max-w-md rounded-lg shadow-xl overflow-hidden p-2 "
-                            >
-                                <button
-                                    onClick={() => setShowDrawModal(false)}
-                                    className="ml-auto bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 cursor-pointer"
-                                >
-                                    <X size={12} />
-                                </button>
-                                <div className="space-y-4">
-                                    <h2 className="text-center font-bold">Draw Your Signature</h2>
-                                    <div className="border border-gray-300 rounded">
-                                        <SignatureCanvas
-                                            ref={canvasRef}
-                                            penColor="black"
-                                            canvasProps={{
-                                                width: 400,
-                                                height: 150,
-                                                className: "bg-white rounded",
-                                            }}
-                                        />
-                                    </div>
-                                    <div className="flex justify-between gap-4">
-                                        <button
-                                            onClick={() => canvasRef.current?.clear()}
-                                            className="w-full py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm"
-                                        >
-                                            Clear
-                                        </button>
-                                        <button
-                                            onClick={handleSaveDrawnSignature}
-                                            className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
-                                        >
-                                            Save
-                                        </button>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        </div>
-                    </Dialog>
-                )}
-            </AnimatePresence>
+      <PoliciesUploadButtons
+        onUploadClick={() => {
+          if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+            fileInputRef.current.click();
+          }
+        }}
+        onClearClick={handleClear}
+        disabled={uploadStatus === "uploading" || uploadStatus === "deleting"}
+        t={t}
+      />
 
-        </div>
-    );
+      <input type="file" ref={fileInputRef} accept="image/*" className="hidden" onChange={(e) => handleUpload(e.target.files?.[0] || null)} />
+
+      {(uploadStatus === "uploading" || uploadStatus === "deleting") && (
+        <p className="text-yellow-600 text-sm text-center flex items-center justify-center gap-2">
+          <span className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-600"></span>
+          {uploadStatus === "uploading" ? "Uploading..." : "Deleting..."}
+        </p>
+      )}
+      {uploadStatus === "error" && <p className="text-red-500 text-sm text-center">{uploadMessage}</p>}
+      {uploadStatus === "idle" && uploadMessage && <p className="text-green-600 text-sm text-center">{uploadMessage}</p>}
+
+      <PoliciesPdfViewerModal modalUrl={modalUrl} onClose={() => setModalUrl(null)} />
+
+      <PoliciesConsentCheckbox checked={sendPoliciesByEmail} onChange={setSendPoliciesByEmail} />
+
+      <PoliciesSubmitSection onSubmit={handleSubmit} submitting={submitting} />
+    </div>
+  );
 }

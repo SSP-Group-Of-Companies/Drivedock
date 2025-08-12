@@ -1,11 +1,4 @@
-import {
-  IApplicationFormPage3,
-  IAccidentEntry,
-  ITrafficConvictionEntry,
-  IEducation,
-  ICanadianHoursOfService,
-  ICanadianDailyHours,
-} from "@/types/applicationForm.types";
+import { IApplicationFormPage3, IAccidentEntry, ITrafficConvictionEntry, IEducation, ICanadianHoursOfService, ICanadianDailyHours } from "@/types/applicationForm.types";
 import { Schema } from "mongoose";
 
 // Accident Entry Schema
@@ -89,8 +82,7 @@ const canadianHoursSchema = new Schema<ICanadianHoursOfService>({
     type: [dailyHoursSchema],
     required: [true, "Daily hours must be provided."],
     validate: {
-      validator: (v: ICanadianDailyHours[]) =>
-        Array.isArray(v) && v.length === 14,
+      validator: (v: ICanadianDailyHours[]) => Array.isArray(v) && v.length === 14,
       message: "Exactly 14 days of hours must be provided.",
     },
   },
@@ -126,13 +118,11 @@ export const applicationFormPage3Schema = new Schema<IApplicationFormPage3>(
 );
 
 // Virtual totalHours getter
-applicationFormPage3Schema
-  .virtual("canadianHoursOfService.totalHours")
-  .get(function (this) {
-    try {
-      const daily = this.canadianHoursOfService?.dailyHours ?? [];
-      return daily.reduce((sum: number, entry) => sum + (entry.hours || 0), 0);
-    } catch {
-      return 0;
-    }
-  });
+applicationFormPage3Schema.virtual("canadianHoursOfService.totalHours").get(function (this) {
+  try {
+    const daily = this.canadianHoursOfService?.dailyHours ?? [];
+    return daily.reduce((sum: number, entry) => sum + (entry.hours || 0), 0);
+  } catch {
+    return 0;
+  }
+});

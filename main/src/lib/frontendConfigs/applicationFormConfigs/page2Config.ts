@@ -3,9 +3,7 @@
 import { FormPageConfig, FormPageConfigFactory } from "../formPageConfig.types";
 import { ApplicationFormPage2Schema } from "@/lib/zodSchemas/applicationFormPage2.schema";
 
-export const page2ConfigFactory: FormPageConfigFactory<
-  ApplicationFormPage2Schema
-> = (ctx): FormPageConfig<ApplicationFormPage2Schema> => {
+export const page2ConfigFactory: FormPageConfigFactory<ApplicationFormPage2Schema> = (ctx): FormPageConfig<ApplicationFormPage2Schema> => {
   const id = ctx.effectiveTrackerId!; // Page 2+ should always have an ID
 
   return {
@@ -15,12 +13,7 @@ export const page2ConfigFactory: FormPageConfigFactory<
 
       values.employments.forEach((e, i) => {
         // (Optional) only validate rows currently rendered
-        const rendered =
-          typeof document !== "undefined"
-            ? document.querySelector(
-                `[data-field="employments.${i}.employerName"]`
-              )
-            : null;
+        const rendered = typeof document !== "undefined" ? document.querySelector(`[data-field="employments.${i}.employerName"]`) : null;
         if (!rendered) return;
 
         fields.push(
