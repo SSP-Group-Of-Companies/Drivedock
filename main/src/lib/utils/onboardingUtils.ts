@@ -19,7 +19,6 @@ export const onboardingStepFlow: EStepPath[] = [
   EStepPath.POLICIES_CONSENTS,
   EStepPath.DRIVING_TEST,
   EStepPath.CARRIER_EDGE,
-
 ];
 
 /**
