@@ -254,7 +254,8 @@
           "college": "Universidad/Instituto (años)",
           "postGraduate": "Posgrado (años)",
           "dayOneDate": "Fecha día uno (AAAA-MM-DD)",
-          "totalHours": "Total de horas"
+          "totalHours": "Total de horas",
+          "dateTitle": "Horas diarias (0-24 horas por día)"
         },
 
         "actions": {
@@ -264,7 +265,7 @@
       },
 
       "page4": {},
-      "page": {},
+      "page5": {},
       "page6": {}
     },
 

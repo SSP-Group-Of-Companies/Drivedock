@@ -31,9 +31,8 @@ export default function TrafficConvictionsSection() {
     return Math.min(4, Math.max(1, count));
   }, [fields, control]);
 
-  const [mobileVisibleCount, setMobileVisibleCount] = useState<number>(
-    initialMobileVisible
-  );
+  const [mobileVisibleCount, setMobileVisibleCount] =
+    useState<number>(initialMobileVisible);
 
   if (!mounted) return null;
 
@@ -49,7 +48,7 @@ export default function TrafficConvictionsSection() {
       <div className="overflow-x-auto">
         <table className="w-full text-sm border-collapse hidden sm:table">
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
+            <tr className="bg-gray-50 rounded-md shadow-sm">
               <th className="py-3 px-4 text-left font-semibold text-gray-700 text-xs">
                 {t("form.step2.page3.fields.date")}
               </th>
@@ -76,35 +75,18 @@ export default function TrafficConvictionsSection() {
                   {index === 0 ? (
                     <input
                       type="date"
-                      className="w-full py-2 px-3 rounded-md shadow-inner bg-gray-50 border-none focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-sm"
+                      className="h-10 w-32 px-2 mt-1 text-center block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
                       placeholder="YYYY-MM-DD"
                       data-field={`trafficConvictions.${index}.date`}
                       {...register(`trafficConvictions.${index}.date` as const)}
                     />
                   ) : (
-                    <div className="relative">
-                      <input
-                        type="date"
-                        className="w-full py-2 px-3 rounded-md shadow-inner bg-gray-50 border-none focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-sm"
-                        data-field={`trafficConvictions.${index}.date`}
-                        {...register(
-                          `trafficConvictions.${index}.date` as const
-                        )}
-                      />
-                      <svg
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                        />
-                      </svg>
-                    </div>
+                    <input
+                      type="date"
+                      className="h-10 w-32 px-2 mt-1 text-center block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
+                      data-field={`trafficConvictions.${index}.date`}
+                      {...register(`trafficConvictions.${index}.date` as const)}
+                    />
                   )}
                   {errors.trafficConvictions?.[index]?.date && (
                     <p className="text-red-500 text-xs mt-1">
@@ -115,8 +97,8 @@ export default function TrafficConvictionsSection() {
                 <td className="py-3 px-4">
                   <input
                     type="text"
-                    className="w-full py-2 px-3 rounded-md shadow-inner bg-gray-50 border-none focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-sm"
-                    placeholder={index === 0 ? "e.g., Toronto, ON" : ""}
+                    className="w-full py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
+                    placeholder={index === 0 ? "Toronto, ON" : ""}
                     data-field={`trafficConvictions.${index}.location`}
                     {...register(
                       `trafficConvictions.${index}.location` as const
@@ -131,8 +113,8 @@ export default function TrafficConvictionsSection() {
                 <td className="py-3 px-4">
                   <input
                     type="text"
-                    className="w-full py-2 px-3 rounded-md shadow-inner bg-gray-50 border-none focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-sm"
-                    placeholder={index === 0 ? "e.g., Speeding" : ""}
+                    className="w-full py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
+                    placeholder={index === 0 ? "Speeding" : ""}
                     data-field={`trafficConvictions.${index}.charge`}
                     {...register(`trafficConvictions.${index}.charge` as const)}
                   />
@@ -145,8 +127,8 @@ export default function TrafficConvictionsSection() {
                 <td className="py-3 px-4">
                   <input
                     type="text"
-                    className="w-full py-2 px-3 rounded-md shadow-inner bg-gray-50 border-none focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-sm"
-                    placeholder={index === 0 ? "e.g., Fine $150" : ""}
+                    className="w-full py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
+                    placeholder={index === 0 ? "Fine $150" : ""}
                     data-field={`trafficConvictions.${index}.penalty`}
                     {...register(
                       `trafficConvictions.${index}.penalty` as const
@@ -166,7 +148,10 @@ export default function TrafficConvictionsSection() {
         {/* Mobile stacked view */}
         <div className="sm:hidden space-y-4">
           {fields.slice(0, mobileVisibleCount).map((field, index) => (
-            <div key={field.id} className="relative grid grid-cols-1 gap-3 border border-gray-200 rounded-xl p-4 bg-white shadow-sm">
+            <div
+              key={field.id}
+              className="relative grid grid-cols-1 gap-3 border border-gray-200 rounded-xl p-4 bg-white shadow-sm"
+            >
               {index > 0 && (
                 <button
                   type="button"
@@ -186,7 +171,7 @@ export default function TrafficConvictionsSection() {
                 </label>
                 <input
                   type="date"
-                  className="w-full py-2 px-3 rounded-md shadow-inner bg-gray-50 border-none focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-sm"
+                  className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
                   data-field={`trafficConvictions.${index}.date`}
                   {...register(`trafficConvictions.${index}.date` as const)}
                 />
@@ -197,7 +182,7 @@ export default function TrafficConvictionsSection() {
                 </label>
                 <input
                   type="text"
-                  className="w-full py-2 px-3 rounded-md shadow-inner bg-gray-50 border-none focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-sm"
+                  className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
                   data-field={`trafficConvictions.${index}.location`}
                   {...register(`trafficConvictions.${index}.location` as const)}
                 />
@@ -208,7 +193,7 @@ export default function TrafficConvictionsSection() {
                 </label>
                 <input
                   type="text"
-                  className="w-full py-2 px-3 rounded-md shadow-inner bg-gray-50 border-none focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-sm"
+                  className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
                   data-field={`trafficConvictions.${index}.charge`}
                   {...register(`trafficConvictions.${index}.charge` as const)}
                 />
@@ -219,7 +204,7 @@ export default function TrafficConvictionsSection() {
                 </label>
                 <input
                   type="text"
-                  className="w-full py-2 px-3 rounded-md shadow-inner bg-gray-50 border-none focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-sm"
+                  className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
                   data-field={`trafficConvictions.${index}.penalty`}
                   {...register(`trafficConvictions.${index}.penalty` as const)}
                 />

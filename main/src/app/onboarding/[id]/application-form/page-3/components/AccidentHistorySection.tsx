@@ -38,9 +38,8 @@ export default function AccidentHistorySection() {
     return Math.min(4, Math.max(1, count));
   }, [fields, control]);
 
-  const [mobileVisibleCount, setMobileVisibleCount] = useState<number>(
-    initialMobileVisible
-  );
+  const [mobileVisibleCount, setMobileVisibleCount] =
+    useState<number>(initialMobileVisible);
 
   if (!mounted) return null;
 
@@ -56,17 +55,17 @@ export default function AccidentHistorySection() {
       <div className="overflow-x-auto">
         <table className="w-full text-sm border-collapse hidden sm:table">
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
-              <th className="py-3 px-4 text-left font-semibold text-gray-700 text-xs">
+            <tr className="bg-gray-50 rounded-md shadow-sm">
+              <th className="py-3 px-4 text-left font-semibold text-gray-700 text-xs w-32">
                 {t("form.step2.page3.fields.date")}
               </th>
-              <th className="py-3 px-4 text-left font-semibold text-gray-700 text-xs">
+              <th className="py-3 px-4 text-left font-semibold text-gray-700 text-xs w-full">
                 {t("form.step2.page3.fields.natureOfAccident")}
               </th>
-              <th className="py-3 px-4 text-center font-semibold text-gray-700 text-xs">
+              <th className="py-3 px-4 text-center font-semibold text-gray-700 text-xs w-16">
                 {t("form.step2.page3.fields.fatalities")}
               </th>
-              <th className="py-3 px-4 text-center font-semibold text-gray-700 text-xs">
+              <th className="py-3 px-4 text-center font-semibold text-gray-700 text-xs w-16">
                 {t("form.step2.page3.fields.injuries")}
               </th>
             </tr>
@@ -83,33 +82,18 @@ export default function AccidentHistorySection() {
                   {index === 0 ? (
                     <input
                       type="date"
-                      className="w-full py-2 px-3 rounded-md shadow-inner bg-gray-50 border-none focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-sm"
+                      className="h-10 w-32 px-2 mt-1 text-center block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
                       placeholder="YYYY-MM-DD"
                       data-field={`accidentHistory.${index}.date`}
                       {...register(`accidentHistory.${index}.date` as const)}
                     />
                   ) : (
-                    <div className="relative">
-                      <input
-                        type="date"
-                        className="w-full py-2 px-3 rounded-md shadow-inner bg-gray-50 border-none focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-sm"
-                        data-field={`accidentHistory.${index}.date`}
-                        {...register(`accidentHistory.${index}.date` as const)}
-                      />
-                      <svg
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                        />
-                      </svg>
-                    </div>
+                    <input
+                      type="date"
+                      className="h-10 w-32 px-2 mt-1 text-center block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
+                      data-field={`accidentHistory.${index}.date`}
+                      {...register(`accidentHistory.${index}.date` as const)}
+                    />
                   )}
                   {errors.accidentHistory?.[index]?.date && (
                     <p className="text-red-500 text-xs mt-1">
@@ -120,9 +104,9 @@ export default function AccidentHistorySection() {
                 <td className="py-3 px-4">
                   <input
                     type="text"
-                    className="w-full py-2 px-3 rounded-md shadow-inner bg-gray-50 border-none focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-sm"
+                    className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
                     placeholder={
-                      index === 0 ? "e.g., Rear-end collision on highway" : ""
+                      index === 0 ? "Rear-end collision on highway" : ""
                     }
                     data-field={`accidentHistory.${index}.natureOfAccident`}
                     {...register(
@@ -139,7 +123,7 @@ export default function AccidentHistorySection() {
                   <input
                     type="number"
                     min={0}
-                    className="w-16 py-2 px-2 text-center rounded-md shadow-inner bg-gray-50 border-none focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-sm"
+                    className="h-10 w-10 text-center p-0 rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     placeholder={index === 0 ? "0" : ""}
                     data-field={`accidentHistory.${index}.fatalities`}
                     {...register(
@@ -159,7 +143,7 @@ export default function AccidentHistorySection() {
                   <input
                     type="number"
                     min={0}
-                    className="w-16 py-2 px-2 text-center rounded-md shadow-inner bg-gray-50 border-none focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-sm"
+                    className="h-10 w-10 text-center p-0 rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     placeholder={index === 0 ? "0" : ""}
                     data-field={`accidentHistory.${index}.injuries`}
                     {...register(`accidentHistory.${index}.injuries` as const, {
@@ -180,7 +164,10 @@ export default function AccidentHistorySection() {
         {/* Mobile stacked view: show first row and an Add Another button */}
         <div className="sm:hidden space-y-4">
           {fields.slice(0, mobileVisibleCount).map((field, index) => (
-            <div key={field.id} className="relative grid grid-cols-1 gap-3 border border-gray-200 rounded-xl p-4 bg-white shadow-sm">
+            <div
+              key={field.id}
+              className="relative grid grid-cols-1 gap-3 border border-gray-200 rounded-xl p-4 bg-white shadow-sm"
+            >
               {index > 0 && (
                 <button
                   type="button"
@@ -200,7 +187,7 @@ export default function AccidentHistorySection() {
                 </label>
                 <input
                   type="date"
-                  className="w-full py-2 px-3 rounded-md shadow-inner bg-gray-50 border-none focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-sm"
+                  className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
                   data-field={`accidentHistory.${index}.date`}
                   {...register(`accidentHistory.${index}.date` as const)}
                 />
@@ -211,9 +198,11 @@ export default function AccidentHistorySection() {
                 </label>
                 <input
                   type="text"
-                  className="w-full py-2 px-3 rounded-md shadow-inner bg-gray-50 border-none focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-sm"
+                  className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
                   data-field={`accidentHistory.${index}.natureOfAccident`}
-                  {...register(`accidentHistory.${index}.natureOfAccident` as const)}
+                  {...register(
+                    `accidentHistory.${index}.natureOfAccident` as const
+                  )}
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -224,9 +213,12 @@ export default function AccidentHistorySection() {
                   <input
                     type="number"
                     min={0}
-                    className="w-full py-2 px-2 text-center rounded-md shadow-inner bg-gray-50 border-none focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-sm"
+                    className="w-full py-2 px-2 text-center rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     data-field={`accidentHistory.${index}.fatalities`}
-                    {...register(`accidentHistory.${index}.fatalities` as const, { valueAsNumber: true })}
+                    {...register(
+                      `accidentHistory.${index}.fatalities` as const,
+                      { valueAsNumber: true }
+                    )}
                   />
                 </div>
                 <div>
@@ -236,9 +228,11 @@ export default function AccidentHistorySection() {
                   <input
                     type="number"
                     min={0}
-                    className="w-full py-2 px-2 text-center rounded-md shadow-inner bg-gray-50 border-none focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-sm"
+                    className="w-full py-2 px-2 text-center rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     data-field={`accidentHistory.${index}.injuries`}
-                    {...register(`accidentHistory.${index}.injuries` as const, { valueAsNumber: true })}
+                    {...register(`accidentHistory.${index}.injuries` as const, {
+                      valueAsNumber: true,
+                    })}
                   />
                 </div>
               </div>
@@ -261,7 +255,12 @@ export default function AccidentHistorySection() {
                   return;
                 }
                 if (fields.length < maxRows) {
-                  append({ date: "", natureOfAccident: "", fatalities: 0, injuries: 0 });
+                  append({
+                    date: "",
+                    natureOfAccident: "",
+                    fatalities: 0,
+                    injuries: 0,
+                  });
                   setMobileVisibleCount((c) => Math.min(maxRows, c + 1));
                 }
               }}

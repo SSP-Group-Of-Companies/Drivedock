@@ -33,6 +33,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import I18nProvider from "./i18n-provider";
+import PageTransitionWrapper from "@/components/shared/PageTransitionWrapper";
 
 // Load Google Fonts as CSS variables
 const geistSans = Geist({
@@ -75,8 +76,10 @@ export default function RootLayout({
 
           {/* Star Watermark is now handled per-page */}
 
-          {/* Main Content Area */}
-          <main className="relative z-10">{children}</main>
+          {/* Main Content Area with Smooth Transitions */}
+          <PageTransitionWrapper>
+            <main className="relative z-10">{children}</main>
+          </PageTransitionWrapper>
         </I18nProvider>
       </body>
     </html>

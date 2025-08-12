@@ -1,9 +1,28 @@
-// main/src/app/onboarding/[id]/application-form/page-1/page.tsx
 /**
- * DriveDock Onboarding — Page 1 (Identity & Addresses) Server Wrapper
- * - Fetches saved Page 1 data + onboardingContext (nextUrl) by tracker ID
- * - Normalizes into ApplicationFormPage1Schema defaultValues
- * - Passes onboardingContext into client for no-op continue jumps
+ * Application Form Page 1 Server Component — DriveDock (SSP Portal)
+ *
+ * Description:
+ * Server-side wrapper for Page 1 of the application form (Identity & Addresses).
+ * Fetches existing data from the backend, normalizes it for React Hook Form,
+ * and passes it to the client component. Handles data transformation and
+ * provides fallback defaults for new applications.
+ *
+ * Features:
+ * - Fetches saved Page 1 data by tracker ID
+ * - Normalizes dates, addresses, and license data
+ * - Provides fallback defaults for new applications
+ * - Handles S3 photo objects and license arrays
+ * - Passes onboarding context for navigation
+ *
+ * Data Flow:
+ * - Fetches from /api/v1/onboarding/[id]/application-form/page-1
+ * - Normalizes dates to YYYY-MM-DD format
+ * - Transforms backend data to RHF-compatible format
+ * - Provides empty defaults for new applications
+ *
+ * Author: Faruq Adebayo Atanda
+ * Company: SSP Group of Companies
+ * Created: 2025-01-27
  */
 
 import { ApplicationFormPage1Schema } from "@/lib/zodSchemas/applicationFormPage1.schema";
@@ -16,12 +35,18 @@ import {
   format as formatDateFns,
 } from "date-fns";
 
-// Minimal placeholders that satisfy the zod/photo shape
+/**
+ * Creates empty S3 photo object for form initialization
+ * @returns Empty photo object with s3Key and url properties
+ */
 function emptyS3Photo() {
   return { s3Key: "", url: "" };
 }
 
-// Single blank address row so only "Current Address" shows on first render
+/**
+ * Default blank address template for new applications
+ * Ensures at least one address field is available on first render
+ */
 const BLANK_ADDRESS = {
   address: "",
   city: "",
@@ -31,13 +56,24 @@ const BLANK_ADDRESS = {
   to: "",
 };
 
-// Normalize any date-ish string into YYYY-MM-DD; return "" if invalid (timezone-safe).
+/**
+ * Normalizes date strings to YYYY-MM-DD format for form inputs
+ * Handles timezone-safe date parsing and validation
+ * @param dateish - Date string to normalize
+ * @returns Normalized date string or empty string if invalid
+ */
 function toYMD(dateish: string): string {
   if (!dateish) return "";
   const d = parseISO(String(dateish));
   return isValidDate(d) ? formatDateFns(d, "yyyy-MM-dd") : "";
 }
 
+/**
+ * Fetches Page 1 data from the backend API
+ * Retrieves existing application data and onboarding context for the given tracker ID
+ * @param trackerId - The onboarding tracker ID
+ * @returns Object containing page1 data and tracker context, or null if fetch fails
+ */
 async function fetchPage1Data(trackerId: string) {
   const base = NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
   try {
@@ -54,7 +90,7 @@ async function fetchPage1Data(trackerId: string) {
     const json = await res.json();
     return {
       page1: json?.data?.page1 ?? null,
-      trackerContext: json?.data?.onboardingContext ?? null, // 👈 keep nextUrl handy
+      trackerContext: json?.data?.onboardingContext ?? null, // Keep nextUrl for navigation
     };
   } catch (error) {
     console.error("Error fetching Page 1 data:", error);
@@ -62,7 +98,10 @@ async function fetchPage1Data(trackerId: string) {
   }
 }
 
-// Fallback defaults (used if no data is returned)
+/**
+ * Fallback defaults for new applications or when no data is returned
+ * Provides complete schema structure with empty values for form initialization
+ */
 const EMPTY_DEFAULTS: ApplicationFormPage1Schema = {
   firstName: "",
   lastName: "",

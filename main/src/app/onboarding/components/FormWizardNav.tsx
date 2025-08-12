@@ -16,13 +16,15 @@ export default function FormWizardNav({
   const steps = Array.from({ length: totalSteps }, (_, i) => i + 1);
 
   // Special handling for application form (stage 2)
+  // Fill between step 2 and 3 grows as the user advances across page-1 .. page-5
+  // Map to percent of the connector filled
   const getApplicationFormProgress = () => {
-    if (pathname.includes("application-form/page-1")) return 20;
-    if (pathname.includes("application-form/page-2")) return 40;
-    if (pathname.includes("application-form/page-3")) return 60;
-    if (pathname.includes("application-form/page-4")) return 80;
-    if (pathname.includes("application-form/page-5")) return 100;
-    return 20; // default for application-form
+    if (pathname.includes("application-form/page-1")) return 20; // 1 of 5
+    if (pathname.includes("application-form/page-2")) return 40; // 2 of 5
+    if (pathname.includes("application-form/page-3")) return 60; // 3 of 5
+    if (pathname.includes("application-form/page-4")) return 80; // 4 of 5
+    if (pathname.includes("application-form/page-5")) return 100; // 5 of 5
+    return 20;
   };
 
   const isApplicationForm = currentStep === 2;
@@ -71,28 +73,37 @@ export default function FormWizardNav({
                   </motion.div>
 
                   {/* Connecting Line */}
-                  {index < steps.length - 1 && (
-                    <div className="relative w-4 sm:w-8 h-1 bg-gray-300 mx-0.5 sm:mx-1 rounded-full overflow-hidden">
-                      {/* Progress fill for application form */}
-                      {isApplicationForm && step === 2 && (
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${applicationProgress}%` }}
-                          transition={{ duration: 0.5, ease: "easeOut" }}
-                          className="absolute top-0 left-0 h-full bg-red-500 rounded-full"
-                        />
-                      )}
-                      {/* Progress fill for other steps */}
-                      {!isApplicationForm && step < currentStep && (
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: "100%" }}
-                          transition={{ duration: 0.5, ease: "easeOut" }}
-                          className="absolute top-0 left-0 h-full bg-green-500 rounded-full"
-                        />
-                      )}
-                    </div>
-                  )}
+                   {index < steps.length - 1 && (
+                     <div className="relative w-4 sm:w-8 h-1 bg-gray-300 mx-0.5 sm:mx-1 rounded-full overflow-hidden">
+                       {/* Application form connector (between 2 and 3) grows incrementally */}
+                       {isApplicationForm && step === 2 && (
+                         <motion.div
+                           initial={{ width: 0 }}
+                           animate={{ width: `${applicationProgress}%` }}
+                           transition={{ duration: 0.5, ease: "easeOut" }}
+                           className="absolute top-0 left-0 h-full bg-red-500 rounded-full"
+                         />
+                       )}
+                       {/* All other completed connectors are fully filled red */}
+                       {!isApplicationForm && step < currentStep && (
+                         <motion.div
+                           initial={{ width: 0 }}
+                           animate={{ width: "100%" }}
+                           transition={{ duration: 0.5, ease: "easeOut" }}
+                           className="absolute top-0 left-0 h-full bg-red-500 rounded-full"
+                         />
+                       )}
+                       {/* When past step 2 in application flow, fill connectors 1->2 fully red */}
+                       {isApplicationForm && step < 2 && (
+                         <motion.div
+                           initial={{ width: 0 }}
+                           animate={{ width: "100%" }}
+                           transition={{ duration: 0.5, ease: "easeOut" }}
+                           className="absolute top-0 left-0 h-full bg-red-500 rounded-full"
+                         />
+                       )}
+                     </div>
+                   )}
                 </div>
               ))}
             </div>

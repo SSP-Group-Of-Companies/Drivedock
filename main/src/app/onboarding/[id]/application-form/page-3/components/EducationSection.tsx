@@ -32,7 +32,7 @@ export default function EducationSection() {
             {t("form.step2.page3.fields.gradeSchool")} (Years)
           </label>
           <select
-            className="w-full py-2 px-3 rounded-md shadow-inner bg-gray-50 border-none focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-sm"
+            className="w-full py-2 px-3 mt-1 block rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
             data-field="education.gradeSchool"
             {...register("education.gradeSchool", {
               valueAsNumber: true,
@@ -57,7 +57,7 @@ export default function EducationSection() {
             {t("form.step2.page3.fields.college")} (Years)
           </label>
           <select
-            className="w-full py-2 px-3 rounded-md shadow-inner bg-gray-50 border-none focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-sm"
+            className="w-full py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
             data-field="education.college"
             {...register("education.college", {
               valueAsNumber: true,
@@ -82,7 +82,7 @@ export default function EducationSection() {
             {t("form.step2.page3.fields.postGraduate")} (Years)
           </label>
           <select
-            className="w-full py-2 px-3 rounded-md shadow-inner bg-gray-50 border-none focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none text-sm"
+            className="w-full py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
             data-field="education.postGraduate"
             {...register("education.postGraduate", {
               valueAsNumber: true,

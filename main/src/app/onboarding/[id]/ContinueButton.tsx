@@ -1,7 +1,31 @@
+/**
+ * Continue Button Component — DriveDock (SSP Portal)
+ *
+ * Description:
+ * Reusable button component for form step navigation in the onboarding flow.
+ * Handles form validation, submission, and navigation with integrated loading states.
+ * Supports both config objects and config factories for flexible usage.
+ *
+ * Features:
+ * - Form validation before submission
+ * - Automatic loading state management
+ * - Server-driven navigation (prefers nextUrl from server)
+ * - No-op continue for unchanged forms (skips unnecessary PATCH)
+ * - Integrated error handling and user feedback
+ *
+ * Props:
+ * - config: FormPageConfig or FormPageConfigFactory
+ * - trackerId: Optional tracker ID (falls back to URL params)
+ *
+ * Author: Faruq Adebayo Atanda
+ * Company: SSP Group of Companies
+ * Created: 2025-01-27
+ */
+
 "use client";
 
 /**
- * <ContinueButton />
+ * ContinueButton Component
  * - Accepts a config object OR a config factory (receives BuildPayloadCtx)
  * - Prefers server-provided nextUrl; otherwise uses config.nextRoute (already resolved)
  * - No-op continue: if revisiting (PATCH path) and form is NOT dirty, skip PATCH and navigate
@@ -25,6 +49,7 @@ import type {
   FormPageConfig,
   FormPageConfigFactory,
 } from "@/lib/frontendConfigs/formPageConfig.types";
+import { useGlobalLoading } from "@/store/useGlobalLoading";
 
 type ContinueButtonProps<T extends FieldValues> = {
   config: FormPageConfig<T> | FormPageConfigFactory<T>;
@@ -35,33 +60,44 @@ export default function ContinueButton<T extends FieldValues>({
   config,
   trackerId,
 }: ContinueButtonProps<T>): ReactNode {
+  // React Hook Form context for form state management
   const {
     getValues,
     trigger,
     formState: { errors, isDirty },
   } = useFormContext<T>();
 
+  // Next.js navigation and routing
   const router = useRouter();
   const params = useParams();
 
+  // Client-side mounting check to prevent hydration issues
   const mounted = useMounted();
   const { t } = useTranslation("common");
 
+  // Global state management
   const { data: prequalifications, clearData } = usePrequalificationStore();
   const { tracker, setTracker } = useOnboardingTracker();
   const { selectedCompany } = useCompanySelection();
   const { handleFormError } = useFormErrorScroll<T>();
 
+  // Local state for submission tracking
   const [submitting, setSubmitting] = useState(false);
+  const { show, hide } = useGlobalLoading();
 
+  /**
+   * Handles form submission, validation, and navigation
+   * Orchestrates the complete flow from validation to navigation
+   */
   const onSubmit = async () => {
     const values = getValues();
 
-    // Resolve context now (used for both validationFields + submission)
+    // Resolve context for validation and submission
     const urlTrackerId = params?.id as string | undefined;
     const effectiveTrackerId = trackerId || urlTrackerId;
-    const isPost = !effectiveTrackerId;
+    const isPost = !effectiveTrackerId; // POST for new, PATCH for existing
 
+    // Build context object for config resolution
     const ctx: BuildPayloadCtx = {
       prequalifications: prequalifications ?? undefined,
       companyId: selectedCompany?.id,
@@ -73,7 +109,7 @@ export default function ContinueButton<T extends FieldValues>({
       effectiveTrackerId,
     };
 
-    // 1) Validate fields listed by this page
+    // Step 1: Validate form fields based on page configuration
     const resolvedConfig =
       typeof config === "function"
         ? (config as FormPageConfigFactory<T>)(ctx)
@@ -88,14 +124,14 @@ export default function ContinueButton<T extends FieldValues>({
       return;
     }
 
-    // 2) Business rules (optional)
+    // Step 2: Check business rules (if defined)
     const ruleError = resolvedConfig.validateBusinessRules?.(values);
     if (ruleError) {
       alert(ruleError);
       return;
     }
 
-    // 3) For POST pages, ensure prequalifications & company selection exist
+    // Step 3: Validate prerequisites for POST operations
     if (isPost) {
       if (!prequalifications?.completed) {
         alert(
@@ -112,14 +148,15 @@ export default function ContinueButton<T extends FieldValues>({
 
     try {
       setSubmitting(true);
+      show(t("form.loading", "Processing..."));
 
-      // 4) NO-OP CONTINUE: If revisiting and nothing changed, skip PATCH and go forward
+      // Step 4: No-op continue - skip PATCH if form hasn't changed
       if (!isPost && !isDirty) {
         router.push(tracker?.nextUrl ?? resolvedConfig.nextRoute);
         return;
       }
 
-      // 5) Build JSON payload and submit
+      // Step 5: Build payload and submit to server
       const jsonPayload = resolvedConfig.buildPayload(values, ctx);
 
       const { trackerContext, nextUrl } = await submitFormStep({
@@ -129,7 +166,7 @@ export default function ContinueButton<T extends FieldValues>({
         submitSegment: resolvedConfig.submitSegment,
       });
 
-      // 6) Navigate (prefer server-driven nextUrl)
+      // Step 6: Navigate to next step (prefer server-provided nextUrl)
       if (isPost) {
         if (!trackerContext?.id)
           throw new Error("Tracker not returned from POST");
@@ -146,6 +183,7 @@ export default function ContinueButton<T extends FieldValues>({
       alert("An error occurred while submitting. Please try again.");
     } finally {
       setSubmitting(false);
+      hide();
     }
   };
 
@@ -156,7 +194,7 @@ export default function ContinueButton<T extends FieldValues>({
         type="button"
         disabled={submitting}
         onClick={onSubmit}
-        className={`px-8 py-2 mt-6 rounded-full font-semibold transition-colors shadow-md flex items-center gap-2 ${
+        className={`px-8 py-2 mt-6 rounded-full font-semibold transition-all shadow-md flex items-center gap-2 cursor-pointer active:translate-y-[1px] active:shadow ${
           submitting
             ? "bg-gray-400 text-white cursor-not-allowed"
             : "bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 text-white hover:opacity-90"

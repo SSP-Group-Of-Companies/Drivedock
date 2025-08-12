@@ -254,7 +254,8 @@
           "college": "Collège/CEGEP (années)",
           "postGraduate": "Études supérieures (années)",
           "dayOneDate": "Date jour un (AAAA-MM-JJ)",
-          "totalHours": "Total des heures"
+          "totalHours": "Total des heures",
+          "dateTitle": "Heures quotidiennes (0-24 heures par jour)"
         },
 
         "actions": {
@@ -264,7 +265,7 @@
       },
 
       "page4": {},
-      "page": {},
+      "page5": {},
       "page6": {}
     },
 

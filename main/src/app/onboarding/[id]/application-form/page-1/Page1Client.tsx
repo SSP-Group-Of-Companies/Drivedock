@@ -1,12 +1,30 @@
-// main/src/app/onboarding/[id]/application-form/page-1/Page1Client.tsx
-"use client";
-
 /**
- * Page 1 Client (Identity, Licenses, Addresses)
- * - RHF + Zod
- * - Uses page1ConfigFactory + <ContinueButton />
- * - Hydrates tracker store from GET for no-op continue
+ * Application Form Page 1 Client Component — DriveDock (SSP Portal)
+ *
+ * Description:
+ * Client-side component for Page 1 of the application form (Identity, Licenses, Addresses).
+ * Manages form state using React Hook Form with Zod validation, orchestrates form sections,
+ * and handles submission through the ContinueButton component.
+ *
+ * Features:
+ * - React Hook Form with Zod validation
+ * - Modular form sections (PersonalDetails, PlaceOfBirth, LicenseSection, AddressSection)
+ * - Tracker store hydration for navigation
+ * - SIN normalization (digits only)
+ * - Form submission orchestration via ContinueButton
+ *
+ * Form Sections:
+ * - PersonalDetails: Name, SIN, contact information
+ * - PlaceOfBirth: Birth location information
+ * - LicenseSection: Driver license details and photos
+ * - AddressSection: Current and previous addresses
+ *
+ * Author: Faruq Adebayo Atanda
+ * Company: SSP Group of Companies
+ * Created: 2025-01-27
  */
+
+"use client";
 
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -26,6 +44,9 @@ import { useEffect } from "react";
 import { useOnboardingTracker } from "@/store/useOnboardingTracker";
 import type { ITrackerContext } from "@/types/onboardingTracker.type";
 
+/**
+ * Props for Page1Client component
+ */
 type Page1ClientProps = {
   defaultValues: ApplicationFormPage1Schema;
   trackerId: string;
@@ -39,19 +60,20 @@ export default function Page1Client({
   trackerId,
   trackerContextFromGet,
 }: Page1ClientProps) {
-  // Normalize SIN (digits only) in defaults
+  // Normalize SIN to digits only for consistent formatting
   const cleanedDefaults: ApplicationFormPage1Schema = {
     ...defaultValues,
     sin: defaultValues.sin?.replace(/\D/g, "") || "",
   };
 
+  // Initialize React Hook Form with Zod validation
   const methods = useForm<ApplicationFormPage1Schema>({
     resolver: zodResolver(applicationFormPage1Schema),
     mode: "onChange",
     defaultValues: cleanedDefaults,
   });
 
-  // Keep the tracker store fresh with latest nextUrl (enables no-op continue)
+  // Hydrate tracker store with latest context for navigation
   const { setTracker } = useOnboardingTracker();
   useEffect(() => {
     if (trackerContextFromGet) setTracker(trackerContextFromGet);

@@ -89,7 +89,7 @@
 
   "form": {
     "subtitle": "All information must be answered truthfully. Liability falls on the applicant.",
-    
+
     "helpPopups": {
       "page2SafetySensitive": "As part of our regulatory compliance process, please confirm the following information:\n\nCross-Border Driving: Please indicate \"Yes\" if you have previously operated a commercial vehicle across the U.S.–Canada border. If not, please indicate \"No.\"\n\nDOT-Regulated Drug Testing: Please indicate \"Yes\" if your previous employer conducted drug and alcohol testing in accordance with U.S. Department of Transportation (DOT) regulations. If not, please indicate \"No.\"\n\nYour responses help us ensure compliance with applicable transportation and safety regulations. If you have any questions or need clarification, feel free to reach out.",
       "page3CanadianHours": "As part of the Hours of Service (HOS) compliance requirements under Canadian regulations, please provide the number of on-duty hours (including driving) you completed in the last 14 days with your previous employer.\n\nKindly ensure the following:\n• Indicate the number of hours worked for each day in the 14-day period.\n• Include the total hours worked over the entire 14 days.\n• If you were on vacation, off-duty, or did not work on any day, please indicate that by entering \"0\" or \"nil\" for that day.\n\nThis information is essential for us to accurately track your compliance with Canadian HOS rules. Thank you for your cooperation."
@@ -249,7 +249,8 @@
           "college": "College (yrs)",
           "postGraduate": "Post Graduate (yrs)",
           "dayOneDate": "Date Day One (YYYY-MM-DD)",
-          "totalHours": "Total Hours"
+          "totalHours": "Total Hours",
+          "dateTitle": "Daily Hours (0-24 hours per day)"
         },
 
         "actions": {
@@ -258,7 +259,7 @@
         }
       },
       "page4": {},
-      "page": {},
+      "page5": {},
       "page6": {}
     },
 
