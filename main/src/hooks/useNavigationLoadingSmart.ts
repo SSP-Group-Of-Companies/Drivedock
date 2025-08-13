@@ -10,7 +10,7 @@ export function useNavigationLoadingSmart() {
   const router = useRouter();
   const { begin, end } = useSmartGlobalLoading({
     delay: 500, // show only if nav takes longer than 500ms (industry standard)
-    minVisible: 0, // no minimum visible time - hide immediately when done
+    minVisible: 0, // no minimum visible time - hide immediately when doneimage.png
     message: "Loading…",
   });
 
