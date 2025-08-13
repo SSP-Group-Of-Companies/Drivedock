@@ -64,7 +64,7 @@ export default function CriminalRecordsSection() {
                   <input
                     type="date"
                     {...register(`criminalRecords.${i}.dateOfSentence`)}
-                    className="mt-1 w-full rounded-md border-gray-300 focus:ring-gray-500 focus:outline-none focus:shadow-md py-2 px-3"
+                    className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
                     data-field={`criminalRecords.${i}.dateOfSentence`}
                   />
                   {rowErr?.dateOfSentence && <p className="text-red-500 text-xs mt-1">{rowErr.dateOfSentence.message}</p>}
@@ -74,7 +74,7 @@ export default function CriminalRecordsSection() {
                   <label className="block text-sm font-medium text-gray-700">{t("form.step2.page4.fields.offense")}</label>
                   <input
                     {...register(`criminalRecords.${i}.offense`)}
-                    className="mt-1 w-full rounded-md border-gray-300 focus:ring-gray-500 focus:outline-none focus:shadow-md py-2 px-3"
+                    className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
                     data-field={`criminalRecords.${i}.offense`}
                   />
                   {rowErr?.offense && <p className="text-red-500 text-xs mt-1">{rowErr.offense.message}</p>}
@@ -84,7 +84,7 @@ export default function CriminalRecordsSection() {
                   <label className="block text-sm font-medium text-gray-700">{t("form.step2.page4.fields.courtLocation")}</label>
                   <input
                     {...register(`criminalRecords.${i}.courtLocation`)}
-                    className="mt-1 w-full rounded-md border-gray-300 focus:ring-gray-500 focus:outline-none focus:shadow-md py-2 px-3"
+                    className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
                     data-field={`criminalRecords.${i}.courtLocation`}
                   />
                   {rowErr?.courtLocation && <p className="text-red-500 text-xs mt-1">{rowErr.courtLocation.message}</p>}

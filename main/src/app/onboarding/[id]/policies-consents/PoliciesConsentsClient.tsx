@@ -9,9 +9,8 @@ import { UploadResult, uploadToS3Presigned } from "@/lib/utils/s3Upload";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
-// ❌ REMOVE value import:
-// import SignatureCanvas from "react-signature-canvas";
-// ✅ TYPE-ONLY import (does not touch server bundle)
+
+// TYPE-ONLY import (does not touch server bundle)
 import type ReactSignatureCanvas from "react-signature-canvas";
 
 import PoliciesPdfGrid from "./components/PoliciesPdfGrid";
@@ -54,29 +53,62 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
   const [initialSignatureKey] = useState(signatureData?.s3Key || null);
   const [initialSendByEmail] = useState(policiesConsents.sendPoliciesByEmail || false);
 
-  // ✅ Ref now uses the TYPE, not the value
+  // Ref now uses the TYPE, not the value
   const canvasRef = useRef<ReactSignatureCanvas | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // helper: only deletes temp objects
+  async function deleteIfTemp(s3Key?: string) {
+    if (!s3Key || !s3Key.startsWith("temp-files/")) return;
+    await fetch("/api/v1/delete-temp-files", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ keys: [s3Key] }),
+    });
+  }
+
   const handleUpload = async (file: File | null) => {
-    if (!file) return;
+    if (!file || uploadStatus === "uploading" || uploadStatus === "deleting") return;
+
     setUploadStatus("uploading");
     setUploadMessage("");
 
-    try {
-      const result = await uploadToS3Presigned({ file, folder: ES3Folder.SIGNATURES, trackerId: id });
-      setSignatureData(result);
+    // keep a reference to previous (may be temp or finalized)
+    const prevKey = signatureData?.s3Key;
 
+    try {
+      // 1) upload the new file
+      const result = await uploadToS3Presigned({
+        file,
+        folder: ES3Folder.SIGNATURES,
+        trackerId: id,
+      });
+
+      // 2) preview new file immediately
       const reader = new FileReader();
       reader.onload = (e) => setSignaturePreview((e.target?.result as string) ?? null);
       reader.readAsDataURL(file);
 
+      // 3) switch state to the new file
+      setSignatureData(result);
+      setIsDrawnSignature(false);
+
+      // 4) best-effort cleanup of the previous temp (non-blocking UX)
+      try {
+        await deleteIfTemp(prevKey);
+      } catch (cleanupErr) {
+        console.warn("Failed to delete previous temp signature:", cleanupErr);
+      }
+
+      if (!uploadMessage) setUploadMessage("Upload successful");
       setUploadStatus("idle");
-      setUploadMessage("Upload successful");
     } catch (err: any) {
       console.error("Signature upload failed", err);
       setUploadStatus("error");
-      setUploadMessage(err.message || "Upload failed");
+      setUploadMessage(err?.message || "Upload failed");
+    } finally {
+      // allow re-selecting the same file to trigger onChange again
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
