@@ -10,26 +10,14 @@ interface FormFieldProps {
   error?: string;
   className?: string;
   children?: React.ReactNode;
-  [key: string]: any; // eslint-disable-line @typescript-eslint/no-explicit-any
+  [key: string]: any;
 }
 
 // Reusable form field component with automatic data-field attribute
-export const FormField: React.FC<FormFieldProps> = ({
-  label,
-  name,
-  type = "text",
-  placeholder,
-  register,
-  error,
-  className = "",
-  children,
-  ...props
-}) => {
+export const FormField: React.FC<FormFieldProps> = ({ label, name, type = "text", placeholder, register, error, className = "", children, ...props }) => {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
-        {label}
-      </label>
+      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
       {children || (
         <input
           type={type}
