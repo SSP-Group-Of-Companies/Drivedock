@@ -49,8 +49,8 @@ export interface ILicenseEntry {
   licenseStateOrProvince: string;
   licenseType: ELicenseType; // e.g., AZ, DZ, etc.
   licenseExpiry: string | Date; // YYYY-MM-DD (client) or Date (server)
-  licenseFrontPhoto: IPhoto; // S3 temp ref on POST; finalized by server
-  licenseBackPhoto: IPhoto; // S3 temp ref on POST; finalized by server
+  licenseFrontPhoto?: IPhoto; // S3 temp ref on POST; finalized by server
+  licenseBackPhoto?: IPhoto; // S3 temp ref on POST; finalized by server
 }
 
 /**

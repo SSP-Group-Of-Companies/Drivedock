@@ -37,8 +37,8 @@ const licenseSchema = new Schema<ILicenseEntry>({
     type: Date,
     required: [true, "License expiry date is required."],
   },
-  licenseFrontPhoto: { type: photoSchema },
-  licenseBackPhoto: { type: photoSchema },
+  licenseFrontPhoto: { type: photoSchema, required: false },
+  licenseBackPhoto: { type: photoSchema, required: false },
 });
 
 export const applicationFormPage1Schema = new Schema<IApplicationFormPage1>(

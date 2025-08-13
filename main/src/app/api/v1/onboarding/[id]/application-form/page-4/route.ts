@@ -13,6 +13,7 @@ import { ECountryCode, IPhoto } from "@/types/shared.types";
 import { isValidObjectId } from "mongoose";
 import { S3_SUBMISSIONS_FOLDER, S3_TEMP_FOLDER } from "@/constants/aws";
 import { parseJsonBody } from "@/lib/utils/reqParser";
+import { ES3Folder } from "@/types/aws.types";
 
 export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
@@ -160,6 +161,62 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     await appFormDoc.save({ validateBeforeSave: false });
 
     // ---------------------------
+    // Section-clear detection (Business + Fast Card)
+    // Place AFTER Phase 1 and BEFORE Phase 2
+    // ---------------------------
+    const emptyStr = (v?: string | null) => !v || v.trim() === "";
+    const arrLen = (a?: IPhoto[]) => (Array.isArray(a) ? a.length : 0);
+
+    const businessNowEmpty =
+      emptyStr(body.employeeNumber) &&
+      emptyStr(body.businessNumber) &&
+      emptyStr(body.hstNumber) &&
+      arrLen(body.incorporatePhotos) === 0 &&
+      arrLen(body.bankingInfoPhotos) === 0 &&
+      arrLen(body.hstPhotos) === 0;
+
+    const prevBusinessHadAny =
+      !emptyStr(prev?.employeeNumber) ||
+      !emptyStr(prev?.businessNumber) ||
+      !emptyStr(prev?.hstNumber) ||
+      arrLen(prev?.incorporatePhotos) > 0 ||
+      arrLen(prev?.bankingInfoPhotos) > 0 ||
+      arrLen(prev?.hstPhotos) > 0;
+
+    const keysToHardDelete: string[] = [];
+    const finalizedOnly = (ks: (string | undefined)[]) => ks.filter((k): k is string => !!k && !k.startsWith(`${S3_TEMP_FOLDER}/`));
+
+    if (businessNowEmpty && prevBusinessHadAny) {
+      const collect = (arr?: IPhoto[]) => (Array.isArray(arr) ? arr.map((p) => p.s3Key).filter(Boolean) : []);
+
+      keysToHardDelete.push(...finalizedOnly(collect(prev?.incorporatePhotos)), ...finalizedOnly(collect(prev?.bankingInfoPhotos)), ...finalizedOnly(collect(prev?.hstPhotos)));
+
+      appFormDoc.set("page4.employeeNumber", "");
+      appFormDoc.set("page4.businessNumber", "");
+      appFormDoc.set("page4.hstNumber", "");
+      appFormDoc.set("page4.incorporatePhotos", []);
+      appFormDoc.set("page4.bankingInfoPhotos", []);
+      appFormDoc.set("page4.hstPhotos", []);
+      await appFormDoc.save({ validateBeforeSave: false });
+    }
+
+    const bodyHasFastCard = !!body.fastCard && (!emptyStr(body.fastCard.fastCardNumber) || !!body.fastCard.fastCardExpiry || !!body.fastCard.fastCardFrontPhoto || !!body.fastCard.fastCardBackPhoto);
+
+    if (!bodyHasFastCard && prev?.fastCard) {
+      keysToHardDelete.push(...finalizedOnly([prev.fastCard.fastCardFrontPhoto?.s3Key, prev.fastCard.fastCardBackPhoto?.s3Key]));
+      appFormDoc.set("page4.fastCard", undefined);
+      await appFormDoc.save({ validateBeforeSave: false });
+    }
+
+    if (keysToHardDelete.length) {
+      try {
+        await deleteS3Objects(keysToHardDelete);
+      } catch (e) {
+        console.warn("Failed to delete section-cleared finalized S3 keys:", e);
+      }
+    }
+
+    // ---------------------------
     // Phase 2: finalize S3 files
     // ---------------------------
     const tempPrefix = `${S3_TEMP_FOLDER}/`;
@@ -181,28 +238,21 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     }
 
     // finalize arrays
-    page4Final.hstPhotos = (await finalizeVector(page4Final.hstPhotos, `${S3_SUBMISSIONS_FOLDER}/hstPhotos/${onboardingDoc.id}`)) as IPhoto[];
-
-    page4Final.incorporatePhotos = (await finalizeVector(page4Final.incorporatePhotos, `${S3_SUBMISSIONS_FOLDER}/incorporatePhotos/${onboardingDoc.id}`)) as IPhoto[];
-
-    page4Final.bankingInfoPhotos = (await finalizeVector(page4Final.bankingInfoPhotos, `${S3_SUBMISSIONS_FOLDER}/bankingInfoPhotos/${onboardingDoc.id}`)) as IPhoto[];
-
-    page4Final.healthCardPhotos = (await finalizeVector(page4Final.healthCardPhotos, `${S3_SUBMISSIONS_FOLDER}/healthCardPhotos/${onboardingDoc.id}`)) as IPhoto[];
-
-    page4Final.medicalCertificationPhotos = (await finalizeVector(page4Final.medicalCertificationPhotos, `${S3_SUBMISSIONS_FOLDER}/medicalCertificationPhotos/${onboardingDoc.id}`)) as IPhoto[];
-
-    page4Final.passportPhotos = (await finalizeVector(page4Final.passportPhotos, `${S3_SUBMISSIONS_FOLDER}/passportPhotos/${onboardingDoc.id}`)) as IPhoto[];
-
-    page4Final.usVisaPhotos = (await finalizeVector(page4Final.usVisaPhotos, `${S3_SUBMISSIONS_FOLDER}/usVisaPhotos/${onboardingDoc.id}`)) as IPhoto[];
-
-    page4Final.prPermitCitizenshipPhotos = (await finalizeVector(page4Final.prPermitCitizenshipPhotos, `${S3_SUBMISSIONS_FOLDER}/prPermitCitizenshipPhotos/${onboardingDoc.id}`)) as IPhoto[];
+    page4Final.hstPhotos = (await finalizeVector(page4Final.hstPhotos, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.HST_PHOTOS}/${onboardingDoc.id}`)) as IPhoto[];
+    page4Final.incorporatePhotos = (await finalizeVector(page4Final.incorporatePhotos, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.INCORPORATION_PHOTOS}/${onboardingDoc.id}`)) as IPhoto[];
+    page4Final.bankingInfoPhotos = (await finalizeVector(page4Final.bankingInfoPhotos, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.BANKING_INFO_PHOTOS}/${onboardingDoc.id}`)) as IPhoto[];
+    page4Final.healthCardPhotos = (await finalizeVector(page4Final.healthCardPhotos, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.HEALTH_CARD_PHOTOS}/${onboardingDoc.id}`)) as IPhoto[];
+    page4Final.medicalCertificationPhotos = (await finalizeVector(page4Final.medicalCertificationPhotos, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.MEDICAL_CERT_PHOTOS}/${onboardingDoc.id}`)) as IPhoto[];
+    page4Final.passportPhotos = (await finalizeVector(page4Final.passportPhotos, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.PASSPORT_PHOTOS}/${onboardingDoc.id}`)) as IPhoto[];
+    page4Final.usVisaPhotos = (await finalizeVector(page4Final.usVisaPhotos, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.US_VISA_PHOTOS}/${onboardingDoc.id}`)) as IPhoto[];
+    page4Final.prPermitCitizenshipPhotos = (await finalizeVector(page4Final.prPermitCitizenshipPhotos, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.PR_CITIZENSHIP_PHOTOS}/${onboardingDoc.id}`)) as IPhoto[];
 
     // finalize fast card singles
     if (page4Final.fastCard?.fastCardFrontPhoto?.s3Key?.startsWith(tempPrefix)) {
-      page4Final.fastCard.fastCardFrontPhoto = await finalizePhoto(page4Final.fastCard.fastCardFrontPhoto, `${S3_SUBMISSIONS_FOLDER}/fastCard/${onboardingDoc.id}`);
+      page4Final.fastCard.fastCardFrontPhoto = await finalizePhoto(page4Final.fastCard.fastCardFrontPhoto, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.FAST_CARD_PHOTOS}/${onboardingDoc.id}`);
     }
     if (page4Final.fastCard?.fastCardBackPhoto?.s3Key?.startsWith(tempPrefix)) {
-      page4Final.fastCard.fastCardBackPhoto = await finalizePhoto(page4Final.fastCard.fastCardBackPhoto, `${S3_SUBMISSIONS_FOLDER}/fastCard/${onboardingDoc.id}`);
+      page4Final.fastCard.fastCardBackPhoto = await finalizePhoto(page4Final.fastCard.fastCardBackPhoto, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.FAST_CARD_PHOTOS}/${onboardingDoc.id}`);
     }
 
     // ---------------------------
@@ -234,8 +284,11 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     const prevKeys = new Set(collectAllKeys(prev));
     const newKeys = new Set(collectAllKeys(page4Final));
 
+    // Avoid double-delete: exclude keys already deleted in section-clear
+    const alreadyDeleted = new Set(keysToHardDelete);
+
     // Delete finalized objects that were removed by the user (present before, absent now)
-    const removedFinalKeys = [...prevKeys].filter((k) => !newKeys.has(k) && !k.startsWith(`${S3_TEMP_FOLDER}/`));
+    const removedFinalKeys = [...prevKeys].filter((k) => !newKeys.has(k) && !k.startsWith(`${S3_TEMP_FOLDER}/`) && !alreadyDeleted.has(k));
 
     if (removedFinalKeys.length) {
       try {
