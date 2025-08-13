@@ -152,20 +152,46 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
 
     // FAST card (Canada only): validate **only if the form sends a fastCard object**,
     // and validate strictly against the payload (ignore any existing on-file photos).
-    .superRefine((data: Out, ctx) => {
+    .superRefine((data, ctx) => {
       if (!isCanadian) return;
-      if (!data.fastCard) return; // no FAST card in payload → ignore entirely (optional)
-
       const fc = data.fastCard;
-      const numOk = !!fc.fastCardNumber?.trim();
-      const expOk = !!fc.fastCardExpiry;
-      const hasFront = !!fc.fastCardFrontPhoto;
-      const hasBack = !!fc.fastCardBackPhoto;
+      if (!fc) return;
 
-      if (!numOk) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["fastCard.fastCardNumber"], message: "Fast card number is required" });
-      if (!expOk) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["fastCard.fastCardExpiry"], message: "Fast card expiry is required" });
-      if (!hasFront) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["fastCard.fastCardFrontPhoto"], message: "Front photo is required" });
-      if (!hasBack) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["fastCard.fastCardBackPhoto"], message: "Back photo is required" });
+      // Only validate if ANY leaf is provided
+      const anyProvided = !!fc.fastCardNumber?.trim() || !!fc.fastCardExpiry || !!fc.fastCardFrontPhoto || !!fc.fastCardBackPhoto;
+
+      // If all are empty → treat as optional and skip
+      if (!anyProvided) return;
+
+      // Now enforce "all-or-nothing"
+      if (!fc.fastCardNumber?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["fastCard.fastCardNumber"],
+          message: "Fast card number is required",
+        });
+      }
+      if (!fc.fastCardExpiry) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["fastCard.fastCardExpiry"],
+          message: "Fast card expiry is required",
+        });
+      }
+      if (!fc.fastCardFrontPhoto) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["fastCard.fastCardFrontPhoto"],
+          message: "Front photo is required",
+        });
+      }
+      if (!fc.fastCardBackPhoto) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["fastCard.fastCardBackPhoto"],
+          message: "Back photo is required",
+        });
+      }
     })
 
     .superRefine((data: Out, ctx) => {
@@ -188,6 +214,15 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
           message: "Please provide details about the suspension/revocation.",
         });
       }
+    })
+
+    .transform((val) => {
+      const fc = val.fastCard;
+      if (fc) {
+        const anyProvided = !!fc.fastCardNumber?.trim() || !!fc.fastCardExpiry || !!fc.fastCardFrontPhoto || !!fc.fastCardBackPhoto;
+        if (!anyProvided) (val as any).fastCard = undefined;
+      }
+      return val;
     });
 
   return schema;

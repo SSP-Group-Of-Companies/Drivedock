@@ -9,7 +9,10 @@ import { UploadResult, uploadToS3Presigned } from "@/lib/utils/s3Upload";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
-import SignatureCanvas from "react-signature-canvas";
+// ❌ REMOVE value import:
+// import SignatureCanvas from "react-signature-canvas";
+// ✅ TYPE-ONLY import (does not touch server bundle)
+import type ReactSignatureCanvas from "react-signature-canvas";
 
 import PoliciesPdfGrid from "./components/PoliciesPdfGrid";
 import PoliciesSignatureBox from "./components/PoliciesSignatureBox";
@@ -51,7 +54,8 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
   const [initialSignatureKey] = useState(signatureData?.s3Key || null);
   const [initialSendByEmail] = useState(policiesConsents.sendPoliciesByEmail || false);
 
-  const canvasRef = useRef<SignatureCanvas>(null);
+  // ✅ Ref now uses the TYPE, not the value
+  const canvasRef = useRef<ReactSignatureCanvas | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleUpload = async (file: File | null) => {
@@ -60,19 +64,11 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
     setUploadMessage("");
 
     try {
-      const result = await uploadToS3Presigned({
-        file,
-        folder: ES3Folder.SIGNATURES,
-        trackerId: id,
-      });
-
+      const result = await uploadToS3Presigned({ file, folder: ES3Folder.SIGNATURES, trackerId: id });
       setSignatureData(result);
 
       const reader = new FileReader();
-      reader.onload = (e) => {
-        const result = e.target?.result as string;
-        setSignaturePreview(result);
-      };
+      reader.onload = (e) => setSignaturePreview((e.target?.result as string) ?? null);
       reader.readAsDataURL(file);
 
       setUploadStatus("idle");
@@ -111,7 +107,6 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
   };
 
   const handleSubmit = async () => {
-    // Skip if nothing changed
     if (!isDrawnSignature && signatureData?.s3Key === initialSignatureKey && sendPoliciesByEmail === initialSendByEmail) {
       router.push(`/onboarding/${id}/drive-test`);
       return;
@@ -128,19 +123,11 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
         const blob = await (await fetch(dataUrl)).blob();
         const file = new File([blob], "drawn-signature.png", { type: "image/png" });
 
-        result = await uploadToS3Presigned({
-          file,
-          folder: ES3Folder.SIGNATURES,
-          trackerId: id,
-        });
-
+        result = await uploadToS3Presigned({ file, folder: ES3Folder.SIGNATURES, trackerId: id });
         setSignatureData(result);
 
         const reader = new FileReader();
-        reader.onload = (e) => {
-          const result = e.target?.result as string;
-          setSignaturePreview(result);
-        };
+        reader.onload = (e) => setSignaturePreview((e.target?.result as string) ?? null);
         reader.readAsDataURL(file);
 
         setIsDrawnSignature(false);
@@ -161,25 +148,16 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
     }
 
     setSubmitting(true);
-
     try {
       const response = await fetch(`/api/v1/onboarding/${id}/policies-consents`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          signature: {
-            s3Key: finalSignature.s3Key,
-            url: finalSignature.url,
-          },
-          sendPoliciesByEmail,
-        }),
+        body: JSON.stringify({ signature: { s3Key: finalSignature.s3Key, url: finalSignature.url }, sendPoliciesByEmail }),
       });
-
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data?.message || "Failed to save signature.");
       }
-
       router.push(`/onboarding/${id}/drive-test`);
     } catch (error: any) {
       console.error("Submit failed", error);

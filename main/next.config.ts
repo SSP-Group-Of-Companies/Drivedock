@@ -5,9 +5,7 @@ const bucketName = process.env.AWS_BUCKET_NAME;
 const region = process.env.AWS_REGION;
 
 // Default S3 domain pattern
-const s3Domain = bucketName && region
-  ? `${bucketName}.s3.${region}.amazonaws.com`
-  : undefined;
+const s3Domain = bucketName && region ? `${bucketName}.s3.${region}.amazonaws.com` : undefined;
 
 const nextConfig: NextConfig = {
   i18n: {
@@ -33,16 +31,16 @@ const nextConfig: NextConfig = {
         process: false,
       };
     }
-    
+
     // Handle PDF.js worker
     config.module.rules.push({
       test: /pdf\.worker\.(min\.)?js/,
-      type: 'asset/resource',
+      type: "asset/resource",
       generator: {
-        filename: 'static/worker/[hash][ext][query]',
+        filename: "static/worker/[hash][ext][query]",
       },
     });
-    
+
     return config;
   },
 };

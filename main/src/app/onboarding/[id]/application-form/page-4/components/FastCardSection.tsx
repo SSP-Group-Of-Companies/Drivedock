@@ -5,12 +5,12 @@ import { useTranslation } from "react-i18next";
 import { useParams } from "next/navigation";
 import useMounted from "@/hooks/useMounted";
 import Image from "next/image";
-import { Camera, X } from "lucide-react";
+import { Camera, X, Eraser } from "lucide-react"; // ✅ NEW
 import { uploadToS3Presigned } from "@/lib/utils/s3Upload";
 import { ES3Folder } from "@/types/aws.types";
 import type { IPhoto } from "@/types/shared.types";
 import type { ApplicationFormPage4Input } from "@/lib/zodSchemas/applicationFormPage4.Schema";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react"; // ✅ UPDATED
 
 export default function FastCardSection({ isCanadian }: { isCanadian: boolean }) {
   const mounted = useMounted();
@@ -22,8 +22,11 @@ export default function FastCardSection({ isCanadian }: { isCanadian: boolean })
     setValue,
     control,
     formState: { errors },
+    clearErrors,
   } = useFormContext<ApplicationFormPage4Input>();
 
+  const num = useWatch({ control, name: "fastCard.fastCardNumber" }) as string | undefined;
+  const exp = useWatch({ control, name: "fastCard.fastCardExpiry" }) as string | undefined;
   const front = useWatch({ control, name: "fastCard.fastCardFrontPhoto" }) as IPhoto | undefined;
   const back = useWatch({ control, name: "fastCard.fastCardBackPhoto" }) as IPhoto | undefined;
 
@@ -34,6 +37,29 @@ export default function FastCardSection({ isCanadian }: { isCanadian: boolean })
 
   // handy alias to the nested error object
   const fcErr = (errors.fastCard as any) || {};
+
+  // ✅ NEW: compute if anything is provided to show Clear button
+  const anyProvided = useMemo(() => !!num?.trim() || !!exp || !!front || !!back, [num, exp, front, back]);
+
+  useEffect(() => {
+    const allEmpty = !num?.trim() && !exp && !front && !back;
+    if (allEmpty) {
+      clearErrors(["fastCard.fastCardNumber", "fastCard.fastCardExpiry", "fastCard.fastCardFrontPhoto", "fastCard.fastCardBackPhoto"]);
+    }
+  }, [num, exp, front, back, clearErrors]);
+
+  // ✅ NEW: clear the entire FAST object (and UI messages)
+  const clearFastCard = () => {
+    setValue("fastCard.fastCardNumber", undefined as any, { shouldDirty: true, shouldValidate: true });
+    setValue("fastCard.fastCardExpiry", undefined as any, { shouldDirty: true, shouldValidate: true });
+    setValue("fastCard.fastCardFrontPhoto", undefined as any, { shouldDirty: true, shouldValidate: true });
+    setValue("fastCard.fastCardBackPhoto", undefined as any, { shouldDirty: true, shouldValidate: true });
+    clearErrors(["fastCard.fastCardNumber", "fastCard.fastCardExpiry", "fastCard.fastCardFrontPhoto", "fastCard.fastCardBackPhoto"]);
+    setFrontStatus("idle");
+    setBackStatus("idle");
+    setFrontMsg("");
+    setBackMsg("");
+  };
 
   const uploadSide = async (file: File | null, side: "front" | "back") => {
     const setStatus = side === "front" ? setFrontStatus : setBackStatus;
@@ -91,7 +117,23 @@ export default function FastCardSection({ isCanadian }: { isCanadian: boolean })
 
   return (
     <section className="space-y-6 border border-gray-200 p-6 rounded-lg bg-white shadow-sm" data-field="fastCard">
-      <h2 className="text-center text-lg font-semibold text-gray-800">{t("form.step2.page4.sections.fastCard.title", "FAST Card")}</h2>
+      {/* ✅ Header with conditional Clear button */}
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold text-gray-800">{t("form.step2.page4.sections.fastCard.title", "FAST Card")}</h2>
+
+        {anyProvided && (
+          <button
+            type="button"
+            onClick={clearFastCard}
+            className="inline-flex items-center gap-2 rounded-full border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 active:translate-y-[1px] transition"
+            aria-label={t("form.step2.page4.actions.clearFast", "Clear FAST card")}
+            title={t("form.step2.page4.actions.clearFast", "Clear FAST card")}
+          >
+            <Eraser className="h-4 w-4" />
+            {t("form.step2.page4.actions.clearFast", "Clear FAST card")}
+          </button>
+        )}
+      </div>
 
       {/* Disclaimer block with same style as other sections */}
       <div className="rounded-xl bg-gray-50/60 ring-1 ring-gray-100 p-4">
@@ -102,6 +144,7 @@ export default function FastCardSection({ isCanadian }: { isCanadian: boolean })
           )}
         </p>
       </div>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
           <label className="block text-sm font-medium text-gray-700">{t("form.step2.page4.fields.fastNumber", "FAST Card Number")}</label>
@@ -199,7 +242,7 @@ export default function FastCardSection({ isCanadian }: { isCanadian: boolean })
             {backStatus === "error" && <p className="text-red-500 text-xs mt-1">{backMsg}</p>}
             {backStatus === "idle" && backMsg && <p className="text-green-600 text-xs mt-1">{backMsg}</p>}
 
-            {/* 🔴 show Zod error for back photo */}
+            {/* show Zod error for back photo */}
             {fcErr.fastCardBackPhoto?.message && (
               <p className="text-red-500 text-xs mt-1" role="alert">
                 {fcErr.fastCardBackPhoto.message}
