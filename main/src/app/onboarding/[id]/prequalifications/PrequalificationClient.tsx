@@ -47,14 +47,13 @@ import {
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { ArrowRight } from "lucide-react";
-import { useGlobalLoading } from "@/store/useGlobalLoading";
-
 //components, hooks, and types
 import useMounted from "@/hooks/useMounted";
 import QuestionGroup from "@/app/onboarding/components/QuestionGroup";
 import FlatbedPopup from "@/app/onboarding/components/FlatbedPopup";
 import { useCompanySelection } from "@/hooks/frontendHooks/useCompanySelection";
 import { useOnboardingTracker } from "@/store/useOnboardingTracker";
+import { useGlobalLoading } from "@/store/useGlobalLoading";
 import {
   EDriverType,
   EHaulPreference,
@@ -94,7 +93,7 @@ export default function PreQualificationClient({
   const router = useRouter();
   const { selectedCompany } = useCompanySelection(); // Determines US/CA behavior
   const { setTracker } = useOnboardingTracker(); // Hydrate tracker into Zustand
-  const { show, hide } = useGlobalLoading(); // Global loading state
+  const { show } = useGlobalLoading();
 
   // Controls visibility/content of the flatbed training popup
   const [showFlatbedPopup, setShowFlatbedPopup] = useState<null | "yes" | "no">(
@@ -170,8 +169,9 @@ export default function PreQualificationClient({
     }
 
     try {
+      // Show loading immediately for API operations
       show(t("form.loading", "Processing..."));
-      
+
       // PATCH to backend for this tracker
       const res = await fetch(
         `/api/v1/onboarding/${trackerId}/prequalifications`,
@@ -199,8 +199,6 @@ export default function PreQualificationClient({
         t("form.errors.saveFailed") ||
           "Failed to save your answers. Please try again."
       );
-    } finally {
-      hide();
     }
   };
 

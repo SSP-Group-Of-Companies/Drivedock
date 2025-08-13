@@ -13,9 +13,9 @@ export const page3ConfigFactory: FormPageConfigFactory<
       const fields: string[] = [
         // Education
         "education.gradeSchool",
-        "education.college", 
+        "education.college",
         "education.postGraduate",
-        
+
         // Canadian Hours of Service
         "canadianHoursOfService.dayOneDate",
         "canadianHoursOfService.dailyHours",
@@ -23,9 +23,12 @@ export const page3ConfigFactory: FormPageConfigFactory<
 
       // Validate accident entries - if any field has data, all fields become required
       values.accidentHistory?.forEach((accident, index) => {
-        const hasAnyData = accident.date || accident.natureOfAccident || 
-                          accident.fatalities > 0 || accident.injuries > 0;
-        
+        const hasAnyData =
+          accident.date ||
+          accident.natureOfAccident ||
+          accident.fatalities > 0 ||
+          accident.injuries > 0;
+
         if (hasAnyData) {
           // If any field has data, all fields in this row must be completed
           fields.push(
@@ -39,9 +42,12 @@ export const page3ConfigFactory: FormPageConfigFactory<
 
       // Validate traffic conviction entries - if any field has data, all fields become required
       values.trafficConvictions?.forEach((conviction, index) => {
-        const hasAnyData = conviction.date || conviction.location || 
-                          conviction.charge || conviction.penalty;
-        
+        const hasAnyData =
+          conviction.date ||
+          conviction.location ||
+          conviction.charge ||
+          conviction.penalty;
+
         if (hasAnyData) {
           // If any field has data, all fields in this row must be completed
           fields.push(
@@ -65,16 +71,26 @@ export const page3ConfigFactory: FormPageConfigFactory<
 
     buildPayload: (values) => {
       // Filter out empty accident entries - only send entries with actual data
-      const filteredAccidentHistory = values.accidentHistory?.filter(accident => {
-        return accident.date || accident.natureOfAccident || 
-               accident.fatalities > 0 || accident.injuries > 0;
-      }) || [];
+      const filteredAccidentHistory =
+        values.accidentHistory?.filter((accident) => {
+          return (
+            accident.date ||
+            accident.natureOfAccident ||
+            accident.fatalities > 0 ||
+            accident.injuries > 0
+          );
+        }) || [];
 
       // Filter out empty traffic conviction entries - only send entries with actual data
-      const filteredTrafficConvictions = values.trafficConvictions?.filter(conviction => {
-        return conviction.date || conviction.location || 
-               conviction.charge || conviction.penalty;
-      }) || [];
+      const filteredTrafficConvictions =
+        values.trafficConvictions?.filter((conviction) => {
+          return (
+            conviction.date ||
+            conviction.location ||
+            conviction.charge ||
+            conviction.penalty
+          );
+        }) || [];
 
       // Build the payload with filtered arrays
       const payload = {
@@ -82,7 +98,7 @@ export const page3ConfigFactory: FormPageConfigFactory<
           ...values,
           accidentHistory: filteredAccidentHistory,
           trafficConvictions: filteredTrafficConvictions,
-        }
+        },
       };
 
       return payload;

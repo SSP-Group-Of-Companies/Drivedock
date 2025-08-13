@@ -40,24 +40,31 @@ import useMounted from "@/hooks/useMounted";
 import { usePrequalificationStore } from "@/store/usePrequalificationStore";
 import { useOnboardingTracker } from "@/store/useOnboardingTracker";
 import { useCompanySelection } from "@/hooks/frontendHooks/useCompanySelection";
+import { useGlobalLoading } from "@/store/useGlobalLoading";
 import { useFormErrorScroll } from "@/hooks/useFormErrorScroll";
 import { COMPANIES } from "@/constants/companies";
 import { submitFormStep } from "@/lib/frontendUtils/submitFormStep";
 import { ECompanyApplicationType } from "@/hooks/frontendHooks/useCompanySelection";
-import type { BuildPayloadCtx, FormPageConfig, FormPageConfigFactory } from "@/lib/frontendConfigs/formPageConfig.types";
-import { useGlobalLoading } from "@/store/useGlobalLoading";
+import type {
+  BuildPayloadCtx,
+  FormPageConfig,
+  FormPageConfigFactory,
+} from "@/lib/frontendConfigs/formPageConfig.types";
 
 type ContinueButtonProps<T extends FieldValues> = {
   config: FormPageConfig<T> | FormPageConfigFactory<T>;
   trackerId?: string;
 };
 
-export default function ContinueButton<T extends FieldValues>({ config, trackerId }: ContinueButtonProps<T>): ReactNode {
+export default function ContinueButton<T extends FieldValues>({
+  config,
+  trackerId,
+}: ContinueButtonProps<T>): ReactNode {
   // React Hook Form context for form state management
   const {
     getValues,
     trigger,
-    formState: { errors, isDirty },
+    formState: { errors, defaultValues },
   } = useFormContext<T>();
 
   // Next.js navigation and routing
@@ -76,7 +83,7 @@ export default function ContinueButton<T extends FieldValues>({ config, trackerI
 
   // Local state for submission tracking
   const [submitting, setSubmitting] = useState(false);
-  const { show, hide } = useGlobalLoading();
+  const { show } = useGlobalLoading();
 
   /**
    * Handles form submission, validation, and navigation
@@ -94,17 +101,24 @@ export default function ContinueButton<T extends FieldValues>({ config, trackerI
     const ctx: BuildPayloadCtx = {
       prequalifications: prequalifications ?? undefined,
       companyId: selectedCompany?.id,
-      applicationType: selectedCompany?.type as ECompanyApplicationType | undefined,
+      applicationType: selectedCompany?.type as
+        | ECompanyApplicationType
+        | undefined,
       tracker,
       isPatch: !isPost,
       effectiveTrackerId,
     };
 
     // Step 1: Validate form fields based on page configuration
-    const resolvedConfig = typeof config === "function" ? (config as FormPageConfigFactory<T>)(ctx) : (config as FormPageConfig<T>);
+    const resolvedConfig =
+      typeof config === "function"
+        ? (config as FormPageConfigFactory<T>)(ctx)
+        : (config as FormPageConfig<T>);
 
     const fieldsToValidate = resolvedConfig.validationFields(values);
-    const isValid = await trigger(fieldsToValidate as Parameters<typeof trigger>[0]);
+    const isValid = await trigger(
+      fieldsToValidate as Parameters<typeof trigger>[0]
+    );
     if (!isValid) {
       handleFormError(errors);
       return;
@@ -120,7 +134,9 @@ export default function ContinueButton<T extends FieldValues>({ config, trackerI
     // Step 3: Validate prerequisites for POST operations
     if (isPost) {
       if (!prequalifications?.completed) {
-        alert("Prequalification data is missing. Please restart the application.");
+        alert(
+          "Prequalification data is missing. Please restart the application."
+        );
         return;
       }
       const companyId = selectedCompany?.id;
@@ -132,15 +148,32 @@ export default function ContinueButton<T extends FieldValues>({ config, trackerI
 
     try {
       setSubmitting(true);
-      show(t("form.loading", "Processing..."));
 
       // Step 4: No-op continue - skip PATCH if form hasn't changed
-      if (!isPost && !isDirty) {
+      // Use a more reliable dirty check that handles boolean fields and deep comparisons
+      const formValues = getValues();
+      const hasChanges = Object.keys(formValues).some((key) => {
+        const currentValue = formValues[key as keyof typeof formValues];
+        const defaultValue = defaultValues?.[key as keyof typeof defaultValues];
+
+        // Handle arrays (like employments)
+        if (Array.isArray(currentValue) && Array.isArray(defaultValue)) {
+          return JSON.stringify(currentValue) !== JSON.stringify(defaultValue);
+        }
+
+        // Handle primitive values
+        return currentValue !== defaultValue;
+      });
+
+      if (!isPost && !hasChanges) {
         router.push(tracker?.nextUrl ?? resolvedConfig.nextRoute);
         return;
       }
 
-      // Step 5: Build payload and submit to server
+      // Step 5: Show loading immediately for API operations
+      show(t("form.loading", "Processing..."));
+
+      // Step 6: Build payload and submit to server
       const jsonPayload = resolvedConfig.buildPayload(values, ctx);
 
       const { trackerContext, nextUrl } = await submitFormStep({
@@ -152,7 +185,8 @@ export default function ContinueButton<T extends FieldValues>({ config, trackerI
 
       // Step 6: Navigate to next step (prefer server-provided nextUrl)
       if (isPost) {
-        if (!trackerContext?.id) throw new Error("Tracker not returned from POST");
+        if (!trackerContext?.id)
+          throw new Error("Tracker not returned from POST");
         setTracker(trackerContext);
         clearData();
         router.push(nextUrl ?? resolvedConfig.nextRoute);
@@ -163,10 +197,11 @@ export default function ContinueButton<T extends FieldValues>({ config, trackerI
       }
     } catch (err: any) {
       console.error("Submission error:", err);
-      alert(err.message || "An error occurred while submitting. Please try again.");
+      alert(
+        err.message || "An error occurred while submitting. Please try again."
+      );
     } finally {
       setSubmitting(false);
-      hide();
     }
   };
 
@@ -178,7 +213,9 @@ export default function ContinueButton<T extends FieldValues>({ config, trackerI
         disabled={submitting}
         onClick={onSubmit}
         className={`px-8 py-2 mt-6 rounded-full font-semibold transition-all shadow-md flex items-center gap-2 cursor-pointer active:translate-y-[1px] active:shadow ${
-          submitting ? "bg-gray-400 text-white cursor-not-allowed" : "bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 text-white hover:opacity-90"
+          submitting
+            ? "bg-gray-400 text-white cursor-not-allowed"
+            : "bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 text-white hover:opacity-90"
         }`}
       >
         {submitting ? t("form.submitting") : t("form.continue")}

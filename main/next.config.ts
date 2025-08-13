@@ -18,6 +18,33 @@ const nextConfig: NextConfig = {
   images: {
     domains: s3Domain ? [s3Domain] : [],
   },
+  webpack: (config, { isServer }) => {
+    // Handle canvas module and other Node.js modules for PDF viewer
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        canvas: false,
+        fs: false,
+        path: false,
+        crypto: false,
+        stream: false,
+        util: false,
+        buffer: false,
+        process: false,
+      };
+    }
+    
+    // Handle PDF.js worker
+    config.module.rules.push({
+      test: /pdf\.worker\.(min\.)?js/,
+      type: 'asset/resource',
+      generator: {
+        filename: 'static/worker/[hash][ext][query]',
+      },
+    });
+    
+    return config;
+  },
 };
 
 export default nextConfig;

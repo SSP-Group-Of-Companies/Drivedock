@@ -3,13 +3,13 @@
  *
  * Description:
  * Wrapper component that provides smooth page transitions across the application.
- * Uses Framer Motion to animate page changes with a simple fade-in/fade-out effect.
+ * Uses Framer Motion to animate page changes with a simple fade-in effect.
  * Applied at the root layout level to handle all navigation transitions.
  *
  * Features:
- * - Smooth fade transitions between pages
+ * - Smooth fade-in transitions between pages
  * - Automatic pathname-based key management
- * - Consistent animation timing across the app
+ * - Fast, subtle animation (0.1s) to prevent white screen flicker
  * - Prevents jarring page jumps during navigation
  *
  * Author: Faruq Adebayo Atanda
@@ -31,19 +31,16 @@ export default function PageTransitionWrapper({ children }: PageTransitionWrappe
   const pathname = usePathname();
 
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={pathname}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{
-          duration: 0.2,
-          ease: "easeInOut",
-        }}
-      >
-        {children}
-      </motion.div>
-    </AnimatePresence>
+    <motion.div
+      key={pathname}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{
+        duration: 0.1,
+        ease: "easeOut",
+      }}
+    >
+      {children}
+    </motion.div>
   );
 }

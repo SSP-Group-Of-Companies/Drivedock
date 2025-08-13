@@ -24,19 +24,22 @@
 import Navbar from "@/components/shared/Navbar";
 import Footer from "@/components/shared/Footer";
 import CompanyLogoHeader from "@/components/shared/CompanyLogoHeader";
-import GlobalLoader from "@/components/shared/GlobalLoader";
 import FormWizardNav from "@/app/onboarding/components/FormWizardNav";
 import { usePathname, useRouter, useParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { AlertCircle, ArrowLeft } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import LanguageDropdown from "@/components/shared/LanguageDropdown";
 import useMounted from "@/hooks/useMounted";
-import { useGlobalLoading } from "@/store/useGlobalLoading";
+import { handleBackNavigation } from "@/lib/utils/onboardingUtils";
 
-export default function FormLayout({ children }: { children: React.ReactNode }) {
+export default function FormLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   // Internationalization and routing
   const { t } = useTranslation("common");
   const pathname = usePathname();
@@ -49,33 +52,15 @@ export default function FormLayout({ children }: { children: React.ReactNode }) 
 
   // Client-side mounting check and global loading
   const mounted = useMounted();
-  const { show, hide } = useGlobalLoading();
 
   /**
-   * Smart back navigation that preserves tracker ID and navigates to correct previous step
-   * Shows loading state and handles navigation based on current pathname
+   * Smart back navigation using shared navigation logic
+   * Loading is handled by the router event listeners
    */
-  const handleBackClick = () => {
-    show(t("form.loading", "Loading..."));
+  const handleBackClick = useCallback(() => {
     const trackerId = params.id as string;
-
-    // Navigate to previous step based on current location in onboarding flow
-    if (trackerId && pathname.includes("/onboarding/")) {
-      if (pathname.includes("/page-2")) {
-        router.push(`/onboarding/${trackerId}/application-form/page-1`);
-      } else if (pathname.includes("/page-1")) {
-        router.push(`/onboarding/${trackerId}/prequalifications`);
-      } else if (pathname.includes("/prequalifications")) {
-        router.push("/start");
-      } else {
-        router.back(); // Fallback for unknown paths
-      }
-    } else {
-      router.back(); // Fallback for non-onboarding pages
-    }
-    // The store now handles minimum display time automatically
-    hide();
-  };
+    handleBackNavigation(pathname, trackerId, router);
+  }, [pathname, params.id, router]);
 
   // Scroll detection for sticky header visibility
   useEffect(() => {
@@ -147,7 +132,9 @@ export default function FormLayout({ children }: { children: React.ReactNode }) 
                     aria-label={t("navbar.back", "Go Back")}
                   >
                     <ArrowLeft size={18} />
-                    <span className="hidden sm:inline">{t("navbar.back", "Back")}</span>
+                    <span className="hidden sm:inline">
+                      {t("navbar.back", "Back")}
+                    </span>
                   </button>
                 </div>
               </div>
@@ -167,7 +154,9 @@ export default function FormLayout({ children }: { children: React.ReactNode }) 
                       aria-label={t("navbar.back", "Go Back")}
                     >
                       <ArrowLeft size={14} />
-                      <span className="hidden sm:inline">{t("navbar.back", "Back")}</span>
+                      <span className="hidden sm:inline">
+                        {t("navbar.back", "Back")}
+                      </span>
                     </button>
                   </div>
                 </div>
@@ -183,8 +172,6 @@ export default function FormLayout({ children }: { children: React.ReactNode }) 
       </AnimatePresence>
 
       <main className="relative min-h-[calc(100vh-120px)] bg-gradient-to-b from-slate-50 via-sky-100 to-sky-200 px-4 py-6 sm:px-8">
-        {/* Global loader portal */}
-        <GlobalLoader />
         <div className="max-w-3xl mx-auto bg-white p-6 rounded-2xl shadow-lg space-y-6 relative">
           {/* Info Icon: absolute top right */}
           <button
@@ -197,21 +184,43 @@ export default function FormLayout({ children }: { children: React.ReactNode }) 
           {/* Info Modal */}
           <AnimatePresence>
             {showModal && (
-              <Dialog open={showModal} onClose={() => setShowModal(false)} className="relative z-50">
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="fixed inset-0 bg-black/30" aria-hidden="true" />
+              <Dialog
+                open={showModal}
+                onClose={() => setShowModal(false)}
+                className="relative z-50"
+              >
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="fixed inset-0 bg-black/30"
+                  aria-hidden="true"
+                />
                 <div className="fixed inset-0 flex items-center justify-center p-4">
-                  <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} transition={{ duration: 0.2 }}>
+                  <motion.div
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: 20, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
                     <DialogPanel className="max-w-md w-full bg-white rounded-xl p-6 shadow-xl space-y-4">
-                      <DialogTitle className="text-lg font-bold text-gray-900">{t("wizard.modalTitle")}</DialogTitle>
+                      <DialogTitle className="text-lg font-bold text-gray-900">
+                        {t("wizard.modalTitle")}
+                      </DialogTitle>
                       <ul className="list-disc pl-5 text-sm text-gray-700 space-y-1">
                         {[1, 2, 3, 4, 5, 6].map((step) => (
                           <li key={step}>
-                            <strong>{t(`wizard.step${step}.label`)}:</strong> {t(`wizard.step${step}.desc`)}
+                            <strong>{t(`wizard.step${step}.label`)}:</strong>{" "}
+                            {t(`wizard.step${step}.desc`)}
                           </li>
                         ))}
                       </ul>
                       <div className="text-right">
-                        <button onClick={() => setShowModal(false)} className="px-4 py-1.5 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700">
+                        <button
+                          onClick={() => setShowModal(false)}
+                          className="px-4 py-1.5 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
+                        >
                           {t("wizard.close")}
                         </button>
                       </div>
@@ -227,7 +236,9 @@ export default function FormLayout({ children }: { children: React.ReactNode }) 
           {/* Step Nav + Title */}
           <FormWizardNav currentStep={currentStep} totalSteps={6} />
           <div className="text-center">
-            <h1 className="text-xl font-bold text-gray-800">{t(`form.step${currentStep}.title`)}</h1>
+            <h1 className="text-xl font-bold text-gray-800">
+              {t(`form.step${currentStep}.title`)}
+            </h1>
             <p className="text-sm text-gray-600">{t("form.subtitle")}</p>
           </div>
 
