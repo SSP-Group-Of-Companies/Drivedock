@@ -20,7 +20,7 @@ import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { Dialog } from "@headlessui/react";
-import { useCompanySelection } from "@/hooks/frontendHooks/useCompanySelection";
+import { ECompanyApplicationType, useCompanySelection } from "@/hooks/frontendHooks/useCompanySelection";
 
 // Components
 import Navbar from "@/components/shared/Navbar";
@@ -92,87 +92,54 @@ export default function CompanyPage() {
 
         {/* Page heading */}
         <div className="max-w-5xl mx-auto w-full">
-          <h1 className="text-3xl sm:text-4xl font-bold text-center mb-2">
-            {t("company.heading", "Join Our Family of Companies")}
-          </h1>
-          <p className="text-center text-gray-500 mb-10">
-            {t(
-              "company.subheading",
-              "Choose the company where you want to build your driving career"
-            )}
-          </p>
+          <h1 className="text-3xl sm:text-4xl font-bold text-center mb-2">{t("company.heading", "Join Our Family of Companies")}</h1>
+          <p className="text-center text-gray-500 mb-10">{t("company.subheading", "Choose the company where you want to build your driving career")}</p>
 
           {/* First row: 2 cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 mb-8">
             {firstRow.map((company) => (
-              <CompanyCard
-                key={company.id}
-                company={company}
-                onApply={handleApply}
-                onSpecialApply={handleSpecialApply}
-              />
+              <CompanyCard key={company.id} company={company} onApply={handleApply} onSpecialApply={handleSpecialApply} />
             ))}
           </div>
 
           {/* Second row: 3 cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {secondRow.map((company) => (
-              <CompanyCard
-                key={company.id}
-                company={company}
-                onApply={handleApply}
-              />
+              <CompanyCard key={company.id} company={company} onApply={handleApply} />
             ))}
           </div>
         </div>
 
         {/* Modal for Flatbed/Drop Deck selection */}
-        <Dialog
-          open={showModal}
-          onClose={() => setShowModal(false)}
-          className="relative z-50"
-        >
+        <Dialog open={showModal} onClose={() => setShowModal(false)} className="relative z-50">
           {/* Modal overlay */}
-          <div
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm"
-            aria-hidden="true"
-          />
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" aria-hidden="true" />
           {/* Modal panel */}
           <div className="fixed inset-0 flex items-center justify-center p-4">
             <Dialog.Panel className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
               {/* Modal title */}
-              <Dialog.Title className="text-lg font-semibold text-gray-900 mb-2">
-                {t("company.selectType", "Select Application Type")}
-              </Dialog.Title>
+              <Dialog.Title className="text-lg font-semibold text-gray-900 mb-2">{t("company.selectType", "Select Application Type")}</Dialog.Title>
               {/* Modal description */}
-              <Dialog.Description className="text-sm text-gray-600 mb-4">
-                {t(
-                  "company.selectTypeDesc",
-                  "Please choose the type of position you are applying for:"
-                )}
-              </Dialog.Description>
+              <Dialog.Description className="text-sm text-gray-600 mb-4">{t("company.selectTypeDesc", "Please choose the type of position you are applying for:")}</Dialog.Description>
 
               {/* Action buttons */}
               <div className="flex flex-col gap-4">
                 <button
                   className="w-full py-3 rounded-lg font-semibold text-white bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 shadow hover:opacity-90 transition"
-                  onClick={() => handleModalSelect("Flatbed")}
+                  onClick={() => handleModalSelect(ECompanyApplicationType.FLATBED)}
                 >
                   {t("company.flatbed", "Flatbed")}
                 </button>
                 <button
                   className="w-full py-3 rounded-lg font-semibold text-white bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 shadow hover:opacity-90 transition"
-                  onClick={() => handleModalSelect("Dry Van")}
+                  onClick={() => handleModalSelect(ECompanyApplicationType.DRY_VAN)}
                 >
                   {t("company.dropdeck", "Dry Van")}
                 </button>
               </div>
 
               {/* Cancel button */}
-              <button
-                className="mt-6 w-full py-2 rounded-lg text-gray-600 border border-gray-300 hover:bg-gray-100 transition"
-                onClick={() => setShowModal(false)}
-              >
+              <button className="mt-6 w-full py-2 rounded-lg text-gray-600 border border-gray-300 hover:bg-gray-100 transition" onClick={() => setShowModal(false)}>
                 {t("company.cancel", "Cancel")}
               </button>
             </Dialog.Panel>
