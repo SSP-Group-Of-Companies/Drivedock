@@ -1,6 +1,7 @@
 "use client";
 
-import { useFormContext } from "react-hook-form";
+import { useEffect } from "react";
+import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import type { ApplicationFormPage4Input } from "@/lib/zodSchemas/applicationFormPage4.Schema";
 import OnboardingPhotoGroup from "@/app/onboarding/components/OnboardingPhotoGroup";
@@ -10,8 +11,31 @@ export default function BusinessSection() {
   const { t } = useTranslation("common");
   const {
     register,
+    control,
+    clearErrors,
     formState: { errors },
   } = useFormContext<ApplicationFormPage4Input>();
+
+  // Watch all fields that participate in the all-or-nothing logic
+  const employeeNumber = useWatch({ control, name: "employeeNumber" });
+  const hstNumber = useWatch({ control, name: "hstNumber" });
+  const businessNumber = useWatch({ control, name: "businessNumber" });
+
+  const incorporatePhotos = useWatch({ control, name: "incorporatePhotos" });
+  const hstPhotos = useWatch({ control, name: "hstPhotos" });
+  const bankingInfoPhotos = useWatch({ control, name: "bankingInfoPhotos" });
+
+  // If ALL business fields are cleared/empty, clear field-level errors immediately
+  useEffect(() => {
+    const isEmptyStr = (v?: string | null) => !v || v.trim().length === 0;
+    const isEmptyArr = (v?: unknown[] | null) => !v || v.length === 0;
+
+    const allEmpty = isEmptyStr(employeeNumber) && isEmptyStr(hstNumber) && isEmptyStr(businessNumber) && isEmptyArr(incorporatePhotos) && isEmptyArr(hstPhotos) && isEmptyArr(bankingInfoPhotos);
+
+    if (allEmpty) {
+      clearErrors(["employeeNumber", "hstNumber", "businessNumber", "incorporatePhotos", "hstPhotos", "bankingInfoPhotos"]);
+    }
+  }, [employeeNumber, hstNumber, businessNumber, incorporatePhotos, hstPhotos, bankingInfoPhotos, clearErrors]);
 
   const rootMessage = (errors as any)?.root?.message as string | undefined;
 
@@ -24,7 +48,7 @@ export default function BusinessSection() {
 
       {/* Disclaimer (same design as CriminalRecords guidance) */}
       <div className="rounded-xl bg-gray-50/60 ring-1 ring-gray-100 p-4">
-        <div className=" text-sm text-gray-700 text-center">
+        <div className="text-sm text-gray-700 text-center">
           <p>
             {t(
               "form.step2.page4.sections.business.disclaimer.text",
@@ -37,19 +61,34 @@ export default function BusinessSection() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div>
           <label className="block text-sm font-medium text-gray-700">{t("form.step2.page4.fields.employeeNumber", "Employee Number")}</label>
-          <input {...register("employeeNumber")} data-field="employeeNumber" className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md" />
+          <input
+            {...register("employeeNumber")}
+            data-field="employeeNumber"
+            className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
+            aria-invalid={!!errors.employeeNumber || !!rootMessage}
+          />
           {errors.employeeNumber && <p className="text-red-500 text-xs mt-1">{errors.employeeNumber.message?.toString()}</p>}
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700">{t("form.step2.page4.fields.hstNumber", "HST Number")}</label>
-          <input {...register("hstNumber")} data-field="hstNumber" className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md" />
+          <input
+            {...register("hstNumber")}
+            data-field="hstNumber"
+            className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
+            aria-invalid={!!errors.hstNumber || !!rootMessage}
+          />
           {errors.hstNumber && <p className="text-red-500 text-xs mt-1">{errors.hstNumber.message?.toString()}</p>}
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700">{t("form.step2.page4.fields.businessNumber", "Business Number")}</label>
-          <input {...register("businessNumber")} data-field="businessNumber" className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md" />
+          <input
+            {...register("businessNumber")}
+            data-field="businessNumber"
+            className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
+            aria-invalid={!!errors.businessNumber || !!rootMessage}
+          />
           {errors.businessNumber && <p className="text-red-500 text-xs mt-1">{errors.businessNumber.message?.toString()}</p>}
         </div>
       </div>
