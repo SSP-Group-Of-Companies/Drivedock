@@ -30,7 +30,7 @@ type GlobalLoadingState = {
   hide: () => void;
 };
 
-export const useGlobalLoading = create<GlobalLoadingState>((set, get) => {
+export const useGlobalLoading = create<GlobalLoadingState>((set) => {
   // Internal state for managing minimum display time
   let hideTimeout: NodeJS.Timeout | null = null;
   let showTime: number | null = null;
@@ -39,7 +39,7 @@ export const useGlobalLoading = create<GlobalLoadingState>((set, get) => {
   return {
     visible: false,
     message: undefined,
-    
+
     /**
      * Shows the global loading screen with optional message
      * @param message - Optional loading message to display
@@ -50,12 +50,12 @@ export const useGlobalLoading = create<GlobalLoadingState>((set, get) => {
         clearTimeout(hideTimeout);
         hideTimeout = null;
       }
-      
+
       // Record when we started showing the loader
       showTime = Date.now();
       set({ visible: true, message });
     },
-    
+
     /**
      * Hides the global loading screen with minimum display time enforcement
      * Prevents jarring flashes by ensuring loader shows for at least MIN_DISPLAY_TIME
@@ -63,7 +63,7 @@ export const useGlobalLoading = create<GlobalLoadingState>((set, get) => {
     hide: () => {
       const currentTime = Date.now();
       const timeShown = showTime ? currentTime - showTime : 0;
-      
+
       // If we haven't shown the loader for minimum time, schedule the hide
       if (timeShown < MIN_DISPLAY_TIME) {
         const remainingTime = MIN_DISPLAY_TIME - timeShown;
@@ -80,5 +80,3 @@ export const useGlobalLoading = create<GlobalLoadingState>((set, get) => {
     },
   };
 });
-
-

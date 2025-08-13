@@ -1,11 +1,22 @@
 "use client";
 
-import SignatureCanvas from "react-signature-canvas";
+import dynamic from "next/dynamic";
 import Image from "next/image";
-import { RefObject, useEffect, useState } from "react";
+import { RefObject, useEffect, useState, forwardRef, type Ref } from "react";
+
+// 1) Get the instance TYPE of react-signature-canvas without pulling in the value
+import type ReactSignatureCanvas from "react-signature-canvas";
+
+// 2) Dynamically import the actual component (client-only)
+const RawSigCanvas = dynamic(() => import("react-signature-canvas"), { ssr: false });
+
+// 3) Bridge component to restore proper ref support for TS
+const SigCanvas = forwardRef(function SigCanvas(props: any, ref: Ref<ReactSignatureCanvas>) {
+  return <RawSigCanvas ref={ref} {...props} />;
+});
 
 type Props = {
-  canvasRef: RefObject<SignatureCanvas | null>;
+  canvasRef: RefObject<ReactSignatureCanvas | null>;
   signaturePreview: string | null;
   onDrawEnd: () => void;
 };
@@ -14,12 +25,21 @@ export default function PoliciesSignatureBox({ canvasRef, signaturePreview, onDr
   const [isDrawing, setIsDrawing] = useState(false);
   const [isEmpty, setIsEmpty] = useState(true);
 
-  // Recompute emptiness when preview changes (e.g., cleared externally)
+  // Keep hint state in sync + clear canvas whenever a preview is shown
   useEffect(() => {
-    // If a preview is shown, we don't need the hint anyway.
-    if (signaturePreview) return;
-    const empty = canvasRef.current && typeof canvasRef.current.isEmpty === "function" ? canvasRef.current.isEmpty() : true;
-    setIsEmpty(empty);
+    const sig = canvasRef.current;
+    if (!sig) return;
+
+    if (signaturePreview) {
+      try {
+        sig.clear();
+      } catch {
+        /* no-op */
+      }
+      setIsEmpty(true);
+    } else {
+      setIsEmpty(typeof sig.isEmpty === "function" ? sig.isEmpty() : true);
+    }
   }, [signaturePreview, canvasRef]);
 
   const showHint = !isDrawing && !signaturePreview && isEmpty;
@@ -33,9 +53,11 @@ export default function PoliciesSignatureBox({ canvasRef, signaturePreview, onDr
       {showHint && <span className="pointer-events-none absolute z-10 text-sm text-slate-400">Sign inside the box</span>}
 
       {!signaturePreview && (
-        <SignatureCanvas
+        <SigCanvas
+          // ref now types correctly because of the forwardRef bridge
           ref={canvasRef}
           penColor="black"
+          backgroundColor="#ffffff" // avoid transparent bleed-through
           onBegin={() => {
             setIsDrawing(true);
             setIsEmpty(false);
@@ -53,7 +75,7 @@ export default function PoliciesSignatureBox({ canvasRef, signaturePreview, onDr
         />
       )}
 
-      {signaturePreview && <Image src={signaturePreview} alt="Signature Preview" fill className="absolute inset-0 z-10 rounded-2xl bg-white p-2 object-contain" />}
+      {signaturePreview && <Image src={signaturePreview} alt="Signature Preview" fill className="absolute inset-0 z-10 rounded-2xl bg-white p-2 object-contain" sizes="" draggable={false} />}
     </div>
   );
 }
