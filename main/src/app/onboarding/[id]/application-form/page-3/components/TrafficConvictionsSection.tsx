@@ -1,7 +1,7 @@
 "use client";
 
-import { useFieldArray, useFormContext } from "react-hook-form";
-import { useMemo, useState } from "react";
+import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -12,6 +12,7 @@ export default function TrafficConvictionsSection() {
   const {
     control,
     register,
+    clearErrors,
     formState: { errors },
   } = useFormContext<ApplicationFormPage3Schema>();
   const { t } = useTranslation("common");
@@ -33,6 +34,35 @@ export default function TrafficConvictionsSection() {
 
   const [mobileVisibleCount, setMobileVisibleCount] =
     useState<number>(initialMobileVisible);
+
+  // Watch all traffic convictions fields to clear errors when rows become empty
+  const trafficConvictions = useWatch({ control, name: "trafficConvictions" });
+  const clearedRowsRef = useRef<Set<number>>(new Set());
+
+  // Clear errors for each row when all fields in that row become empty
+  useEffect(() => {
+    if (!trafficConvictions) return;
+    
+    trafficConvictions.forEach((conviction, index) => {
+      const allEmpty = !conviction?.date?.trim() && 
+                      !conviction?.location?.trim() && 
+                      !conviction?.charge?.trim() && 
+                      !conviction?.penalty?.trim();
+      
+      if (allEmpty && !clearedRowsRef.current.has(index)) {
+        clearErrors([
+          `trafficConvictions.${index}.date`,
+          `trafficConvictions.${index}.location`,
+          `trafficConvictions.${index}.charge`,
+          `trafficConvictions.${index}.penalty`
+        ]);
+        clearedRowsRef.current.add(index);
+      } else if (!allEmpty) {
+        // If row is no longer empty, remove from cleared set
+        clearedRowsRef.current.delete(index);
+      }
+    });
+  }, [trafficConvictions, clearErrors]);
 
   if (!mounted) return null;
 
@@ -72,22 +102,13 @@ export default function TrafficConvictionsSection() {
                 }`}
               >
                 <td className="py-3 px-4">
-                  {index === 0 ? (
-                    <input
-                      type="date"
-                      className="h-10 w-32 px-2 mt-1 text-center block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
-                      placeholder="YYYY-MM-DD"
-                      data-field={`trafficConvictions.${index}.date`}
-                      {...register(`trafficConvictions.${index}.date` as const)}
-                    />
-                  ) : (
-                    <input
-                      type="date"
-                      className="h-10 w-32 px-2 mt-1 text-center block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
-                      data-field={`trafficConvictions.${index}.date`}
-                      {...register(`trafficConvictions.${index}.date` as const)}
-                    />
-                  )}
+                  <input
+                    type="date"
+                    className="h-10 w-32 px-2 mt-1 text-center block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
+                    placeholder="YYYY-MM-DD"
+                    data-field={`trafficConvictions.${index}.date`}
+                    {...register(`trafficConvictions.${index}.date` as const)}
+                  />
                   {errors.trafficConvictions?.[index]?.date && (
                     <p className="text-red-500 text-xs mt-1">
                       {errors.trafficConvictions[index]?.date?.message}

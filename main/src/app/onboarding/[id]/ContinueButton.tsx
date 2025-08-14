@@ -83,7 +83,7 @@ export default function ContinueButton<T extends FieldValues>({
 
   // Local state for submission tracking
   const [submitting, setSubmitting] = useState(false);
-  const { show } = useGlobalLoading();
+  const { show, hide } = useGlobalLoading();
 
   /**
    * Handles form submission, validation, and navigation
@@ -197,11 +197,13 @@ export default function ContinueButton<T extends FieldValues>({
       }
     } catch (err: any) {
       console.error("Submission error:", err);
+      hide(); // Hide loading screen on error
       alert(
         err.message || "An error occurred while submitting. Please try again."
       );
     } finally {
       setSubmitting(false);
+      // Only hide loading screen on error - successful navigation will be handled by navigation loading system
     }
   };
 

@@ -9,8 +9,8 @@ export function useNavigationLoadingSmart() {
   const pathname = usePathname();
   const router = useRouter();
   const { begin, end } = useSmartGlobalLoading({
-    delay: 500, // show only if nav takes longer than 500ms (industry standard)
-    minVisible: 0, // no minimum visible time - hide immediately when doneimage.png
+    delay: 300, // show loading screen sooner for better UX
+    minVisible: 0, // no minimum visible time - timing handled by setTimeout
     message: "Loading…",
   });
 
@@ -55,8 +55,13 @@ export function useNavigationLoadingSmart() {
     return () => document.removeEventListener("click", onClickCapture, true);
   }, [begin]);
 
-  // 3) When route actually changes, end loader
+  // 3) When route actually changes, end loader with delay to cover page transition
   useEffect(() => {
-    end();
+    // Add a small delay to ensure the page transition has time to complete
+    const timer = setTimeout(() => {
+      end();
+    }, 250); // Match the page transition duration + buffer
+
+    return () => clearTimeout(timer);
   }, [pathname, end]);
 }
