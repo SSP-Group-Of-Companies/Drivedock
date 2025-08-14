@@ -2,7 +2,7 @@ import mongoose, { Schema } from "mongoose";
 import { EStepPath, IOnboardingTrackerDoc } from "@/types/onboardingTracker.type";
 import { ECompanyApplicationType } from "@/hooks/frontendHooks/useCompanySelection";
 import PreQualifications from "../models/Prequalifications";
-import ApplicationForm from "../models/ApplicationFormss";
+import ApplicationForm from "../models/applicationForm";
 import { decryptString } from "@/lib/utils/cryptoUtils";
 import PoliciesConsents from "../models/PoliciesConsents";
 import { ECompanyId } from "@/constants/companies";

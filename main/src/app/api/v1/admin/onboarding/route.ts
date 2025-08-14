@@ -2,8 +2,8 @@ import { NextRequest } from "next/server";
 import connectDB from "@/lib/utils/connectDB";
 import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
-import ApplicationForm from "@/mongoose/models/ApplicationFormss";
 import mongoose from "mongoose";
+import ApplicationForm from "@/mongoose/models/applicationForm";
 
 // -------------------------
 // Helper
