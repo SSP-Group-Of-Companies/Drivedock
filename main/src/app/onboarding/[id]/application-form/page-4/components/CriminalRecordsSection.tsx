@@ -76,9 +76,9 @@ export default function CriminalRecordsSection() {
               key={row.id}
               className={[
                 // Mobile: card style with spacing
-                "relative rounded-2xl border border-gray-200 p-4 shadow-sm bg-white",
+                "relative rounded-2xl border border-gray-200 p-4 shadow-sm bg-white space-y-4 md:space-y-0",
                 // Desktop: flat row with only a subtle bottom shadow
-                "md:rounded-none md:border-0 md:bg-transparent md:shadow-[0_1px_0_0_rgba(0,0,0,0.05)] md:px-2 md:grid md:grid-cols-12 md:items-start md:gap-3",
+                "md:rounded-none md:border-0 md:bg-transparent md:shadow-[0_1px_0_0_rgba(0,0,0,0.05)] md:px-2 md:grid md:grid-cols-12 md:items-center md:gap-3",
                 // Remove the extra gap under the header for first row
                 i === 0 ? "md:pt-2 md:-mt-[1px]" : "md:py-2",
               ].join(" ")}
