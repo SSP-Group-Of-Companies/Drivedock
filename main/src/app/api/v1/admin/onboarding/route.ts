@@ -6,7 +6,7 @@ import ApplicationForm from "@/mongoose/models/ApplicationForm";
 import mongoose from "mongoose";
 
 // -------------------------
-// Helpers
+// Helper
 // -------------------------
 const { Types } = mongoose;
 

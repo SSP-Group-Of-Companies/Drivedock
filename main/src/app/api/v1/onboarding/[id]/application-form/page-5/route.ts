@@ -1,7 +1,7 @@
 import { FORM_RESUME_EXPIRES_AT_IN_MILSEC } from "@/config/env";
 import { errorResponse, successResponse } from "@/lib/utils/apiResponse";
 import connectDB from "@/lib/utils/connectDB";
-import ApplicationForm from "@/mongoose/models/ApplicationForm";
+import ApplicationForm from "@/mongoose/models/ApplicationFormS";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import { IApplicationFormPage5 } from "@/types/applicationForm.types";
 import { competencyQuestions } from "@/constants/competencyTestQuestions";

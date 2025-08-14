@@ -2,7 +2,7 @@ import { hashString } from "@/lib/utils/cryptoUtils";
 import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
 import connectDB from "@/lib/utils/connectDB";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
-import ApplicationForm from "@/mongoose/models/ApplicationForm";
+import ApplicationForm from "@/mongoose/models/ApplicationFormS";
 
 export const GET = async (_: Request, { params }: { params: Promise<{ sin: string }> }) => {
   try {
