@@ -1,4 +1,3 @@
-// main/src/app/onboarding/[id]/application-form/page-3/page.tsx
 /**
  * DriveDock Onboarding — Page 3 (Accident History, Traffic Convictions, Education, Canadian Hours) Server Wrapper
  * - Fetches saved Page 3 data + onboardingContext (nextUrl) by tracker ID
@@ -10,25 +9,10 @@ import { ApplicationFormPage3Schema } from "@/lib/zodSchemas/applicationFormPage
 import Page3Client from "./Page3Client";
 import { NEXT_PUBLIC_BASE_URL } from "@/config/env";
 import { redirect } from "next/navigation";
-import {
-  parseISO,
-  isValid as isValidDate,
-  format as formatDateFns,
-} from "date-fns";
-
-// Helper to normalize date to YYYY-MM-DD
-function toYMD(dateish: string) {
-  if (!dateish) return "";
-  const d = parseISO(String(dateish));
-  return isValidDate(d) ? formatDateFns(d, "yyyy-MM-dd") : "";
-}
+import { formatInputDate } from "@/lib/utils/dateUtils";
 
 // Helper to normalize array with a minimum length (does NOT truncate existing data)
-function normalizeArray<T>(
-  arr: T[] | undefined,
-  minimumLength: number,
-  createEmpty: () => T
-): T[] {
+function normalizeArray<T>(arr: T[] | undefined, minimumLength: number, createEmpty: () => T): T[] {
   const normalized = Array.isArray(arr) ? [...arr] : [];
   while (normalized.length < minimumLength) {
     normalized.push(createEmpty());
@@ -36,42 +20,49 @@ function normalizeArray<T>(
   return normalized;
 }
 
-async function fetchPage3Data(trackerId: string) {
+/** ---------- Error-handled fetch (Page 5 style) ---------- */
+type Page3DataResponse = {
+  data?: { page3?: any; onboardingContext?: any };
+  error?: string;
+};
+
+async function fetchPage3Data(trackerId: string): Promise<Page3DataResponse> {
   const base = NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
   try {
-    const res = await fetch(
-      `${base}/api/v1/onboarding/${trackerId}/application-form/page-3`,
-      { cache: "no-store" }
-    );
+    const res = await fetch(`${base}/api/v1/onboarding/${trackerId}/application-form/page-3`, {
+      cache: "no-store",
+    });
 
     if (res.status === 403) {
       redirect(`/onboarding/${trackerId}/application-form/page-2`);
     }
     if (!res.ok) {
-      console.warn("Page 3 fetch failed:", res.status);
-      return null;
+      let message = "Failed to fetch Page 3 data.";
+      try {
+        const errJson = await res.json();
+        message = errJson?.message || message;
+      } catch {}
+      return { error: message };
     }
 
     const json = await res.json();
-    return {
-      page3: json?.data?.page3 ?? null,
-      trackerContext: json?.data?.onboardingContext ?? null, // 👈 keep nextUrl handy
-    };
+    return { data: json?.data };
   } catch (error) {
     console.error("Error fetching Page 3 data:", error);
-    return null;
+    return { error: "Unexpected server error. Please try again later." };
   }
 }
 
-export default async function Page3ServerWrapper({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function Page3ServerWrapper({ params }: { params: Promise<{ id: string }> }) {
   const { id: trackerId } = await params;
-  const fetched = await fetchPage3Data(trackerId);
-  const pageData = fetched?.page3;
-  const trackerContextFromGet = fetched?.trackerContext ?? null;
+  const { data, error } = await fetchPage3Data(trackerId);
+
+  if (error) {
+    return <div className="p-6 text-center text-red-600 font-semibold">{error}</div>;
+  }
+
+  const pageData = data?.page3;
+  const trackerContextFromGet = data?.onboardingContext ?? null;
 
   // Normalize the data
   const defaultValues: ApplicationFormPage3Schema = {
@@ -82,7 +73,7 @@ export default async function Page3ServerWrapper({
       injuries: 0,
     })).map((item) => ({
       ...item,
-      date: toYMD(item.date),
+      date: formatInputDate(item?.date),
     })),
     trafficConvictions: normalizeArray(pageData?.trafficConvictions, 4, () => ({
       date: "",
@@ -91,7 +82,7 @@ export default async function Page3ServerWrapper({
       penalty: "",
     })).map((item) => ({
       ...item,
-      date: toYMD(item.date),
+      date: formatInputDate(item?.date),
     })),
     education: {
       gradeSchool: pageData?.education?.gradeSchool ?? 0,
@@ -99,25 +90,15 @@ export default async function Page3ServerWrapper({
       postGraduate: pageData?.education?.postGraduate ?? 0,
     },
     canadianHoursOfService: {
-      dayOneDate: toYMD(pageData?.canadianHoursOfService?.dayOneDate),
-      dailyHours: normalizeArray(
-        pageData?.canadianHoursOfService?.dailyHours,
-        14,
-        () => ({ day: 1, hours: 0 })
-      ).map((item, i) => ({
+      dayOneDate: formatInputDate(pageData?.canadianHoursOfService?.dayOneDate),
+      dailyHours: normalizeArray(pageData?.canadianHoursOfService?.dailyHours, 14, () => ({ day: 1, hours: 0 })).map((item, i) => ({
         ...item,
-        day: (item.day || i + 1) as number, // Ensure day is a number 1-14
-        hours: item.hours || 0,
+        day: (item?.day || i + 1) as number, // Ensure day is a number 1-14
+        hours: item?.hours || 0,
       })),
       totalHours: pageData?.canadianHoursOfService?.totalHours ?? 0,
     },
   };
 
-  return (
-    <Page3Client
-      defaultValues={defaultValues}
-      trackerId={trackerId}
-      trackerContextFromGet={trackerContextFromGet}
-    />
-  );
+  return <Page3Client defaultValues={defaultValues} trackerId={trackerId} trackerContextFromGet={trackerContextFromGet} />;
 }

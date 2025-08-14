@@ -1,4 +1,3 @@
-// main/src/app/onboarding/[id]/application-form/page-2/page.tsx
 /**
  * DriveDock Onboarding — Page 2 (Employment History) Server Wrapper
  * - Fetches saved Page 2 data + onboardingContext (nextUrl) by tracker ID
@@ -10,36 +9,38 @@ import { ApplicationFormPage2Schema } from "@/lib/zodSchemas/applicationFormPage
 import Page2Client from "./Page2Client";
 import { NEXT_PUBLIC_BASE_URL } from "@/config/env";
 import { redirect } from "next/navigation";
-import {
-  parseISO,
-  isValid as isValidDate,
-  format as formatDateFns,
-} from "date-fns";
+import { formatInputDate } from "@/lib/utils/dateUtils";
 
-// Normalize any date-ish string into YYYY-MM-DD; return "" if invalid (timezone-safe).
-function toYMD(dateish: string): string {
-  if (!dateish) return "";
-  const d = parseISO(String(dateish));
-  return isValidDate(d) ? formatDateFns(d, "yyyy-MM-dd") : "";
-}
+/** ---------- Error-handled fetch (Page 5 style) ---------- */
+type Page2DataResponse = {
+  data?: { page2?: any; onboardingContext?: any };
+  error?: string;
+};
 
-async function fetchPage2Data(trackerId: string) {
+async function fetchPage2Data(trackerId: string): Promise<Page2DataResponse> {
   const base = NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-  const res = await fetch(
-    `${base}/api/v1/onboarding/${trackerId}/application-form/page-2`,
-    { cache: "no-store" }
-  );
+  try {
+    const res = await fetch(`${base}/api/v1/onboarding/${trackerId}/application-form/page-2`, {
+      cache: "no-store",
+    });
 
-  if (res.status === 403) {
-    redirect(`/onboarding/${trackerId}/application-form/page-1`);
+    if (res.status === 403) {
+      redirect(`/onboarding/${trackerId}/application-form/page-1`);
+    }
+    if (!res.ok) {
+      let message = "Failed to fetch Page 2 data.";
+      try {
+        const errJson = await res.json();
+        message = errJson?.message || message;
+      } catch {}
+      return { error: message };
+    }
+
+    const json = await res.json();
+    return { data: json?.data };
+  } catch {
+    return { error: "Unexpected server error. Please try again later." };
   }
-  if (!res.ok) return null;
-
-  const json = await res.json();
-  return {
-    page2: json?.data?.page2 ?? null,
-    trackerContext: json?.data?.onboardingContext ?? null, // 👈 keep nextUrl handy
-  };
 }
 
 // Single source of truth for an empty employment row
@@ -65,16 +66,16 @@ function emptyEmploymentRow() {
   };
 }
 
-export default async function ApplicationFormPage2({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function ApplicationFormPage2({ params }: { params: Promise<{ id: string }> }) {
   const { id: trackerId } = await params;
 
-  const fetched = await fetchPage2Data(trackerId);
-  const page2 = fetched?.page2;
-  const trackerContextFromGet = fetched?.trackerContext ?? null;
+  const { data, error } = await fetchPage2Data(trackerId);
+  if (error) {
+    return <div className="p-6 text-center text-red-600 font-semibold">{error}</div>;
+  }
+
+  const page2 = data?.page2;
+  const trackerContextFromGet = data?.onboardingContext ?? null;
 
   const defaultValues: ApplicationFormPage2Schema = page2
     ? {
@@ -91,8 +92,8 @@ export default async function ApplicationFormPage2({
                 phone2: e.phone2 ?? "",
                 email: e.email ?? "",
                 positionHeld: e.positionHeld ?? "",
-                from: toYMD(e.from),
-                to: toYMD(e.to),
+                from: formatInputDate(e.from),
+                to: formatInputDate(e.to),
                 salary: e.salary ?? "",
                 reasonForLeaving: e.reasonForLeaving ?? "",
                 subjectToFMCSR: Boolean(e.subjectToFMCSR),
@@ -103,11 +104,5 @@ export default async function ApplicationFormPage2({
       }
     : { employments: [emptyEmploymentRow()] };
 
-  return (
-    <Page2Client
-      defaultValues={defaultValues}
-      trackerId={trackerId}
-      trackerContextFromGet={trackerContextFromGet}
-    />
-  );
+  return <Page2Client defaultValues={defaultValues} trackerId={trackerId} trackerContextFromGet={trackerContextFromGet} />;
 }

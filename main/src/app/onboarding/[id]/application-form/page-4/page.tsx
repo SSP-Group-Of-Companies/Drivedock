@@ -38,7 +38,7 @@ export default async function ApplicationFormPage4({ params }: { params: Promise
   }
 
   if (!data?.onboardingContext) {
-    return <div className="p-6 text-center text-red-600 font-semibold">Onboarding context missing.</div>;
+    return <div className="p-6 text-center text-red-600 font-semibold">Onboarding document missing.</div>;
   }
 
   // The client handles defaults via its own mapper; pass raw data here.

@@ -29,11 +29,7 @@ import { ApplicationFormPage1Schema } from "@/lib/zodSchemas/applicationFormPage
 import { ELicenseType } from "@/types/shared.types";
 import Page1Client from "./Page1Client";
 import { NEXT_PUBLIC_BASE_URL } from "@/config/env";
-import {
-  parseISO,
-  isValid as isValidDate,
-  format as formatDateFns,
-} from "date-fns";
+import { formatInputDate } from "@/lib/utils/dateUtils";
 
 /**
  * Creates empty S3 photo object for form initialization
@@ -56,51 +52,36 @@ const BLANK_ADDRESS = {
   to: "",
 };
 
-/**
- * Normalizes date strings to YYYY-MM-DD format for form inputs
- * Handles timezone-safe date parsing and validation
- * @param dateish - Date string to normalize
- * @returns Normalized date string or empty string if invalid
- */
-function toYMD(dateish: string): string {
-  if (!dateish) return "";
-  const d = parseISO(String(dateish));
-  return isValidDate(d) ? formatDateFns(d, "yyyy-MM-dd") : "";
-}
+/** ---------- Error-handled fetch (same style as Page 5) ---------- */
+type Page1DataResponse = {
+  data?: { page1?: any; onboardingContext?: any };
+  error?: string;
+};
 
-/**
- * Fetches Page 1 data from the backend API
- * Retrieves existing application data and onboarding context for the given tracker ID
- * @param trackerId - The onboarding tracker ID
- * @returns Object containing page1 data and tracker context, or null if fetch fails
- */
-async function fetchPage1Data(trackerId: string) {
+async function fetchPage1Data(trackerId: string): Promise<Page1DataResponse> {
   const base = NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
   try {
-    const res = await fetch(
-      `${base}/api/v1/onboarding/${trackerId}/application-form/page-1`,
-      { cache: "no-store" }
-    );
+    const res = await fetch(`${base}/api/v1/onboarding/${trackerId}/application-form/page-1`, { cache: "no-store" });
 
     if (!res.ok) {
-      console.warn("Page 1 fetch failed:", res.status);
-      return null;
+      // Try to read a message from the API, fall back to generic
+      let message = "Failed to fetch Page 1 data.";
+      try {
+        const errJson = await res.json();
+        message = errJson?.message || message;
+      } catch {}
+      return { error: message };
     }
 
     const json = await res.json();
-    return {
-      page1: json?.data?.page1 ?? null,
-      trackerContext: json?.data?.onboardingContext ?? null, // Keep nextUrl for navigation
-    };
-  } catch (error) {
-    console.error("Error fetching Page 1 data:", error);
-    return null;
+    return { data: json?.data };
+  } catch {
+    return { error: "Unexpected server error. Please try again later." };
   }
 }
 
 /**
  * Fallback defaults for new applications or when no data is returned
- * Provides complete schema structure with empty values for form initialization
  */
 const EMPTY_DEFAULTS: ApplicationFormPage1Schema = {
   firstName: "",
@@ -130,27 +111,23 @@ const EMPTY_DEFAULTS: ApplicationFormPage1Schema = {
   addresses: [BLANK_ADDRESS],
 };
 
-export default async function Page1ServerWrapper({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function Page1ServerWrapper({ params }: { params: Promise<{ id: string }> }) {
   const { id: trackerId } = await params;
-  const fetched = await fetchPage1Data(trackerId);
-  const pageData = fetched?.page1;
-  const trackerContextFromGet = fetched?.trackerContext ?? null;
 
+  const { data, error } = await fetchPage1Data(trackerId);
+  if (error) {
+    return <div className="p-6 text-center text-red-600 font-semibold">{error}</div>;
+  }
+
+  const pageData = data?.page1;
+  // Keep your existing “empty defaults for new apps” behavior:
   const defaultValues: ApplicationFormPage1Schema = pageData
     ? {
         firstName: pageData.firstName || "",
         lastName: pageData.lastName || "",
-        // If server ever returns clear SIN (first-time POST), show it; otherwise require re-entry.
-        sin:
-          typeof pageData.sin === "string" && /^\d{9}$/.test(pageData.sin)
-            ? pageData.sin
-            : "",
+        sin: typeof pageData.sin === "string" && /^\d{9}$/.test(pageData.sin) ? pageData.sin : "",
         sinPhoto: pageData.sinPhoto || emptyS3Photo(),
-        dob: toYMD(pageData.dob),
+        dob: formatInputDate(pageData.dob),
         phoneHome: pageData.phoneHome || "",
         phoneCell: pageData.phoneCell || "",
         canProvideProofOfAge: !!pageData.canProvideProofOfAge,
@@ -166,19 +143,21 @@ export default async function Page1ServerWrapper({
                 licenseNumber: l.licenseNumber || "",
                 licenseStateOrProvince: l.licenseStateOrProvince || "",
                 licenseType: l.licenseType || ELicenseType.AZ,
-                licenseExpiry: toYMD(l.licenseExpiry),
-                licenseFrontPhoto: index === 0 
-                  ? {
-                      s3Key: l.licenseFrontPhoto?.s3Key || "",
-                      url: l.licenseFrontPhoto?.url || "",
-                    }
-                  : undefined,
-                licenseBackPhoto: index === 0
-                  ? {
-                      s3Key: l.licenseBackPhoto?.s3Key || "",
-                      url: l.licenseBackPhoto?.url || "",
-                    }
-                  : undefined,
+                licenseExpiry: formatInputDate(l.licenseExpiry),
+                licenseFrontPhoto:
+                  index === 0
+                    ? {
+                        s3Key: l.licenseFrontPhoto?.s3Key || "",
+                        url: l.licenseFrontPhoto?.url || "",
+                      }
+                    : undefined,
+                licenseBackPhoto:
+                  index === 0
+                    ? {
+                        s3Key: l.licenseBackPhoto?.s3Key || "",
+                        url: l.licenseBackPhoto?.url || "",
+                      }
+                    : undefined,
               }))
             : EMPTY_DEFAULTS.licenses,
         addresses:
@@ -188,18 +167,12 @@ export default async function Page1ServerWrapper({
                 city: a.city || "",
                 stateOrProvince: a.stateOrProvince || "",
                 postalCode: a.postalCode || "",
-                from: toYMD(a.from),
-                to: toYMD(a.to),
+                from: formatInputDate(a.from),
+                to: formatInputDate(a.to),
               }))
             : [BLANK_ADDRESS],
       }
     : EMPTY_DEFAULTS;
 
-  return (
-    <Page1Client
-      defaultValues={defaultValues}
-      trackerId={trackerId}
-      trackerContextFromGet={trackerContextFromGet}
-    />
-  );
+  return <Page1Client defaultValues={defaultValues} trackerId={trackerId} />;
 }
