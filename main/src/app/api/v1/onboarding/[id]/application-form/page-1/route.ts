@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { decryptString, encryptString, hashString } from "@/lib/utils/cryptoUtils";
 import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
 import connectDB from "@/lib/utils/connectDB";
-import ApplicationForm from "@/mongoose/models/applicationForm";
+import ApplicationForm from "@/mongoose/models/ApplicationForm";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import { FORM_RESUME_EXPIRES_AT_IN_MILSEC } from "@/config/env";
 import { isValidSIN, isValidPhoneNumber, isValidEmail, isValidDOB } from "@/lib/utils/validationUtils";
