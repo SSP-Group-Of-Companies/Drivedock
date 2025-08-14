@@ -25,8 +25,8 @@ export const licenseEntrySchema = z.object({
   licenseStateOrProvince: z.string().min(1, "Province is required"),
   licenseType: z.nativeEnum(ELicenseType),
   licenseExpiry: dateYMD,
-  licenseFrontPhoto: photoSchema.optional(),
-  licenseBackPhoto: photoSchema.optional(),
+  licenseFrontPhoto: z.union([photoSchema, z.undefined()]).optional(),
+  licenseBackPhoto: z.union([photoSchema, z.undefined()]).optional(),
 });
 
 // Address Entry

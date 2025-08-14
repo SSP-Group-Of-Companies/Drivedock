@@ -162,19 +162,23 @@ export default async function Page1ServerWrapper({
         birthStateOrProvince: pageData.birthStateOrProvince || "",
         licenses:
           Array.isArray(pageData.licenses) && pageData.licenses.length
-            ? pageData.licenses.map((l: any) => ({
+            ? pageData.licenses.map((l: any, index: number) => ({
                 licenseNumber: l.licenseNumber || "",
                 licenseStateOrProvince: l.licenseStateOrProvince || "",
                 licenseType: l.licenseType || ELicenseType.AZ,
                 licenseExpiry: toYMD(l.licenseExpiry),
-                licenseFrontPhoto: {
-                  s3Key: l.licenseFrontPhoto?.s3Key || "",
-                  url: l.licenseFrontPhoto?.url || "",
-                },
-                licenseBackPhoto: {
-                  s3Key: l.licenseBackPhoto?.s3Key || "",
-                  url: l.licenseBackPhoto?.url || "",
-                },
+                licenseFrontPhoto: index === 0 
+                  ? {
+                      s3Key: l.licenseFrontPhoto?.s3Key || "",
+                      url: l.licenseFrontPhoto?.url || "",
+                    }
+                  : undefined,
+                licenseBackPhoto: index === 0
+                  ? {
+                      s3Key: l.licenseBackPhoto?.s3Key || "",
+                      url: l.licenseBackPhoto?.url || "",
+                    }
+                  : undefined,
               }))
             : EMPTY_DEFAULTS.licenses,
         addresses:

@@ -93,7 +93,7 @@ export default function PreQualificationClient({
   const router = useRouter();
   const { selectedCompany } = useCompanySelection(); // Determines US/CA behavior
   const { setTracker } = useOnboardingTracker(); // Hydrate tracker into Zustand
-  const { show } = useGlobalLoading();
+  const { show, hide } = useGlobalLoading();
 
   // Controls visibility/content of the flatbed training popup
   const [showFlatbedPopup, setShowFlatbedPopup] = useState<null | "yes" | "no">(
@@ -195,10 +195,13 @@ export default function PreQualificationClient({
     } catch (err) {
       // Log for debugging; show a basic alert for the MVP
       console.error("Prequalification submit error:", err);
+      hide(); // Hide loading screen on error
       alert(
         t("form.errors.saveFailed") ||
           "Failed to save your answers. Please try again."
       );
+    } finally {
+      // Only hide loading screen on error - successful navigation will be handled by navigation loading system
     }
   };
 

@@ -10,7 +10,11 @@ import { ApplicationFormPage3Schema } from "@/lib/zodSchemas/applicationFormPage
 import Page3Client from "./Page3Client";
 import { NEXT_PUBLIC_BASE_URL } from "@/config/env";
 import { redirect } from "next/navigation";
-import { parseISO, isValid as isValidDate, format as formatDateFns } from "date-fns";
+import {
+  parseISO,
+  isValid as isValidDate,
+  format as formatDateFns,
+} from "date-fns";
 
 // Helper to normalize date to YYYY-MM-DD
 function toYMD(dateish: string) {
@@ -71,19 +75,21 @@ export default async function Page3ServerWrapper({
 
   // Normalize the data
   const defaultValues: ApplicationFormPage3Schema = {
-    accidentHistory: normalizeArray(
-      pageData?.accidentHistory,
-      4,
-      () => ({ date: "", natureOfAccident: "", fatalities: 0, injuries: 0 })
-    ).map(item => ({
+    accidentHistory: normalizeArray(pageData?.accidentHistory, 4, () => ({
+      date: "",
+      natureOfAccident: "",
+      fatalities: 0,
+      injuries: 0,
+    })).map((item) => ({
       ...item,
       date: toYMD(item.date),
     })),
-    trafficConvictions: normalizeArray(
-      pageData?.trafficConvictions,
-      4,
-      () => ({ date: "", location: "", charge: "", penalty: "" })
-    ).map(item => ({
+    trafficConvictions: normalizeArray(pageData?.trafficConvictions, 4, () => ({
+      date: "",
+      location: "",
+      charge: "",
+      penalty: "",
+    })).map((item) => ({
       ...item,
       date: toYMD(item.date),
     })),

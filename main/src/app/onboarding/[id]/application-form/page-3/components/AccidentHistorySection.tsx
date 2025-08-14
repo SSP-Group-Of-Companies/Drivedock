@@ -1,7 +1,7 @@
 "use client";
 
-import { useFieldArray, useFormContext } from "react-hook-form";
-import { useMemo, useState } from "react";
+import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -12,6 +12,7 @@ export default function AccidentHistorySection() {
   const {
     control,
     register,
+    clearErrors,
     formState: { errors },
   } = useFormContext<ApplicationFormPage3Schema>();
   const { t } = useTranslation("common");
@@ -40,6 +41,36 @@ export default function AccidentHistorySection() {
 
   const [mobileVisibleCount, setMobileVisibleCount] =
     useState<number>(initialMobileVisible);
+
+  // Watch all accident history fields to clear errors when rows become empty
+  const accidentHistory = useWatch({ control, name: "accidentHistory" });
+  const clearedRowsRef = useRef<Set<number>>(new Set());
+
+  // Clear errors for each row when all fields in that row become empty
+  useEffect(() => {
+    if (!accidentHistory) return;
+
+    accidentHistory.forEach((accident, index) => {
+      const allEmpty =
+        !accident?.date?.trim() &&
+        !accident?.natureOfAccident?.trim() &&
+        (!accident?.fatalities || accident.fatalities === 0) &&
+        (!accident?.injuries || accident.injuries === 0);
+
+      if (allEmpty && !clearedRowsRef.current.has(index)) {
+        clearErrors([
+          `accidentHistory.${index}.date`,
+          `accidentHistory.${index}.natureOfAccident`,
+          `accidentHistory.${index}.fatalities`,
+          `accidentHistory.${index}.injuries`,
+        ]);
+        clearedRowsRef.current.add(index);
+      } else if (!allEmpty) {
+        // If row is no longer empty, remove from cleared set
+        clearedRowsRef.current.delete(index);
+      }
+    });
+  }, [accidentHistory, clearErrors]);
 
   if (!mounted) return null;
 
@@ -79,22 +110,13 @@ export default function AccidentHistorySection() {
                 }`}
               >
                 <td className="py-3 px-4">
-                  {index === 0 ? (
-                    <input
-                      type="date"
-                      className="h-10 w-32 px-2 mt-1 text-center block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
-                      placeholder="YYYY-MM-DD"
-                      data-field={`accidentHistory.${index}.date`}
-                      {...register(`accidentHistory.${index}.date` as const)}
-                    />
-                  ) : (
-                    <input
-                      type="date"
-                      className="h-10 w-32 px-2 mt-1 text-center block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
-                      data-field={`accidentHistory.${index}.date`}
-                      {...register(`accidentHistory.${index}.date` as const)}
-                    />
-                  )}
+                  <input
+                    type="date"
+                    className="h-10 w-32 px-2 mt-1 text-center block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
+                    placeholder="YYYY-MM-DD"
+                    data-field={`accidentHistory.${index}.date`}
+                    {...register(`accidentHistory.${index}.date` as const)}
+                  />
                   {errors.accidentHistory?.[index]?.date && (
                     <p className="text-red-500 text-xs mt-1">
                       {errors.accidentHistory[index]?.date?.message}

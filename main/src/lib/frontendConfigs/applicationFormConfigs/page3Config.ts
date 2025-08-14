@@ -21,42 +21,24 @@ export const page3ConfigFactory: FormPageConfigFactory<
         "canadianHoursOfService.dailyHours",
       ];
 
-      // Validate accident entries - if any field has data, all fields become required
-      values.accidentHistory?.forEach((accident, index) => {
-        const hasAnyData =
-          accident.date ||
-          accident.natureOfAccident ||
-          accident.fatalities > 0 ||
-          accident.injuries > 0;
-
-        if (hasAnyData) {
-          // If any field has data, all fields in this row must be completed
-          fields.push(
-            `accidentHistory.${index}.date`,
-            `accidentHistory.${index}.natureOfAccident`,
-            `accidentHistory.${index}.fatalities`,
-            `accidentHistory.${index}.injuries`
-          );
-        }
+      // Include all accident and traffic conviction fields for validation
+      // The Zod schema will handle the all-or-nothing logic
+      values.accidentHistory?.forEach((_, index) => {
+        fields.push(
+          `accidentHistory.${index}.date`,
+          `accidentHistory.${index}.natureOfAccident`,
+          `accidentHistory.${index}.fatalities`,
+          `accidentHistory.${index}.injuries`
+        );
       });
 
-      // Validate traffic conviction entries - if any field has data, all fields become required
-      values.trafficConvictions?.forEach((conviction, index) => {
-        const hasAnyData =
-          conviction.date ||
-          conviction.location ||
-          conviction.charge ||
-          conviction.penalty;
-
-        if (hasAnyData) {
-          // If any field has data, all fields in this row must be completed
-          fields.push(
-            `trafficConvictions.${index}.date`,
-            `trafficConvictions.${index}.location`,
-            `trafficConvictions.${index}.charge`,
-            `trafficConvictions.${index}.penalty`
-          );
-        }
+      values.trafficConvictions?.forEach((_, index) => {
+        fields.push(
+          `trafficConvictions.${index}.date`,
+          `trafficConvictions.${index}.location`,
+          `trafficConvictions.${index}.charge`,
+          `trafficConvictions.${index}.penalty`
+        );
       });
 
       // Validate each daily hours entry (14 days as per backend schema)
@@ -70,35 +52,10 @@ export const page3ConfigFactory: FormPageConfigFactory<
     validateBusinessRules: () => null,
 
     buildPayload: (values) => {
-      // Filter out empty accident entries - only send entries with actual data
-      const filteredAccidentHistory =
-        values.accidentHistory?.filter((accident) => {
-          return (
-            accident.date ||
-            accident.natureOfAccident ||
-            accident.fatalities > 0 ||
-            accident.injuries > 0
-          );
-        }) || [];
-
-      // Filter out empty traffic conviction entries - only send entries with actual data
-      const filteredTrafficConvictions =
-        values.trafficConvictions?.filter((conviction) => {
-          return (
-            conviction.date ||
-            conviction.location ||
-            conviction.charge ||
-            conviction.penalty
-          );
-        }) || [];
-
-      // Build the payload with filtered arrays
+      // Send all data as-is, let the backend handle validation
+      // This matches the FastCard approach - don't filter on the frontend
       const payload = {
-        page3: {
-          ...values,
-          accidentHistory: filteredAccidentHistory,
-          trafficConvictions: filteredTrafficConvictions,
-        },
+        page3: values,
       };
 
       return payload;

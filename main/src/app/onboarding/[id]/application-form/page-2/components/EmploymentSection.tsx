@@ -29,7 +29,6 @@ export default function EmploymentSection() {
 
   const employments = watch("employments");
   const [showPrevious, setShowPrevious] = useState(false);
-  const hasAutoAddedRef = useRef(false);
 
   const createEmptyEmployment = (): EmploymentEntry => ({
     employerName: "",
@@ -60,18 +59,7 @@ export default function EmploymentSection() {
     if (fields.length > 1) setShowPrevious(true);
   }, [fields.length]);
 
-  useEffect(() => {
-    const current = employments[0];
-    if (!current?.from || !current?.to) return;
 
-    const { totalMonths } = calculateTimelineFromCurrent(employments);
-
-    if (totalMonths > 24 && !hasAutoAddedRef.current) {
-      setShowPrevious(true);
-      hasAutoAddedRef.current = true;
-      if (fields.length < MAX_ENTRIES) append(createEmptyEmployment());
-    }
-  }, [employments, append, fields.length]);
 
   const { timeline, totalDays, totalMonths } =
     calculateTimelineFromCurrent(employments);

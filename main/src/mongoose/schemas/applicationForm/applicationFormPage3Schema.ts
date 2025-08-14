@@ -1,34 +1,34 @@
 import { IApplicationFormPage3, IAccidentEntry, ITrafficConvictionEntry, IEducation, ICanadianHoursOfService, ICanadianDailyHours } from "@/types/applicationForm.types";
 import { Schema } from "mongoose";
 
-// Accident Entry Schema
+// Accident Entry Schema - Allow empty entries
 const accidentEntrySchema = new Schema<IAccidentEntry>({
-  date: { type: Date, required: [true, "Accident date is required."] },
+  date: { type: Date, required: false },
   natureOfAccident: {
     type: String,
-    required: [true, "Nature of accident is required."],
+    required: false,
   },
   fatalities: {
     type: Number,
     min: [0, "Fatalities cannot be negative."],
-    required: [true, "Number of fatalities is required."],
+    required: false,
   },
   injuries: {
     type: Number,
     min: [0, "Injuries cannot be negative."],
-    required: [true, "Number of injuries is required."],
+    required: false,
   },
 });
 
-// Conviction Entry Schema
+// Conviction Entry Schema - Allow empty entries
 const convictionEntrySchema = new Schema<ITrafficConvictionEntry>({
-  date: { type: Date, required: [true, "Conviction date is required."] },
+  date: { type: Date, required: false },
   location: {
     type: String,
-    required: [true, "Conviction location is required."],
+    required: false,
   },
-  charge: { type: String, required: [true, "Charge is required."] },
-  penalty: { type: String, required: [true, "Penalty is required."] },
+  charge: { type: String, required: false },
+  penalty: { type: String, required: false },
 });
 
 // Education Schema
@@ -116,6 +116,67 @@ export const applicationFormPage3Schema = new Schema<IApplicationFormPage3>(
     timestamps: true,
   }
 );
+
+// Add custom validation for all-or-nothing logic
+applicationFormPage3Schema.pre('validate', function(next) {
+  // Validate accident history entries - all-or-nothing per row
+  if (this.accidentHistory && Array.isArray(this.accidentHistory)) {
+    this.accidentHistory.forEach((accident, index) => {
+      if (!accident) return;
+      
+      const hasAnyData = accident.date || 
+                        accident.natureOfAccident || 
+                        (accident.fatalities && accident.fatalities > 0) || 
+                        (accident.injuries && accident.injuries > 0);
+
+      if (hasAnyData) {
+        // If any field has data, all fields in this row must be completed
+        if (!accident.date) {
+          this.invalidate(`accidentHistory.${index}.date`, 'Accident date is required');
+        }
+        if (!accident.natureOfAccident) {
+          this.invalidate(`accidentHistory.${index}.natureOfAccident`, 'Nature of accident is required');
+        }
+        if (accident.fatalities === undefined || accident.fatalities === null) {
+          this.invalidate(`accidentHistory.${index}.fatalities`, 'Number of fatalities is required (0 if none)');
+        }
+        if (accident.injuries === undefined || accident.injuries === null) {
+          this.invalidate(`accidentHistory.${index}.injuries`, 'Number of injuries is required (0 if none)');
+        }
+      }
+    });
+  }
+
+  // Validate traffic conviction entries - all-or-nothing per row
+  if (this.trafficConvictions && Array.isArray(this.trafficConvictions)) {
+    this.trafficConvictions.forEach((conviction, index) => {
+      if (!conviction) return;
+      
+      const hasAnyData = conviction.date || 
+                        conviction.location || 
+                        conviction.charge || 
+                        conviction.penalty;
+
+      if (hasAnyData) {
+        // If any field has data, all fields in this row must be completed
+        if (!conviction.date) {
+          this.invalidate(`trafficConvictions.${index}.date`, 'Conviction date is required');
+        }
+        if (!conviction.location) {
+          this.invalidate(`trafficConvictions.${index}.location`, 'Conviction location is required');
+        }
+        if (!conviction.charge) {
+          this.invalidate(`trafficConvictions.${index}.charge`, 'Charge is required');
+        }
+        if (!conviction.penalty) {
+          this.invalidate(`trafficConvictions.${index}.penalty`, 'Penalty is required');
+        }
+      }
+    });
+  }
+
+  next();
+});
 
 // Virtual totalHours getter
 applicationFormPage3Schema.virtual("canadianHoursOfService.totalHours").get(function (this) {
