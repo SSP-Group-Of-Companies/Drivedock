@@ -8,7 +8,7 @@ import { advanceStatus, buildTrackerContext, hasCompletedStep, onboardingExpired
 import { EStepPath } from "@/types/onboardingTracker.type";
 import { isValidObjectId } from "mongoose";
 import { NextRequest } from "next/server";
-import ApplicationForm from "@/mongoose/models/ApplicationForms";
+import ApplicationForm from "@/mongoose/models/ApplicationForm";
 
 export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {

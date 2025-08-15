@@ -13,7 +13,7 @@ import { isValidObjectId } from "mongoose";
 import { S3_SUBMISSIONS_FOLDER, S3_TEMP_FOLDER } from "@/constants/aws";
 import { parseJsonBody } from "@/lib/utils/reqParser";
 import { ES3Folder } from "@/types/aws.types";
-import ApplicationForm from "@/mongoose/models/ApplicationForms";
+import ApplicationForm from "@/mongoose/models/ApplicationForm";
 
 export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {

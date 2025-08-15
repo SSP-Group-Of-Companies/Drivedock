@@ -5,7 +5,7 @@ import PreQualifications from "../models/Prequalifications";
 import { decryptString } from "@/lib/utils/cryptoUtils";
 import PoliciesConsents from "../models/PoliciesConsents";
 import { ECompanyId } from "@/constants/companies";
-import ApplicationForm from "../models/ApplicationForms";
+import ApplicationForm from "../models/ApplicationForm";
 
 const onboardingTrackerSchema = new Schema<IOnboardingTrackerDoc>(
   {

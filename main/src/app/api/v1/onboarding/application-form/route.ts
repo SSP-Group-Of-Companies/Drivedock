@@ -17,7 +17,7 @@ import { S3_SUBMISSIONS_FOLDER, S3_TEMP_FOLDER } from "@/constants/aws";
 import { ES3Folder } from "@/types/aws.types";
 import { ECountryCode, ELicenseType } from "@/types/shared.types";
 import { isValidEmail, isValidPhoneNumber, isValidDOB, isValidSIN } from "@/lib/utils/validationUtils";
-import ApplicationForm from "@/mongoose/models/ApplicationForms";
+import ApplicationForm from "@/mongoose/models/ApplicationForm";
 
 export async function POST(req: NextRequest) {
   await connectDB();

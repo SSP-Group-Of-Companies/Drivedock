@@ -3,7 +3,7 @@ import connectDB from "@/lib/utils/connectDB";
 import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import mongoose from "mongoose";
-import ApplicationForm from "@/mongoose/models/ApplicationForms";
+import ApplicationForm from "@/mongoose/models/ApplicationForm";
 
 // -------------------------
 // Helper
