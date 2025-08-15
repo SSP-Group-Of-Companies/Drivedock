@@ -106,9 +106,7 @@ function StartPageContent() {
           <h2 className="text-lg font-semibold mb-1">
             {t("start.beforeYouBegin")}
           </h2>
-          <p className="text-sm text-gray-600 mb-4">
-            {t("start.readAndAgree")}
-          </p>
+          <p className="text-sm text-gray-600 mb-4">{t("start.ensureDoc")}</p>
 
           {/* Checklist of conditions */}
           <ConsentChecklist />

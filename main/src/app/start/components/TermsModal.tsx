@@ -69,33 +69,66 @@ export default function TermsModal({ onAgree, onCancel }: TermsModalProps) {
         <div className="fixed inset-0 overflow-y-auto flex items-center justify-center px-4">
           <Dialog.Panel className="w-full max-w-2xl transform overflow-hidden rounded-xl bg-white p-6 text-left align-middle shadow-xl transition-all">
             {/* Title */}
-            <Dialog.Title className="text-lg font-semibold mb-4 text-gray-800">
-              {t("start.termsModal.title")}
+            <Dialog.Title className="text-center font-bold mb-4 text-gray-800">
+              {t("start.policiesModal.title")}
             </Dialog.Title>
+
+            {/* Title */}
+            <p className="text-sm text-gray-700 pb-6 text-left">
+              {t("start.policiesModal.sub-title")}
+            </p>
 
             {/* Scrollable terms content */}
             <div className="max-h-80 overflow-y-auto text-sm text-gray-700 space-y-3 pr-2">
-              <p>{t("start.termsModal.intro")}</p>
+              <p className="mt-2 text-gray-600 font-semibold">
+                {t("start.policiesModal.section.WhatInfo")}
+              </p>
               <ul className="list-disc list-inside space-y-2">
-                <li>{t("start.termsModal.items.subcontractor")}</li>
-                <li>{t("start.termsModal.items.truthfulInfo")}</li>
-                <li>{t("start.termsModal.items.backgroundChecks")}</li>
                 <li>
-                  {t("start.termsModal.items.companyRules.title")}
-                  <ul className="list-[circle] ml-6 mt-1 space-y-1">
-                    <li>
-                      {t("start.termsModal.items.companyRules.drugPolicy")}
-                    </li>
-                    <li>{t("start.termsModal.items.companyRules.dashCam")}</li>
-                    <li>
-                      {t("start.termsModal.items.companyRules.safetyRules")}
-                    </li>
-                    <li>{t("start.termsModal.items.companyRules.seals")}</li>
-                  </ul>
+                  {t("start.policiesModal.section.WhatInfoItems.itemOne")}
                 </li>
-                <li>{t("start.termsModal.items.discipline")}</li>
-                <li>{t("start.termsModal.items.laws")}</li>
+                <li>
+                  {t("start.policiesModal.section.WhatInfoItems.itemTwo")}
+                </li>
+                <li>
+                  {t("start.policiesModal.section.WhatInfoItems.itemThree")}
+                </li>
+                <li>
+                  {t("start.policiesModal.section.WhatInfoItems.itemFour")}
+                </li>
               </ul>
+
+              <p className="mt-2 text-gray-600 font-semibold">
+                {t("start.policiesModal.section.whyInfo")}
+              </p>
+              <ul className="list-disc list-inside space-y-2">
+                <li>{t("start.policiesModal.section.WhyInfoItems.itemOne")}</li>
+                <li>{t("start.policiesModal.section.WhyInfoItems.itemTwo")}</li>
+                <li>
+                  {t("start.policiesModal.section.WhyInfoItems.itemThree")}
+                </li>
+                <li>
+                  {t("start.policiesModal.section.WhyInfoItems.itemFour")}
+                </li>
+              </ul>
+
+              <p className="mt-2 text-gray-600 font-semibold">
+                {t("start.policiesModal.section.whoInfo")}
+              </p>
+              <ul className="list-disc list-inside space-y-2">
+                <li>{t("start.policiesModal.section.WhoInfoItems.itemOne")}</li>
+                <li>{t("start.policiesModal.section.WhoInfoItems.itemTwo")}</li>
+                <li>
+                  {t("start.policiesModal.section.WhoInfoItems.itemThree")}
+                </li>
+              </ul>
+
+              <p className="mt-2 text-gray-600 font-semibold">
+                {t("start.policiesModal.section.howLong")}
+              </p>
+              <p className="mt-2">
+                {t("start.policiesModal.section.duration")}
+              </p>
             </div>
 
             {/* Action buttons */}
@@ -104,13 +137,13 @@ export default function TermsModal({ onAgree, onCancel }: TermsModalProps) {
                 onClick={onCancel}
                 className="px-4 py-2 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200"
               >
-                {t("start.termsModal.cancel")}
+                {t("start.policiesModal.cancel")}
               </button>
               <button
                 onClick={onAgree}
                 className="px-4 py-2 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700"
               >
-                {t("start.termsModal.agree")}
+                {t("start.policiesModal.agree")}
               </button>
             </div>
           </Dialog.Panel>
