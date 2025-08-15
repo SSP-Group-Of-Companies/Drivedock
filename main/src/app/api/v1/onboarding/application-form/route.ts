@@ -2,7 +2,6 @@ import { NextRequest } from "next/server";
 import { encryptString, hashString } from "@/lib/utils/cryptoUtils";
 import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
 import connectDB from "@/lib/utils/connectDB";
-import ApplicationForm from "@/mongoose/models/applicationForm";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import PreQualifications from "@/mongoose/models/Prequalifications";
 import { FORM_RESUME_EXPIRES_AT_IN_MILSEC } from "@/config/env";
@@ -18,6 +17,7 @@ import { S3_SUBMISSIONS_FOLDER, S3_TEMP_FOLDER } from "@/constants/aws";
 import { ES3Folder } from "@/types/aws.types";
 import { ECountryCode, ELicenseType } from "@/types/shared.types";
 import { isValidEmail, isValidPhoneNumber, isValidDOB, isValidSIN } from "@/lib/utils/validationUtils";
+import ApplicationForm from "@/mongoose/models/ApplicationForms";
 
 export async function POST(req: NextRequest) {
   await connectDB();

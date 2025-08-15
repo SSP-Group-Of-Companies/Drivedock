@@ -2,7 +2,6 @@ import { NextRequest } from "next/server";
 import { decryptString, encryptString, hashString } from "@/lib/utils/cryptoUtils";
 import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
 import connectDB from "@/lib/utils/connectDB";
-import ApplicationForm from "@/mongoose/models/applicationForm";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import { FORM_RESUME_EXPIRES_AT_IN_MILSEC } from "@/config/env";
 import { isValidSIN, isValidPhoneNumber, isValidEmail, isValidDOB } from "@/lib/utils/validationUtils";
@@ -15,6 +14,7 @@ import { IApplicationFormPage1, ILicenseEntry } from "@/types/applicationForm.ty
 import { EStepPath } from "@/types/onboardingTracker.type";
 import { isValidObjectId } from "mongoose";
 import { parseJsonBody } from "@/lib/utils/reqParser";
+import ApplicationForm from "@/mongoose/models/ApplicationForms";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
