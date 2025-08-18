@@ -25,7 +25,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
     // Find tracker + form
     const onboardingDoc = await OnboardingTracker.findById(id);
-    if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
+    if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) return errorResponse(404, "ApplicationForm not linked");
@@ -75,7 +75,7 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
 
     // Fetch onboarding tracker
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
-    if (!onboardingDoc) {
+    if (!onboardingDoc || onboardingDoc.terminated) {
       return errorResponse(404, "Onboarding document not found");
     }
 

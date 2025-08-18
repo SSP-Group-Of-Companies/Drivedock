@@ -90,6 +90,11 @@ const onboardingTrackerSchema = new Schema<IOnboardingTrackerDoc>(
         ref: "FlatbedTraining",
       },
     },
+    terminated: {
+      type: Boolean,
+      default: false,
+      required: [true, "Termination status is required."],
+    },
   },
   {
     timestamps: true,

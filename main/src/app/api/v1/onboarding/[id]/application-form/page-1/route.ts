@@ -26,7 +26,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
-    if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
+    if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
 
     const oldSin = decryptString(onboardingDoc.sinEncrypted);
 
@@ -202,7 +202,7 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
 
     // Fetch onboarding tracker
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
-    if (!onboardingDoc) {
+    if (!onboardingDoc || onboardingDoc.terminated) {
       return errorResponse(404, "Onboarding document not found");
     }
 

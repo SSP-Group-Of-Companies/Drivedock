@@ -59,6 +59,9 @@ export interface IOnboardingTracker {
     flatbedTraining?: ObjectId;
   };
 
+  // Termination flag — used to hide from driver access
+  terminated: boolean;
+
   createdAt: Date;
   updatedAt: Date;
 }
