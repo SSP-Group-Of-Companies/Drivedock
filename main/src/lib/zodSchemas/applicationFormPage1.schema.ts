@@ -29,24 +29,27 @@ export const licenseEntrySchema = z.object({
       const selectedDate = new Date(date);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
+
       // Check if date is in the past or today
       if (selectedDate <= today) {
         return false;
       }
-      
+
       // Check if date is 30 days or less from now
       const thirtyDaysFromNow = new Date();
       thirtyDaysFromNow.setDate(today.getDate() + 30);
       thirtyDaysFromNow.setHours(0, 0, 0, 0);
-      
+
       if (selectedDate <= thirtyDaysFromNow) {
         return false;
       }
-      
+
       return true;
     },
-    { message: "License expiry date cannot be a past, current date, or within 30 days" }
+    {
+      message:
+        "License expiry date cannot be a past, current date, or within 30 days",
+    }
   ),
   licenseFrontPhoto: z.union([photoSchema, z.undefined()]).optional(),
   licenseBackPhoto: z.union([photoSchema, z.undefined()]).optional(),
