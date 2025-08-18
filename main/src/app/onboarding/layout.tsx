@@ -204,22 +204,57 @@ export default function FormLayout({
                     exit={{ y: 20, opacity: 0 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <DialogPanel className="max-w-md w-full bg-white rounded-xl p-6 shadow-xl space-y-4">
-                      <DialogTitle className="text-lg font-bold text-gray-900">
+                    <DialogPanel className="max-w-2xl w-full bg-white rounded-xl p-6 shadow-xl space-y-6 max-h-[80vh] overflow-y-auto">
+                      <DialogTitle className="text-center text-xl font-bold text-gray-900">
                         {t("wizard.modalTitle")}
                       </DialogTitle>
-                      <ul className="list-disc pl-5 text-sm text-gray-700 space-y-1">
-                        {[1, 2, 3, 4, 5, 6].map((step) => (
-                          <li key={step}>
-                            <strong>{t(`wizard.step${step}.label`)}:</strong>{" "}
-                            {t(`wizard.step${step}.desc`)}
-                          </li>
-                        ))}
-                      </ul>
-                      <div className="text-right">
+
+                      {/* Steps Section */}
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-800">
+                          {t("wizard.stepsTitle")}
+                        </h3>
+                        <ul className="space-y-3">
+                          {[1, 2, 3, 4, 5, 6, 7].map((step) => (
+                            <li key={step} className="text-sm text-gray-700">
+                              <div className="font-medium text-gray-900 mb-1">
+                                {t(`wizard.steps.step${step}.label`)}
+                              </div>
+                              <div className="text-gray-600">
+                                {t(`wizard.steps.step${step}.desc`)}
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      {/* Saving & Security Section */}
+                      <div className="space-y-4 pt-4 border-t border-gray-200">
+                        <h3 className="text-lg font-semibold text-gray-800">
+                          {t("wizard.savingTitle")}
+                        </h3>
+                        <ul className="space-y-2 text-sm text-gray-700">
+                          <li>• {t("wizard.saving.autoSignOut")}</li>
+                          <li>• {t("wizard.saving.progressSaves")}</li>
+                          <li>• {t("wizard.saving.resumeLater")}</li>
+                          <li>• {t("wizard.saving.privacyNote")}</li>
+                        </ul>
+                      </div>
+
+                      {/* Tips Section */}
+                      <div className="space-y-4 pt-4 border-t border-gray-200">
+                        <h3 className="text-lg font-semibold text-gray-800">
+                          {t("wizard.tipsTitle")}
+                        </h3>
+                        <p className="text-sm text-gray-700">
+                          {t("wizard.tips")}
+                        </p>
+                      </div>
+
+                      <div className="text-right pt-4">
                         <button
                           onClick={() => setShowModal(false)}
-                          className="px-4 py-1.5 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
+                          className="px-4 py-2 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
                         >
                           {t("wizard.close")}
                         </button>

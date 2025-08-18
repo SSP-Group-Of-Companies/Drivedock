@@ -2,7 +2,7 @@
 
 import { useTranslation } from "react-i18next";
 import { useFormContext, useFieldArray, Path } from "react-hook-form";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Upload, AlertTriangle } from "lucide-react";
 
 import useMounted from "@/hooks/useMounted";
@@ -66,7 +66,9 @@ export default function AddressSection() {
   } = useFormContext<ApplicationFormPage1Schema>();
 
   const [hasSubmitted, setHasSubmitted] = useState(false);
-  const [addressToDateWarnings, setAddressToDateWarnings] = useState<{ [key: number]: string }>({});
+  const [addressToDateWarnings, setAddressToDateWarnings] = useState<{
+    [key: number]: string;
+  }>({});
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -105,65 +107,70 @@ export default function AddressSection() {
     return () => clearTimeout(id);
   }, [hasSubmitted, watchedAddresses, trigger]);
 
-  // Validate existing "to" dates on mount
+  // Function to validate address "To" date (memoized for stable deps)
+  const validateAddressToDate = useCallback(
+    (dateValue: string, index: number) => {
+      if (!dateValue) {
+        setAddressToDateWarnings((prev) => ({ ...prev, [index]: "" }));
+        clearErrors(`addresses.${index}.to`);
+        return;
+      }
+
+      const selectedDate = new Date(dateValue);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Reset time for accurate comparison
+
+      // Future date check
+      if (selectedDate > today) {
+        setError(`addresses.${index}.to`, {
+          type: "manual",
+          message: "End date cannot be in the future",
+        });
+        setAddressToDateWarnings((prev) => ({ ...prev, [index]: "" }));
+        return;
+      }
+
+      // Clear any previous errors
+      clearErrors(`addresses.${index}.to`);
+      setAddressToDateWarnings((prev) => ({ ...prev, [index]: "" }));
+    },
+    [clearErrors, setError]
+  );
+
+  // Validate existing "to" dates on mount / when fields change
   useEffect(() => {
     if (mounted && fields.length > 0) {
-      fields.forEach((field, index) => {
+      fields.forEach((_, index) => {
         const toDate = watch(`addresses.${index}.to`);
         if (toDate) {
           validateAddressToDate(toDate, index);
         }
       });
     }
-  }, [mounted, fields.length, watch]);
+    // deps: when mounted flips true, fields array identity changes, or validator changes
+  }, [mounted, fields, validateAddressToDate, watch]);
 
   // Clear warnings when addresses are removed
   useEffect(() => {
     const currentWarningKeys = Object.keys(addressToDateWarnings).map(Number);
     const currentFieldIndices = fields.map((_, index) => index);
-    
-    // Remove warnings for addresses that no longer exist
-    const warningsToRemove = currentWarningKeys.filter(key => !currentFieldIndices.includes(key));
+
+    const warningsToRemove = currentWarningKeys.filter(
+      (key) => !currentFieldIndices.includes(key)
+    );
     if (warningsToRemove.length > 0) {
-      setAddressToDateWarnings(prev => {
+      setAddressToDateWarnings((prev) => {
         const newWarnings = { ...prev };
-        warningsToRemove.forEach(key => delete newWarnings[key]);
+        warningsToRemove.forEach((key) => delete newWarnings[key]);
         return newWarnings;
       });
     }
-  }, [fields.length, addressToDateWarnings]);
+  }, [fields, addressToDateWarnings]);
 
   const getPostalCodeLabel = () =>
     selectedCompany?.countryCode === "US"
       ? t("form.step2.page1.fields.zipCode")
       : t("form.step2.page1.fields.postalCode");
-
-  // Function to validate address "To" date
-  const validateAddressToDate = (dateValue: string, index: number) => {
-    if (!dateValue) {
-      setAddressToDateWarnings(prev => ({ ...prev, [index]: "" }));
-      clearErrors(`addresses.${index}.to`);
-      return;
-    }
-
-    const selectedDate = new Date(dateValue);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Reset time to start of day for accurate comparison
-
-    // Check if date is in the future
-    if (selectedDate > today) {
-      setError(`addresses.${index}.to`, {
-        type: "manual",
-        message: "End date cannot be in the future"
-      });
-      setAddressToDateWarnings(prev => ({ ...prev, [index]: "" }));
-      return;
-    }
-
-    // Clear any previous errors
-    clearErrors(`addresses.${index}.to`);
-    setAddressToDateWarnings(prev => ({ ...prev, [index]: "" }));
-  };
 
   const handleAdd = () => {
     append({
@@ -261,7 +268,11 @@ export default function AddressSection() {
                 type={type ?? "text"}
                 data-field={`addresses.${index}.${name}`}
                 className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
-                onChange={name === "to" ? (e) => validateAddressToDate(e.target.value, index) : undefined}
+                onChange={
+                  name === "to"
+                    ? (e) => validateAddressToDate(e.target.value, index)
+                    : undefined
+                }
               />
               {addressErrors?.[index]?.[name] && (
                 <p className="text-red-500 text-xs mt-1">

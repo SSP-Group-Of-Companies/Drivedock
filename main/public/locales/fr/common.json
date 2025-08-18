@@ -38,35 +38,63 @@
     "subheading": "Commencez votre parcours avec SSP Group of Companies",
     "languageLabel": "🌐 Sélectionner la langue",
     "beforeYouBegin": "Avant de commencer",
-    "readAndAgree": "Veuillez lire et accepter ce qui suit :",
-    "continue": "Continuer vers la candidature",
+    "ensureDoc": "Veuillez vous assurer de disposer des documents ci-dessous pour compléter ce processus de candidature",
+    "continue": "Continuer vers la demande",
     "estimatedTime": "Temps estimé : 15–20 minutes",
-    "agreeToTerms": "J’accepte les conditions ci-dessus",
-    "checklist": {
-      "accurateInfo": "Toutes les informations fournies doivent être exactes et véridiques",
-      "digitalProcess": "Vous comprenez qu’il s’agit d’un processus de candidature numérique",
-      "consentChecks": "Vous consentez aux vérifications des antécédents et du dossier de conduite",
-      "termsAgreement": "Vous acceptez les conditions générales de SSP Group of Companies"
+    "agreeToTerms": "J'accepte les politiques de l'entreprise et les principes d'utilisation des données",
+
+    "CanadaDocChecklist": {
+      "driverLicense": "Permis de conduire",
+      "SINnumber": "Numéro NAS",
+      "healthCard": "Carte d'assurance maladie",
+      "Passport": "Passeport",
+      "visa": "Visa américain (pour les conducteurs transfrontaliers)",
+      "permit": "Résidence permanente / Permis de travail / Citoyen canadien",
+      "option": "Documents facultatifs :",
+      "fastCard": "Carte FAST",
+      "IncorporateDocuments": "Documents de constitution (incorporation)",
+      "bankingInfo": "Informations bancaires (pour les sociétés incorporées)"
     },
-    "termsModal": {
-      "title": "Conditions générales",
-      "intro": "En continuant, vous acceptez que :",
-      "items": {
-        "subcontractor": "Vous postulez comme sous-traitant ou employé",
-        "truthfulInfo": "Toutes les informations que vous soumettez sont exactes et véridiques",
-        "backgroundChecks": "Vous consentez aux vérifications d’antécédents et à la vérification du dossier de conduite",
-        "companyRules": {
-          "title": "Vous comprenez et acceptez les règles de l’entreprise concernant :",
-          "drugPolicy": "Les politiques sur l’alcool et les drogues",
-          "dashCam": "L’enregistrement par caméra de bord dans les véhicules",
-          "safetyRules": "La vitesse, la déclaration d’accident et l’utilisation du téléphone",
-          "seals": "Les scellés de remorque et les inspections transfrontalières"
+
+    "USAChecklist": {
+      "driverLicense": "Permis de conduire",
+      "SSNnumber": "Numéro SSN",
+      "healthCard": "Certificat médical",
+      "Passport": "Passeport / Résident permanent / Citoyen américain",
+      "option": "Documents facultatifs :",
+      "IncorporateDocuments": "Documents de constitution (incorporation)",
+      "bankingInfo": "Informations bancaires (pour les sociétés incorporées)"
+    },
+
+    "policiesModal": {
+      "title": "Avis sur les politiques et l'utilisation des données",
+      "sub-title": "Dans le cadre de votre candidature pour devenir conducteur au sein de [Company Name], nous devons recueillir certains renseignements personnels afin de confirmer vos qualifications et de respecter les exigences légales et de sécurité",
+      "section": {
+        "WhatInfo": "Quelles informations nous recueillons :",
+        "WhatInfoItems": {
+          "itemOne": "Vos renseignements personnels (nom, adresse, coordonnées)",
+          "itemTwo": "Votre permis de conduire et votre dossier de conduite (résumé)",
+          "itemThree": "Votre historique d'emploi et vos références",
+          "itemFour": "Les résultats des vérifications des antécédents et des tests de dépistage d'alcool/drogues"
         },
-        "discipline": "Les mesures disciplinaires peuvent inclure des amendes, une suspension ou un congédiement",
-        "laws": "Vous êtes responsable du respect des lois canadiennes et américaines sur le transport routier"
+        "whyInfo": "Pourquoi nous recueillons ces informations",
+        "WhyInfoItems": {
+          "itemOne": "Vérifier que vous remplissez les exigences légales pour la conduite commerciale",
+          "itemTwo": "Assurer la sécurité au travail et sur la route",
+          "itemThree": "Effectuer les vérifications d'antécédents et d'emploi exigées par la loi",
+          "itemFour": "Maintenir des dossiers d'emploi et de conformité exacts"
+        },
+        "whoInfo": "Qui a accès à ces informations",
+        "WhoInfoItems": {
+          "itemOne": "Les équipes des ressources humaines et de conformité de [Company Name]",
+          "itemTwo": "Les autorités réglementaires (p. ex., Transports Canada, FMCSA en cas de transport transfrontalier)",
+          "itemThree": "Des tiers autorisés (p. ex., fournisseurs de vérification des antécédents, assureurs)"
+        },
+        "howLong": "Durée de conservation de vos informations",
+        "duration": "Vos informations seront conservées de façon sécurisée pendant la période exigée par la loi (généralement de 3 à 7 ans, selon le type de document et la juridiction)."
       },
       "cancel": "Annuler",
-      "agree": "J’accepte"
+      "agree": "J'accepte"
     }
   },
   "company": {
@@ -350,33 +378,49 @@
     "continue": "Continuer"
   },
   "wizard": {
-    "infoTitle": "Que signifient les étapes ?",
-    "modalTitle": "Étapes de la candidature",
+    "modalTitle": "À propos de cette application",
     "close": "Fermer",
-    "step1": {
-      "label": "Étape 1",
-      "desc": "Présélection"
+    "aboutTitle": "À propos de cette application",
+    "stepsTitle": "Aperçu des étapes",
+    "savingTitle": "Enregistrement et sécurité",
+    "tipsTitle": "Conseils",
+    "steps": {
+      "step1": {
+        "label": "1. Préqualification",
+        "desc": "Vérification rapide de l’admissibilité (≈2 min) : âge, permis AZ, admissibilité au travail (Canada/États-Unis) et préparation de base."
+      },
+      "step2": {
+        "label": "2. Formulaire de candidature",
+        "desc": "Formulaire de 5 pages couvrant les renseignements personnels, l’historique d’adresses sur 5 ans, les permis et téléversements, l’historique d’emploi et les déclarations."
+      },
+      "step3": {
+        "label": "3. Politiques et consentements",
+        "desc": "Passez en revue les politiques de l’entreprise et fournissez les consentements/signatures requis."
+      },
+      "step4": {
+        "label": "4. CarriersEdge",
+        "desc": "Effectuez la formation de sécurité en ligne assignée ; nous vous guiderons pour vous connecter."
+      },
+      "step5": {
+        "label": "5. Essai routier",
+        "desc": "Planification et résultats de l’évaluation sur route et en cour (gérée par l’équipe Sécurité)."
+      },
+      "step6": {
+        "label": "6. Test de dépistage",
+        "desc": "Le cas échéant, vous recevrez des instructions et l’adresse du centre de référence."
+      },
+      "step7": {
+        "label": "7. Formation en cour (si applicable)",
+        "desc": "Orientation sur site et présentation de l’équipement."
+      }
     },
-    "step2": {
-      "label": "Étape 2",
-      "desc": "Formulaire de candidature du chauffeur"
+    "saving": {
+      "autoSignOut": "Déconnexion automatique : pour votre sécurité, vous serez déconnecté après 10 minutes d’inactivité.",
+      "progressSaves": "Enregistrement de la progression : vos informations ne sont sauvegardées que lorsque vous cliquez sur Suivant/Continuer sur une page.",
+      "resumeLater": "Reprendre plus tard : utilisez votre NAS (numéro d’assurance sociale) avec le bouton Reprendre sur l’écran d’accueil pour continuer sur n’importe quel appareil.",
+      "privacyNote": "Avis de confidentialité : votre NAS sert uniquement à retrouver votre dossier et est stocké de manière sécurisée."
     },
-    "step3": {
-      "label": "Étape 3",
-      "desc": "Politiques et consentements"
-    },
-    "step4": {
-      "label": "Étape 4",
-      "desc": "Formation CarrierEdge"
-    },
-    "step5": {
-      "label": "Étape 5",
-      "desc": "Essai de conduite"
-    },
-    "step6": {
-      "label": "Étape 6",
-      "desc": "Test de dépistage"
-    }
+    "tips": "Ayez votre permis AZ, votre historique d’adresses sur 5 ans et vos renseignements récents d’emploi à portée de main pour accélérer le processus."
   },
   "actions": {
     "addPhoto": "Ajouter une photo",

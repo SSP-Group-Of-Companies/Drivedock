@@ -12,7 +12,7 @@
 
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ELicenseType } from "@/types/shared.types";
 import { FieldErrors } from "react-hook-form";
 import { Camera, Upload, X, AlertTriangle } from "lucide-react";
@@ -77,64 +77,67 @@ export default function LicenseSection() {
   const [backPhotoMessage, setBackPhotoMessage] = useState("");
 
   // Function to validate license expiry date
-  const validateLicenseExpiry = (dateValue: string, index: number) => {
-    if (!dateValue) {
-      setLicenseExpiryWarnings((prev) => ({ ...prev, [index]: "" }));
+  const validateLicenseExpiry = useCallback(
+    (dateValue: string, index: number) => {
+      if (!dateValue) {
+        setLicenseExpiryWarnings((prev) => ({ ...prev, [index]: "" }));
+        clearErrors(`licenses.${index}.licenseExpiry`);
+        return;
+      }
+
+      const selectedDate = new Date(dateValue);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Reset time to start of day for accurate comparison
+
+      const thirtyDaysFromNow = new Date();
+      thirtyDaysFromNow.setDate(today.getDate() + 30);
+      thirtyDaysFromNow.setHours(0, 0, 0, 0);
+
+      const sixtyDaysFromNow = new Date();
+      sixtyDaysFromNow.setDate(today.getDate() + 60);
+      sixtyDaysFromNow.setHours(0, 0, 0, 0);
+
+      // Check if date is in the past or today
+      if (selectedDate <= today) {
+        setError(`licenses.${index}.licenseExpiry`, {
+          type: "manual",
+          message: "License expiry date cannot be a past or current date",
+        });
+        setLicenseExpiryWarnings((prev) => ({ ...prev, [index]: "" }));
+        return;
+      }
+
+      // Check if date is 30 days or less from now (prevent proceeding)
+      if (selectedDate <= thirtyDaysFromNow) {
+        const daysUntilExpiry = Math.ceil(
+          (selectedDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+        );
+        setError(`licenses.${index}.licenseExpiry`, {
+          type: "manual",
+          message: `License will expire in ${daysUntilExpiry} days. Please renew your license before proceeding.`,
+        });
+        setLicenseExpiryWarnings((prev) => ({ ...prev, [index]: "" }));
+        return;
+      }
+
+      // Clear any previous errors
       clearErrors(`licenses.${index}.licenseExpiry`);
-      return;
-    }
 
-    const selectedDate = new Date(dateValue);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Reset time to start of day for accurate comparison
-
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(today.getDate() + 30);
-    thirtyDaysFromNow.setHours(0, 0, 0, 0);
-
-    const sixtyDaysFromNow = new Date();
-    sixtyDaysFromNow.setDate(today.getDate() + 60);
-    sixtyDaysFromNow.setHours(0, 0, 0, 0);
-
-    // Check if date is in the past or today
-    if (selectedDate <= today) {
-      setError(`licenses.${index}.licenseExpiry`, {
-        type: "manual",
-        message: "License expiry date cannot be a past or current date",
-      });
-      setLicenseExpiryWarnings((prev) => ({ ...prev, [index]: "" }));
-      return;
-    }
-
-    // Check if date is 30 days or less from now (prevent proceeding)
-    if (selectedDate <= thirtyDaysFromNow) {
-      const daysUntilExpiry = Math.ceil(
-        (selectedDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-      );
-      setError(`licenses.${index}.licenseExpiry`, {
-        type: "manual",
-        message: `License will expire in ${daysUntilExpiry} days. Please renew your license before proceeding.`,
-      });
-      setLicenseExpiryWarnings((prev) => ({ ...prev, [index]: "" }));
-      return;
-    }
-
-    // Clear any previous errors
-    clearErrors(`licenses.${index}.licenseExpiry`);
-
-    // Check if date is between 31-60 days (show warning but allow proceeding)
-    if (selectedDate <= sixtyDaysFromNow) {
-      const daysUntilExpiry = Math.ceil(
-        (selectedDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-      );
-      setLicenseExpiryWarnings((prev) => ({
-        ...prev,
-        [index]: `License will expire in ${daysUntilExpiry} days`,
-      }));
-    } else {
-      setLicenseExpiryWarnings((prev) => ({ ...prev, [index]: "" }));
-    }
-  };
+      // Check if date is between 31-60 days (show warning but allow proceeding)
+      if (selectedDate <= sixtyDaysFromNow) {
+        const daysUntilExpiry = Math.ceil(
+          (selectedDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+        );
+        setLicenseExpiryWarnings((prev) => ({
+          ...prev,
+          [index]: `License will expire in ${daysUntilExpiry} days`,
+        }));
+      } else {
+        setLicenseExpiryWarnings((prev) => ({ ...prev, [index]: "" }));
+      }
+    },
+    [setError, clearErrors, setLicenseExpiryWarnings]
+  );
 
   const handleLicensePhotoUpload = async (
     file: File | null,
@@ -265,7 +268,7 @@ export default function LicenseSection() {
         }
       });
     }
-  }, [licenseExpiryDates, mounted]);
+  }, [licenseExpiryDates, mounted, validateLicenseExpiry]);
 
   // Clear warnings when licenses are removed
   useEffect(() => {
@@ -283,7 +286,7 @@ export default function LicenseSection() {
         return newWarnings;
       });
     }
-  }, [fields.length, licenseExpiryWarnings]);
+  }, [fields, licenseExpiryWarnings]);
 
   // Prevent rendering until mounted to avoid hydration mismatch
   if (!mounted) return null;
