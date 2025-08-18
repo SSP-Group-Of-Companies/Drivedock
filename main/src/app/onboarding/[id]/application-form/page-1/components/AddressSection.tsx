@@ -2,8 +2,8 @@
 
 import { useTranslation } from "react-i18next";
 import { useFormContext, useFieldArray, Path } from "react-hook-form";
-import { useEffect, useState, useCallback } from "react";
-import { Upload, AlertTriangle } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Upload } from "lucide-react";
 
 import useMounted from "@/hooks/useMounted";
 import { ApplicationFormPage1Schema } from "@/lib/zodSchemas/applicationFormPage1.schema";
@@ -18,7 +18,7 @@ type AddressFieldName =
   | "from"
   | "to";
 
-// Config array, typed so AddressFieldName is actually used
+// Config array for address fields
 const ADDRESS_FIELDS = [
   { name: "address", labelKey: "form.step2.page1.fields.address" },
   { name: "city", labelKey: "form.step2.page1.fields.city" },
@@ -26,7 +26,7 @@ const ADDRESS_FIELDS = [
     name: "stateOrProvince",
     labelKey: "form.step2.page1.fields.stateOrProvince",
   },
-  { name: "postalCode", labelKey: "form.step2.page1.fields.postalCode" }, // label adjusted below per country
+  { name: "postalCode", labelKey: "form.step2.page1.fields.postalCode" },
   {
     name: "from",
     labelKey: "form.step2.page1.fields.from",
@@ -39,14 +39,19 @@ const ADDRESS_FIELDS = [
   type?: "date";
 }>;
 
-// Robustly extract array-root error message for RHF+Zod
-function getAddressesRootErrorMessage(errs: any): string | undefined {
-  const e = errs?.addresses;
-  if (!e) return undefined;
+// Extract root error message for addresses array
+function getAddressesRootErrorMessage(errors: any): string | undefined {
+  const addressErrors = errors?.addresses;
+  if (!addressErrors) return undefined;
+
   return (
-    e?.root?.message ??
-    (typeof e?.message === "string" ? e.message : undefined) ??
-    (Array.isArray(e?._errors) ? e._errors[0] : undefined)
+    addressErrors?.root?.message ??
+    (typeof addressErrors?.message === "string"
+      ? addressErrors.message
+      : undefined) ??
+    (Array.isArray(addressErrors?._errors)
+      ? addressErrors._errors[0]
+      : undefined)
   );
 }
 
@@ -60,22 +65,17 @@ export default function AddressSection() {
     control,
     trigger,
     watch,
-    setError,
-    clearErrors,
     formState: { errors },
   } = useFormContext<ApplicationFormPage1Schema>();
 
   const [hasSubmitted, setHasSubmitted] = useState(false);
-  const [addressToDateWarnings, setAddressToDateWarnings] = useState<{
-    [key: number]: string;
-  }>({});
 
   const { fields, append, remove } = useFieldArray({
     control,
     name: "addresses",
   });
 
-  // Ensure exactly one blank address appears on first load (when empty)
+  // Ensure exactly one blank address appears on first load
   useEffect(() => {
     if (fields.length === 0) {
       append({
@@ -87,7 +87,7 @@ export default function AddressSection() {
         to: "",
       });
     }
-  }, [fields, append]);
+  }, [fields.length, append]);
 
   const watchedAddresses = watch("addresses");
   const addressErrors = errors.addresses as any[] | undefined;
@@ -95,77 +95,21 @@ export default function AddressSection() {
 
   // Mark that we attempted submit once we see any array error
   useEffect(() => {
-    if (errors.addresses) setHasSubmitted(true);
+    if (errors.addresses) {
+      setHasSubmitted(true);
+    }
   }, [errors.addresses]);
 
-  // Re-validate only after user edits following a submit attempt
+  // Re-validate addresses after user edits following a submit attempt
   useEffect(() => {
     if (!hasSubmitted) return;
-    const id = setTimeout(() => {
+
+    const timeoutId = setTimeout(() => {
       trigger("addresses");
     }, 200);
-    return () => clearTimeout(id);
+
+    return () => clearTimeout(timeoutId);
   }, [hasSubmitted, watchedAddresses, trigger]);
-
-  // Function to validate address "To" date (memoized for stable deps)
-  const validateAddressToDate = useCallback(
-    (dateValue: string, index: number) => {
-      if (!dateValue) {
-        setAddressToDateWarnings((prev) => ({ ...prev, [index]: "" }));
-        clearErrors(`addresses.${index}.to`);
-        return;
-      }
-
-      const selectedDate = new Date(dateValue);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0); // Reset time for accurate comparison
-
-      // Future date check
-      if (selectedDate > today) {
-        setError(`addresses.${index}.to`, {
-          type: "manual",
-          message: "End date cannot be in the future",
-        });
-        setAddressToDateWarnings((prev) => ({ ...prev, [index]: "" }));
-        return;
-      }
-
-      // Clear any previous errors
-      clearErrors(`addresses.${index}.to`);
-      setAddressToDateWarnings((prev) => ({ ...prev, [index]: "" }));
-    },
-    [clearErrors, setError]
-  );
-
-  // Validate existing "to" dates on mount / when fields change
-  useEffect(() => {
-    if (mounted && fields.length > 0) {
-      fields.forEach((_, index) => {
-        const toDate = watch(`addresses.${index}.to`);
-        if (toDate) {
-          validateAddressToDate(toDate, index);
-        }
-      });
-    }
-    // deps: when mounted flips true, fields array identity changes, or validator changes
-  }, [mounted, fields, validateAddressToDate, watch]);
-
-  // Clear warnings when addresses are removed
-  useEffect(() => {
-    const currentWarningKeys = Object.keys(addressToDateWarnings).map(Number);
-    const currentFieldIndices = fields.map((_, index) => index);
-
-    const warningsToRemove = currentWarningKeys.filter(
-      (key) => !currentFieldIndices.includes(key)
-    );
-    if (warningsToRemove.length > 0) {
-      setAddressToDateWarnings((prev) => {
-        const newWarnings = { ...prev };
-        warningsToRemove.forEach((key) => delete newWarnings[key]);
-        return newWarnings;
-      });
-    }
-  }, [fields, addressToDateWarnings]);
 
   const getPostalCodeLabel = () =>
     selectedCompany?.countryCode === "US"
@@ -268,21 +212,10 @@ export default function AddressSection() {
                 type={type ?? "text"}
                 data-field={`addresses.${index}.${name}`}
                 className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
-                onChange={
-                  name === "to"
-                    ? (e) => validateAddressToDate(e.target.value, index)
-                    : undefined
-                }
               />
               {addressErrors?.[index]?.[name] && (
                 <p className="text-red-500 text-xs mt-1">
                   {addressErrors[index][name]?.message || ""}
-                </p>
-              )}
-              {name === "to" && addressToDateWarnings[index] && (
-                <p className="text-yellow-600 text-xs mt-1 flex items-center">
-                  <AlertTriangle className="w-3 h-3 mr-1" />
-                  {addressToDateWarnings[index]}
                 </p>
               )}
             </div>
