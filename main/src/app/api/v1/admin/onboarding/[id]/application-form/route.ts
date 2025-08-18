@@ -17,7 +17,7 @@ export const GET = async (_: Request, { params }: { params: Promise<{ sin: strin
 
     // Step 1: Find the onboarding tracker to get the linked application form
     const onboardingDoc = await OnboardingTracker.findOne({ sinHash });
-    if (!onboardingDoc) {
+    if (!onboardingDoc || onboardingDoc.terminated) {
       return errorResponse(404, "Onboarding document not found");
     }
 

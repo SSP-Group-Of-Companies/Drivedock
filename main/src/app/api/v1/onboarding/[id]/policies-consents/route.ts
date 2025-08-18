@@ -21,7 +21,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!isValidObjectId(id)) return errorResponse(400, "Invalid onboarding ID");
 
     const onboardingDoc = await OnboardingTracker.findById(id);
-    if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
+    if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
 
     if (!hasCompletedStep(onboardingDoc.status, EStepPath.APPLICATION_PAGE_5)) return errorResponse(400, "Please complete previous step first");
 
@@ -86,7 +86,7 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
 
     // Step 1: Find onboarding tracker
     const onboardingDoc = await OnboardingTracker.findById(id);
-    if (!onboardingDoc) {
+    if (!onboardingDoc || onboardingDoc.terminated) {
       return errorResponse(404, "Onboarding document not found");
     }
 
