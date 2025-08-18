@@ -27,6 +27,7 @@
 
 import { CheckCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import Image from "next/image";
 
 //components & hooks
 import useMounted from "@/hooks/useMounted";
@@ -40,18 +41,27 @@ export default function ConsentChecklist() {
 
   return (
     <div className="space-y-6 mb-6">
-      {/* Two Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* Two Column Layout with better visual balance */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
         {/* Canada Section */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-800 text-center lg:text-left">
-            Canada
-          </h3>
+        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+          <div className="flex items-center justify-center mb-4">
+            <div className="overflow-hidden ">
+              <Image
+                src="/assets/logos/canadaFlag.png"
+                alt="Canada Flag"
+                width={50}
+                height={50}
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-800">Canada</h3>
+          </div>
 
-          <div className="space-y-3">
+          <div className="space-y-4">
             {/* Required Documents */}
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium text-gray-700">
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold text-gray-800 border-b border-gray-200 pb-2">
                 Required Documents:
               </h4>
               <ul className="space-y-2">
@@ -112,9 +122,9 @@ export default function ConsentChecklist() {
               </ul>
             </div>
 
-            {/* Divider */}
-            <div className="border-t border-gray-200 pt-3">
-              <h4 className="text-sm font-medium text-gray-600 mb-2">
+            {/* Optional Documents */}
+            <div className="space-y-3 pt-4 border-t border-gray-100">
+              <h4 className="text-sm font-semibold text-gray-600">
                 Optional Documents:
               </h4>
               <ul className="space-y-2">
@@ -151,15 +161,24 @@ export default function ConsentChecklist() {
         </div>
 
         {/* USA Section */}
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-800 text-center lg:text-left">
-            USA
-          </h3>
+        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+          <div className="flex items-center justify-center mb-4">
+            <div className="overflow-hidden">
+              <Image
+                src="/assets/logos/AmericaFlag.png"
+                alt="USA Flag"
+                width={40}
+                height={40}
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-800">USA</h3>
+          </div>
 
-          <div className="space-y-3">
+          <div className="space-y-4">
             {/* Required Documents */}
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium text-gray-700">
+            <div className="space-y-3">
+              <h4 className="text-sm font-semibold text-gray-800 border-b border-gray-200 pb-2">
                 Required Documents:
               </h4>
               <ul className="space-y-2">
@@ -199,12 +218,15 @@ export default function ConsentChecklist() {
                     {t("start.USAChecklist.Passport")}
                   </span>
                 </li>
+                {/* Invisible placeholders to align with Canada's 6 items */}
+                <li className="invisible h-5"></li>
+                <li className="invisible h-5"></li>
               </ul>
             </div>
 
-            {/* Divider */}
-            <div className="border-t border-gray-200 pt-3">
-              <h4 className="text-sm font-medium text-gray-600 mb-2">
+            {/* Optional Documents */}
+            <div className="space-y-3 pt-4 border-t border-gray-100">
+              <h4 className="text-sm font-semibold text-gray-600">
                 Optional Documents:
               </h4>
               <ul className="space-y-2">

@@ -46,7 +46,7 @@
     "ensureDoc": "Please ensure you have the documents listed below to complete this application process",
     "continue": "Continue to Application",
     "estimatedTime": "Estimated time: 15–20 minutes",
-    "agreeToTerms": "I agree to the company's polices & Data Usage principles",
+    "agreeToTerms": "I agree to the Terms & Conditions and Privacy Policy",
 
     "CanadaDocChecklist": {
       "driverLicense": "Driver's License",
@@ -71,35 +71,55 @@
       "bankingInfo": "Banking Info (For Incorporate)"
     },
 
+    "termsModal": {
+      "title": "Terms & Conditions",
+      "intro": "Please review the terms below. To continue, confirm your agreement.",
+      "points": {
+        "accurateInfo": "All information I provide will be accurate and truthful.",
+        "digitalProcess": "I understand this is a digital application and that records may be stored electronically.",
+        "truthfulInfo": "I confirm that all information I submit is true and accurate.",
+        "applicationType": "I acknowledge my selected application type (contractor or employee) in this application.",
+        "rulesTitle": "I understand and agree to the following company rules:",
+        "drugPolicy": "Drug & Alcohol policies",
+        "dashCam": "Dash cam recording in vehicles",
+        "safetyRules": "Speed limits, incident reporting, and no phone use while driving",
+        "seals": "Trailer seals and cross-border inspection requirements",
+        "laws": "I am responsible for complying with Canadian and U.S. trucking laws."
+      },
+      "masterConsent": "I have read and agree to the Terms & Conditions listed above.",
+      "cancel": "Cancel",
+      "next": "I Agree & Continue"
+    },
+
     "policiesModal": {
-      "title": "Polices & Data Usage Notice",
-      "sub-title": "As part of your application to become a driver with [Company Name], we are required to collect certain personal information to confirm your qualifications and comply with legal and safety regulations",
+      "title": "Policies & Data Usage Notice",
+      "sub-title": "As part of your application to become a driver with [Company Name], we collect and use certain personal information to confirm your qualifications and comply with legal and safety requirements.",
       "section": {
-        "WhatInfo": "What information we collect:",
-        "WhatInfoItems": {
-          "itemOne": "Your personal details (name, address, contact information)",
-          "itemTwo": "Your driver’s license and driving record (abstract)",
+        "whatInfo": "What information we collect",
+        "whatInfoItems": {
+          "itemOne": "Personal details (name, address, contact information)",
+          "itemTwo": "Driver’s licence details and driving record (abstract)",
           "itemThree": "Employment history and references",
           "itemFour": "Results of background checks and drug/alcohol testing"
         },
         "whyInfo": "Why we collect this information",
-        "WhyInfoItems": {
-          "itemOne": "To verify that you meet legal requirements for commercial driving",
+        "whyInfoItems": {
+          "itemOne": "To verify you meet legal requirements for commercial driving",
           "itemTwo": "To ensure workplace and road safety",
           "itemThree": "To complete background and employment checks as required by law",
           "itemFour": "To maintain accurate employment and compliance records"
         },
         "whoInfo": "Who has access to this information",
-        "WhoInfoItems": {
+        "whoInfoItems": {
           "itemOne": "[Company Name] Human Resources and Compliance teams",
-          "itemTwo": "Regulatory authorities (e.g., Transport Canada, FMCSA if cross-border)",
+          "itemTwo": "Regulatory authorities (e.g., Transport Canada; FMCSA if cross-border)",
           "itemThree": "Authorized third parties (e.g., background check providers, insurers)"
         },
         "howLong": "How long we keep your information",
-        "duration": "Your information will be securely stored for the period required by law (typically 3–7 years, depending on the document type and jurisdiction)."
+        "duration": "Your information will be securely stored for the period required by law (typically 3–7 years, depending on document type and jurisdiction)."
       },
-      "cancel": "Cancel",
-      "agree": "I Agree"
+      "back": "Back",
+      "agree": "I Agree & Finish"
     }
   },
   "company": {

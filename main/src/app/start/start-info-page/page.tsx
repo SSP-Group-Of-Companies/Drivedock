@@ -102,7 +102,7 @@ function StartPageContent() {
         </div>
 
         {/* Consent Card */}
-        <div className="w-full max-w-lg bg-white p-6 rounded-xl shadow-md">
+        <div className="w-full max-w-2xl bg-white p-6 rounded-xl shadow-md">
           <h2 className="text-lg font-semibold mb-1">
             {t("start.beforeYouBegin")}
           </h2>
