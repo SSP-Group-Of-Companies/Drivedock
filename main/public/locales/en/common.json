@@ -70,6 +70,10 @@
       "IncorporateDocuments": "Incorporate documents",
       "bankingInfo": "Banking Info (For Incorporate)"
     },
+    "docs": {
+      "OptionalDocuments": "Optional Documents:",
+      "RequiredDocuments": "Required Documents:"
+    },
 
     "termsModal": {
       "title": "Terms & Conditions",

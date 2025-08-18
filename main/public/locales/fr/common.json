@@ -65,6 +65,10 @@
       "IncorporateDocuments": "Documents de constitution (incorporation)",
       "bankingInfo": "Informations bancaires (pour les sociétés incorporées)"
     },
+    "docs": {
+      "OptionalDocuments": "Documents facultatifs :",
+      "RequiredDocuments": "Documents obligatoires :"
+    },
 
     "policiesModal": {
       "title": "Avis sur les politiques et l'utilisation des données",

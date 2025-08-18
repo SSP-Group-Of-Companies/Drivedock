@@ -65,6 +65,10 @@
       "IncorporateDocuments": "Documentos de constitución (empresa)",
       "bankingInfo": "Información bancaria (para empresa constituida)"
     },
+    "docs": {
+      "OptionalDocuments": "Documentos opcionales:",
+      "RequiredDocuments": "Documentos obligatorios:"
+    },
 
     "policiesModal": {
       "title": "Aviso de políticas y uso de datos",

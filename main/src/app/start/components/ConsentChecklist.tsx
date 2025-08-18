@@ -62,7 +62,7 @@ export default function ConsentChecklist() {
             {/* Required Documents */}
             <div className="space-y-3">
               <h4 className="text-sm font-semibold text-gray-800 border-b border-gray-200 pb-2">
-                Required Documents:
+                {t("start.docs.RequiredDocuments")}
               </h4>
               <ul className="space-y-2">
                 <li className="flex items-start gap-3">
@@ -125,7 +125,7 @@ export default function ConsentChecklist() {
             {/* Optional Documents */}
             <div className="space-y-3 pt-4 border-t border-gray-100">
               <h4 className="text-sm font-semibold text-gray-600">
-                Optional Documents:
+                {t("start.docs.OptionalDocuments")}
               </h4>
               <ul className="space-y-2">
                 <li className="flex items-start gap-3">
@@ -179,7 +179,7 @@ export default function ConsentChecklist() {
             {/* Required Documents */}
             <div className="space-y-3">
               <h4 className="text-sm font-semibold text-gray-800 border-b border-gray-200 pb-2">
-                Required Documents:
+                {t("start.docs.RequiredDocuments")}
               </h4>
               <ul className="space-y-2">
                 <li className="flex items-start gap-3">
@@ -227,7 +227,7 @@ export default function ConsentChecklist() {
             {/* Optional Documents */}
             <div className="space-y-3 pt-4 border-t border-gray-100">
               <h4 className="text-sm font-semibold text-gray-600">
-                Optional Documents:
+                {t("start.docs.OptionalDocuments")}
               </h4>
               <ul className="space-y-2">
                 <li className="flex items-start gap-3">
