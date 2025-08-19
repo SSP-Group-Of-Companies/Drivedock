@@ -60,10 +60,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     onboardingDoc.forms.policiesConsents = updatedDoc.id;
-    console.log(onboardingDoc.status);
     onboardingDoc.status = advanceProgress(onboardingDoc.status, EStepPath.POLICIES_CONSENTS);
 
-    console.log(onboardingDoc.status);
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();
     await onboardingDoc.save();
 
