@@ -60,7 +60,7 @@ import {
   ETeamStatus,
   IPreQualifications,
 } from "@/types/preQualifications.types";
-import { ITrackerContext } from "@/types/onboardingTracker.type";
+import { ITrackerContext } from "@/types/onboardingTracker.types";
 
 /**
  * RHF form shape used on this page.

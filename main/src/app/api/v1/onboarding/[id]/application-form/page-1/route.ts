@@ -3,15 +3,14 @@ import { decryptString, encryptString, hashString } from "@/lib/utils/cryptoUtil
 import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
 import connectDB from "@/lib/utils/connectDB";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
-import { FORM_RESUME_EXPIRES_AT_IN_MILSEC } from "@/config/env";
 import { isValidSIN, isValidPhoneNumber, isValidEmail, isValidDOB } from "@/lib/utils/validationUtils";
 import { hasRecentAddressCoverage } from "@/lib/utils/hasMinimumAddressDuration";
-import { buildTrackerContext, advanceStatus, onboardingExpired } from "@/lib/utils/onboardingUtils";
+import { advanceProgress, buildTrackerContext, nextResumeExpiry, onboardingExpired } from "@/lib/utils/onboardingUtils";
 import { deleteS3Objects, finalizePhoto } from "@/lib/utils/s3Upload";
 import { ES3Folder } from "@/types/aws.types";
 import { S3_SUBMISSIONS_FOLDER, S3_TEMP_FOLDER } from "@/constants/aws";
 import { IApplicationFormPage1, ILicenseEntry } from "@/types/applicationForm.types";
-import { EStepPath } from "@/types/onboardingTracker.type";
+import { EStepPath } from "@/types/onboardingTracker.types";
 import { isValidObjectId } from "mongoose";
 import { parseJsonBody } from "@/lib/utils/reqParser";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
@@ -72,7 +71,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     // ----------------------------------------------------------------
     // Phase 1 — Write *only page1* subtree, validate *only page1*
     // ----------------------------------------------------------------
-    const tempLicenses: ILicenseEntry[] = page1.licenses.map((lic) => ({ ...lic }));
+    const tempLicenses: ILicenseEntry[] = page1.licenses.map((lic) => ({
+      ...lic,
+    }));
     const tempSinPhoto = page1.sinPhoto;
 
     const page1ToSave: Omit<IApplicationFormPage1, "sin"> = {
@@ -176,8 +177,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       onboardingDoc.sinHash = sinHash;
       onboardingDoc.sinEncrypted = sinEncrypted;
     }
-    onboardingDoc.status = advanceStatus(onboardingDoc.status, EStepPath.APPLICATION_PAGE_1);
-    onboardingDoc.resumeExpiresAt = new Date(Date.now() + Number(FORM_RESUME_EXPIRES_AT_IN_MILSEC));
+    onboardingDoc.status = advanceProgress(onboardingDoc.status, EStepPath.APPLICATION_PAGE_1);
+    onboardingDoc.resumeExpiresAt = nextResumeExpiry();
     await onboardingDoc.save();
 
     return successResponse(200, "ApplicationForm Page 1 updated", {
@@ -221,10 +222,6 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
     if (!appFormDoc.page1) {
       return errorResponse(404, "Page 1 of the application form not found");
     }
-
-    // update tracker current step
-    onboardingDoc.status.currentStep = EStepPath.APPLICATION_PAGE_1;
-    await onboardingDoc.save();
 
     return successResponse(200, "Page 1 data retrieved", {
       onboardingContext: buildTrackerContext(onboardingDoc),

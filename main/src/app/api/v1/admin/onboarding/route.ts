@@ -2,33 +2,30 @@ import { NextRequest } from "next/server";
 import connectDB from "@/lib/utils/connectDB";
 import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
-import mongoose from "mongoose";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
+import CarriersEdgeTraining from "@/mongoose/models/CarriersEdgeTraining";
+import DrugTest from "@/mongoose/models/DrugTest";
+import { EStepPath } from "@/types/onboardingTracker.types";
+import { onboardingStepFlow } from "@/lib/utils/onboardingUtils";
+import type { DashboardOnboardingItem } from "@/types/adminDashboard.types";
 
-// -------------------------
-// Helper
-// -------------------------
-const { Types } = mongoose;
-
+// ---------- helpers ----------
 function toBool(v: string | null): boolean | undefined {
   if (v == null) return undefined;
   if (v === "true") return true;
   if (v === "false") return false;
   return undefined;
 }
-
 function toNumber(v: string | null): number | undefined {
-  if (v == null) return undefined;
+  if (!v) return undefined;
   const n = Number(v);
   return Number.isFinite(n) ? n : undefined;
 }
-
 function toDate(v: string | null): Date | undefined {
   if (!v) return undefined;
   const d = new Date(v);
   return isNaN(d.getTime()) ? undefined : d;
 }
-
 function toArray(v: string | null): string[] | undefined {
   if (!v) return undefined;
   return v
@@ -36,162 +33,51 @@ function toArray(v: string | null): string[] | undefined {
     .map((s) => s.trim())
     .filter(Boolean);
 }
-
-function isValidObjectId(id: string): boolean {
-  // Using mongoose's validation covers both 24-hex and ObjectId construction edge cases
-  return Types.ObjectId.isValid(id);
-}
-
-function toObjectIdArray(ids: string[] | undefined): mongoose.Types.ObjectId[] | undefined {
-  if (!ids || !ids.length) return undefined;
-  const filtered = ids.filter(isValidObjectId);
-  return filtered.map((s) => new Types.ObjectId(s));
-}
-
-function buildSort(sortParam: string | null): Record<string, 1 | -1> {
-  if (!sortParam) return { createdAt: -1 };
-  // e.g. "createdAt:-1,updatedAt:1,status.currentStep:-1"
-  const sort: Record<string, 1 | -1> = {};
-  sortParam.split(",").forEach((entry) => {
-    const [field, dirRaw] = entry.split(":").map((x) => x.trim());
-    if (!field) return;
-    const dir = dirRaw === "-1" || dirRaw?.toLowerCase() === "desc" ? -1 : 1;
-    sort[field] = dir;
-  });
-  return Object.keys(sort).length ? sort : { createdAt: -1 };
-}
-
 function escapeRegex(input: string) {
   return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-/**
- * For population, allow:
- *   populate=driverApplication,preQualification,policiesConsents
- *   populateSelect[driverApplication]=page1,licenses
- *   populateSelect[preQualification]=field1,field2
- *   populateSelect[policiesConsents]=signatureUrl,consents
- */
-function buildPopulateOptions(searchParams: URLSearchParams) {
-  const populateRaw = toArray(searchParams.get("populate")); // list of form refs
-  if (!populateRaw?.length) return [];
+// ---------- sort parsing ----------
+function buildSort(sortParam: string | null) {
+  if (!sortParam) return { spec: { updatedAt: -1 } };
+  const token = sortParam.trim();
 
-  type Pop = {
-    path: string;
-    select?: string;
-  };
-
-  const map: Record<string, string> = {
-    driverApplication: "forms.driverApplication",
-    preQualification: "forms.preQualification",
-    policiesConsents: "forms.policiesConsents",
-  };
-
-  const pops: Pop[] = [];
-
-  for (const token of populateRaw) {
-    const path = map[token];
-    if (!path) continue;
-
-    // populateSelect[driverApplication]=page1,licenses
-    const selectKey = `populateSelect[${token}]`;
-    const selectList = toArray(searchParams.get(selectKey));
-    pops.push({
-      path,
-      select: selectList?.join(" "),
-    });
+  if (["driverNameAsc", "driverNameDesc", "progress:asc", "progress:desc"].includes(token)) {
+    return { token };
   }
 
-  return pops;
+  const spec: Record<string, 1 | -1> = {};
+  for (const entry of token.split(",")) {
+    const [field, dirRaw] = entry.split(":").map((x) => x.trim());
+    if (!field) continue;
+    const dir = dirRaw === "-1" || dirRaw?.toLowerCase() === "desc" ? -1 : 1;
+    spec[field] = dir;
+  }
+  return Object.keys(spec).length ? { spec } : { spec: { updatedAt: -1 } };
 }
 
-/**
- * Build a flexible filter object for Mongoose `find`.
- * Accepts both exact values and arrays, plus date ranges.
- *
- * Supported keys (examples):
- * - ids=... (comma list of _id)
- * - sinHash=... (exact) or sinHashRegex=... (regex)
- * - companyId=CANADA_SSP (exact or list: companyId=ID1,ID2)
- * - applicationType=..., status.currentStep=..., status.completedStep=...
- * - forms.preQualification=..., forms.driverApplication=..., forms.policiesConsents=...
- * - createdAtFrom=ISO, createdAtTo=ISO
- * - updatedAtFrom=ISO, updatedAtTo=ISO
- * - resumeExpiresFrom=ISO, resumeExpiresTo=ISO
- * - isExpired=true|false (shortcut using resumeExpiresAt vs now)
- * - q (generic text: will try sinHash AND name search if provided)
- *
- * Plus: driverName=... OR driverFirst=... & driverLast=...
- */
-async function buildFilter(searchParams: URLSearchParams) {
+// ---------- base filter ----------
+async function buildBaseFilter(searchParams: URLSearchParams) {
   const filter: Record<string, any> = {};
 
-  // Generic ID filter
-  const ids = toArray(searchParams.get("ids"));
-  const idsObj = toObjectIdArray(ids);
-  if (ids && !ids.length) {
-    // no ids provided -> nothing
-  } else if (ids && ids.length && (!idsObj || idsObj.length === 0)) {
-    // only invalid ids were provided -> ensure no match
-    filter._id = { $in: [] };
-  } else if (idsObj && idsObj.length) {
-    filter._id = { $in: idsObj };
-  }
-
-  // SIN hash filters
-  const sinHash = searchParams.get("sinHash");
-  if (sinHash) {
-    filter.sinHash = sinHash.trim();
-  }
-  const sinHashRegex = searchParams.get("sinHashRegex");
-  if (sinHashRegex) {
-    filter.sinHash = { $regex: escapeRegex(sinHashRegex.trim()), $options: "i" };
-  }
-
-  // Company / type
   const companyIds = toArray(searchParams.get("companyId"));
-  if (companyIds?.length) {
-    filter.companyId = { $in: companyIds };
-  }
+  if (companyIds?.length) filter.companyId = { $in: companyIds };
+
   const applicationTypes = toArray(searchParams.get("applicationType"));
-  if (applicationTypes?.length) {
-    filter.applicationType = { $in: applicationTypes };
+  if (applicationTypes?.length) filter.applicationType = { $in: applicationTypes };
+
+  const completed = toBool(searchParams.get("completed"));
+  if (typeof completed === "boolean") filter["status.completed"] = completed;
+
+  // terminated=true  -> only true
+  // terminated=false or absent -> false OR missing
+  const terminated = toBool(searchParams.get("terminated"));
+  if (terminated === true) {
+    filter.terminated = true;
+  } else {
+    filter.$or = [{ terminated: false }, { terminated: { $exists: false } }];
   }
 
-  // Status fields
-  const currentStep = searchParams.get("status.currentStep");
-  if (currentStep) filter["status.currentStep"] = currentStep;
-  const completedStep = searchParams.get("status.completedStep");
-  if (completedStep) filter["status.completedStep"] = completedStep;
-  const statusState = searchParams.get("status.state");
-  if (statusState) filter["status.state"] = statusState;
-
-  // Forms by ObjectId (sanitize!)
-  const preQ = toArray(searchParams.get("forms.preQualification"));
-  const preQObj = toObjectIdArray(preQ);
-  if (preQ && preQ.length && (!preQObj || preQObj.length === 0)) {
-    filter["forms.preQualification"] = { $in: [] };
-  } else if (preQObj && preQObj.length) {
-    filter["forms.preQualification"] = { $in: preQObj };
-  }
-
-  const driverApp = toArray(searchParams.get("forms.driverApplication"));
-  const driverAppObj = toObjectIdArray(driverApp);
-  if (driverApp && driverApp.length && (!driverAppObj || driverAppObj.length === 0)) {
-    filter["forms.driverApplication"] = { $in: [] };
-  } else if (driverAppObj && driverAppObj.length) {
-    filter["forms.driverApplication"] = { $in: driverAppObj };
-  }
-
-  const polCon = toArray(searchParams.get("forms.policiesConsents"));
-  const polConObj = toObjectIdArray(polCon);
-  if (polCon && polCon.length && (!polConObj || polConObj.length === 0)) {
-    filter["forms.policiesConsents"] = { $in: [] };
-  } else if (polConObj && polConObj.length) {
-    filter["forms.policiesConsents"] = { $in: polConObj };
-  }
-
-  // Date ranges
   const createdAtFrom = toDate(searchParams.get("createdAtFrom"));
   const createdAtTo = toDate(searchParams.get("createdAtTo"));
   if (createdAtFrom || createdAtTo) {
@@ -208,145 +94,268 @@ async function buildFilter(searchParams: URLSearchParams) {
     if (updatedAtTo) filter.updatedAt.$lte = updatedAtTo;
   }
 
-  const resumeFrom = toDate(searchParams.get("resumeExpiresFrom"));
-  const resumeTo = toDate(searchParams.get("resumeExpiresTo"));
-  if (resumeFrom || resumeTo) {
-    filter.resumeExpiresAt = {};
-    if (resumeFrom) filter.resumeExpiresAt.$gte = resumeFrom;
-    if (resumeTo) filter.resumeExpiresAt.$lte = resumeTo;
-  }
+  // Robust name search:
+  // Supports: "john", "doe", "john doe", "johndoe", "john, doe", and wild spacing.
+  const driverNameInput = searchParams.get("driverName") || "";
+  const driverNameRaw = driverNameInput.trim();
 
-  // isExpired shortcut (based on resumeExpiresAt)
-  const isExpired = toBool(searchParams.get("isExpired"));
-  if (typeof isExpired === "boolean") {
-    const now = new Date();
-    filter.resumeExpiresAt = filter.resumeExpiresAt || {};
-    if (isExpired) {
-      filter.resumeExpiresAt.$lt = now;
-    } else {
-      filter.resumeExpiresAt.$gte = now;
-    }
-  }
+  if (driverNameRaw) {
+    // 1) tokens from commas/whitespace
+    const tokens = driverNameRaw.split(/[,\s]+/).filter(Boolean);
 
-  // Generic q: try sinHash regex
-  const q = searchParams.get("q");
-  if (q && !filter.sinHash) {
-    const rx = new RegExp(escapeRegex(q), "i");
-    filter.$or = (filter.$or || []).concat([{ sinHash: rx }]);
-  }
+    // 2) a "squashed" query (strip non-alphanumerics)
+    const squashedQuery = driverNameRaw.replace(/[^A-Za-z0-9]/g, "");
+    // Build a regex string that allows any non-alphanumerics between characters:
+    // "johndoe" -> "j[^A-Za-z0-9]*o[^A-Za-z0-9]*h...e"
+    const fuzzyBetween = "[^A-Za-z0-9]*";
+    const fuzzyPattern = squashedQuery
+      .split("")
+      .map((ch) => escapeRegex(ch))
+      .join(fuzzyBetween);
 
-  // Driver name search (firstname/lastname) OR driverName param
-  const driverName = searchParams.get("driverName") || undefined;
-  const driverFirst = searchParams.get("driverFirst") || undefined;
-  const driverLast = searchParams.get("driverLast") || undefined;
+    // JS regex for first/last direct matches (used in a normal .find query)
+    const rxWhole = new RegExp(escapeRegex(driverNameRaw), "i");
 
-  let mustSearchName = false;
-  const nameOrs: any[] = [];
-  if (driverName) {
-    mustSearchName = true;
-    const rx = new RegExp(escapeRegex(driverName.trim()), "i");
-    nameOrs.push({ "page1.firstName": rx }, { "page1.lastName": rx }, { "page1.fullName": rx });
-  } else {
-    if (driverFirst) {
-      mustSearchName = true;
-      nameOrs.push({ "page1.firstName": new RegExp(escapeRegex(driverFirst.trim()), "i") });
-    }
-    if (driverLast) {
-      mustSearchName = true;
-      nameOrs.push({ "page1.lastName": new RegExp(escapeRegex(driverLast.trim()), "i") });
-    }
-  }
+    // Tokenized constraints (each token must appear in first OR last)
+    const andPerToken =
+      tokens.length > 0
+        ? tokens.map((tok) => {
+            const rx = new RegExp(escapeRegex(tok), "i");
+            return { $or: [{ "page1.firstName": rx }, { "page1.lastName": rx }] };
+          })
+        : [];
 
-  if (mustSearchName) {
-    const appIds = await ApplicationForm.find({ $or: nameOrs }, { _id: 1 }).lean();
+    // Compose the ApplicationForm name query (no $regexReplace needed)
+    const appFormNameQuery: any = {
+      $or: [
+        ...(andPerToken.length ? [{ $and: andPerToken }] : []),
+        { "page1.firstName": rxWhole },
+        { "page1.lastName": rxWhole },
+        {
+          // "johndoe" matches "john....doe" (any punctuation/spaces between chars)
+          $expr: {
+            $regexMatch: {
+              input: {
+                $concat: [{ $ifNull: ["$page1.firstName", ""] }, { $ifNull: ["$page1.lastName", ""] }],
+              },
+              regex: fuzzyPattern, // <- string pattern, not $regexReplace
+              options: "i",
+            },
+          },
+        },
+      ],
+    };
 
-    const idList = appIds.map((d: any) => d._id as mongoose.Types.ObjectId);
+    const appIdsDocs = await ApplicationForm.find(appFormNameQuery, { _id: 1 }).lean();
 
-    // If user also passed forms.driverApplication filter, intersect them
-    if (filter["forms.driverApplication"]?.$in) {
-      const existing: mongoose.Types.ObjectId[] = filter["forms.driverApplication"].$in;
-      const set = new Set(existing.map(String));
-      const intersect = idList.filter((x) => set.has(String(x)));
-      filter["forms.driverApplication"] = { $in: intersect }; // if empty -> matches nothing
-      if (intersect.length === 0) {
-        // Explicitly force no matches without causing cast errors
-        filter["forms.driverApplication"] = { $in: [] };
-      }
-    } else {
-      // No prior filter; constrain by name result
-      filter["forms.driverApplication"] = { $in: idList };
-      if (idList.length === 0) {
-        filter["forms.driverApplication"] = { $in: [] };
-      }
-    }
+    const objIds = appIdsDocs.map((d: any) => d._id);
+    const strIds = objIds.map((id: any) => id.toString());
+
+    // Constrain trackers by driverApplication (ObjectId or legacy string)
+    const driverAppConstraint = {
+      $or: [{ "forms.driverApplication": { $in: objIds } }, { "forms.driverApplication": { $in: strIds } }],
+    };
+
+    if (filter.$and) filter.$and.push(driverAppConstraint);
+    else filter.$and = [driverAppConstraint];
   }
 
   return filter;
 }
 
-// -------------------------
+// ===============================================================
 // GET handler
-// -------------------------
+// ===============================================================
 export async function GET(req: NextRequest) {
   try {
     await connectDB();
-
     const { searchParams } = new URL(req.url);
 
-    // Pagination
+    const appFormColl = ApplicationForm.collection.name;
+    const ceColl = CarriersEdgeTraining.collection.name;
+    const dtColl = DrugTest.collection.name;
+
     const page = Math.max(1, toNumber(searchParams.get("page")) ?? 1);
     const limit = Math.max(1, Math.min(200, toNumber(searchParams.get("limit")) ?? 20));
     const skip = (page - 1) * limit;
 
-    // Fields projection
-    // e.g. select="_id,companyId,status.currentStep,createdAt"
-    const selectList = toArray(searchParams.get("select"));
-    const select = selectList?.length ? selectList.join(" ") : undefined;
+    const sortParsed = buildSort(searchParams.get("sort") || "updatedAt:desc");
+    const baseFilter = await buildBaseFilter(searchParams);
 
-    // Sorting
-    const sort = buildSort(searchParams.get("sort"));
+    const currentStep = (searchParams.get("currentStep") || searchParams.get("status.currentStep")) as EStepPath | undefined;
 
-    // Populate
-    const populateOptions = buildPopulateOptions(searchParams);
+    const ceEmailSent = toBool(searchParams.get("carriersEdgeTrainingEmailSent"));
+    const dtDocsUploaded = toBool(searchParams.get("drugTestDocumentsUploaded"));
 
-    // Count only?
-    const countOnly = toBool(searchParams.get("countOnly")) === true;
+    // ---------------- pipeline ----------------
+    const matchBase: Record<string, any> = { ...baseFilter };
+    const matchItems: Record<string, any> = { ...baseFilter };
 
-    // Build filter (includes optional driver name expansion)
-    const filter = await buildFilter(searchParams);
-
-    // Count first (so sort/skip/limit isn't applied to counting)
-    const totalPromise = OnboardingTracker.countDocuments(filter);
-
-    if (countOnly) {
-      const total = await totalPromise;
-      return successResponse(200, "Onboarding trackers count", {
-        page,
-        limit,
-        total,
-        totalPages: Math.max(1, Math.ceil(total / limit)),
-        filterUsed: filter,
-      });
+    if (currentStep) matchItems["status.currentStep"] = currentStep;
+    if (typeof ceEmailSent === "boolean" && !currentStep) {
+      matchItems["status.currentStep"] = EStepPath.CARRIERS_EDGE_TRAINING;
+    }
+    if (typeof dtDocsUploaded === "boolean" && !currentStep) {
+      matchItems["status.currentStep"] = EStepPath.DRUG_TEST;
     }
 
-    // Query chain (no reassign -> avoids TS generic mismatch)
-    const q = OnboardingTracker.find(filter).sort(sort).skip(skip).limit(limit).lean();
+    const sortStage =
+      (sortParsed as any).token === "driverNameAsc"
+        ? { $sort: { driverName: 1 } }
+        : (sortParsed as any).token === "driverNameDesc"
+        ? { $sort: { driverName: -1 } }
+        : (sortParsed as any).token === "progress:asc"
+        ? { $sort: { progressStepIndex: 1 } }
+        : (sortParsed as any).token === "progress:desc"
+        ? { $sort: { progressStepIndex: -1 } }
+        : { $sort: (sortParsed as any).spec };
 
-    if (select) q.select(select);
-    if (populateOptions.length) q.populate(populateOptions as any);
+    const pipeline: any[] = [
+      { $match: matchItems },
 
-    const [items, total] = await Promise.all([q.exec(), totalPromise]);
+      // Normalize forms.driverApplication → ObjectId (handles legacy strings)
+      {
+        $addFields: {
+          driverApplicationId: {
+            $cond: [
+              { $eq: [{ $type: "$forms.driverApplication" }, "objectId"] },
+              "$forms.driverApplication",
+              {
+                $cond: [{ $eq: [{ $type: "$forms.driverApplication" }, "string"] }, { $toObjectId: "$forms.driverApplication" }, null],
+              },
+            ],
+          },
+        },
+      },
+
+      // --- lookups ---
+      {
+        $lookup: {
+          from: appFormColl,
+          localField: "driverApplicationId",
+          foreignField: "_id",
+          as: "driverApp",
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                driverName: {
+                  $let: {
+                    vars: {
+                      fn: { $ifNull: ["$page1.firstName", ""] },
+                      ln: { $ifNull: ["$page1.lastName", ""] },
+                    },
+                    in: { $trim: { input: { $concat: ["$$fn", " ", "$$ln"] } } },
+                  },
+                },
+                email: "$page1.email",
+              },
+            },
+          ],
+        },
+      },
+      {
+        $lookup: {
+          from: ceColl,
+          localField: "forms.carriersEdgeTraining",
+          foreignField: "_id",
+          as: "ce",
+          pipeline: [{ $project: { _id: 1, emailSent: 1 } }],
+        },
+      },
+      {
+        $lookup: {
+          from: dtColl,
+          localField: "forms.drugTest",
+          foreignField: "_id",
+          as: "dt",
+          pipeline: [{ $project: { _id: 1, documentsUploaded: 1 } }],
+        },
+      },
+
+      // --- derive fields used for sorting/matching and summary ---
+      { $addFields: { driverAppObj: { $arrayElemAt: ["$driverApp", 0] } } },
+      {
+        $addFields: {
+          driverName: { $ifNull: ["$driverAppObj.driverName", null] },
+          driverEmail: { $ifNull: ["$driverAppObj.email", null] },
+          ceEmailSent: { $ifNull: [{ $first: "$ce.emailSent" }, false] },
+          dtDocumentsUploaded: { $ifNull: [{ $first: "$dt.documentsUploaded" }, false] },
+          progressStepIndex: { $indexOfArray: [onboardingStepFlow, "$status.currentStep"] },
+        },
+      },
+
+      ...(typeof ceEmailSent === "boolean" ? [{ $match: { "status.currentStep": EStepPath.CARRIERS_EDGE_TRAINING, ceEmailSent } }] : []),
+      ...(typeof dtDocsUploaded === "boolean" ? [{ $match: { "status.currentStep": EStepPath.DRUG_TEST, dtDocumentsUploaded: dtDocsUploaded } }] : []),
+
+      sortStage,
+      { $skip: skip },
+      { $limit: limit },
+
+      {
+        $addFields: {
+          itemSummary: {
+            driverName: "$driverName",
+            driverEmail: "$driverEmail",
+            carrierEdgeTraining: { emailSent: "$ceEmailSent" },
+            drugTest: { documentsUploaded: "$dtDocumentsUploaded" },
+          },
+        },
+      },
+
+      {
+        $project: {
+          _id: 1,
+          status: 1,
+          companyId: 1,
+          applicationType: 1,
+          createdAt: 1,
+          updatedAt: 1,
+          terminated: 1,
+          resumeExpiresAt: 1,
+          forms: 1,
+          itemSummary: 1,
+        },
+      },
+    ];
+
+    const [rawItems, total, counts] = await Promise.all([
+      OnboardingTracker.aggregate(pipeline).collation({ locale: "en", strength: 2 }).allowDiskUse(true),
+      OnboardingTracker.countDocuments(matchItems),
+      (async () => {
+        const [all, driveTest, ce, dt] = await Promise.all([
+          OnboardingTracker.countDocuments({ ...matchBase }),
+          OnboardingTracker.countDocuments({ ...matchBase, "status.currentStep": EStepPath.DRIVE_TEST }),
+          OnboardingTracker.countDocuments({
+            ...matchBase,
+            "status.currentStep": EStepPath.CARRIERS_EDGE_TRAINING,
+            ...(typeof ceEmailSent === "boolean" ? { "forms.carriersEdgeTraining": { $exists: true } } : {}),
+          }),
+          OnboardingTracker.countDocuments({
+            ...matchBase,
+            "status.currentStep": EStepPath.DRUG_TEST,
+            ...(typeof dtDocsUploaded === "boolean" ? { "forms.drugTest": { $exists: true } } : {}),
+          }),
+        ]);
+        return { all, driveTest, carriersEdgeTraining: ce, drugTest: dt };
+      })(),
+    ]);
+
+    const items = rawItems as DashboardOnboardingItem[];
 
     return successResponse(200, "Onboarding documents fetched", {
       page,
       limit,
       total,
       totalPages: Math.max(1, Math.ceil(total / limit)),
-      sort,
+      sort: (sortParsed as any).token || (sortParsed as any).spec,
       count: items.length,
+      counts,
       items,
     });
   } catch (err: any) {
-    return errorResponse(500, "Failed to fetch onboarding trackers", { error: err?.message ?? String(err) });
+    return errorResponse(500, "Failed to fetch onboarding trackers", {
+      error: err?.message ?? String(err),
+    });
   }
 }

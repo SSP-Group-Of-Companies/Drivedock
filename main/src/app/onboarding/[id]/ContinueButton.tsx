@@ -52,6 +52,115 @@ type ContinueButtonProps<T extends FieldValues> = {
   trackerId?: string;
 };
 
+// =====================
+// Deep compare helpers
+// =====================
+function isPlainObject(v: unknown): v is Record<string, unknown> {
+  return Object.prototype.toString.call(v) === "[object Object]";
+}
+
+function isDate(v: unknown): v is Date {
+  return v instanceof Date || (typeof v === "string" && !isNaN(Date.parse(v)));
+}
+
+function isFileLike(v: unknown): v is { name: string; size: number; type?: string; lastModified?: number } {
+  // Works in browser for File/Blob; remains safe in SSR (will just return false).
+  return !!v && typeof v === "object" && "name" in (v as any) && "size" in (v as any);
+}
+
+/**
+ * Normalize values for stable comparison:
+ * - Convert Date-like strings to Date timestamps
+ * - Convert File objects to a comparable shape
+ * - Remove undefined values (treat missing and undefined as equal)
+ * - Optionally treat "" and null as undefined (toggle by need)
+ */
+function normalizeForCompare<T>(input: T): any {
+  const seen = new WeakMap<object, any>();
+
+  const walk = (val: any): any => {
+    // Handle primitives
+    if (val === undefined) return undefined;
+    if (val === null) return undefined; // treat null ~ undefined (toggle off if you need strict)
+    if (typeof val === "string" && val.trim() === "") return undefined; // treat empty string ~ undefined (toggle off if needed)
+    if (typeof val !== "object") return Number.isNaN(val) ? "__NaN__" : val;
+
+    // Handle Date-like
+    if (isDate(val)) {
+      const d = val instanceof Date ? val : new Date(val);
+      return ["__Date__", d.getTime()];
+    }
+
+    // Handle File-like
+    if (isFileLike(val)) {
+      const f = val as any;
+      return ["__File__", f.name, f.size, f.type ?? "", f.lastModified ?? 0];
+    }
+
+    // Avoid cycles
+    if (seen.has(val)) return seen.get(val);
+
+    if (Array.isArray(val)) {
+      const out = val.map(walk).filter((x) => x !== undefined); // drop undefined entries
+      seen.set(val, out);
+      return out;
+    }
+
+    if (isPlainObject(val)) {
+      const out: Record<string, any> = {};
+      seen.set(val, out);
+      for (const key of Object.keys(val).sort()) {
+        const v = walk(val[key]);
+        if (v !== undefined) out[key] = v; // remove undefined keys
+      }
+      return out;
+    }
+
+    // Fallback (Map/Set/etc.) – stringify as last resort
+    try {
+      return JSON.parse(JSON.stringify(val));
+    } catch {
+      return String(val);
+    }
+  };
+
+  return walk(input);
+}
+
+function deepEqual(a: any, b: any): boolean {
+  if (a === b) return true;
+
+  // NaN equality
+  if (typeof a === "number" && typeof b === "number" && Number.isNaN(a) && Number.isNaN(b)) {
+    return true;
+  }
+
+  // If types differ after normalization, they'll fail below
+  if (typeof a !== "object" || typeof b !== "object" || a == null || b == null) {
+    return false;
+  }
+
+  // Arrays
+  if (Array.isArray(a) && Array.isArray(b)) {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      if (!deepEqual(a[i], b[i])) return false;
+    }
+    return true;
+  }
+
+  // Objects
+  const aKeys = Object.keys(a);
+  const bKeys = Object.keys(b);
+  if (aKeys.length !== bKeys.length) return false;
+
+  for (const k of aKeys) {
+    if (!Object.prototype.hasOwnProperty.call(b, k)) return false;
+    if (!deepEqual(a[k], b[k])) return false;
+  }
+  return true;
+}
+
 export default function ContinueButton<T extends FieldValues>({ config, trackerId }: ContinueButtonProps<T>): ReactNode {
   // React Hook Form context for form state management
   const {
@@ -133,24 +242,20 @@ export default function ContinueButton<T extends FieldValues>({ config, trackerI
     try {
       setSubmitting(true);
 
-      // Step 4: No-op continue - skip PATCH if form hasn't changed
-      // Use a more reliable dirty check that handles boolean fields and deep comparisons
+      // =====================
+      // Step 4: No‑op continue
+      // =====================
       const formValues = getValues();
-      const hasChanges = Object.keys(formValues).some((key) => {
-        const currentValue = formValues[key as keyof typeof formValues];
-        const defaultValue = defaultValues?.[key as keyof typeof defaultValues];
 
-        // Handle arrays (like employments)
-        if (Array.isArray(currentValue) && Array.isArray(defaultValue)) {
-          return JSON.stringify(currentValue) !== JSON.stringify(defaultValue);
-        }
+      // Normalize both sides so comparison is stable and forgiving for empty/undefined/null
+      const normalizedCurrent = normalizeForCompare(formValues);
+      const normalizedDefault = normalizeForCompare(defaultValues ?? {});
 
-        // Handle primitive values
-        return currentValue !== defaultValue;
-      });
+      // Deep compare the whole form (covers nested objects & arrays)
+      const hasChanges = !deepEqual(normalizedCurrent, normalizedDefault);
 
       if (!isPost && !hasChanges) {
-        router.push(tracker?.nextUrl ?? resolvedConfig.nextRoute);
+        router.push(resolvedConfig.nextRoute);
         return;
       }
 

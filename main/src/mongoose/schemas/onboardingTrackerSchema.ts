@@ -1,11 +1,15 @@
 import mongoose, { Schema } from "mongoose";
-import { EStepPath, IOnboardingTrackerDoc } from "@/types/onboardingTracker.type";
+import { EStepPath, IOnboardingTrackerDoc } from "@/types/onboardingTracker.types";
 import { ECompanyApplicationType } from "@/hooks/frontendHooks/useCompanySelection";
 import PreQualifications from "../models/Prequalifications";
 import { decryptString } from "@/lib/utils/cryptoUtils";
 import PoliciesConsents from "../models/PoliciesConsents";
 import { ECompanyId } from "@/constants/companies";
 import ApplicationForm from "../models/ApplicationForm";
+import CarriersEdgeTraining from "../models/CarriersEdgeTraining";
+import DrugTest from "../models/DrugTest";
+import FlatbedTraining from "../models/FlatbedTraining";
+import DriveTest from "../models/DriveTest";
 
 const onboardingTrackerSchema = new Schema<IOnboardingTrackerDoc>(
   {
@@ -39,16 +43,9 @@ const onboardingTrackerSchema = new Schema<IOnboardingTrackerDoc>(
         },
         required: [true, "Current onboarding step is required."],
       },
-      completedStep: {
-        type: String,
-        enum: {
-          values: Object.values(EStepPath),
-          message: `Completed step must be one of: ${Object.values(EStepPath).join(", ")}`,
-        },
-        required: [true, "Completed onboarding step is required."],
-      },
       completed: {
         type: Boolean,
+        default: false,
         required: [true, "Completion status is required."],
       },
     },
@@ -73,21 +70,21 @@ const onboardingTrackerSchema = new Schema<IOnboardingTrackerDoc>(
         type: Schema.Types.ObjectId,
         ref: PoliciesConsents,
       },
-      carrierEdge: {
+      carriersEdgeTraining: {
         type: Schema.Types.ObjectId,
-        ref: "CarrierEdgeStatus",
+        ref: CarriersEdgeTraining,
       },
       driveTest: {
         type: Schema.Types.ObjectId,
-        ref: "DriveTest",
+        ref: DriveTest,
       },
       drugTest: {
         type: Schema.Types.ObjectId,
-        ref: "DrugTest",
+        ref: DrugTest,
       },
       flatbedTraining: {
         type: Schema.Types.ObjectId,
-        ref: "FlatbedTraining",
+        ref: FlatbedTraining,
       },
     },
     terminated: {
@@ -139,5 +136,28 @@ onboardingTrackerSchema.post("findOneAndDelete", async function (doc) {
 
   await Promise.all(tasks);
 });
+
+// ---------------------------------------------------------
+// INDEXES (crucial for dashboards / queries)
+// ---------------------------------------------------------
+onboardingTrackerSchema.index(
+  { terminated: 1, "status.currentStep": 1, updatedAt: -1 }, // dashboard default
+  { name: "terminated_step_updatedAt" }
+);
+
+onboardingTrackerSchema.index(
+  { terminated: 1, companyId: 1, "status.currentStep": 1, updatedAt: -1 }, // per-company
+  { name: "terminated_company_step_updatedAt" }
+);
+
+onboardingTrackerSchema.index(
+  { terminated: 1, createdAt: -1 }, // recent trackers
+  { name: "terminated_createdAt" }
+);
+
+onboardingTrackerSchema.index(
+  { terminated: 1, applicationType: 1, updatedAt: -1 }, // optional, if filtered often
+  { name: "terminated_appType_updatedAt" }
+);
 
 export default onboardingTrackerSchema;

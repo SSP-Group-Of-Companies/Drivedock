@@ -19,7 +19,7 @@ import {
 import ContinueButton from "@/app/onboarding/[id]/ContinueButton";
 import { page3ConfigFactory } from "@/lib/frontendConfigs/applicationFormConfigs/page3Config";
 import { useOnboardingTracker } from "@/store/useOnboardingTracker";
-import type { ITrackerContext } from "@/types/onboardingTracker.type";
+import type { ITrackerContext } from "@/types/onboardingTracker.types";
 
 // Import modular components
 import AccidentHistorySection from "./components/AccidentHistorySection";
