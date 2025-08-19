@@ -20,7 +20,7 @@ import ContinueButton from "@/app/onboarding/[id]/ContinueButton";
 import { page2ConfigFactory } from "@/lib/frontendConfigs/applicationFormConfigs/page2Config";
 import { useEffect } from "react";
 import { useOnboardingTracker } from "@/store/useOnboardingTracker";
-import type { ITrackerContext } from "@/types/onboardingTracker.type";
+import type { ITrackerContext } from "@/types/onboardingTracker.types";
 
 type Page2ClientProps = {
   defaultValues: ApplicationFormPage2Schema;

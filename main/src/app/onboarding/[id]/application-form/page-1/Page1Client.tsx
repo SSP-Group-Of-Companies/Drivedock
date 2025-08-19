@@ -42,7 +42,7 @@ import ContinueButton from "@/app/onboarding/[id]/ContinueButton";
 import { page1ConfigFactory } from "@/lib/frontendConfigs/applicationFormConfigs/page1Config";
 import { useEffect } from "react";
 import { useOnboardingTracker } from "@/store/useOnboardingTracker";
-import type { ITrackerContext } from "@/types/onboardingTracker.type";
+import type { ITrackerContext } from "@/types/onboardingTracker.types";
 
 /**
  * Props for Page1Client component

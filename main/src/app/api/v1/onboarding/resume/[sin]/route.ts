@@ -2,17 +2,11 @@ import { errorResponse } from "@/lib/utils/apiResponse";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import connectDB from "@/lib/utils/connectDB";
 import { hashString } from "@/lib/utils/cryptoUtils";
-import {
-  getOnboardingStepPaths,
-  onboardingExpired,
-} from "@/lib/utils/onboardingUtils";
+import { getOnboardingStepPaths, onboardingExpired } from "@/lib/utils/onboardingUtils";
 import { NextRequest } from "next/server";
 import { isValidSIN } from "@/lib/utils/validationUtils";
 
-export const GET = async (
-  req: NextRequest,
-  { params }: { params: Promise<{ sin: string }> }
-) => {
+export const GET = async (req: NextRequest, { params }: { params: Promise<{ sin: string }> }) => {
   try {
     await connectDB();
     const { sin } = await params;

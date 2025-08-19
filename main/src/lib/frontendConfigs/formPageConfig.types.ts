@@ -1,7 +1,7 @@
 // main/src/lib/frontendConfigs/formPageConfig.types.ts
 import { FieldValues } from "react-hook-form";
 import { IPreQualifications } from "@/types/preQualifications.types";
-import { ITrackerContext } from "@/types/onboardingTracker.type";
+import { ITrackerContext } from "@/types/onboardingTracker.types";
 
 export type BuildPayloadCtx = {
   prequalifications?: IPreQualifications;

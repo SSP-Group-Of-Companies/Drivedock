@@ -36,7 +36,7 @@
 
 import PreQualificationClient from "@/app/onboarding/[id]/prequalifications/PrequalificationClient";
 import { IPreQualifications } from "@/types/preQualifications.types";
-import { ITrackerContext } from "@/types/onboardingTracker.type";
+import { ITrackerContext } from "@/types/onboardingTracker.types";
 import { NEXT_PUBLIC_BASE_URL } from "@/config/env";
 
 /**

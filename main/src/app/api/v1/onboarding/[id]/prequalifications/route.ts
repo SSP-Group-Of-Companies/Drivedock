@@ -2,10 +2,9 @@ import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
 import PreQualifications from "@/mongoose/models/Prequalifications";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import connectDB from "@/lib/utils/connectDB";
-import { FORM_RESUME_EXPIRES_AT_IN_MILSEC } from "@/config/env";
 import { COMPANIES } from "@/constants/companies";
-import { advanceStatus, buildTrackerContext, onboardingExpired } from "@/lib/utils/onboardingUtils";
-import { EStepPath } from "@/types/onboardingTracker.type";
+import { advanceProgress, buildTrackerContext, nextResumeExpiry, onboardingExpired } from "@/lib/utils/onboardingUtils";
+import { EStepPath } from "@/types/onboardingTracker.types";
 import { isValidObjectId } from "mongoose";
 import { NextRequest } from "next/server";
 
@@ -60,8 +59,8 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     }
 
     // Step 5: Update onboarding tracker status
-    onboardingDoc.status = advanceStatus(onboardingDoc.status, EStepPath.PRE_QUALIFICATIONS);
-    onboardingDoc.resumeExpiresAt = new Date(Date.now() + Number(FORM_RESUME_EXPIRES_AT_IN_MILSEC));
+    onboardingDoc.status = advanceProgress(onboardingDoc.status, EStepPath.PRE_QUALIFICATIONS);
+    onboardingDoc.resumeExpiresAt = nextResumeExpiry();
     await onboardingDoc.save();
 
     return successResponse(200, "PreQualifications and onboarding tracker updated", {
@@ -94,10 +93,6 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
     if (preQualId) {
       preQualDoc = await PreQualifications.findById(preQualId);
     }
-
-    // update tracker current step
-    onboardingDoc.status.currentStep = EStepPath.PRE_QUALIFICATIONS;
-    await onboardingDoc.save();
 
     return successResponse(200, "PreQualifications data retrieved", {
       onboardingContext: buildTrackerContext(onboardingDoc),

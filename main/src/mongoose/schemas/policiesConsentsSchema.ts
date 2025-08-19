@@ -19,6 +19,8 @@ const policiesConsentsSchema = new Schema<IPoliciesConsentsDoc>(
   },
   {
     timestamps: true, // adds createdAt and updatedAt
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
   }
 );
 

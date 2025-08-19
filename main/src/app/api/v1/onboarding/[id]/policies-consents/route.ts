@@ -1,16 +1,15 @@
-import { FORM_RESUME_EXPIRES_AT_IN_MILSEC } from "@/config/env";
 import { errorResponse, successResponse } from "@/lib/utils/apiResponse";
 import connectDB from "@/lib/utils/connectDB";
 import PoliciesConsents from "@/mongoose/models/PoliciesConsents";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import { deleteS3Objects, finalizePhoto } from "@/lib/utils/s3Upload";
-import { EStepPath } from "@/types/onboardingTracker.type";
+import { EStepPath } from "@/types/onboardingTracker.types";
 import { isValidObjectId } from "mongoose";
 import { NextRequest } from "next/server";
 import { IPhoto } from "@/types/shared.types";
 import { IPoliciesConsents } from "@/types/policiesConsents.types";
 import { parseJsonBody } from "@/lib/utils/reqParser";
-import { advanceStatus, buildTrackerContext, hasCompletedStep, onboardingExpired } from "@/lib/utils/onboardingUtils";
+import { advanceProgress, buildTrackerContext, hasReachedStep, nextResumeExpiry, onboardingExpired } from "@/lib/utils/onboardingUtils";
 import { S3_SUBMISSIONS_FOLDER, S3_TEMP_FOLDER } from "@/constants/aws";
 import { ES3Folder } from "@/types/aws.types";
 
@@ -23,7 +22,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const onboardingDoc = await OnboardingTracker.findById(id);
     if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
 
-    if (!hasCompletedStep(onboardingDoc.status, EStepPath.APPLICATION_PAGE_5)) return errorResponse(400, "Please complete previous step first");
+    if (!hasReachedStep(onboardingDoc.status, EStepPath.APPLICATION_PAGE_5)) return errorResponse(400, "Please complete previous step first");
 
     const { signature, sendPoliciesByEmail } = await parseJsonBody<IPoliciesConsents>(req);
     const tempSignature = signature;
@@ -61,8 +60,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     onboardingDoc.forms.policiesConsents = updatedDoc.id;
-    onboardingDoc.status = advanceStatus(onboardingDoc.status, EStepPath.POLICIES_CONSENTS);
-    onboardingDoc.resumeExpiresAt = new Date(Date.now() + Number(FORM_RESUME_EXPIRES_AT_IN_MILSEC));
+    onboardingDoc.status = advanceProgress(onboardingDoc.status, EStepPath.POLICIES_CONSENTS);
+
+    onboardingDoc.resumeExpiresAt = nextResumeExpiry();
     await onboardingDoc.save();
 
     return successResponse(200, "Policies & Consents updated", {
@@ -99,13 +99,9 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
       policiesDoc = await PoliciesConsents.findById(policiesId);
     }
 
-    if (!hasCompletedStep(onboardingDoc.status, EStepPath.APPLICATION_PAGE_5)) {
+    if (!hasReachedStep(onboardingDoc.status, EStepPath.APPLICATION_PAGE_5)) {
       return errorResponse(403, "Please complete previous step first");
     }
-
-    // update tracker current step
-    onboardingDoc.status.currentStep = EStepPath.POLICIES_CONSENTS;
-    await onboardingDoc.save();
 
     return successResponse(200, "Policies & Consents data retrieved", {
       onboardingContext: buildTrackerContext(onboardingDoc),

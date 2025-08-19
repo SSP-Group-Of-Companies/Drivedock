@@ -1,4 +1,4 @@
-import { ITrackerContext } from "@/types/onboardingTracker.type";
+import { ITrackerContext } from "@/types/onboardingTracker.types";
 
 type Scope = "application-form" | "prequalifications" | "policies-consents";
 

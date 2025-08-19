@@ -4,15 +4,14 @@ import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
 import connectDB from "@/lib/utils/connectDB";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import PreQualifications from "@/mongoose/models/Prequalifications";
-import { FORM_RESUME_EXPIRES_AT_IN_MILSEC } from "@/config/env";
 import { finalizePhoto } from "@/lib/utils/s3Upload";
 import { COMPANIES, ECompanyId } from "@/constants/companies";
-import { EStepPath, ICreateOnboardingPayload, IOnboardingTrackerDoc } from "@/types/onboardingTracker.type";
+import { EStepPath, ICreateOnboardingPayload, IOnboardingTrackerDoc } from "@/types/onboardingTracker.types";
 import { ECompanyApplicationType } from "@/hooks/frontendHooks/useCompanySelection";
 import { ILicenseEntry } from "@/types/applicationForm.types";
 import { HydratedDocument } from "mongoose";
 import { hasRecentAddressCoverage } from "@/lib/utils/hasMinimumAddressDuration";
-import { advanceStatus, buildTrackerContext } from "@/lib/utils/onboardingUtils";
+import { advanceProgress, buildTrackerContext, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
 import { S3_SUBMISSIONS_FOLDER, S3_TEMP_FOLDER } from "@/constants/aws";
 import { ES3Folder } from "@/types/aws.types";
 import { ECountryCode, ELicenseType } from "@/types/shared.types";
@@ -68,7 +67,7 @@ export async function POST(req: NextRequest) {
     onboardingDoc = await OnboardingTracker.create({
       sinHash,
       sinEncrypted: encryptString(sin),
-      resumeExpiresAt: new Date(Date.now() + Number(FORM_RESUME_EXPIRES_AT_IN_MILSEC)),
+      resumeExpiresAt: nextResumeExpiry(),
       status: {
         currentStep: EStepPath.PRE_QUALIFICATIONS,
         completedStep: EStepPath.PRE_QUALIFICATIONS,
@@ -97,7 +96,7 @@ export async function POST(req: NextRequest) {
       driverApplication: appFormDoc.id,
       preQualification: preQualDoc.id,
     };
-    onboardingDoc.status = advanceStatus(onboardingDoc.status, EStepPath.APPLICATION_PAGE_1);
+    onboardingDoc.status = advanceProgress(onboardingDoc.status, EStepPath.APPLICATION_PAGE_1);
     await onboardingDoc.save();
 
     // Finalize files only after successful DB save

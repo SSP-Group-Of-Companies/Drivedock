@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { ITrackerContext } from "@/types/onboardingTracker.type";
+import { ITrackerContext } from "@/types/onboardingTracker.types";
 
 interface OnboardingTrackerStore {
   tracker: ITrackerContext | null;

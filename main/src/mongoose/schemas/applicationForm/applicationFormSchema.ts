@@ -33,4 +33,6 @@ const applicationFormSchema = new Schema<IApplicationFormDoc>(
   }
 );
 
+applicationFormSchema.index({ "page1.fullName": 1, "page1.firstName": 1, "page1.lastName": 1 }, { name: "name_search" });
+
 export default applicationFormSchema;

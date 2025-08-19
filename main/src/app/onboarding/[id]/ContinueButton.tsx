@@ -1,35 +1,9 @@
 /**
  * Continue Button Component — DriveDock (SSP Portal)
- *
- * Description:
- * Reusable button component for form step navigation in the onboarding flow.
- * Handles form validation, submission, and navigation with integrated loading states.
- * Supports both config objects and config factories for flexible usage.
- *
- * Features:
- * - Form validation before submission
- * - Automatic loading state management
- * - Server-driven navigation (prefers nextUrl from server)
- * - No-op continue for unchanged forms (skips unnecessary PATCH)
- * - Integrated error handling and user feedback
- *
- * Props:
- * - config: FormPageConfig or FormPageConfigFactory
- * - trackerId: Optional tracker ID (falls back to URL params)
- *
- * Author: Faruq Adebayo Atanda
- * Company: SSP Group of Companies
- * Created: 2025-01-27
+ * (…header unchanged…)
  */
 
 "use client";
-
-/**
- * ContinueButton Component
- * - Accepts a config object OR a config factory (receives BuildPayloadCtx)
- * - Prefers server-provided nextUrl; otherwise uses config.nextRoute (already resolved)
- * - No-op continue: if revisiting (PATCH path) and form is NOT dirty, skip PATCH and navigate
- */
 
 import { useFormContext, FieldValues } from "react-hook-form";
 import { useRouter, useParams } from "next/navigation";
@@ -47,50 +21,42 @@ import { submitFormStep } from "@/lib/frontendUtils/submitFormStep";
 import { ECompanyApplicationType } from "@/hooks/frontendHooks/useCompanySelection";
 import type { BuildPayloadCtx, FormPageConfig, FormPageConfigFactory } from "@/lib/frontendConfigs/formPageConfig.types";
 
+// ✅ NEW: import deep-compare helpers
+import { hasDeepChanges } from "@/lib/utils/deepCompare";
+
 type ContinueButtonProps<T extends FieldValues> = {
   config: FormPageConfig<T> | FormPageConfigFactory<T>;
   trackerId?: string;
 };
 
 export default function ContinueButton<T extends FieldValues>({ config, trackerId }: ContinueButtonProps<T>): ReactNode {
-  // React Hook Form context for form state management
   const {
     getValues,
     trigger,
     formState: { errors, defaultValues },
   } = useFormContext<T>();
 
-  // Next.js navigation and routing
   const router = useRouter();
   const params = useParams();
 
-  // Client-side mounting check to prevent hydration issues
   const mounted = useMounted();
   const { t } = useTranslation("common");
 
-  // Global state management
   const { data: prequalifications, clearData } = usePrequalificationStore();
   const { tracker, setTracker } = useOnboardingTracker();
   const { selectedCompany } = useCompanySelection();
   const { handleFormError } = useFormErrorScroll<T>();
 
-  // Local state for submission tracking
   const [submitting, setSubmitting] = useState(false);
   const { show, hide } = useGlobalLoading();
 
-  /**
-   * Handles form submission, validation, and navigation
-   * Orchestrates the complete flow from validation to navigation
-   */
   const onSubmit = async () => {
     const values = getValues();
 
-    // Resolve context for validation and submission
     const urlTrackerId = params?.id as string | undefined;
     const effectiveTrackerId = trackerId || urlTrackerId;
     const isPost = !effectiveTrackerId; // POST for new, PATCH for existing
 
-    // Build context object for config resolution
     const ctx: BuildPayloadCtx = {
       prequalifications: prequalifications ?? undefined,
       companyId: selectedCompany?.id,
@@ -100,7 +66,6 @@ export default function ContinueButton<T extends FieldValues>({ config, trackerI
       effectiveTrackerId,
     };
 
-    // Step 1: Validate form fields based on page configuration
     const resolvedConfig = typeof config === "function" ? (config as FormPageConfigFactory<T>)(ctx) : (config as FormPageConfig<T>);
 
     const fieldsToValidate = resolvedConfig.validationFields(values);
@@ -110,14 +75,12 @@ export default function ContinueButton<T extends FieldValues>({ config, trackerI
       return;
     }
 
-    // Step 2: Check business rules (if defined)
     const ruleError = resolvedConfig.validateBusinessRules?.(values);
     if (ruleError) {
       alert(ruleError);
       return;
     }
 
-    // Step 3: Validate prerequisites for POST operations
     if (isPost) {
       if (!prequalifications?.completed) {
         alert("Prequalification data is missing. Please restart the application.");
@@ -133,31 +96,23 @@ export default function ContinueButton<T extends FieldValues>({ config, trackerI
     try {
       setSubmitting(true);
 
-      // Step 4: No-op continue - skip PATCH if form hasn't changed
-      // Use a more reliable dirty check that handles boolean fields and deep comparisons
+      // =====================
+      // No‑op continue (PATCH)
+      // =====================
       const formValues = getValues();
-      const hasChanges = Object.keys(formValues).some((key) => {
-        const currentValue = formValues[key as keyof typeof formValues];
-        const defaultValue = defaultValues?.[key as keyof typeof defaultValues];
 
-        // Handle arrays (like employments)
-        if (Array.isArray(currentValue) && Array.isArray(defaultValue)) {
-          return JSON.stringify(currentValue) !== JSON.stringify(defaultValue);
-        }
-
-        // Handle primitive values
-        return currentValue !== defaultValue;
+      const hasChanges = hasDeepChanges(formValues, (defaultValues ?? {}) as Partial<T>, {
+        nullAsUndefined: true,
+        emptyStringAsUndefined: true,
       });
 
       if (!isPost && !hasChanges) {
-        router.push(tracker?.nextUrl ?? resolvedConfig.nextRoute);
+        router.push(resolvedConfig.nextRoute);
         return;
       }
 
-      // Step 5: Show loading immediately for API operations
       show(t("form.loading", "Processing..."));
 
-      // Step 6: Build payload and submit to server
       const jsonPayload = resolvedConfig.buildPayload(values, ctx);
 
       const { trackerContext, nextUrl } = await submitFormStep({
@@ -167,24 +122,23 @@ export default function ContinueButton<T extends FieldValues>({ config, trackerI
         submitSegment: resolvedConfig.submitSegment,
       });
 
-      // Step 6: Navigate to next step (prefer server-provided nextUrl)
       if (isPost) {
         if (!trackerContext?.id) throw new Error("Tracker not returned from POST");
         setTracker(trackerContext);
         clearData();
         router.push(nextUrl ?? resolvedConfig.nextRoute);
       } else {
-        if (trackerContext) setTracker(trackerContext); // keep store fresh if returned
+        if (trackerContext) setTracker(trackerContext);
         router.push(nextUrl ?? resolvedConfig.nextRoute);
         if (!nextUrl) router.refresh();
       }
     } catch (err: any) {
       console.error("Submission error:", err);
-      hide(); // Hide loading screen on error
+      hide();
       alert(err.message || "An error occurred while submitting. Please try again.");
     } finally {
       setSubmitting(false);
-      // Only hide loading screen on error - successful navigation will be handled by navigation loading system
+      // Success path leaves global loader visible until route transition
     }
   };
 
