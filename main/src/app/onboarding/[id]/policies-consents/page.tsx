@@ -1,65 +1,46 @@
 "use server";
 
-import { NEXT_PUBLIC_BASE_URL } from "@/config/env";
 import PoliciesConsentsClient, { PoliciesConsentsClientProps } from "./PoliciesConsentsClient";
-
+import { resolveBaseUrl } from "@/lib/utils/urlConstructor";
 
 type PageDataResponse = {
-    data?: PoliciesConsentsClientProps;
-    error?: string;
+  data?: PoliciesConsentsClientProps;
+  error?: string;
 };
 
 // Server-side data fetching function
 async function fetchPageData(trackerId: string): Promise<PageDataResponse> {
-    try {
-        const response = await fetch(
-            `${NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-            }/api/v1/onboarding/${trackerId}/policies-consents`,
-            {
-                cache: "no-store",
-            }
-        );
+  try {
+    const base = resolveBaseUrl();
+    const response = await fetch(`${base}/api/v1/onboarding/${trackerId}/policies-consents`, {
+      cache: "no-store",
+    });
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error("Failed to fetch policies-consents:", errorData);
-            return { error: errorData?.message || "Failed to fetch data." };
-        }
-
-        const json = await response.json();
-        return { data: json.data };
-    } catch {
-        return { error: "Unexpected server error. Please try again later." };
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Failed to fetch policies-consents:", errorData);
+      return { error: errorData?.message || "Failed to fetch data." };
     }
+
+    const json = await response.json();
+    return { data: json.data };
+  } catch {
+    return { error: "Unexpected server error. Please try again later." };
+  }
 }
 
-export default async function ApplicationFormPagePoliciesConsents({
-    params,
-}: {
-    params: Promise<{ id: string }>;
-}) {
-    const { id: trackerId } = await params;
+export default async function ApplicationFormPagePoliciesConsents({ params }: { params: Promise<{ id: string }> }) {
+  const { id: trackerId } = await params;
 
-    const { data, error } = await fetchPageData(trackerId);
+  const { data, error } = await fetchPageData(trackerId);
 
-    if (error) {
-        return (
-            <div className="p-6 text-center text-red-600 font-semibold">{error}</div>
-        );
-    }
+  if (error) {
+    return <div className="p-6 text-center text-red-600 font-semibold">{error}</div>;
+  }
 
-    if (!data?.policiesConsents || !data?.onboardingContext) {
-        return (
-            <div className="p-6 text-center text-red-600 font-semibold">
-                Failed to load data. Please try again later.
-            </div>
-        );
-    }
+  if (!data?.policiesConsents || !data?.onboardingContext) {
+    return <div className="p-6 text-center text-red-600 font-semibold">Failed to load data. Please try again later.</div>;
+  }
 
-    return (
-        <PoliciesConsentsClient
-            policiesConsents={data.policiesConsents}
-            onboardingContext={data.onboardingContext}
-        />
-    );
+  return <PoliciesConsentsClient policiesConsents={data.policiesConsents} onboardingContext={data.onboardingContext} />;
 }

@@ -7,9 +7,9 @@
 
 import { ApplicationFormPage2Schema } from "@/lib/zodSchemas/applicationFormPage2.schema";
 import Page2Client from "./Page2Client";
-import { NEXT_PUBLIC_BASE_URL } from "@/config/env";
 import { redirect } from "next/navigation";
 import { formatInputDate } from "@/lib/utils/dateUtils";
+import { resolveBaseUrl } from "@/lib/utils/urlConstructor";
 
 /** ---------- Error-handled fetch (Page 5 style) ---------- */
 type Page2DataResponse = {
@@ -18,7 +18,7 @@ type Page2DataResponse = {
 };
 
 async function fetchPage2Data(trackerId: string): Promise<Page2DataResponse> {
-  const base = NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  const base = resolveBaseUrl();
   try {
     const res = await fetch(`${base}/api/v1/onboarding/${trackerId}/application-form/page-2`, {
       cache: "no-store",

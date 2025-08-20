@@ -7,9 +7,9 @@
 
 import { ApplicationFormPage3Schema } from "@/lib/zodSchemas/applicationFormPage3.schema";
 import Page3Client from "./Page3Client";
-import { NEXT_PUBLIC_BASE_URL } from "@/config/env";
 import { redirect } from "next/navigation";
 import { formatInputDate } from "@/lib/utils/dateUtils";
+import { resolveBaseUrl } from "@/lib/utils/urlConstructor";
 
 // Helper to normalize array with a minimum length (does NOT truncate existing data)
 function normalizeArray<T>(arr: T[] | undefined, minimumLength: number, createEmpty: () => T): T[] {
@@ -27,7 +27,7 @@ type Page3DataResponse = {
 };
 
 async function fetchPage3Data(trackerId: string): Promise<Page3DataResponse> {
-  const base = NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  const base = resolveBaseUrl();
   try {
     const res = await fetch(`${base}/api/v1/onboarding/${trackerId}/application-form/page-3`, {
       cache: "no-store",

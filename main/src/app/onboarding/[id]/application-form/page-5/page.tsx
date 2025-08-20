@@ -1,8 +1,8 @@
 "use server";
 
-import { NEXT_PUBLIC_BASE_URL } from "@/config/env";
 import Page5Client from "./Page5Client";
 import { IApplicationFormPage5 } from "@/types/applicationForm.types";
+import { resolveBaseUrl } from "@/lib/utils/urlConstructor";
 
 // Types
 type Page5DataResponse = {
@@ -13,7 +13,8 @@ type Page5DataResponse = {
 // 🌐 Fetch Function
 async function fetchPage5Data(trackerId: string): Promise<Page5DataResponse> {
   try {
-    const response = await fetch(`${NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/v1/onboarding/${trackerId}/application-form/page-5`, { cache: "no-store" });
+    const base = resolveBaseUrl();
+    const response = await fetch(`${base}/api/v1/onboarding/${trackerId}/application-form/page-5`, { cache: "no-store" });
 
     if (!response.ok) {
       const errorData = await response.json();

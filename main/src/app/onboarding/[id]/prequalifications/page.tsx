@@ -37,7 +37,7 @@
 import PreQualificationClient from "@/app/onboarding/[id]/prequalifications/PrequalificationClient";
 import { IPreQualifications } from "@/types/preQualifications.types";
 import { ITrackerContext } from "@/types/onboardingTracker.types";
-import { NEXT_PUBLIC_BASE_URL } from "@/config/env";
+import { resolveBaseUrl } from "@/lib/utils/urlConstructor";
 
 /**
  * Converts typed IPreQualifications to RHF-compatible defaults
@@ -49,25 +49,17 @@ import { NEXT_PUBLIC_BASE_URL } from "@/config/env";
  *   enum values so the <QuestionGroup /> can compare values directly and
  *   the submit handler can cast back to enums without string munging.
  */
-function transformToFormValues(
-  data: IPreQualifications
-): Record<string, string> {
+function transformToFormValues(data: IPreQualifications): Record<string, string> {
   return {
     // Booleans -> i18n-friendly string tokens expected by the UI
     over23Local: data.over23Local ? "form.yes" : "form.no",
     over25CrossBorder: data.over25CrossBorder ? "form.yes" : "form.no",
     canDriveManual: data.canDriveManual ? "form.yes" : "form.no",
-    experienceDrivingTractorTrailer: data.experienceDrivingTractorTrailer
-      ? "form.yes"
-      : "form.no",
+    experienceDrivingTractorTrailer: data.experienceDrivingTractorTrailer ? "form.yes" : "form.no",
     faultAccidentIn3Years: data.faultAccidentIn3Years ? "form.yes" : "form.no",
     zeroPointsOnAbstract: data.zeroPointsOnAbstract ? "form.yes" : "form.no",
-    noUnpardonedCriminalRecord: data.noUnpardonedCriminalRecord
-      ? "form.yes"
-      : "form.no",
-    legalRightToWorkCanada: data.legalRightToWorkCanada
-      ? "form.yes"
-      : "form.no",
+    noUnpardonedCriminalRecord: data.noUnpardonedCriminalRecord ? "form.yes" : "form.no",
+    legalRightToWorkCanada: data.legalRightToWorkCanada ? "form.yes" : "form.no",
 
     // Canada-only fields (may be omitted for US companies)
     canCrossBorderUSA: data.canCrossBorderUSA ? "form.yes" : "form.no",
@@ -97,19 +89,15 @@ function transformToFormValues(
  *   4) Render <PreQualificationClient /> with `defaultValues`, `trackerId`,
  *      and `trackerContext` (used for Zustand hydration + navigation).
  */
-export default async function PrequalificationsPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function PrequalificationsPage({ params }: { params: Promise<{ id: string }> }) {
   // Await the `id` from the dynamic route segment
   const { id } = await params;
 
+  const base = resolveBaseUrl();
+
   // Fetch the current prequalification state for this tracker
   const res = await fetch(
-    `${
-      NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000"
-    }/api/v1/onboarding/${id}/prequalifications`,
+    `${base}/api/v1/onboarding/${id}/prequalifications`,
     { cache: "no-store" } // avoid caching so edits elsewhere are reflected immediately
   );
 
@@ -130,11 +118,5 @@ export default async function PrequalificationsPage({
   const defaultValues = transformToFormValues(prequalData);
 
   // Render client component with hydrated defaults and tracker info
-  return (
-    <PreQualificationClient
-      defaultValues={defaultValues}
-      trackerId={id}
-      trackerContext={trackerContext}
-    />
-  );
+  return <PreQualificationClient defaultValues={defaultValues} trackerId={id} trackerContext={trackerContext} />;
 }

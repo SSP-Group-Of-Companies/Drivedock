@@ -28,8 +28,8 @@
 import { ApplicationFormPage1Schema } from "@/lib/zodSchemas/applicationFormPage1.schema";
 import { ELicenseType } from "@/types/shared.types";
 import Page1Client from "./Page1Client";
-import { NEXT_PUBLIC_BASE_URL } from "@/config/env";
 import { formatInputDate } from "@/lib/utils/dateUtils";
+import { resolveBaseUrl } from "@/lib/utils/urlConstructor";
 
 /**
  * Creates empty S3 photo object for form initialization
@@ -59,7 +59,7 @@ type Page1DataResponse = {
 };
 
 async function fetchPage1Data(trackerId: string): Promise<Page1DataResponse> {
-  const base = NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+  const base = resolveBaseUrl();
   try {
     const res = await fetch(`${base}/api/v1/onboarding/${trackerId}/application-form/page-1`, { cache: "no-store" });
 
@@ -75,7 +75,8 @@ async function fetchPage1Data(trackerId: string): Promise<Page1DataResponse> {
 
     const json = await res.json();
     return { data: json?.data };
-  } catch {
+  } catch (error) {
+    console.log(error);
     return { error: "Unexpected server error. Please try again later." };
   }
 }

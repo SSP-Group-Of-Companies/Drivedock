@@ -1,0 +1,4 @@
+drivedock.sspportal.lvh.me:4443 {
+    tls internal
+    reverse_proxy 127.0.0.1:3001
+}
