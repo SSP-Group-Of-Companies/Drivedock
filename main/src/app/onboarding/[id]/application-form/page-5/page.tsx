@@ -14,6 +14,8 @@ type Page5DataResponse = {
 async function fetchPage5Data(trackerId: string): Promise<Page5DataResponse> {
   try {
     const base = await resolveInternalBaseUrl();
+    console.log("base:", base);
+    console.log("url: ", `${base}/api/v1/onboarding/${trackerId}/application-form/page-5`);
     const response = await fetch(`${base}/api/v1/onboarding/${trackerId}/application-form/page-5`, { cache: "no-store" });
 
     if (!response.ok) {
