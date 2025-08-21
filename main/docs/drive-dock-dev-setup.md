@@ -16,7 +16,7 @@
   - Local dev server: `http://localhost:3001`
   - Public HTTPS URL (via Caddy): `https://drivedock.sspportal.lvh.me:4443`
 
-🚨 **Do not change these ports or URLs.** They are hard‑coded into:
+🚨 **Do not change these ports or URLs.** They are hard-coded into:
 
 - Azure AD redirect URIs
 - Cookie domain/subdomain sharing
@@ -61,9 +61,8 @@ This ensures auth and logout flows behave identically to production.
 - **Git**
 - **Caddy** (local reverse proxy + HTTPS)
 
-  - Windows: download the release zip from [https://caddyserver.com/download](https://caddyserver.com/download)
-  - macOS: `brew install caddy`
-  - Linux: follow distro instructions at [https://caddyserver.com/docs/install](https://caddyserver.com/docs/install)
+  - Download from: [https://caddyserver.com/download](https://caddyserver.com/download)
+  - You do **not install** Caddy globally. You just download the binary (`caddy.exe` on Windows, `caddy` on macOS/Linux) and run it directly from its folder.
 
 ---
 
@@ -180,20 +179,18 @@ NEXT_PUBLIC_ALLOWED_CALLBACK_HOSTS=
 
 ## 4) Caddy (local HTTPS + subdomains)
 
-We ship a `Caddyfile` in each repo. **Use them without edits.**
+We ship the **CaddyFile** in DriveDock with both Portal + DriveDock configs included. This way, you only run Caddy **once** to handle HTTPS for both apps.
 
-### SSP Portal `Caddyfile`
+### Combined `CaddyFile` (in `drivedock/main/CaddyFile`)
 
 ```caddyfile
+# SSP Portal (HTTPS) → localhost:3000
 sspportal.lvh.me:3443 {
     tls internal
     reverse_proxy 127.0.0.1:3000
 }
-```
 
-### DriveDock `Caddyfile`
-
-```caddyfile
+# DriveDock (HTTPS) → localhost:3001
 drivedock.sspportal.lvh.me:4443 {
     tls internal
     reverse_proxy 127.0.0.1:3001
@@ -204,29 +201,23 @@ drivedock.sspportal.lvh.me:4443 {
 
 #### Run Caddy
 
-From each repo’s `caddy/` folder (or wherever the `caddy.exe`/binary and `Caddyfile` are placed):
+1. Download the Caddy binary from [caddyserver.com](https://caddyserver.com/download).
+2. Open a terminal **in the folder where you downloaded Caddy**.
+3. Run it by pointing to the DriveDock CaddyFile:
 
 **Windows (PowerShell / CMD)**
 
 ```powershell
-# In ssp-portal/caddy
-./caddy.exe run --config Caddyfile
-
-# In drivedock/caddy
-./caddy.exe run --config Caddyfile
+.\caddy.exe run --config "C:\Users\Ridoy\projects\Drivedock\main\CaddyFile"
 ```
 
 **macOS/Linux**
 
 ```bash
-# In ssp-portal/caddy
-caddy run --config Caddyfile
-
-# In drivedock/caddy
-caddy run --config Caddyfile
+./caddy run --config ~/projects/Drivedock/main/CaddyFile
 ```
 
-Leave both Caddy processes running.
+This single Caddy process will serve HTTPS for **both SSP Portal and DriveDock**.
 
 ---
 
@@ -267,7 +258,7 @@ npm run dev
 - **TLS/Certificate warnings**: Caddy uses an internal CA. Trust its root cert (Caddy prints its path on first run) or proceed past the browser warning during initial setup.
 - **Port already in use**: Stop whatever is bound to 3000/3001, 3443/4443. Do **not** change our dev ports.
 - **Redirect URI mismatch (AADSTS50011)**: Your Azure AD app must list `https://sspportal.lvh.me:3443/api/auth/callback/azure-ad` exactly.
-- **Cookie not present in DriveDock**: Ensure you first authenticate at the Portal URL (same browser/profile). Confirm both Caddy proxies are running.
+- **Cookie not present in DriveDock**: Ensure you first authenticate at the Portal URL (same browser/profile). Confirm Caddy is running with both configs.
 - **Mixed content / wrong origin**: Always use the HTTPS `lvh.me` URLs, never `http://localhost:*` directly in the browser.
 
 ---
@@ -276,6 +267,7 @@ npm run dev
 
 - Auth relies on **exact origins**. Using `lvh.me` subdomains lets us mirror production cookie and redirect behavior locally.
 - Caddy provides **HTTPS** and **subdomains** so Azure AD redirects and SameSite cookie rules behave.
+- A single Caddy config handles **both apps at once**, reducing terminal clutter.
 - Keeping **fixed ports** allows env defaults, callback URLs, and docs to stay in sync across all devs.
 
 ---
@@ -284,7 +276,7 @@ npm run dev
 
 - [ ] `npm install` in **both** repos
 - [ ] `.env.local` files retrieved from a teammate (do not guess values)
-- [ ] Caddy running with the provided `Caddyfile`s (Portal @ 3443 → :3000, DriveDock @ 4443 → :3001)
+- [ ] Caddy downloaded from [caddyserver.com](https://caddyserver.com/download) and run with DriveDock’s combined `CaddyFile` (Portal @ 3443 → :3000, DriveDock @ 4443 → :3001)
 - [ ] `npm run dev` in **both** apps
 - [ ] Open Portal → login → cookie set
 - [ ] Open DriveDock → sees cookie → logout hits Portal
