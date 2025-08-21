@@ -3,7 +3,7 @@
 import Page4Client from "./Page4Client";
 import { IApplicationFormPage4 } from "@/types/applicationForm.types";
 import { ITrackerContext } from "@/types/onboardingTracker.types";
-import { resolveInternalBaseUrl } from "@/lib/utils/urlConstructor";
+import { resolveInternalBaseUrl } from "@/lib/utils/urlHelper.server";
 
 // ---- Types for server fetch ----
 type Page4DataResponse = {

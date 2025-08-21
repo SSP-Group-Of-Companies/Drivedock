@@ -29,7 +29,7 @@ import { ApplicationFormPage1Schema } from "@/lib/zodSchemas/applicationFormPage
 import { ELicenseType } from "@/types/shared.types";
 import Page1Client from "./Page1Client";
 import { formatInputDate } from "@/lib/utils/dateUtils";
-import { resolveInternalBaseUrl } from "@/lib/utils/urlConstructor";
+import { resolveInternalBaseUrl } from "@/lib/utils/urlHelper.server";
 
 /**
  * Creates empty S3 photo object for form initialization

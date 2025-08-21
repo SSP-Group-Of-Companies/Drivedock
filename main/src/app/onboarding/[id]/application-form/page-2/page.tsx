@@ -8,7 +8,7 @@
 import { ApplicationFormPage2Schema } from "@/lib/zodSchemas/applicationFormPage2.schema";
 import Page2Client from "./Page2Client";
 import { formatInputDate } from "@/lib/utils/dateUtils";
-import { resolveInternalBaseUrl } from "@/lib/utils/urlConstructor";
+import { resolveInternalBaseUrl } from "@/lib/utils/urlHelper.server";
 
 /** ---------- Error-handled fetch (Page 5 style) ---------- */
 type Page2DataResponse = {

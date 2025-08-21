@@ -8,7 +8,7 @@
 import { ApplicationFormPage3Schema } from "@/lib/zodSchemas/applicationFormPage3.schema";
 import Page3Client from "./Page3Client";
 import { formatInputDate } from "@/lib/utils/dateUtils";
-import { resolveInternalBaseUrl } from "@/lib/utils/urlConstructor";
+import { resolveInternalBaseUrl } from "@/lib/utils/urlHelper.server";
 
 // Helper to normalize array with a minimum length (does NOT truncate existing data)
 function normalizeArray<T>(arr: T[] | undefined, minimumLength: number, createEmpty: () => T): T[] {

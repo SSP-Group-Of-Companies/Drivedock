@@ -37,7 +37,7 @@
 import PreQualificationClient from "@/app/onboarding/[id]/prequalifications/PrequalificationClient";
 import { IPreQualifications } from "@/types/preQualifications.types";
 import { ITrackerContext } from "@/types/onboardingTracker.types";
-import { resolveInternalBaseUrl } from "@/lib/utils/urlConstructor";
+import { resolveInternalBaseUrl } from "@/lib/utils/urlHelper.server";
 
 /**
  * Converts typed IPreQualifications to RHF-compatible defaults

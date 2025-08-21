@@ -1,7 +1,7 @@
 "use server";
 
 import PoliciesConsentsClient, { PoliciesConsentsClientProps } from "./PoliciesConsentsClient";
-import { resolveInternalBaseUrl } from "@/lib/utils/urlConstructor";
+import { resolveInternalBaseUrl } from "@/lib/utils/urlHelper.server";
 
 type PageDataResponse = {
   data?: PoliciesConsentsClientProps;

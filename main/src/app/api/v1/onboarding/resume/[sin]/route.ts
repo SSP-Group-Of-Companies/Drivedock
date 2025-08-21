@@ -5,7 +5,7 @@ import { hashString } from "@/lib/utils/cryptoUtils";
 import { getOnboardingStepPaths, onboardingExpired } from "@/lib/utils/onboardingUtils";
 import { NextRequest } from "next/server";
 import { isValidSIN } from "@/lib/utils/validationUtils";
-import { resolveBaseUrl } from "@/lib/utils/urlConstructor";
+import { resolveBaseUrl } from "@/lib/utils/urlHelper.server";
 
 export const GET = async (_: NextRequest, { params }: { params: Promise<{ sin: string }> }) => {
   try {

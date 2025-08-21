@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { COOKIE_NAME, NEXTAUTH_SECRET, NEXT_PUBLIC_PORTAL_BASE_URL } from "./config/env";
-import { resolveBaseUrl } from "./lib/utils/urlConstructor";
+import { resolveBaseUrl } from "./lib/utils/urlHelper.server";
 
 export async function middleware(req: NextRequest) {
   // Only runs for /dashboard/* (see matcher below)
