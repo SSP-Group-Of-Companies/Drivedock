@@ -1,40 +1,32 @@
 "use server";
 
+/**
+ * DriveDock Onboarding — Policies & Consents
+ * Server Wrapper
+ *
+ * Responsibilities
+ * - Fetch saved Policies/Consents data + onboardingContext by tracker ID
+ * - Pass payload to the client component
+ *
+ * Implementation Notes
+ * - Uses fetchServerPageData (server-only) for consistent error handling and cookie forwarding (Vercel preview safe)
+ * - Builds same-origin absolute URL via resolveInternalBaseUrl (works in dev and prod)
+ */
+
+import "server-only";
 import PoliciesConsentsClient, { PoliciesConsentsClientProps } from "./PoliciesConsentsClient";
 import { resolveInternalBaseUrl } from "@/lib/utils/urlHelper.server";
-
-type PageDataResponse = {
-  data?: PoliciesConsentsClientProps;
-  error?: string;
-};
-
-// Server-side data fetching function
-async function fetchPageData(trackerId: string): Promise<PageDataResponse> {
-  try {
-    const base = await resolveInternalBaseUrl();
-
-    const response = await fetch(`${base}/api/v1/onboarding/${trackerId}/policies-consents`, {
-      cache: "no-store",
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error("Failed to fetch policies-consents:", errorData);
-      return { error: errorData?.message || "Failed to fetch data." };
-    }
-
-    const json = await response.json();
-    return { data: json.data };
-  } catch (err) {
-    console.log(err);
-    return { error: "Unexpected server error. Please try again later." };
-  }
-}
+import { fetchServerPageData } from "@/lib/utils/fetchServerPageData";
 
 export default async function ApplicationFormPagePoliciesConsents({ params }: { params: Promise<{ id: string }> }) {
   const { id: trackerId } = await params;
 
-  const { data, error } = await fetchPageData(trackerId);
+  // Build same-origin absolute URL (dev + Vercel preview safe)
+  const base = await resolveInternalBaseUrl();
+  const url = `${base}/api/v1/onboarding/${trackerId}/policies-consents`;
+
+  // Unified fetch pattern (handles cookies/redirects/JSON + unwraps { data })
+  const { data, error } = await fetchServerPageData<PoliciesConsentsClientProps>(url);
 
   if (error) {
     return <div className="p-6 text-center text-red-600 font-semibold">{error}</div>;

@@ -1,38 +1,40 @@
 "use server";
 
+/**
+ * DriveDock Onboarding — Page 4 (Criminal Records, Driving History, Banking, Incorporation)
+ * Server Wrapper
+ *
+ * Responsibilities
+ * - Fetch saved Page 4 data + onboardingContext (nextUrl) by tracker ID
+ * - Delegate defaults/normalization to the client mapper (Page4Client handles it)
+ *
+ * Implementation Notes
+ * - Uses fetchServerPageData (server-only) for consistent error handling and cookie forwarding (Vercel preview safe)
+ * - Builds same-origin absolute URL via resolveInternalBaseUrl (works in dev and prod)
+ */
+
+import "server-only";
 import Page4Client from "./Page4Client";
 import { IApplicationFormPage4 } from "@/types/applicationForm.types";
 import { ITrackerContext } from "@/types/onboardingTracker.types";
 import { resolveInternalBaseUrl } from "@/lib/utils/urlHelper.server";
+import { fetchServerPageData } from "@/lib/utils/fetchServerPageData";
 
-// ---- Types for server fetch ----
-type Page4DataResponse = {
-  data?: { page4?: IApplicationFormPage4; onboardingContext: ITrackerContext };
-  error?: string;
+/** API response envelope (unwrapped to `data` by fetchServerPageData) */
+type Page4Result = {
+  page4?: IApplicationFormPage4;
+  onboardingContext?: ITrackerContext;
 };
-
-// ---- Server Fetcher (Page5-style error handling) ----
-async function fetchPage4Data(trackerId: string): Promise<Page4DataResponse> {
-  try {
-    const base = await resolveInternalBaseUrl();
-    const res = await fetch(`${base}/api/v1/onboarding/${trackerId}/application-form/page-4`, { cache: "no-store" });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      return { error: err?.message || "Failed to fetch Page 4 data." };
-    }
-
-    const json = await res.json();
-    return { data: json.data };
-  } catch (error) {
-    console.log(error);
-    return { error: "Unexpected server error. Please try again later." };
-  }
-}
 
 export default async function ApplicationFormPage4({ params }: { params: Promise<{ id: string }> }) {
   const { id: trackerId } = await params;
-  const { data, error } = await fetchPage4Data(trackerId);
+
+  // Build same-origin absolute URL (dev + Vercel preview safe)
+  const base = await resolveInternalBaseUrl();
+  const url = `${base}/api/v1/onboarding/${trackerId}/application-form/page-4`;
+
+  // Unified fetch pattern (handles cookies/redirects/JSON + unwraps { data })
+  const { data, error } = await fetchServerPageData<Page4Result>(url);
 
   if (error) {
     return <div className="p-6 text-center text-red-600 font-semibold">{error}</div>;
@@ -42,6 +44,6 @@ export default async function ApplicationFormPage4({ params }: { params: Promise
     return <div className="p-6 text-center text-red-600 font-semibold">Onboarding document missing.</div>;
   }
 
-  // The client handles defaults via its own mapper; pass raw data here.
+  // Client component performs detailed mapping/defaults
   return <Page4Client trackerId={trackerId} onboardingContext={data.onboardingContext} page4={data.page4 ?? null} />;
 }

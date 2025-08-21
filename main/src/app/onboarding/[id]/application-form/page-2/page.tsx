@@ -1,3 +1,5 @@
+"use server";
+
 /**
  * DriveDock Onboarding — Page 2 (Employment History) Server Wrapper
  * - Fetches saved Page 2 data + onboardingContext (nextUrl) by tracker ID
@@ -5,40 +7,18 @@
  * - Passes onboardingContext into client for no-op continue jumps
  */
 
-import { ApplicationFormPage2Schema } from "@/lib/zodSchemas/applicationFormPage2.schema";
+import "server-only";
 import Page2Client from "./Page2Client";
+import { ApplicationFormPage2Schema } from "@/lib/zodSchemas/applicationFormPage2.schema";
 import { formatInputDate } from "@/lib/utils/dateUtils";
 import { resolveInternalBaseUrl } from "@/lib/utils/urlHelper.server";
+import { fetchServerPageData } from "@/lib/utils/fetchServerPageData";
 
-/** ---------- Error-handled fetch (Page 5 style) ---------- */
-type Page2DataResponse = {
-  data?: { page2?: any; onboardingContext?: any };
-  error?: string;
+/** ---------- Types ---------- */
+type Page2Result = {
+  page2?: any;
+  onboardingContext?: any;
 };
-
-async function fetchPage2Data(trackerId: string): Promise<Page2DataResponse> {
-  const base = await resolveInternalBaseUrl();
-  try {
-    const res = await fetch(`${base}/api/v1/onboarding/${trackerId}/application-form/page-2`, {
-      cache: "no-store",
-    });
-
-    if (!res.ok) {
-      let message = "Failed to fetch Page 2 data.";
-      try {
-        const errJson = await res.json();
-        message = errJson?.message || message;
-      } catch {}
-      return { error: message };
-    }
-
-    const json = await res.json();
-    return { data: json?.data };
-  } catch (error) {
-    console.log(error);
-    return { error: "Unexpected server error. Please try again later." };
-  }
-}
 
 // Single source of truth for an empty employment row
 function emptyEmploymentRow() {
@@ -66,7 +46,13 @@ function emptyEmploymentRow() {
 export default async function ApplicationFormPage2({ params }: { params: Promise<{ id: string }> }) {
   const { id: trackerId } = await params;
 
-  const { data, error } = await fetchPage2Data(trackerId);
+  // Build same-origin absolute URL (dev + Vercel preview safe)
+  const base = await resolveInternalBaseUrl();
+  const url = `${base}/api/v1/onboarding/${trackerId}/application-form/page-2`;
+
+  // Unified fetch pattern (handles cookies/redirects/JSON)
+  const { data, error } = await fetchServerPageData<Page2Result>(url);
+
   if (error) {
     return <div className="p-6 text-center text-red-600 font-semibold">{error}</div>;
   }
@@ -77,7 +63,7 @@ export default async function ApplicationFormPage2({ params }: { params: Promise
   const defaultValues: ApplicationFormPage2Schema = page2
     ? {
         employments:
-          page2.employments?.length > 0
+          Array.isArray(page2.employments) && page2.employments.length > 0
             ? page2.employments.map((e: any) => ({
                 employerName: e.employerName ?? "",
                 supervisorName: e.supervisorName ?? "",

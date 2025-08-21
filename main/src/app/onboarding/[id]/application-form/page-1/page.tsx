@@ -1,48 +1,25 @@
-/**
- * Application Form Page 1 Server Component — DriveDock (SSP Portal)
- *
- * Description:
- * Server-side wrapper for Page 1 of the application form (Identity & Addresses).
- * Fetches existing data from the backend, normalizes it for React Hook Form,
- * and passes it to the client component. Handles data transformation and
- * provides fallback defaults for new applications.
- *
- * Features:
- * - Fetches saved Page 1 data by tracker ID
- * - Normalizes dates, addresses, and license data
- * - Provides fallback defaults for new applications
- * - Handles S3 photo objects and license arrays
- * - Passes onboarding context for navigation
- *
- * Data Flow:
- * - Fetches from /api/v1/onboarding/[id]/application-form/page-1
- * - Normalizes dates to YYYY-MM-DD format
- * - Transforms backend data to RHF-compatible format
- * - Provides empty defaults for new applications
- *
- * Author: Faruq Adebayo Atanda
- * Company: SSP Group of Companies
- * Created: 2025-01-27
- */
+"use server";
 
+import "server-only";
+import Page1Client from "./Page1Client";
 import { ApplicationFormPage1Schema } from "@/lib/zodSchemas/applicationFormPage1.schema";
 import { ELicenseType } from "@/types/shared.types";
-import Page1Client from "./Page1Client";
 import { formatInputDate } from "@/lib/utils/dateUtils";
 import { resolveInternalBaseUrl } from "@/lib/utils/urlHelper.server";
+import { fetchServerPageData } from "@/lib/utils/fetchServerPageData";
 
-/**
- * Creates empty S3 photo object for form initialization
- * @returns Empty photo object with s3Key and url properties
- */
+/** ---------- Types ---------- */
+type Page1Result = {
+  page1?: any; // shape from API
+  onboardingContext?: any; // if your API includes it
+};
+
+/** Creates empty S3 photo object for form initialization */
 function emptyS3Photo() {
   return { s3Key: "", url: "" };
 }
 
-/**
- * Default blank address template for new applications
- * Ensures at least one address field is available on first render
- */
+/** Default blank address template for new applications */
 const BLANK_ADDRESS = {
   address: "",
   city: "",
@@ -52,38 +29,7 @@ const BLANK_ADDRESS = {
   to: "",
 };
 
-/** ---------- Error-handled fetch (same style as Page 5) ---------- */
-type Page1DataResponse = {
-  data?: { page1?: any; onboardingContext?: any };
-  error?: string;
-};
-
-async function fetchPage1Data(trackerId: string): Promise<Page1DataResponse> {
-  const base = await resolveInternalBaseUrl();
-  try {
-    const res = await fetch(`${base}/api/v1/onboarding/${trackerId}/application-form/page-1`, { cache: "no-store" });
-
-    if (!res.ok) {
-      // Try to read a message from the API, fall back to generic
-      let message = "Failed to fetch Page 1 data.";
-      try {
-        const errJson = await res.json();
-        message = errJson?.message || message;
-      } catch {}
-      return { error: message };
-    }
-
-    const json = await res.json();
-    return { data: json?.data };
-  } catch (error) {
-    console.log(error);
-    return { error: "Unexpected server error. Please try again later." };
-  }
-}
-
-/**
- * Fallback defaults for new applications or when no data is returned
- */
+/** Fallback defaults for new applications or when no data is returned */
 const EMPTY_DEFAULTS: ApplicationFormPage1Schema = {
   firstName: "",
   lastName: "",
@@ -115,13 +61,20 @@ const EMPTY_DEFAULTS: ApplicationFormPage1Schema = {
 export default async function Page1ServerWrapper({ params }: { params: Promise<{ id: string }> }) {
   const { id: trackerId } = await params;
 
-  const { data, error } = await fetchPage1Data(trackerId);
+  // Build same-origin absolute URL (dev + Vercel preview safe)
+  const base = await resolveInternalBaseUrl();
+  const url = `${base}/api/v1/onboarding/${trackerId}/application-form/page-1`;
+
+  // Unified fetch pattern (handles cookies/redirects/JSON)
+  const { data, error } = await fetchServerPageData<Page1Result>(url);
+
   if (error) {
     return <div className="p-6 text-center text-red-600 font-semibold">{error}</div>;
   }
 
   const pageData = data?.page1;
-  // Keep your existing “empty defaults for new apps” behavior:
+
+  // Keep your existing “empty defaults for new apps” behavior
   const defaultValues: ApplicationFormPage1Schema = pageData
     ? {
         firstName: pageData.firstName || "",
@@ -145,6 +98,7 @@ export default async function Page1ServerWrapper({ params }: { params: Promise<{
                 licenseStateOrProvince: l.licenseStateOrProvince || "",
                 licenseType: l.licenseType || ELicenseType.AZ,
                 licenseExpiry: formatInputDate(l.licenseExpiry),
+                // Only first license has photos in your current UX
                 licenseFrontPhoto:
                   index === 0
                     ? {
