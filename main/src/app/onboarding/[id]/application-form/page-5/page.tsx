@@ -2,7 +2,7 @@
 
 import Page5Client from "./Page5Client";
 import { IApplicationFormPage5 } from "@/types/applicationForm.types";
-import { resolveBaseUrl } from "@/lib/utils/urlConstructor";
+import { resolveInternalBaseUrl } from "@/lib/utils/urlConstructor";
 
 // Types
 type Page5DataResponse = {
@@ -13,7 +13,7 @@ type Page5DataResponse = {
 // 🌐 Fetch Function
 async function fetchPage5Data(trackerId: string): Promise<Page5DataResponse> {
   try {
-    const base = resolveBaseUrl();
+    const base = await resolveInternalBaseUrl();
     const response = await fetch(`${base}/api/v1/onboarding/${trackerId}/application-form/page-5`, { cache: "no-store" });
 
     if (!response.ok) {
@@ -23,7 +23,8 @@ async function fetchPage5Data(trackerId: string): Promise<Page5DataResponse> {
 
     const json = await response.json();
     return { data: json.data };
-  } catch {
+  } catch (error) {
+    console.log(error);
     return { error: "Unexpected server error. Please try again later." };
   }
 }

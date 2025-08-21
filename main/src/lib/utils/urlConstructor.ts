@@ -1,25 +1,57 @@
-// lib/utils/siteUrl.ts
-import { NextRequest } from "next/server";
+// lib/utils/urlConstructor.ts
+import { isProd, PORT } from "@/config/env";
+import { headers } from "next/headers";
+import type { NextRequest } from "next/server";
 
-export function getSiteUrl(req: NextRequest): string {
-  // NextRequest.url contains the full incoming URL (including protocol + host)
-  const { origin } = new URL(req.url);
-  return origin;
+/** Trim a trailing slash, if present. */
+function trimSlash(url: string) {
+  return url.replace(/\/+$/, "");
 }
 
 /**
- * Resolves the base URL for API requests.
+ * Public base URL for this app.
  *
- * - In production: always uses NEXT_PUBLIC_BASE_URL
- * - In development: prefers NEXT_PUBLIC_INTERNAL_BASE_URL (if set),
- *   otherwise falls back to NEXT_PUBLIC_BASE_URL
+ * Use for:
+ * - SSO / OAuth redirect URIs
+ * - Links visible to the browser (emails, redirects, etc.)
+ *
+ * Behavior:
+ * - Client: window.location.origin
+ * - Server: reconstruct from x-forwarded-proto + host (works behind proxy/CDN)
  */
-export function resolveBaseUrl(): string {
-  const isProd = process.env.NODE_ENV === "production";
-
-  if (isProd) {
-    return process.env.NEXT_PUBLIC_BASE_URL ?? "";
+export async function resolveBaseUrl(): Promise<string> {
+  if (typeof window !== "undefined") {
+    return trimSlash(window.location.origin);
   }
+  const hdrs = await headers();
+  const proto = hdrs.get("x-forwarded-proto") ?? "http";
+  const host = hdrs.get("host") ?? "localhost";
+  return `${proto}://${host}`;
+}
 
-  return process.env.NEXT_PUBLIC_INTERNAL_BASE_URL ?? process.env.NEXT_PUBLIC_BASE_URL ?? "";
+/**
+ * Internal base URL for **server-to-server** calls within this app.
+ *
+ * Use for:
+ * - Server Components / Route Handlers calling your own API routes in **development**
+ * - Bypassing TLS/Caddy and talking directly to the Next dev server
+ *
+ * Behavior:
+ * - Dev:  http://127.0.0.1:{PORT}  (PORT is set by `next dev -p 3001`)
+ * - Prod: same as resolveBaseUrl() (no local dev server in production)
+ *
+ * NOTE: This is **server-only**. Do not call from client code.
+ */
+export async function resolveInternalBaseUrl(): Promise<string> {
+  if (typeof window !== "undefined") throw new Error("resolveInternalBaseUrl() is server-only");
+
+  if (!isProd) return `http://127.0.0.1:${PORT}`;
+
+  // In prod, internal == public
+  return await resolveBaseUrl();
+}
+
+/** When inside a Route Handler and you *have* a NextRequest. */
+export function resolveBaseUrlFromRequest(req: NextRequest): string {
+  return req.nextUrl.origin;
 }

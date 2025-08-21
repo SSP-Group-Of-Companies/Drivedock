@@ -5,9 +5,9 @@ import { hashString } from "@/lib/utils/cryptoUtils";
 import { getOnboardingStepPaths, onboardingExpired } from "@/lib/utils/onboardingUtils";
 import { NextRequest } from "next/server";
 import { isValidSIN } from "@/lib/utils/validationUtils";
-import { NEXT_PUBLIC_BASE_URL } from "@/config/env";
+import { resolveBaseUrl } from "@/lib/utils/urlConstructor";
 
-export const GET = async (req: NextRequest, { params }: { params: Promise<{ sin: string }> }) => {
+export const GET = async (_: NextRequest, { params }: { params: Promise<{ sin: string }> }) => {
   try {
     await connectDB();
     const { sin } = await params;
@@ -36,7 +36,8 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ sin:
       return errorResponse(400, "Unable to resolve redirect path");
     }
 
-    const fullUrl = new URL(currentUrl, NEXT_PUBLIC_BASE_URL || req.url);
+    const base = await resolveBaseUrl();
+    const fullUrl = new URL(currentUrl, base);
 
     // Return JSON for frontend fetch()
     return Response.json({

@@ -3,7 +3,7 @@
 import Page4Client from "./Page4Client";
 import { IApplicationFormPage4 } from "@/types/applicationForm.types";
 import { ITrackerContext } from "@/types/onboardingTracker.types";
-import { resolveBaseUrl } from "@/lib/utils/urlConstructor";
+import { resolveInternalBaseUrl } from "@/lib/utils/urlConstructor";
 
 // ---- Types for server fetch ----
 type Page4DataResponse = {
@@ -14,7 +14,7 @@ type Page4DataResponse = {
 // ---- Server Fetcher (Page5-style error handling) ----
 async function fetchPage4Data(trackerId: string): Promise<Page4DataResponse> {
   try {
-    const base = resolveBaseUrl();
+    const base = await resolveInternalBaseUrl();
     const res = await fetch(`${base}/api/v1/onboarding/${trackerId}/application-form/page-4`, { cache: "no-store" });
 
     if (!res.ok) {
@@ -24,7 +24,8 @@ async function fetchPage4Data(trackerId: string): Promise<Page4DataResponse> {
 
     const json = await res.json();
     return { data: json.data };
-  } catch {
+  } catch (error) {
+    console.log(error);
     return { error: "Unexpected server error. Please try again later." };
   }
 }

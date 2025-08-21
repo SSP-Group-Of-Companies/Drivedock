@@ -97,11 +97,7 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
 
     // GATE: must be allowed to view Page 2
     if (!hasReachedStep(onboardingDoc.status, EStepPath.APPLICATION_PAGE_2)) {
-      // backwards-compatible friendly message
-      if (!hasReachedStep(onboardingDoc.status, EStepPath.APPLICATION_PAGE_1)) {
-        return errorResponse(403, "Please complete previous step first");
-      }
-      return errorResponse(403, "Access to this step is not allowed yet");
+      return errorResponse(403, "Please complete previous step first");
     }
 
     return successResponse(200, "Page 2 data retrieved", {

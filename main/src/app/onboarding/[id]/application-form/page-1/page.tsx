@@ -29,7 +29,7 @@ import { ApplicationFormPage1Schema } from "@/lib/zodSchemas/applicationFormPage
 import { ELicenseType } from "@/types/shared.types";
 import Page1Client from "./Page1Client";
 import { formatInputDate } from "@/lib/utils/dateUtils";
-import { resolveBaseUrl } from "@/lib/utils/urlConstructor";
+import { resolveInternalBaseUrl } from "@/lib/utils/urlConstructor";
 
 /**
  * Creates empty S3 photo object for form initialization
@@ -59,7 +59,7 @@ type Page1DataResponse = {
 };
 
 async function fetchPage1Data(trackerId: string): Promise<Page1DataResponse> {
-  const base = resolveBaseUrl();
+  const base = await resolveInternalBaseUrl();
   try {
     const res = await fetch(`${base}/api/v1/onboarding/${trackerId}/application-form/page-1`, { cache: "no-store" });
 

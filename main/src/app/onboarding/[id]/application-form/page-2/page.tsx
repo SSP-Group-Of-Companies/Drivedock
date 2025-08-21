@@ -7,9 +7,8 @@
 
 import { ApplicationFormPage2Schema } from "@/lib/zodSchemas/applicationFormPage2.schema";
 import Page2Client from "./Page2Client";
-import { redirect } from "next/navigation";
 import { formatInputDate } from "@/lib/utils/dateUtils";
-import { resolveBaseUrl } from "@/lib/utils/urlConstructor";
+import { resolveInternalBaseUrl } from "@/lib/utils/urlConstructor";
 
 /** ---------- Error-handled fetch (Page 5 style) ---------- */
 type Page2DataResponse = {
@@ -18,15 +17,12 @@ type Page2DataResponse = {
 };
 
 async function fetchPage2Data(trackerId: string): Promise<Page2DataResponse> {
-  const base = resolveBaseUrl();
+  const base = await resolveInternalBaseUrl();
   try {
     const res = await fetch(`${base}/api/v1/onboarding/${trackerId}/application-form/page-2`, {
       cache: "no-store",
     });
 
-    if (res.status === 403) {
-      redirect(`/onboarding/${trackerId}/application-form/page-1`);
-    }
     if (!res.ok) {
       let message = "Failed to fetch Page 2 data.";
       try {
@@ -38,7 +34,8 @@ async function fetchPage2Data(trackerId: string): Promise<Page2DataResponse> {
 
     const json = await res.json();
     return { data: json?.data };
-  } catch {
+  } catch (error) {
+    console.log(error);
     return { error: "Unexpected server error. Please try again later." };
   }
 }

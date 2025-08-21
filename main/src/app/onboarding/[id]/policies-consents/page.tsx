@@ -1,7 +1,7 @@
 "use server";
 
 import PoliciesConsentsClient, { PoliciesConsentsClientProps } from "./PoliciesConsentsClient";
-import { resolveBaseUrl } from "@/lib/utils/urlConstructor";
+import { resolveInternalBaseUrl } from "@/lib/utils/urlConstructor";
 
 type PageDataResponse = {
   data?: PoliciesConsentsClientProps;
@@ -11,7 +11,8 @@ type PageDataResponse = {
 // Server-side data fetching function
 async function fetchPageData(trackerId: string): Promise<PageDataResponse> {
   try {
-    const base = resolveBaseUrl();
+    const base = await resolveInternalBaseUrl();
+
     const response = await fetch(`${base}/api/v1/onboarding/${trackerId}/policies-consents`, {
       cache: "no-store",
     });
@@ -24,7 +25,8 @@ async function fetchPageData(trackerId: string): Promise<PageDataResponse> {
 
     const json = await response.json();
     return { data: json.data };
-  } catch {
+  } catch (err) {
+    console.log(err);
     return { error: "Unexpected server error. Please try again later." };
   }
 }

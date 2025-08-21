@@ -37,7 +37,7 @@
 import PreQualificationClient from "@/app/onboarding/[id]/prequalifications/PrequalificationClient";
 import { IPreQualifications } from "@/types/preQualifications.types";
 import { ITrackerContext } from "@/types/onboardingTracker.types";
-import { resolveBaseUrl } from "@/lib/utils/urlConstructor";
+import { resolveInternalBaseUrl } from "@/lib/utils/urlConstructor";
 
 /**
  * Converts typed IPreQualifications to RHF-compatible defaults
@@ -93,7 +93,7 @@ export default async function PrequalificationsPage({ params }: { params: Promis
   // Await the `id` from the dynamic route segment
   const { id } = await params;
 
-  const base = resolveBaseUrl();
+  const base = await resolveInternalBaseUrl();
 
   // Fetch the current prequalification state for this tracker
   const res = await fetch(
