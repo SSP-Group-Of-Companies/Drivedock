@@ -13,14 +13,16 @@ interface ThemeStore {
 const getInitialResolvedTheme = (theme: Theme): "light" | "dark" => {
   if (typeof window === "undefined") return "light";
   if (theme === "system") {
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
   }
   return theme;
 };
 
 export const useThemeStore = create<ThemeStore>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       theme: "system",
       resolvedTheme: "light",
       setTheme: (theme: Theme) => {
@@ -33,9 +35,9 @@ export const useThemeStore = create<ThemeStore>()(
     }),
     {
       name: "drivedock_theme",
-      partialize: (state) => ({ 
+      partialize: (state) => ({
         theme: state.theme,
-        resolvedTheme: state.resolvedTheme 
+        resolvedTheme: state.resolvedTheme,
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
@@ -51,7 +53,7 @@ export const useThemeStore = create<ThemeStore>()(
 // Listen for system theme changes
 if (typeof window !== "undefined") {
   const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-  
+
   mediaQuery.addEventListener("change", (e) => {
     const store = useThemeStore.getState();
     if (store.theme === "system") {
