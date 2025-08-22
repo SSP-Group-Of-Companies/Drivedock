@@ -39,9 +39,17 @@ async function patchJson<T>(
 }
 
 export async function terminateTracker(id: string, signal?: AbortSignal) {
-  return patchJson<void>(`${BASE}/${id}`, { terminated: true }, signal);
+  return patchJson<void>(
+    `${BASE}/${id}/terminate`,
+    { terminated: true },
+    signal
+  );
 }
 
 export async function restoreTracker(id: string, signal?: AbortSignal) {
-  return patchJson<void>(`${BASE}/${id}`, { terminated: false }, signal);
+  return patchJson<void>(
+    `${BASE}/${id}/restore`,
+    { terminated: false },
+    signal
+  );
 }

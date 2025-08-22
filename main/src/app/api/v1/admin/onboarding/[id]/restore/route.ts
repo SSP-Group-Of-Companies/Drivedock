@@ -1,0 +1,27 @@
+// app/api/v1/admin/onboarding/[id]/restore/route.ts
+import connectDB from "@/lib/utils/connectDB";
+import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
+import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
+
+export async function PATCH(
+  _req: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    await connectDB();
+    const doc = await OnboardingTracker.findByIdAndUpdate(
+      params.id,
+      { $set: { terminated: false } },
+      { new: true, runValidators: true }
+    );
+    if (!doc) return errorResponse(404, "Onboarding tracker not found");
+    return successResponse(200, "Onboarding tracker restored", {
+      _id: String(doc._id),
+      terminated: !!doc.terminated,
+    });
+  } catch (e: any) {
+    return errorResponse(500, "Failed to restore onboarding tracker", {
+      error: e?.message ?? String(e),
+    });
+  }
+}
