@@ -2,12 +2,12 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
-import { COOKIE_NAME, NEXTAUTH_SECRET, NEXT_PUBLIC_PORTAL_BASE_URL } from "./config/env";
+import { AUTH_COOKIE_NAME, NEXTAUTH_SECRET, NEXT_PUBLIC_PORTAL_BASE_URL } from "./config/env";
 import { resolveBaseUrl } from "./lib/utils/urlHelper.server";
 
 export async function middleware(req: NextRequest) {
   // Only runs for /dashboard/* (see matcher below)
-  const token = await getToken({ req: req as any, secret: NEXTAUTH_SECRET, cookieName: COOKIE_NAME });
+  const token = await getToken({ req: req as any, secret: NEXTAUTH_SECRET, cookieName: AUTH_COOKIE_NAME });
   if (!token) {
     const base = await resolveBaseUrl();
     const callbackUrl = encodeURIComponent(base);

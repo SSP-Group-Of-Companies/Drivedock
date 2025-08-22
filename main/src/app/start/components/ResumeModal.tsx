@@ -46,6 +46,8 @@ import { useOnboardingTracker } from "@/store/useOnboardingTracker";
 
 // Components & hooks
 import useMounted from "@/hooks/useMounted";
+import { EStepPath } from "@/types/onboardingTracker.types";
+import { buildOnboardingStepPath } from "@/lib/utils/onboardingUtils";
 
 interface ResumeModalProps {
   isOpen: boolean;
@@ -86,13 +88,13 @@ export default function ResumeModal({ isOpen, onClose }: ResumeModalProps) {
       const data = await res.json();
 
       const trackerContext = data?.data?.onboardingContext;
-      const redirectUrl = data?.data?.redirectUrl;
+      const currentStep: EStepPath = trackerContext?.status?.currentStep;
 
-      if (trackerContext && redirectUrl) {
+      if (trackerContext && currentStep) {
         // Wrap in React transition to ensure safe redirect after state update
         startTransition(() => {
           setTracker(trackerContext);
-          router.replace(redirectUrl);
+          router.replace(buildOnboardingStepPath(trackerContext));
         });
       } else {
         throw new Error("Resume info missing");
@@ -109,15 +111,7 @@ export default function ResumeModal({ isOpen, onClose }: ResumeModalProps) {
     <Transition show={isOpen} as={Fragment}>
       <Dialog as="div" className="relative z-50" onClose={onClose}>
         {/* Backdrop overlay */}
-        <Transition.Child
-          as={Fragment}
-          enter="ease-out duration-200"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="ease-in duration-150"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
+        <Transition.Child as={Fragment} enter="ease-out duration-200" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-150" leaveFrom="opacity-100" leaveTo="opacity-0">
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
         </Transition.Child>
 
@@ -134,12 +128,8 @@ export default function ResumeModal({ isOpen, onClose }: ResumeModalProps) {
           >
             <Dialog.Panel className="w-full max-w-md transform rounded-xl bg-white p-6 shadow-xl transition-all">
               {/* Title & description */}
-              <Dialog.Title className="text-lg font-semibold text-gray-900 mb-2">
-                {t("resume.title")}
-              </Dialog.Title>
-              <Dialog.Description className="text-sm text-gray-600 mb-4">
-                {t("resume.description")}
-              </Dialog.Description>
+              <Dialog.Title className="text-lg font-semibold text-gray-900 mb-2">{t("resume.title")}</Dialog.Title>
+              <Dialog.Description className="text-sm text-gray-600 mb-4">{t("resume.description")}</Dialog.Description>
 
               {/* SIN input field */}
               <input
@@ -174,16 +164,10 @@ export default function ResumeModal({ isOpen, onClose }: ResumeModalProps) {
 
               {/* Action buttons */}
               <div className="mt-6 flex justify-end gap-2">
-                <button
-                  onClick={onClose}
-                  className="px-4 py-2 text-sm rounded-md border border-gray-300 text-gray-600 hover:bg-gray-100 transition"
-                >
+                <button onClick={onClose} className="px-4 py-2 text-sm rounded-md border border-gray-300 text-gray-600 hover:bg-gray-100 transition">
                   {t("resume.cancel")}
                 </button>
-                <button
-                  onClick={handleSubmit}
-                  className="px-4 py-2 text-sm rounded-md bg-blue-700 text-white hover:bg-blue-800 transition"
-                >
+                <button onClick={handleSubmit} className="px-4 py-2 text-sm rounded-md bg-blue-700 text-white hover:bg-blue-800 transition">
                   {t("resume.continue")}
                 </button>
               </div>

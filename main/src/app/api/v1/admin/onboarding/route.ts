@@ -6,9 +6,9 @@ import ApplicationForm from "@/mongoose/models/ApplicationForm";
 import CarriersEdgeTraining from "@/mongoose/models/CarriersEdgeTraining";
 import DrugTest from "@/mongoose/models/DrugTest";
 import { EStepPath } from "@/types/onboardingTracker.types";
-import { onboardingStepFlow } from "@/lib/utils/onboardingUtils";
 import type { DashboardOnboardingItem } from "@/types/adminDashboard.types";
 import { guard } from "@/lib/auth/authUtils";
+import { getOnboardingStepFlow } from "@/lib/utils/onboardingUtils";
 
 // ---------- helpers ----------
 function toBool(v: string | null): boolean | undefined {
@@ -284,7 +284,7 @@ export async function GET(req: NextRequest) {
           driverEmail: { $ifNull: ["$driverAppObj.email", null] },
           ceEmailSent: { $ifNull: [{ $first: "$ce.emailSent" }, false] },
           dtDocumentsUploaded: { $ifNull: [{ $first: "$dt.documentsUploaded" }, false] },
-          progressStepIndex: { $indexOfArray: [onboardingStepFlow, "$status.currentStep"] },
+          progressStepIndex: { $indexOfArray: [getOnboardingStepFlow({ needsFlatbedTraining: true }), "$status.currentStep"] },
         },
       },
 
@@ -357,8 +357,6 @@ export async function GET(req: NextRequest) {
       items,
     });
   } catch (err: any) {
-    return errorResponse(500, "Failed to fetch onboarding trackers", {
-      error: err?.message ?? String(err),
-    });
+    return errorResponse(err);
   }
 }

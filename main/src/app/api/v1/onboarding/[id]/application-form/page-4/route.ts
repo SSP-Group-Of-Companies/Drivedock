@@ -30,8 +30,8 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     const appFormDoc = await ApplicationForm.findById(appFormId);
     if (!appFormDoc) return errorResponse(404, "ApplicationForm not found");
 
-    if (!hasReachedStep(onboardingDoc.status, EStepPath.APPLICATION_PAGE_3)) {
-      return errorResponse(400, "Please complete previous step first");
+    if (!hasReachedStep(onboardingDoc, EStepPath.APPLICATION_PAGE_4)) {
+      return errorResponse(400, "Please complete previous steps first");
     }
 
     const body = await parseJsonBody<IApplicationFormPage4>(req);
@@ -305,7 +305,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     await appFormDoc.save({ validateBeforeSave: false });
 
     // Tracker & resume expiry
-    onboardingDoc.status = advanceProgress(onboardingDoc.status, EStepPath.APPLICATION_PAGE_4);
+    onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.APPLICATION_PAGE_4);
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();
     await onboardingDoc.save();
 
@@ -346,8 +346,8 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
       return errorResponse(404, "ApplicationForm not found");
     }
 
-    if (!hasReachedStep(onboardingDoc.status, EStepPath.APPLICATION_PAGE_3)) {
-      return errorResponse(403, "Please complete previous step first");
+    if (!hasReachedStep(onboardingDoc, EStepPath.APPLICATION_PAGE_4)) {
+      return errorResponse(403, "Please complete previous steps first");
     }
 
     return successResponse(200, "Page 4 data retrieved", {

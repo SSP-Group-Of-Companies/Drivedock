@@ -44,20 +44,12 @@ import { useTranslation } from "react-i18next";
 import { ArrowRight } from "lucide-react";
 
 // components, hooks, and types
-import {
-  EDriverType,
-  EHaulPreference,
-  ETeamStatus,
-  IPreQualifications,
-} from "@/types/preQualifications.types";
+import { EDriverType, EHaulPreference, ETeamStatus, IPreQualifications } from "@/types/preQualifications.types";
 import QuestionGroup from "@/app/onboarding/components/QuestionGroup";
 import FlatbedPopup from "@/app/onboarding/components/FlatbedPopup";
 import { usePrequalificationStore } from "@/store/usePrequalificationStore";
 import { useCompanySelection } from "@/hooks/frontendHooks/useCompanySelection";
-import {
-  preQualificationQuestions,
-  categoryQuestions,
-} from "@/constants/form-questions/preQualification";
+import { preQualificationQuestions, categoryQuestions } from "@/constants/form-questions/preQualification";
 import useMounted from "@/hooks/useMounted";
 
 /**
@@ -80,9 +72,7 @@ export default function PreQualificationPage() {
   const { selectedCompany } = useCompanySelection();
 
   // Local UI state controlling the flatbed info popup (null → hidden)
-  const [showFlatbedPopup, setShowFlatbedPopup] = useState<null | "yes" | "no">(
-    null
-  );
+  const [showFlatbedPopup, setShowFlatbedPopup] = useState<null | "yes" | "no">(null);
 
   /**
    * Derive the list of questions to show based on company country.
@@ -92,9 +82,7 @@ export default function PreQualificationPage() {
   const filteredPreQualificationQuestions = useMemo(() => {
     if (!selectedCompany) return preQualificationQuestions;
     if (selectedCompany.countryCode === "US") {
-      return preQualificationQuestions.filter(
-        (q) => q.name !== "canCrossBorderUSA" && q.name !== "hasFASTCard"
-      );
+      return preQualificationQuestions.filter((q) => q.name !== "canCrossBorderUSA" && q.name !== "hasFASTCard");
     }
     return preQualificationQuestions;
   }, [selectedCompany]);
@@ -106,11 +94,7 @@ export default function PreQualificationPage() {
    */
   const defaultValues: FormValues = useMemo(() => {
     if (!prequalData) {
-      return Object.fromEntries(
-        [...filteredPreQualificationQuestions, ...categoryQuestions].map(
-          (q) => [q.name, ""]
-        )
-      );
+      return Object.fromEntries([...filteredPreQualificationQuestions, ...categoryQuestions].map((q) => [q.name, ""]));
     }
     return transformToFormValues(prequalData);
   }, [prequalData, filteredPreQualificationQuestions]);
@@ -152,10 +136,7 @@ export default function PreQualificationPage() {
    */
   const watchAllFields = watch();
   const allAnswered = Object.keys(watchAllFields).every((key) => {
-    const isFieldRendered = [
-      ...filteredPreQualificationQuestions,
-      ...categoryQuestions,
-    ].some((q) => q.name === key);
+    const isFieldRendered = [...filteredPreQualificationQuestions, ...categoryQuestions].some((q) => q.name === key);
     return !isFieldRendered || watchAllFields[key] !== "";
   });
 
@@ -172,12 +153,10 @@ export default function PreQualificationPage() {
       over23Local: data.over23Local === "form.yes",
       over25CrossBorder: data.over25CrossBorder === "form.yes",
       canDriveManual: data.canDriveManual === "form.yes",
-      experienceDrivingTractorTrailer:
-        data.experienceDrivingTractorTrailer === "form.yes",
+      experienceDrivingTractorTrailer: data.experienceDrivingTractorTrailer === "form.yes",
       faultAccidentIn3Years: data.faultAccidentIn3Years === "form.yes",
       zeroPointsOnAbstract: data.zeroPointsOnAbstract === "form.yes",
-      noUnpardonedCriminalRecord:
-        data.noUnpardonedCriminalRecord === "form.yes",
+      noUnpardonedCriminalRecord: data.noUnpardonedCriminalRecord === "form.yes",
       legalRightToWorkCanada: data.legalRightToWorkCanada === "form.yes",
 
       // Categories are saved as ENUM values (already in RHF state)
@@ -224,10 +203,7 @@ export default function PreQualificationPage() {
                 <QuestionGroup
                   question={
                     // If user is in the US company context, swap the label to the US variant
-                    q.name === "legalRightToWorkCanada" &&
-                    selectedCompany?.countryCode === "US"
-                      ? t("form.step1.questions.legalRightToWorkUS")
-                      : t(q.label)
+                    q.name === "legalRightToWorkCanada" && selectedCompany?.countryCode === "US" ? t("form.step1.questions.legalRightToWorkUS") : t(q.label)
                   }
                   options={q.options} // Options come from constants (typed; i18n labelKeys)
                   value={field.value} // Current RHF value for this field
@@ -239,9 +215,7 @@ export default function PreQualificationPage() {
         </div>
 
         {/* Categories */}
-        <h2 className="text-xl text-center font-bold text-gray-800">
-          {t("form.step1.questions.categories")}
-        </h2>
+        <h2 className="text-xl text-center font-bold text-gray-800">{t("form.step1.questions.categories")}</h2>
 
         <div className="space-y-4">
           {categoryQuestions.map((q) => (
@@ -300,17 +274,11 @@ function transformToFormValues(data: IPreQualifications): FormValues {
     over23Local: data.over23Local ? "form.yes" : "form.no",
     over25CrossBorder: data.over25CrossBorder ? "form.yes" : "form.no",
     canDriveManual: data.canDriveManual ? "form.yes" : "form.no",
-    experienceDrivingTractorTrailer: data.experienceDrivingTractorTrailer
-      ? "form.yes"
-      : "form.no",
+    experienceDrivingTractorTrailer: data.experienceDrivingTractorTrailer ? "form.yes" : "form.no",
     faultAccidentIn3Years: data.faultAccidentIn3Years ? "form.yes" : "form.no",
     zeroPointsOnAbstract: data.zeroPointsOnAbstract ? "form.yes" : "form.no",
-    noUnpardonedCriminalRecord: data.noUnpardonedCriminalRecord
-      ? "form.yes"
-      : "form.no",
-    legalRightToWorkCanada: data.legalRightToWorkCanada
-      ? "form.yes"
-      : "form.no",
+    noUnpardonedCriminalRecord: data.noUnpardonedCriminalRecord ? "form.yes" : "form.no",
+    legalRightToWorkCanada: data.legalRightToWorkCanada ? "form.yes" : "form.no",
     canCrossBorderUSA: data.canCrossBorderUSA ? "form.yes" : "form.no",
     hasFASTCard: data.hasFASTCard ? "form.yes" : "form.no",
 

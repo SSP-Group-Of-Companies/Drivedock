@@ -10,21 +10,16 @@
 
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  applicationFormPage1Schema,
-  ApplicationFormPage1Schema,
-} from "@/lib/zodSchemas/applicationFormPage1.schema";
+import { applicationFormPage1Schema, ApplicationFormPage1Schema } from "@/lib/zodSchemas/applicationFormPage1.schema";
 import { ELicenseType } from "@/types/shared.types";
-
-// Reuse components from the [id] folder
-import PersonalDetails from "../[id]/application-form/page-1/components/PersonalDetails";
-import PlaceOfBirth from "../[id]/application-form/page-1/components/PlaceOfBirth";
-import LicenseSection from "../[id]/application-form/page-1/components/LicenseSection";
-import AddressSection from "../[id]/application-form/page-1/components/AddressSection";
-import ContinueButton from "../[id]/ContinueButton";
 
 // ✅ Use the factory (not the old object)
 import { page1ConfigFactory } from "@/lib/frontendConfigs/applicationFormConfigs/page1Config";
+import PersonalDetails from "../../[id]/application-form/page-1/components/PersonalDetails";
+import PlaceOfBirth from "../../[id]/application-form/page-1/components/PlaceOfBirth";
+import LicenseSection from "../../[id]/application-form/page-1/components/LicenseSection";
+import AddressSection from "../../[id]/application-form/page-1/components/AddressSection";
+import ContinueButton from "../../[id]/ContinueButton";
 
 const EMPTY_PHOTO = { s3Key: "", url: "" };
 
@@ -85,9 +80,7 @@ export default function ApplicationFormPage1() {
         <AddressSection />
 
         {/* ✅ Pass the factory directly. No trackerId here (POST flow). */}
-        <ContinueButton<ApplicationFormPage1Schema>
-          config={page1ConfigFactory}
-        />
+        <ContinueButton<ApplicationFormPage1Schema> config={page1ConfigFactory} />
       </form>
     </FormProvider>
   );

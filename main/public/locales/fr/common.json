@@ -333,6 +333,13 @@
         "submissionFailed": "Échec de l’envoi."
       }
     },
+    "step6": {
+      "title": "Test de Dépistage",
+      "description": "Veuillez téléverser des photos claires de vos documents de test de dépistage de drogues. Vous pouvez ajouter jusqu’à {{count}} photos. Une fois téléversés, les documents seront vérifiés avant que vous puissiez continuer.",
+      "verified": "Documents vérifiés.",
+      "pending": "Documents téléversés. En attente de vérification. Les téléversements sont désactivés.",
+      "labelDocuments": "Documents du test de dépistage"
+    },
     "errors": {
       "minimum5Years": "Vous devez fournir au moins 5 années d’historique d’adresses.",
       "addressDurationError": "L’historique des adresses doit couvrir les 5 dernières années. Veuillez ajouter une adresse précédente si vous avez vécu à plus d’un endroit."
@@ -391,7 +398,9 @@
     "clear": "Effacer",
     "processing": "Traitement...",
     "submitAnswers": "Soumettre les réponses",
-    "continue": "Continuer"
+    "continue": "Continuer",
+    "submitDocuments": "Soumettre les documents",
+    "pendingVerification": "Vérification en attente"
   },
   "photoGroup": {
     "noPhotosYet": "Aucune photo pour le moment",

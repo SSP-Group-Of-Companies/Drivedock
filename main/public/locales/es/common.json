@@ -333,6 +333,13 @@
         "submissionFailed": "Error al enviar."
       }
     },
+    "step6": {
+      "title": "Prueba de Drogas",
+      "description": "Por favor, cargue fotos claras de sus documentos de la prueba de drogas. Puede subir hasta {{count}} fotos. Una vez cargados, los documentos serán verificados antes de que pueda continuar.",
+      "verified": "Documentos verificados.",
+      "pending": "Documentos cargados. Pendiente de verificación. Las cargas están deshabilitadas.",
+      "labelDocuments": "Documentos de la Prueba de Drogas"
+    },
     "errors": {
       "minimum5Years": "Debes proporcionar al menos 5 años de historial de direcciones.",
       "addressDurationError": "El historial de direcciones debe abarcar los últimos 5 años. Agrega una dirección anterior si viviste en más de un lugar."
@@ -391,7 +398,9 @@
     "clear": "Limpiar",
     "processing": "Procesando...",
     "submitAnswers": "Enviar respuestas",
-    "continue": "Continuar"
+    "continue": "Continuar",
+    "submitDocuments": "Enviar documentos",
+    "pendingVerification": "Verificación pendiente"
   },
   "photoGroup": {
     "noPhotosYet": "Aún no hay fotos",

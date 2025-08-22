@@ -22,7 +22,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const onboardingDoc = await OnboardingTracker.findById(id);
     if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
 
-    if (!hasReachedStep(onboardingDoc.status, EStepPath.APPLICATION_PAGE_5)) return errorResponse(400, "Please complete previous step first");
+    if (!hasReachedStep(onboardingDoc, EStepPath.POLICIES_CONSENTS)) return errorResponse(400, "Please complete previous steps first");
 
     const { signature, sendPoliciesByEmail } = await parseJsonBody<IPoliciesConsents>(req);
     const tempSignature = signature;
@@ -60,7 +60,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     onboardingDoc.forms.policiesConsents = updatedDoc.id;
-    onboardingDoc.status = advanceProgress(onboardingDoc.status, EStepPath.POLICIES_CONSENTS);
+    onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.POLICIES_CONSENTS);
 
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();
     await onboardingDoc.save();
@@ -99,8 +99,8 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
       policiesDoc = await PoliciesConsents.findById(policiesId);
     }
 
-    if (!hasReachedStep(onboardingDoc.status, EStepPath.APPLICATION_PAGE_5)) {
-      return errorResponse(403, "Please complete previous step first");
+    if (!hasReachedStep(onboardingDoc, EStepPath.POLICIES_CONSENTS)) {
+      return errorResponse(403, "Please complete previous steps first");
     }
 
     return successResponse(200, "Policies & Consents data retrieved", {

@@ -14,11 +14,11 @@ export async function resolveBaseUrl(): Promise<string> {
 }
 
 /** Server-to-server base:
- * - Dev: http://127.0.0.1:PORT
+ * - Dev: http://localhost:PORT
  * - Prod: current origin (same as resolveBaseUrl)
  */
 export async function resolveInternalBaseUrl(): Promise<string> {
-  if (!isProd) return `http://127.0.0.1:${PORT}`;
+  if (!isProd) return `http://localhost:${PORT}`;
   return await resolveBaseUrl();
 }
 

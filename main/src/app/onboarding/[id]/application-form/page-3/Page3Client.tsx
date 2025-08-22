@@ -11,15 +11,12 @@ import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
 
-import {
-  applicationFormPage3Schema,
-  ApplicationFormPage3Schema,
-} from "@/lib/zodSchemas/applicationFormPage3.schema";
+import { applicationFormPage3Schema, ApplicationFormPage3Schema } from "@/lib/zodSchemas/applicationFormPage3.schema";
 
 import ContinueButton from "@/app/onboarding/[id]/ContinueButton";
 import { page3ConfigFactory } from "@/lib/frontendConfigs/applicationFormConfigs/page3Config";
 import { useOnboardingTracker } from "@/store/useOnboardingTracker";
-import type { ITrackerContext } from "@/types/onboardingTracker.types";
+import type { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
 
 // Import modular components
 import AccidentHistorySection from "./components/AccidentHistorySection";
@@ -32,14 +29,10 @@ type Page3ClientProps = {
   trackerId: string;
   // Optional: when the server wrapper passes onboardingContext from GET,
   // we hydrate the store so no-op continue can navigate forward without PATCH.
-  trackerContextFromGet?: ITrackerContext | null;
+  trackerContextFromGet?: IOnboardingTrackerContext | null;
 };
 
-export default function Page3Client({
-  defaultValues,
-  trackerId,
-  trackerContextFromGet,
-}: Page3ClientProps) {
+export default function Page3Client({ defaultValues, trackerId, trackerContextFromGet }: Page3ClientProps) {
   const methods = useForm<ApplicationFormPage3Schema>({
     resolver: zodResolver(applicationFormPage3Schema),
     mode: "onChange",

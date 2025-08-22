@@ -5,14 +5,11 @@ import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 // Zod
-import {
-  makeApplicationFormPage4Schema,
-  ApplicationFormPage4Input,
-} from "@/lib/zodSchemas/applicationFormPage4.Schema";
+import { makeApplicationFormPage4Schema, ApplicationFormPage4Input } from "@/lib/zodSchemas/applicationFormPage4.Schema";
 
 import { ECountryCode } from "@/types/shared.types";
 import { IApplicationFormPage4 } from "@/types/applicationForm.types";
-import { ITrackerContext } from "@/types/onboardingTracker.types";
+import { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
 
 // UI
 import ContinueButton from "@/app/onboarding/[id]/ContinueButton";
@@ -33,9 +30,7 @@ function formatDate(d?: string | Date | null) {
   return isNaN(dt.getTime()) ? "" : dt.toISOString().split("T")[0];
 }
 
-function mapDefaults(
-  page4: IApplicationFormPage4 | null
-): ApplicationFormPage4Input {
+function mapDefaults(page4: IApplicationFormPage4 | null): ApplicationFormPage4Input {
   return {
     criminalRecords:
       page4?.criminalRecords?.map((r) => ({
@@ -78,23 +73,15 @@ function mapDefaults(
 
 type Props = {
   trackerId: string;
-  onboardingContext: ITrackerContext;
+  onboardingContext: IOnboardingTrackerContext;
   page4: IApplicationFormPage4 | null;
 };
 
-export default function Page4Client({
-  trackerId,
-  onboardingContext,
-  page4,
-}: Props) {
+export default function Page4Client({ trackerId, onboardingContext, page4 }: Props) {
   const defaultValues = useMemo(() => mapDefaults(page4), [page4]);
 
   // derive country from companyId
-  const countryCode: ECountryCode = isCanadianCompany(
-    onboardingContext.companyId
-  )
-    ? ECountryCode.CA
-    : ECountryCode.US;
+  const countryCode: ECountryCode = isCanadianCompany(onboardingContext.companyId) ? ECountryCode.CA : ECountryCode.US;
 
   const schema = useMemo(
     () =>
@@ -121,10 +108,7 @@ export default function Page4Client({
         <EligibilityDocsSection countryCode={countryCode} />
         {countryCode === ECountryCode.CA && <FastCardSection isCanadian />}
         <AdditionalInfoSection />
-        <ContinueButton<ApplicationFormPage4Input>
-          config={config}
-          trackerId={trackerId}
-        />
+        <ContinueButton<ApplicationFormPage4Input> config={config} trackerId={trackerId} />
       </form>
     </FormProvider>
   );

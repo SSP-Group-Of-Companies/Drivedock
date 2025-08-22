@@ -24,14 +24,14 @@
 import "server-only";
 import PreQualificationClient from "@/app/onboarding/[id]/prequalifications/PrequalificationClient";
 import { IPreQualifications } from "@/types/preQualifications.types";
-import { ITrackerContext } from "@/types/onboardingTracker.types";
+import { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
 import { resolveInternalBaseUrl } from "@/lib/utils/urlHelper.server";
 import { fetchServerPageData } from "@/lib/utils/fetchServerPageData";
 
 /** API response envelope (unwrapped to `data` by fetchServerPageData) */
 type PrequalResult = {
   preQualifications?: IPreQualifications;
-  onboardingContext?: ITrackerContext;
+  onboardingContext?: IOnboardingTrackerContext;
 };
 
 /**

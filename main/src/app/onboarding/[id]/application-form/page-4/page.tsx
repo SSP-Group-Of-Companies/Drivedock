@@ -16,14 +16,14 @@
 import "server-only";
 import Page4Client from "./Page4Client";
 import { IApplicationFormPage4 } from "@/types/applicationForm.types";
-import { ITrackerContext } from "@/types/onboardingTracker.types";
+import { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
 import { resolveInternalBaseUrl } from "@/lib/utils/urlHelper.server";
 import { fetchServerPageData } from "@/lib/utils/fetchServerPageData";
 
 /** API response envelope (unwrapped to `data` by fetchServerPageData) */
 type Page4Result = {
   page4?: IApplicationFormPage4;
-  onboardingContext?: ITrackerContext;
+  onboardingContext?: IOnboardingTrackerContext;
 };
 
 export default async function ApplicationFormPage4({ params }: { params: Promise<{ id: string }> }) {

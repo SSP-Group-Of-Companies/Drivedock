@@ -7,6 +7,7 @@ import { advanceProgress, buildTrackerContext, nextResumeExpiry, onboardingExpir
 import { EStepPath } from "@/types/onboardingTracker.types";
 import { isValidObjectId } from "mongoose";
 import { NextRequest } from "next/server";
+import { ECompanyApplicationType } from "@/hooks/frontendHooks/useCompanySelection";
 
 export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
@@ -58,8 +59,11 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       return errorResponse(404, "PreQualifications not found");
     }
 
+    // check if flatbed training is required
+    onboardingDoc.needsFlatbedTraining = onboardingDoc.applicationType === ECompanyApplicationType.FLATBED ? !Boolean(preQualDoc.flatbedExperience) : false;
+
     // Step 5: Update onboarding tracker status
-    onboardingDoc.status = advanceProgress(onboardingDoc.status, EStepPath.PRE_QUALIFICATIONS);
+    onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.PRE_QUALIFICATIONS);
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();
     await onboardingDoc.save();
 

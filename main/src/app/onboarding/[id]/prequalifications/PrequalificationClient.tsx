@@ -52,7 +52,8 @@ import { useCompanySelection } from "@/hooks/frontendHooks/useCompanySelection";
 import { useOnboardingTracker } from "@/store/useOnboardingTracker";
 import { useGlobalLoading } from "@/store/useGlobalLoading";
 import { EDriverType, EHaulPreference, ETeamStatus, IPreQualifications } from "@/types/preQualifications.types";
-import { ITrackerContext } from "@/types/onboardingTracker.types";
+import { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
+import { buildOnboardingStepPath } from "@/lib/utils/onboardingUtils";
 
 /**
  * RHF form shape used on this page.
@@ -72,7 +73,7 @@ type FormValues = Record<string, string>;
 type Props = {
   defaultValues: FormValues;
   trackerId: string;
-  trackerContext?: ITrackerContext | null;
+  trackerContext?: IOnboardingTrackerContext | null;
 };
 
 export default function PreQualificationClient({ defaultValues, trackerId, trackerContext }: Props) {
@@ -162,11 +163,12 @@ export default function PreQualificationClient({ defaultValues, trackerId, track
 
       // Expect onboardingContext.nextUrl to be returned for navigation
       const result = await res.json();
-      const nextUrl: string | undefined = result?.data?.onboardingContext?.nextUrl;
-      if (!nextUrl) throw new Error("nextUrl missing from onboardingContext");
+      const onboardingContext: IOnboardingTrackerContext = result?.data?.onboardingContext;
+      const nextStep = onboardingContext?.nextStep;
+      if (!onboardingContext || !nextStep) throw new Error("nextStep missing from onboardingContext");
 
       // Navigate to the next step in the wizard
-      router.push(nextUrl);
+      router.push(buildOnboardingStepPath(onboardingContext, nextStep));
     } catch (err) {
       // Log for debugging; show a basic alert for the MVP
       console.error("Prequalification submit error:", err);

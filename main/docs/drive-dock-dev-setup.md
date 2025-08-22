@@ -113,7 +113,7 @@ AWS_ACCESS_KEY_ID=
 AWS_SECRET_ACCESS_KEY=
 
 # Authentication Configuration
-COOKIE_NAME=   # Cookie name for authentication token
+AUTH_COOKIE_NAME=   # Cookie name for authentication token
 NEXTAUTH_SECRET=
 
 # Portal URL Configuration
@@ -127,7 +127,7 @@ NEXT_PUBLIC_PORTAL_BASE_URL=https://sspportal.lvh.me:3443
 NEXT_PUBLIC_ORIGIN=
 
 # Cookie shared across sub-apps
-COOKIE_NAME=
+AUTH_COOKIE_NAME=
 COOKIE_DOMAIN=
 
 # NextAuth

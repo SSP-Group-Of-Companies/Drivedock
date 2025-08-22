@@ -96,7 +96,10 @@ export async function POST(req: NextRequest) {
       driverApplication: appFormDoc.id,
       preQualification: preQualDoc.id,
     };
-    onboardingDoc.status = advanceProgress(onboardingDoc.status, EStepPath.APPLICATION_PAGE_1);
+    onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.APPLICATION_PAGE_1);
+
+    // check if flatbed training is required
+    onboardingDoc.needsFlatbedTraining = applicationType === ECompanyApplicationType.FLATBED ? !Boolean(prequalifications.flatbedExperience) : false;
     await onboardingDoc.save();
 
     // Finalize files only after successful DB save

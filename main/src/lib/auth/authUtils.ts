@@ -6,7 +6,7 @@ import { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 import type { IUser } from "@/types/user.types";
 import { AppError } from "@/lib/utils/apiResponse";
-import { COOKIE_NAME, NEXTAUTH_SECRET } from "@/config/env";
+import { AUTH_COOKIE_NAME, NEXTAUTH_SECRET } from "@/config/env";
 
 interface AppJWT {
   userId?: string;
@@ -39,14 +39,14 @@ async function buildNextRequest(): Promise<NextRequest> {
  */
 export const currentUser = cache(async (): Promise<IUser | null> => {
   const jar = await cookies();
-  const raw = jar.get(COOKIE_NAME)?.value;
+  const raw = jar.get(AUTH_COOKIE_NAME)?.value;
   if (!raw) return null;
 
   const req = await buildNextRequest();
   const token = (await getToken({
     req,
     secret: NEXTAUTH_SECRET,
-    cookieName: COOKIE_NAME,
+    cookieName: AUTH_COOKIE_NAME,
   })) as AppJWT | null;
 
   if (!token?.userId || !token?.email || !token?.name) return null;

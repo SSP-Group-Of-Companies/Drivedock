@@ -7,7 +7,7 @@ export const AWS_REGION = process.env.AWS_REGION!;
 export const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID!;
 export const AWS_SECRET_ACCESS_KEY = process.env.AWS_SECRET_ACCESS_KEY!;
 export const CRON_SECRET = process.env.CRON_SECRET!;
-export const COOKIE_NAME = process.env.COOKIE_NAME!;
+export const AUTH_COOKIE_NAME = process.env.AUTH_COOKIE_NAME! || "";
 export const NEXTAUTH_SECRET = process.env.NEXTAUTH_SECRET!;
 export const NEXT_PUBLIC_PORTAL_BASE_URL = process.env.NEXT_PUBLIC_PORTAL_BASE_URL!;
 export const isProd = process.env.NODE_ENV === "production";

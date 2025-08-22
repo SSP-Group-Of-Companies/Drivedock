@@ -60,7 +60,7 @@ export default function Navbar() {
    */
   const handleBackClick = () => {
     const trackerId = (params?.id as string) || undefined;
-    handleBackNavigation(pathname, trackerId, router);
+    handleBackNavigation(pathname, trackerId, router, { needsFlatbedTraining: false });
   };
 
   // UI control flags

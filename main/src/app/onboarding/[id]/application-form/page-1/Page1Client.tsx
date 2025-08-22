@@ -28,10 +28,7 @@
 
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  applicationFormPage1Schema,
-  ApplicationFormPage1Schema,
-} from "@/lib/zodSchemas/applicationFormPage1.schema";
+import { applicationFormPage1Schema, ApplicationFormPage1Schema } from "@/lib/zodSchemas/applicationFormPage1.schema";
 
 import PersonalDetails from "./components/PersonalDetails";
 import PlaceOfBirth from "./components/PlaceOfBirth";
@@ -42,7 +39,7 @@ import ContinueButton from "@/app/onboarding/[id]/ContinueButton";
 import { page1ConfigFactory } from "@/lib/frontendConfigs/applicationFormConfigs/page1Config";
 import { useEffect } from "react";
 import { useOnboardingTracker } from "@/store/useOnboardingTracker";
-import type { ITrackerContext } from "@/types/onboardingTracker.types";
+import type { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
 
 /**
  * Props for Page1Client component
@@ -52,14 +49,10 @@ type Page1ClientProps = {
   trackerId: string;
   // Optional: when the server wrapper passes onboardingContext from GET,
   // we hydrate the store so no-op continue can navigate forward without PATCH.
-  trackerContextFromGet?: ITrackerContext | null;
+  trackerContextFromGet?: IOnboardingTrackerContext | null;
 };
 
-export default function Page1Client({
-  defaultValues,
-  trackerId,
-  trackerContextFromGet,
-}: Page1ClientProps) {
+export default function Page1Client({ defaultValues, trackerId, trackerContextFromGet }: Page1ClientProps) {
   // Normalize SIN to digits only for consistent formatting
   const cleanedDefaults: ApplicationFormPage1Schema = {
     ...defaultValues,

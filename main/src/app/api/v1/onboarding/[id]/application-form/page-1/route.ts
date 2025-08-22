@@ -177,7 +177,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       onboardingDoc.sinHash = sinHash;
       onboardingDoc.sinEncrypted = sinEncrypted;
     }
-    onboardingDoc.status = advanceProgress(onboardingDoc.status, EStepPath.APPLICATION_PAGE_1);
+    onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.APPLICATION_PAGE_1);
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();
     await onboardingDoc.save();
 

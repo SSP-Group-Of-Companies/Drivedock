@@ -1,8 +1,14 @@
 import { Schema } from "mongoose";
 import { IDrugTestDoc } from "@/types/drugTest.types";
+import { photoSchema } from "./sharedSchemas";
 
 const drugTestSchema = new Schema<IDrugTestDoc>(
   {
+    documents: {
+      type: [photoSchema],
+      default: [],
+      required: [true, "documents is required"],
+    },
     documentsUploaded: {
       type: Boolean,
       default: false,
