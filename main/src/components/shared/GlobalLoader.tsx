@@ -11,6 +11,7 @@
  * - Subtle particle animations for visual interest
  * - Backdrop blur for focus
  * - Responsive design with professional animations
+ * - Theme-aware colors when in dashboard context
  *
  * Author: Faruq Adebayo Atanda
  * Company: SSP Group of Companies
@@ -22,9 +23,43 @@
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import { useGlobalLoading } from "@/store/useGlobalLoading";
+import { useThemeStore } from "@/store/useThemeStore";
 
 export default function GlobalLoader() {
   const { visible, message } = useGlobalLoading();
+  const { resolvedTheme } = useThemeStore();
+
+  // Check if we're in dashboard context (theme is available)
+  const isDashboard = typeof resolvedTheme !== 'undefined';
+  
+  // Fallback colors for driver side
+  const getBackgroundColor = () => {
+    if (isDashboard) {
+      return 'var(--color-background)';
+    }
+    return 'rgba(255, 255, 255, 0.7)';
+  };
+
+  const getTextColor = () => {
+    if (isDashboard) {
+      return 'var(--color-on-surface-variant)';
+    }
+    return '#6b7280'; // gray-500
+  };
+
+  const getPrimaryColor = () => {
+    if (isDashboard) {
+      return 'var(--color-primary)';
+    }
+    return '#0071bc'; // SSP blue
+  };
+
+  const getSecondaryColor = () => {
+    if (isDashboard) {
+      return 'var(--color-secondary)';
+    }
+    return '#e30613'; // SSP red
+  };
 
   return (
     <AnimatePresence>
@@ -34,14 +69,22 @@ export default function GlobalLoader() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-white/70 backdrop-blur-sm"
+          className="fixed inset-0 z-[70] flex items-center justify-center backdrop-blur-sm transition-colors duration-200"
+          style={{
+            backgroundColor: getBackgroundColor(),
+            opacity: isDashboard ? 0.7 : 1
+          }}
         >
           <div className="flex flex-col items-center gap-3">
             {/* Animated SSP star with breathing effect and particles */}
             <div className="relative w-32 h-32">
               {/* Background glow effect */}
               <motion.div
-                className="absolute inset-0 rounded-full bg-gradient-to-r from-[#e30613]/20 to-blue-500/20 blur-xl"
+                className="absolute inset-0 rounded-full blur-xl"
+                style={{
+                  background: `linear-gradient(to right, ${getPrimaryColor()}, ${getSecondaryColor()})`,
+                  opacity: 0.2
+                }}
                 animate={{
                   scale: [1, 1.2, 1],
                   opacity: [0.3, 0.6, 0.3],
@@ -52,7 +95,7 @@ export default function GlobalLoader() {
                   ease: "easeInOut",
                 }}
               />
-              
+
               {/* Main star container with breathing animation */}
               <motion.div
                 className="relative w-full h-full"
@@ -90,12 +133,14 @@ export default function GlobalLoader() {
               {[0, 1, 2, 3, 4].map((i) => (
                 <motion.span
                   key={i}
-                  className="absolute rounded-full bg-[#e30613]/40"
+                  className="absolute rounded-full"
                   style={{
+                    backgroundColor: getSecondaryColor(),
+                    opacity: 0.4,
                     width: 3 + (i % 2) * 2,
                     height: 3 + (i % 2) * 2,
-                    left: `${20 + (i * 15) % 60}%`,
-                    top: `${15 + (i * 20) % 70}%`,
+                    left: `${20 + ((i * 15) % 60)}%`,
+                    top: `${15 + ((i * 20) % 70)}%`,
                   }}
                   initial={{ opacity: 0, scale: 0 }}
                   animate={{
@@ -112,10 +157,15 @@ export default function GlobalLoader() {
                 />
               ))}
             </div>
-            
+
             {/* Optional loading message */}
             {message && (
-              <p className="text-sm text-gray-700 animate-pulse">{message}</p>
+              <p 
+                className="text-sm animate-pulse"
+                style={{ color: getTextColor() }}
+              >
+                {message}
+              </p>
             )}
           </div>
         </motion.div>

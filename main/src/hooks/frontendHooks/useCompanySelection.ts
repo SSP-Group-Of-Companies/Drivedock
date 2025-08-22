@@ -45,6 +45,7 @@
 
 import { create } from "zustand";
 import type { Company } from "@/constants/companies";
+import { ECompanyApplicationType } from "@/constants/companies";
 import { persist } from "zustand/middleware";
 
 /**
@@ -52,10 +53,6 @@ import { persist } from "zustand/middleware";
  * e.g., Flatbed or Dry Van.
  * This is the single source of truth for these values.
  */
-export enum ECompanyApplicationType {
-  FLATBED = "FLAT_BED",
-  DRY_VAN = "DRY_VAN",
-}
 
 /**
  * Extends the base Company type with optional application type.

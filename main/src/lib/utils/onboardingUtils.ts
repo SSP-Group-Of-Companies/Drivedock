@@ -1,5 +1,10 @@
 import { FORM_RESUME_EXPIRES_AT_IN_MILSEC } from "@/config/env";
-import { EStepPath, IOnboardingStatus, IOnboardingTrackerDoc, ITrackerContext } from "@/types/onboardingTracker.types";
+import {
+  EStepPath,
+  IOnboardingStatus,
+  IOnboardingTrackerDoc,
+  ITrackerContext,
+} from "@/types/onboardingTracker.types";
 
 // Start flow routes (before onboarding)
 const START_FLOW = ["/start/start-info-page", "/start/company"] as const;
@@ -15,6 +20,7 @@ export const onboardingStepFlow: EStepPath[] = [
   EStepPath.POLICIES_CONSENTS,
   EStepPath.DRIVE_TEST,
   EStepPath.CARRIERS_EDGE_TRAINING,
+  EStepPath.DRUG_TEST,
   EStepPath.flat_bed_training,
 ];
 
@@ -43,7 +49,10 @@ export function getPrevStep(step: EStepPath): EStepPath | null {
  * - Otherwise, move currentStep to the *next* step after the one just completed.
  * - If the completed step is the final step, mark completed and keep currentStep there.
  */
-export function advanceProgress(previous: IOnboardingStatus, completedNow: EStepPath): IOnboardingStatus {
+export function advanceProgress(
+  previous: IOnboardingStatus,
+  completedNow: EStepPath
+): IOnboardingStatus {
   const prevIdx = getStepIndex(previous.currentStep);
   const doneIdx = getStepIndex(completedNow);
 
@@ -64,12 +73,22 @@ export function advanceProgress(previous: IOnboardingStatus, completedNow: EStep
 }
 
 /** Progress / gating checks */
-export function hasReachedStep(status: IOnboardingStatus, step: EStepPath): boolean {
+export function hasReachedStep(
+  status: IOnboardingStatus,
+  step: EStepPath
+): boolean {
   return !isStepBefore(status.currentStep, step);
 }
 
 /** Build prev/current/next URLs from the authoritative current step */
-export function getOnboardingStepPaths(currentStep: EStepPath, onboardingId: string): { nextUrl: string | null; currentUrl: string | null; prevUrl: string | null } {
+export function getOnboardingStepPaths(
+  currentStep: EStepPath,
+  onboardingId: string
+): {
+  nextUrl: string | null;
+  currentUrl: string | null;
+  prevUrl: string | null;
+} {
   const index = getStepIndex(currentStep);
   const prevStep = onboardingStepFlow[index - 1] ?? null;
   const nextStep = onboardingStepFlow[index + 1] ?? null;
@@ -85,7 +104,10 @@ export function getOnboardingStepPaths(currentStep: EStepPath, onboardingId: str
  * Tracker context — always uses the authoritative currentStep
  * (resume behavior = resume at furthest step reached).
  */
-export function buildTrackerContext(tracker: IOnboardingTrackerDoc, defaultStep?: EStepPath): ITrackerContext {
+export function buildTrackerContext(
+  tracker: IOnboardingTrackerDoc,
+  defaultStep?: EStepPath
+): ITrackerContext {
   const step = defaultStep || tracker.status.currentStep;
   const { prevUrl, nextUrl } = getOnboardingStepPaths(step, tracker.id);
 
@@ -100,14 +122,18 @@ export function buildTrackerContext(tracker: IOnboardingTrackerDoc, defaultStep?
 }
 
 /** Session expiry */
-export function onboardingExpired(tracker?: IOnboardingTrackerDoc | null): boolean {
+export function onboardingExpired(
+  tracker?: IOnboardingTrackerDoc | null
+): boolean {
   if (!tracker?.resumeExpiresAt) return true;
   return new Date() > tracker.resumeExpiresAt;
 }
 
 /** Full flow for back-navigation helper (unchanged) */
 export function buildFullFlow(trackerId?: string): string[] {
-  const onboardingAbs = trackerId ? onboardingStepFlow.map((seg) => `/onboarding/${trackerId}/${seg}`) : onboardingStepFlow.map((seg) => `/onboarding/${seg}`);
+  const onboardingAbs = trackerId
+    ? onboardingStepFlow.map((seg) => `/onboarding/${trackerId}/${seg}`)
+    : onboardingStepFlow.map((seg) => `/onboarding/${seg}`);
   return [...START_FLOW, ...onboardingAbs];
 }
 
@@ -120,7 +146,11 @@ export function findIndexInFlow(flow: string[], pathname: string): number {
   return idx;
 }
 
-export function handleBackNavigation(pathname: string, trackerId: string | undefined, router: any): void {
+export function handleBackNavigation(
+  pathname: string,
+  trackerId: string | undefined,
+  router: any
+): void {
   const fullFlow = buildFullFlow(trackerId);
   const currentIndex = findIndexInFlow(fullFlow, pathname);
   if (currentIndex <= 0) {

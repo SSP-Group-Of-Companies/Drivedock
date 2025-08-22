@@ -27,7 +27,9 @@ interface PageTransitionWrapperProps {
   children: ReactNode;
 }
 
-export default function PageTransitionWrapper({ children }: PageTransitionWrapperProps) {
+export default function PageTransitionWrapper({
+  children,
+}: PageTransitionWrapperProps) {
   const pathname = usePathname();
 
   return (

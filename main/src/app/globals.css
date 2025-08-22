@@ -7,11 +7,12 @@
  *
  * Sections:
  * 1. Tailwind CSS import
- * 2. Custom keyframes
- * 3. Animation utility classes
- * 4. SSP-branded animated ring styles
- * 5. Country flag background utilities
- * 6. Shine animation for highlight effects
+ * 2. Theme Variables (Light/Dark Mode)
+ * 3. Custom keyframes
+ * 4. Animation utility classes
+ * 5. SSP-branded animated ring styles
+ * 6. Country flag background utilities
+ * 7. Shine animation for highlight effects
  *
  * Author: Faruq Adebayo Atanda
  * Created: 2025-08-08
@@ -23,7 +24,94 @@
 @import "tailwindcss";
 
 /* ------------------------------
-   2. Custom Keyframes
+   2. Theme Variables (Light/Dark Mode)
+   Following Google Material Design 3 and Apple Human Interface Guidelines
+------------------------------ */
+:root {
+  /* Light Mode Colors */
+  --color-background: #ffffff;
+  --color-surface: #fafafa;
+  --color-surface-variant: #f5f5f5;
+  --color-primary: #0071bc;
+  --color-primary-container: #e3f2fd;
+  --color-secondary: #e30613;
+  --color-secondary-container: #ffebee;
+  --color-on-background: #1a1a1a;
+  --color-on-surface: #1a1a1a;
+  --color-on-lightgray-test: #6e6e6e;
+  --color-on-surface-variant: #424242;
+  --color-outline: #e0e0e0;
+  --color-outline-variant: #f0f0f0;
+  --color-shadow: rgba(0, 0, 0, 0.08);
+  --color-shadow-elevated: rgba(0, 0, 0, 0.12);
+  --color-shadow-high: rgba(0, 0, 0, 0.16);
+  --elevation-1: 0 1px 2px 0 rgba(0, 0, 0, 0.1); /* tailwind shadow-sm */
+  --card-border-color: transparent;
+
+  /* Card and component colors */
+  --color-card: #ffffff;
+  --popUp-card: #f7f8fa;
+  --popUp-card-item-hover: #f1f2f3;
+  --color-card-hover: #f8f9fa;
+  --color-sidebar: rgba(0, 0, 0, 0.04);
+  --color-sidebar-hover: rgba(0, 0, 0, 0.08);
+  --color-header: rgba(255, 255, 255, 0.8);
+  --color-header-border: rgba(0, 0, 0, 0.06);
+
+  /* Status colors */
+  --color-success: #4caf50;
+  --color-success-container: #e8f5e8;
+  --color-success-on-container: #1b5e20;
+  --color-warning: #ffc107;
+  --color-warning-container: #fff8e1;
+  --color-warning-on-container: #f57f17;
+  --color-error: #f44336;
+  --color-info: #2196f3;
+}
+
+.dark {
+  /* Dark Mode Colors */
+  --color-background: #000000;
+  --color-surface: #121212;
+  --color-surface-variant: #1e1e1e;
+  --color-primary: #64b5f6;
+  --color-primary-container: #1976d2;
+  --color-secondary: #ff6b6b;
+  --color-secondary-container: #c62828;
+  --color-on-background: #ffffff;
+  --color-on-surface: #ffffff;
+  --color-on-surface-variant: #b3b3b3;
+  --color-outline: #424242;
+  --color-outline-variant: #2a2a2a;
+  --color-shadow: rgba(0, 0, 0, 0.3);
+  --color-shadow-elevated: rgba(0, 0, 0, 0.4);
+  --color-shadow-high: rgba(0, 0, 0, 0.5);
+  --elevation-1: none; /* or: 0 0 #0000 */
+  --card-border-color: var(--color-outline);
+
+  /* Card and component colors */
+  --color-card: #1e1e1e;
+  --popUp-card: #1e1e1e;
+  --color-card-hover: #2a2a2a;
+  --popUp-card-item-hover: #2a2a2a;
+  --color-sidebar: rgba(255, 255, 255, 0.05);
+  --color-sidebar-hover: rgba(255, 255, 255, 0.1);
+  --color-header: rgba(18, 18, 18, 0.8);
+  --color-header-border: rgba(255, 255, 255, 0.1);
+
+  /* Status colors */
+  --color-success: #81c784;
+  --color-success-container: #1b5e20;
+  --color-success-on-container: #e8f5e8;
+  --color-warning: #ffd54f;
+  --color-warning-container: #f57f17;
+  --color-warning-on-container: #fff8e1;
+  --color-error: #e57373;
+  --color-info: #64b5f6;
+}
+
+/* ------------------------------
+   3. Custom Keyframes
 ------------------------------ */
 
 /* Rotates a full turn (used in SSP animated ring) */
@@ -55,7 +143,7 @@
 }
 
 /* ------------------------------
-   3. Animation Utility Classes
+   4. Animation Utility Classes
 ------------------------------ */
 
 /* Apply wiggle animation */
@@ -64,7 +152,7 @@
 }
 
 /* ------------------------------
-   4. SSP-Branded Animated Ring
+   5. SSP-Branded Animated Ring
    Used to draw attention to language selector on first mount
 ------------------------------ */
 .ssp-animated-ring {
@@ -84,8 +172,11 @@
   background-repeat: no-repeat;
   background-size: 50% 50%;
   background-position: 0 0, 100% 0, 100% 100%, 0 100%;
-  background-image: linear-gradient(#005baa, #005baa), linear-gradient(#005baa, #005baa), linear-gradient(#e30613, #e30613), linear-gradient(#e30613, #e30613);
-  animation: rotate-ssp 2.5s linear forwards, fade-out 0.4s ease-out 2.2s forwards;
+  background-image: linear-gradient(#005baa, #005baa),
+    linear-gradient(#005baa, #005baa), linear-gradient(#e30613, #e30613),
+    linear-gradient(#e30613, #e30613);
+  animation: rotate-ssp 2.5s linear forwards,
+    fade-out 0.4s ease-out 2.2s forwards;
 }
 
 .ssp-animated-ring::after {
@@ -96,31 +187,49 @@
   left: 6px;
   width: calc(100% - 12px);
   height: calc(100% - 12px);
-  background: white;
+  background: var(--color-background);
   border-radius: 10px;
   animation: fade-out 0.4s ease-out 2.2s forwards;
 }
 
 /* ------------------------------
-   5. Country Flag Background Utilities
+   6. Country Flag Background Utilities
    Used for language selection flags
 ------------------------------ */
 @layer components {
   .bg-flag-fr {
-    background: linear-gradient(to right, #0055a4 33%, #ffffff 33%, #ffffff 66%, #ef4135 66%);
+    background: linear-gradient(
+      to right,
+      #0055a4 33%,
+      #ffffff 33%,
+      #ffffff 66%,
+      #ef4135 66%
+    );
   }
 
   .bg-flag-us {
-    background: linear-gradient(to right, #3c3b6e 30%, #ffffff 30%, #ffffff 65%, #b22234 65%);
+    background: linear-gradient(
+      to right,
+      #3c3b6e 30%,
+      #ffffff 30%,
+      #ffffff 65%,
+      #b22234 65%
+    );
   }
 
   .bg-flag-es {
-    background: linear-gradient(to bottom, #aa151b 33.33%, #f1bf00 33.33%, #f1bf00 66.66%, #aa151b 66.66%);
+    background: linear-gradient(
+      to bottom,
+      #aa151b 33.33%,
+      #f1bf00 33.33%,
+      #f1bf00 66.66%,
+      #aa151b 66.66%
+    );
   }
 }
 
 /* ------------------------------
-   6. Shine Animation
+   7. Shine Animation
    Creates a moving light reflection effect
 ------------------------------ */
 @keyframes shine {
@@ -182,4 +291,17 @@
 
 .rpv-core__tooltip-body {
   display: none !important;
+}
+
+/* ------------------------------
+   8. Scrollbar Utilities
+   Hide scrollbars while preserving scroll functionality
+------------------------------ */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }

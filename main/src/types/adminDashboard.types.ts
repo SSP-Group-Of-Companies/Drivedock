@@ -13,7 +13,17 @@ export type DashboardOnboardingItemSummary = {
  * The item returned by the admin onboarding list API.
  * Reuses fields from IOnboardingTracker and adds the lean itemSummary.
  */
-export type DashboardOnboardingItem = Pick<IOnboardingTracker, "status" | "companyId" | "applicationType" | "createdAt" | "updatedAt" | "terminated" | "resumeExpiresAt" | "forms"> & {
+export type DashboardOnboardingItem = Pick<
+  IOnboardingTracker,
+  | "status"
+  | "companyId"
+  | "applicationType"
+  | "createdAt"
+  | "updatedAt"
+  | "terminated"
+  | "resumeExpiresAt"
+  | "forms"
+> & {
   _id: string;
   itemSummary: DashboardOnboardingItemSummary;
 };

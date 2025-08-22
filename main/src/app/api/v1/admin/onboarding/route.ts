@@ -42,7 +42,14 @@ function buildSort(sortParam: string | null) {
   if (!sortParam) return { spec: { updatedAt: -1 } };
   const token = sortParam.trim();
 
-  if (["driverNameAsc", "driverNameDesc", "progress:asc", "progress:desc"].includes(token)) {
+  if (
+    [
+      "driverNameAsc",
+      "driverNameDesc",
+      "progress:asc",
+      "progress:desc",
+    ].includes(token)
+  ) {
     return { token };
   }
 
@@ -64,7 +71,8 @@ async function buildBaseFilter(searchParams: URLSearchParams) {
   if (companyIds?.length) filter.companyId = { $in: companyIds };
 
   const applicationTypes = toArray(searchParams.get("applicationType"));
-  if (applicationTypes?.length) filter.applicationType = { $in: applicationTypes };
+  if (applicationTypes?.length)
+    filter.applicationType = { $in: applicationTypes };
 
   const completed = toBool(searchParams.get("completed"));
   if (typeof completed === "boolean") filter["status.completed"] = completed;
@@ -121,7 +129,9 @@ async function buildBaseFilter(searchParams: URLSearchParams) {
       tokens.length > 0
         ? tokens.map((tok) => {
             const rx = new RegExp(escapeRegex(tok), "i");
-            return { $or: [{ "page1.firstName": rx }, { "page1.lastName": rx }] };
+            return {
+              $or: [{ "page1.firstName": rx }, { "page1.lastName": rx }],
+            };
           })
         : [];
 
@@ -136,7 +146,10 @@ async function buildBaseFilter(searchParams: URLSearchParams) {
           $expr: {
             $regexMatch: {
               input: {
-                $concat: [{ $ifNull: ["$page1.firstName", ""] }, { $ifNull: ["$page1.lastName", ""] }],
+                $concat: [
+                  { $ifNull: ["$page1.firstName", ""] },
+                  { $ifNull: ["$page1.lastName", ""] },
+                ],
               },
               regex: fuzzyPattern, // <- string pattern, not $regexReplace
               options: "i",
@@ -146,14 +159,19 @@ async function buildBaseFilter(searchParams: URLSearchParams) {
       ],
     };
 
-    const appIdsDocs = await ApplicationForm.find(appFormNameQuery, { _id: 1 }).lean();
+    const appIdsDocs = await ApplicationForm.find(appFormNameQuery, {
+      _id: 1,
+    }).lean();
 
     const objIds = appIdsDocs.map((d: any) => d._id);
     const strIds = objIds.map((id: any) => id.toString());
 
     // Constrain trackers by driverApplication (ObjectId or legacy string)
     const driverAppConstraint = {
-      $or: [{ "forms.driverApplication": { $in: objIds } }, { "forms.driverApplication": { $in: strIds } }],
+      $or: [
+        { "forms.driverApplication": { $in: objIds } },
+        { "forms.driverApplication": { $in: strIds } },
+      ],
     };
 
     if (filter.$and) filter.$and.push(driverAppConstraint);
@@ -176,16 +194,24 @@ export async function GET(req: NextRequest) {
     const dtColl = DrugTest.collection.name;
 
     const page = Math.max(1, toNumber(searchParams.get("page")) ?? 1);
-    const limit = Math.max(1, Math.min(200, toNumber(searchParams.get("limit")) ?? 20));
+    const limit = Math.max(
+      1,
+      Math.min(200, toNumber(searchParams.get("limit")) ?? 20)
+    );
     const skip = (page - 1) * limit;
 
     const sortParsed = buildSort(searchParams.get("sort") || "updatedAt:desc");
     const baseFilter = await buildBaseFilter(searchParams);
 
-    const currentStep = (searchParams.get("currentStep") || searchParams.get("status.currentStep")) as EStepPath | undefined;
+    const currentStep = (searchParams.get("currentStep") ||
+      searchParams.get("status.currentStep")) as EStepPath | undefined;
 
-    const ceEmailSent = toBool(searchParams.get("carriersEdgeTrainingEmailSent"));
-    const dtDocsUploaded = toBool(searchParams.get("drugTestDocumentsUploaded"));
+    const ceEmailSent = toBool(
+      searchParams.get("carriersEdgeTrainingEmailSent")
+    );
+    const dtDocsUploaded = toBool(
+      searchParams.get("drugTestDocumentsUploaded")
+    );
 
     // ---------------- pipeline ----------------
     const matchBase: Record<string, any> = { ...baseFilter };
@@ -221,7 +247,11 @@ export async function GET(req: NextRequest) {
               { $eq: [{ $type: "$forms.driverApplication" }, "objectId"] },
               "$forms.driverApplication",
               {
-                $cond: [{ $eq: [{ $type: "$forms.driverApplication" }, "string"] }, { $toObjectId: "$forms.driverApplication" }, null],
+                $cond: [
+                  { $eq: [{ $type: "$forms.driverApplication" }, "string"] },
+                  { $toObjectId: "$forms.driverApplication" },
+                  null,
+                ],
               },
             ],
           },
@@ -245,7 +275,9 @@ export async function GET(req: NextRequest) {
                       fn: { $ifNull: ["$page1.firstName", ""] },
                       ln: { $ifNull: ["$page1.lastName", ""] },
                     },
-                    in: { $trim: { input: { $concat: ["$$fn", " ", "$$ln"] } } },
+                    in: {
+                      $trim: { input: { $concat: ["$$fn", " ", "$$ln"] } },
+                    },
                   },
                 },
                 email: "$page1.email",
@@ -280,13 +312,35 @@ export async function GET(req: NextRequest) {
           driverName: { $ifNull: ["$driverAppObj.driverName", null] },
           driverEmail: { $ifNull: ["$driverAppObj.email", null] },
           ceEmailSent: { $ifNull: [{ $first: "$ce.emailSent" }, false] },
-          dtDocumentsUploaded: { $ifNull: [{ $first: "$dt.documentsUploaded" }, false] },
-          progressStepIndex: { $indexOfArray: [onboardingStepFlow, "$status.currentStep"] },
+          dtDocumentsUploaded: {
+            $ifNull: [{ $first: "$dt.documentsUploaded" }, false],
+          },
+          progressStepIndex: {
+            $indexOfArray: [onboardingStepFlow, "$status.currentStep"],
+          },
         },
       },
 
-      ...(typeof ceEmailSent === "boolean" ? [{ $match: { "status.currentStep": EStepPath.CARRIERS_EDGE_TRAINING, ceEmailSent } }] : []),
-      ...(typeof dtDocsUploaded === "boolean" ? [{ $match: { "status.currentStep": EStepPath.DRUG_TEST, dtDocumentsUploaded: dtDocsUploaded } }] : []),
+      ...(typeof ceEmailSent === "boolean"
+        ? [
+            {
+              $match: {
+                "status.currentStep": EStepPath.CARRIERS_EDGE_TRAINING,
+                ceEmailSent,
+              },
+            },
+          ]
+        : []),
+      ...(typeof dtDocsUploaded === "boolean"
+        ? [
+            {
+              $match: {
+                "status.currentStep": EStepPath.DRUG_TEST,
+                dtDocumentsUploaded: dtDocsUploaded,
+              },
+            },
+          ]
+        : []),
 
       sortStage,
       { $skip: skip },
@@ -320,21 +374,30 @@ export async function GET(req: NextRequest) {
     ];
 
     const [rawItems, total, counts] = await Promise.all([
-      OnboardingTracker.aggregate(pipeline).collation({ locale: "en", strength: 2 }).allowDiskUse(true),
+      OnboardingTracker.aggregate(pipeline)
+        .collation({ locale: "en", strength: 2 })
+        .allowDiskUse(true),
       OnboardingTracker.countDocuments(matchItems),
       (async () => {
         const [all, driveTest, ce, dt] = await Promise.all([
           OnboardingTracker.countDocuments({ ...matchBase }),
-          OnboardingTracker.countDocuments({ ...matchBase, "status.currentStep": EStepPath.DRIVE_TEST }),
+          OnboardingTracker.countDocuments({
+            ...matchBase,
+            "status.currentStep": EStepPath.DRIVE_TEST,
+          }),
           OnboardingTracker.countDocuments({
             ...matchBase,
             "status.currentStep": EStepPath.CARRIERS_EDGE_TRAINING,
-            ...(typeof ceEmailSent === "boolean" ? { "forms.carriersEdgeTraining": { $exists: true } } : {}),
+            ...(typeof ceEmailSent === "boolean"
+              ? { "forms.carriersEdgeTraining": { $exists: true } }
+              : {}),
           }),
           OnboardingTracker.countDocuments({
             ...matchBase,
             "status.currentStep": EStepPath.DRUG_TEST,
-            ...(typeof dtDocsUploaded === "boolean" ? { "forms.drugTest": { $exists: true } } : {}),
+            ...(typeof dtDocsUploaded === "boolean"
+              ? { "forms.drugTest": { $exists: true } }
+              : {}),
           }),
         ]);
         return { all, driveTest, carriersEdgeTraining: ce, drugTest: dt };

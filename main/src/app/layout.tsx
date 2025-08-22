@@ -70,6 +70,7 @@ export default function RootLayout({
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased relative min-h-screen overflow-x-hidden bg-white text-gray-900`}
+        suppressHydrationWarning
       >
         <I18nProvider>
           {/* Background Gradient Layer */}
