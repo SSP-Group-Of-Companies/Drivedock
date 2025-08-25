@@ -7,7 +7,6 @@ import CarriersEdgeTraining from "@/mongoose/models/CarriersEdgeTraining";
 import DrugTest from "@/mongoose/models/DrugTest";
 import { EStepPath } from "@/types/onboardingTracker.types";
 import type { DashboardOnboardingItem } from "@/types/adminDashboard.types";
-import { guard } from "@/lib/auth/authUtils";
 import { getOnboardingStepFlow } from "@/lib/utils/onboardingUtils";
 
 // ---------- helpers ----------
@@ -174,7 +173,6 @@ async function buildBaseFilter(searchParams: URLSearchParams) {
 export async function GET(req: NextRequest) {
   try {
     await connectDB();
-    await guard();
 
     const { searchParams } = new URL(req.url);
 

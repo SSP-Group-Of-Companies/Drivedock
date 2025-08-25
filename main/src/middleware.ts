@@ -5,18 +5,32 @@ import { getToken } from "next-auth/jwt";
 import { AUTH_COOKIE_NAME, NEXTAUTH_SECRET, NEXT_PUBLIC_PORTAL_BASE_URL } from "./config/env";
 import { resolveBaseUrl } from "./lib/utils/urlHelper.server";
 
+// Flag to disable auth (to bypass checks)
+const DISABLE_AUTH = true;
+
 export async function middleware(req: NextRequest) {
-  // Only runs for /dashboard/* (see matcher below)
-  const token = await getToken({ req: req as any, secret: NEXTAUTH_SECRET, cookieName: AUTH_COOKIE_NAME });
+  // If auth disabled, allow all
+  if (DISABLE_AUTH) {
+    return NextResponse.next();
+  }
+
+  // Normal auth check
+  const token = await getToken({
+    req: req as any,
+    secret: NEXTAUTH_SECRET,
+    cookieName: AUTH_COOKIE_NAME,
+  });
+
   if (!token) {
     const base = await resolveBaseUrl();
     const callbackUrl = encodeURIComponent(base);
     return NextResponse.redirect(`${NEXT_PUBLIC_PORTAL_BASE_URL}/login?callbackUrl=${callbackUrl}`);
   }
+
   return NextResponse.next();
 }
 
-// Only require auth for /dashboard routes
+// Apply to all routes you want guarded
 export const config = {
   matcher: ["/dashboard/:path*"],
 };
