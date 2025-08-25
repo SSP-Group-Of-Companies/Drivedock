@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import type { DashboardOnboardingItem } from "@/types/adminDashboard.types";
 import type { CategoryTab } from "@/hooks/dashboard/useAdminOnboardingQueryState";
-import { onboardingStepFlow } from "@/lib/utils/onboardingUtils";
+import { getOnboardingStepFlow } from "@/lib/utils/onboardingUtils";
 import { EStepPath } from "@/types/onboardingTracker.types";
 
 import ConfirmTerminateDialog from "@/app/dashboard/components/dialogs/ConfirmTerminateDialog";
@@ -32,38 +32,42 @@ import {
 function stepLabel(step: EStepPath | undefined) {
   if (!step) return "Unknown";
   switch (step) {
-    case "prequalifications":
+    case EStepPath.PRE_QUALIFICATIONS:
       return "Prequalifications";
-    case "application-form/page-1":
+    case EStepPath.APPLICATION_PAGE_1:
       return "Application — Page 1";
-    case "application-form/page-2":
+    case EStepPath.APPLICATION_PAGE_2:
       return "Application — Page 2";
-    case "application-form/page-3":
+    case EStepPath.APPLICATION_PAGE_3:
       return "Application — Page 3";
-    case "application-form/page-4":
+    case EStepPath.APPLICATION_PAGE_4:
       return "Application — Page 4";
-    case "application-form/page-5":
+    case EStepPath.APPLICATION_PAGE_5:
       return "Application — Page 5";
-    case "policies-consents":
+    case EStepPath.POLICIES_CONSENTS:
       return "Policies & Consents";
-    case "drive-test":
+    case EStepPath.DRIVE_TEST:
       return "Drive Test";
-    case "carriers-edge-training":
+    case EStepPath.CARRIERS_EDGE_TRAINING:
       return "Carrier's Edge";
-    case "drug-test":
+    case EStepPath.DRUG_TEST:
       return "Drug Test";
-    case "flat-bed-training":
+    case EStepPath.FLATBED_TRAINING:
       return "Flatbed Training";
     default:
       return step;
   }
 }
 
-function progressPercent(step: EStepPath | undefined) {
+function progressPercent(item: DashboardOnboardingItem) {
+  const step = item.status.currentStep;
   if (!step) return 0;
-  const idx = onboardingStepFlow.indexOf(step);
+  const stepFlow = getOnboardingStepFlow({
+    needsFlatbedTraining: item.needsFlatbedTraining,
+  });
+  const idx = stepFlow.indexOf(step);
   if (idx < 0) return 0;
-  const denom = Math.max(1, onboardingStepFlow.length - 1);
+  const denom = Math.max(1, stepFlow.length - 1);
   return Math.min(100, Math.max(0, Math.round((idx / denom) * 100)));
 }
 
@@ -468,7 +472,7 @@ export default function DataGrid({
             )}
 
             {items.map((it) => {
-              const pct = progressPercent(it.status?.currentStep);
+              const pct = progressPercent(it);
               const step = stepLabel(it.status?.currentStep);
               const inProgress = !it.status?.completed;
 

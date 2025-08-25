@@ -24,7 +24,7 @@ export enum EStepPath {
   DRIVE_TEST = "drive-test",
   CARRIERS_EDGE_TRAINING = "carriers-edge-training",
   DRUG_TEST = "drug-test",
-  flat_bed_training = "flat-bed-training",
+  FLATBED_TRAINING = "flatbed-training",
 }
 
 /**
@@ -63,6 +63,8 @@ export interface IOnboardingTracker {
     flatbedTraining?: ObjectId;
   };
 
+  needsFlatbedTraining: boolean;
+
   terminated: boolean;
 
   createdAt: Date;
@@ -76,13 +78,14 @@ export interface IOnboardingTrackerDoc extends IOnboardingTracker, Document {
 /**
  * Public-facing (unchanged) tracker context
  */
-export interface ITrackerContext {
+export interface IOnboardingTrackerContext {
   id: string;
   companyId: string;
   applicationType?: ECompanyApplicationType;
+  needsFlatbedTraining: boolean;
   status: IOnboardingStatus;
-  prevUrl: string | null;
-  nextUrl: string | null;
+  prevStep: EStepPath | null;
+  nextStep: EStepPath | null;
 }
 
 /**

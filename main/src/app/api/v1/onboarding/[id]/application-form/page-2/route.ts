@@ -40,8 +40,8 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     if (!appFormDoc) return errorResponse(404, "ApplicationForm not found");
 
     // GATE: must be allowed to access Page 2
-    if (!hasReachedStep(onboardingDoc.status, EStepPath.APPLICATION_PAGE_2)) {
-      return errorResponse(403, "please complete previous step first");
+    if (!hasReachedStep(onboardingDoc, EStepPath.APPLICATION_PAGE_2)) {
+      return errorResponse(403, "Please complete previous steps first");
     }
 
     // ---------------------------
@@ -55,7 +55,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     // Phase 2: tracker updates
     // ---------------------------
     // 1) Advance authoritative progress to PAGE_2 (monotonic)
-    onboardingDoc.status = advanceProgress(onboardingDoc.status, EStepPath.APPLICATION_PAGE_2);
+    onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.APPLICATION_PAGE_2);
     // 2) Refresh resume window
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();
 
@@ -96,12 +96,8 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
     if (!appFormDoc) return errorResponse(404, "ApplicationForm not found");
 
     // GATE: must be allowed to view Page 2
-    if (!hasReachedStep(onboardingDoc.status, EStepPath.APPLICATION_PAGE_2)) {
-      // backwards-compatible friendly message
-      if (!hasReachedStep(onboardingDoc.status, EStepPath.APPLICATION_PAGE_1)) {
-        return errorResponse(403, "Please complete previous step first");
-      }
-      return errorResponse(403, "Access to this step is not allowed yet");
+    if (!hasReachedStep(onboardingDoc, EStepPath.APPLICATION_PAGE_2)) {
+      return errorResponse(403, "Please complete previous steps first");
     }
 
     return successResponse(200, "Page 2 data retrieved", {

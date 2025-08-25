@@ -94,6 +94,11 @@ const onboardingTrackerSchema = new Schema<IOnboardingTrackerDoc>(
         ref: FlatbedTraining,
       },
     },
+    needsFlatbedTraining: {
+      type: Boolean,
+      default: false,
+      required: [true, "needsFlatbedTraining is required"],
+    },
     terminated: {
       type: Boolean,
       default: false,

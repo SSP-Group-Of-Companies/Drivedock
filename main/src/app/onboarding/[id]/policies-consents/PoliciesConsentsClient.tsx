@@ -2,7 +2,7 @@
 
 import { CanadianCompanyId, getCompanyById } from "@/constants/companies";
 import { IPoliciesConsents } from "@/types/policiesConsents.types";
-import { ITrackerContext } from "@/types/onboardingTracker.types";
+import { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
 import { ES3Folder } from "@/types/aws.types";
 import { UploadResult, uploadToS3Presigned } from "@/lib/utils/s3Upload";
 
@@ -20,23 +20,16 @@ import PoliciesConsentCheckbox from "./components/PoliciesConsentCheckbox";
 import PoliciesSubmitSection from "./components/PoliciesSubmitSection";
 import PoliciesPdfViewerModal from "./components/PoliciesPdfViewerModal";
 
-import {
-  CANADIAN_HIRING_PDFS,
-  CANADIAN_PDFS,
-  US_PDFS,
-} from "@/constants/policiesConsentsPdfs";
+import { CANADIAN_HIRING_PDFS, CANADIAN_PDFS, US_PDFS } from "@/constants/policiesConsentsPdfs";
 import { ECountryCode } from "@/types/shared.types";
 import useMounted from "@/hooks/useMounted";
 
 export type PoliciesConsentsClientProps = {
   policiesConsents: Partial<IPoliciesConsents>;
-  onboardingContext: ITrackerContext;
+  onboardingContext: IOnboardingTrackerContext;
 };
 
-export default function PoliciesConsentsClient({
-  policiesConsents,
-  onboardingContext,
-}: PoliciesConsentsClientProps) {
+export default function PoliciesConsentsClient({ policiesConsents, onboardingContext }: PoliciesConsentsClientProps) {
   const mounted = useMounted();
   const router = useRouter();
   const { t } = useTranslation("common");
@@ -44,33 +37,21 @@ export default function PoliciesConsentsClient({
   const company = getCompanyById(onboardingContext.companyId);
   const isCanadianApplicant = company?.countryCode === ECountryCode.CA;
   const pdfList = isCanadianApplicant ? CANADIAN_PDFS : US_PDFS;
-  const hiringPdf = isCanadianApplicant
-    ? CANADIAN_HIRING_PDFS[company.id as CanadianCompanyId]
-    : null;
+  const hiringPdf = isCanadianApplicant ? CANADIAN_HIRING_PDFS[company.id as CanadianCompanyId] : null;
 
   const id = onboardingContext.id;
 
   const [modalUrl, setModalUrl] = useState<string | null>(null);
-  const [signaturePreview, setSignaturePreview] = useState<string | null>(
-    policiesConsents.signature?.url || null
-  );
+  const [signaturePreview, setSignaturePreview] = useState<string | null>(policiesConsents.signature?.url || null);
 
-  const [signatureData, setSignatureData] = useState(
-    policiesConsents.signature
-  );
-  const [sendPoliciesByEmail, setSendPoliciesByEmail] = useState<boolean>(
-    policiesConsents.sendPoliciesByEmail || false
-  );
-  const [uploadStatus, setUploadStatus] = useState<
-    "idle" | "uploading" | "deleting" | "error"
-  >("idle");
+  const [signatureData, setSignatureData] = useState(policiesConsents.signature);
+  const [sendPoliciesByEmail, setSendPoliciesByEmail] = useState<boolean>(policiesConsents.sendPoliciesByEmail || false);
+  const [uploadStatus, setUploadStatus] = useState<"idle" | "uploading" | "deleting" | "error">("idle");
   const [uploadMessage, setUploadMessage] = useState<string>("");
   const [isDrawnSignature, setIsDrawnSignature] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [initialSignatureKey] = useState(signatureData?.s3Key || null);
-  const [initialSendByEmail] = useState(
-    policiesConsents.sendPoliciesByEmail || false
-  );
+  const [initialSendByEmail] = useState(policiesConsents.sendPoliciesByEmail || false);
 
   // Ref now uses the TYPE, not the value
   const canvasRef = useRef<ReactSignatureCanvas | null>(null);
@@ -87,8 +68,7 @@ export default function PoliciesConsentsClient({
   }
 
   const handleUpload = async (file: File | null) => {
-    if (!file || uploadStatus === "uploading" || uploadStatus === "deleting")
-      return;
+    if (!file || uploadStatus === "uploading" || uploadStatus === "deleting") return;
 
     setUploadStatus("uploading");
     setUploadMessage("");
@@ -106,8 +86,7 @@ export default function PoliciesConsentsClient({
 
       // 2) preview new file immediately
       const reader = new FileReader();
-      reader.onload = (e) =>
-        setSignaturePreview((e.target?.result as string) ?? null);
+      reader.onload = (e) => setSignaturePreview((e.target?.result as string) ?? null);
       reader.readAsDataURL(file);
 
       // 3) switch state to the new file
@@ -169,9 +148,7 @@ export default function PoliciesConsentsClient({
    * 2) Scan pixels for non-transparent bounds
    * 3) Copy onto a white-backed canvas (no alpha)
    */
-  async function getSignatureBlobFromCanvas(
-    sig: ReactSignatureCanvas
-  ): Promise<Blob> {
+  async function getSignatureBlobFromCanvas(sig: ReactSignatureCanvas): Promise<Blob> {
     const source = sig.getCanvas(); // the raw drawing canvas
     const w = source.width;
     const h = source.height;
@@ -179,9 +156,7 @@ export default function PoliciesConsentsClient({
     const ctx = source.getContext("2d");
     if (!ctx) {
       // Fallback: export the raw canvas without trimming
-      return await new Promise<Blob>(
-        (resolve) => source.toBlob((b) => resolve(b as Blob), "image/png")!
-      );
+      return await new Promise<Blob>((resolve) => source.toBlob((b) => resolve(b as Blob), "image/png")!);
     }
 
     // Read pixel data
@@ -190,9 +165,7 @@ export default function PoliciesConsentsClient({
       imgData = ctx.getImageData(0, 0, w, h);
     } catch {
       // Some browsers/security contexts can throw; fallback to raw
-      return await new Promise<Blob>(
-        (resolve) => source.toBlob((b) => resolve(b as Blob), "image/png")!
-      );
+      return await new Promise<Blob>((resolve) => source.toBlob((b) => resolve(b as Blob), "image/png")!);
     }
 
     const data = imgData.data;
@@ -223,9 +196,7 @@ export default function PoliciesConsentsClient({
       const ectx = empty.getContext("2d")!;
       ectx.fillStyle = "#ffffff";
       ectx.fillRect(0, 0, empty.width, empty.height);
-      return await new Promise<Blob>(
-        (resolve) => empty.toBlob((b) => resolve(b as Blob), "image/png")!
-      );
+      return await new Promise<Blob>((resolve) => empty.toBlob((b) => resolve(b as Blob), "image/png")!);
     }
 
     const trimW = right - left + 1;
@@ -241,18 +212,12 @@ export default function PoliciesConsentsClient({
     octx.fillRect(0, 0, trimW, trimH);
     octx.drawImage(source, left, top, trimW, trimH, 0, 0, trimW, trimH);
 
-    return await new Promise<Blob>(
-      (resolve) => out.toBlob((b) => resolve(b as Blob), "image/png")!
-    );
+    return await new Promise<Blob>((resolve) => out.toBlob((b) => resolve(b as Blob), "image/png")!);
   }
 
   const handleSubmit = async () => {
     // No changes? Navigate forward.
-    if (
-      !isDrawnSignature &&
-      signatureData?.s3Key === initialSignatureKey &&
-      sendPoliciesByEmail === initialSendByEmail
-    ) {
+    if (!isDrawnSignature && signatureData?.s3Key === initialSignatureKey && sendPoliciesByEmail === initialSendByEmail) {
       router.push(`/onboarding/${id}/drive-test`);
       return;
     }
@@ -263,12 +228,7 @@ export default function PoliciesConsentsClient({
     let result: UploadResult | null = null;
 
     // If user drew a signature (or we have no uploaded signature), export from canvas
-    if (
-      (!signatureData?.s3Key || isDrawnSignature) &&
-      canvasRef.current &&
-      typeof canvasRef.current.isEmpty === "function" &&
-      !canvasRef.current.isEmpty()
-    ) {
+    if ((!signatureData?.s3Key || isDrawnSignature) && canvasRef.current && typeof canvasRef.current.isEmpty === "function" && !canvasRef.current.isEmpty()) {
       try {
         // ✅ Use robust trimming instead of getTrimmedCanvas()
         const blob = await getSignatureBlobFromCanvas(canvasRef.current);
@@ -282,17 +242,14 @@ export default function PoliciesConsentsClient({
         setSignatureData(result);
 
         const reader = new FileReader();
-        reader.onload = (e) =>
-          setSignaturePreview((e.target?.result as string) ?? null);
+        reader.onload = (e) => setSignaturePreview((e.target?.result as string) ?? null);
         reader.readAsDataURL(file);
 
         setIsDrawnSignature(false);
       } catch (err: any) {
         console.error("Signature upload failed", err);
         setUploadStatus("error");
-        setUploadMessage(
-          "Failed to process or upload your signature. Please try again."
-        );
+        setUploadMessage("Failed to process or upload your signature. Please try again.");
         return;
       }
     }
@@ -307,17 +264,14 @@ export default function PoliciesConsentsClient({
 
     setSubmitting(true);
     try {
-      const response = await fetch(
-        `/api/v1/onboarding/${id}/policies-consents`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            signature: { s3Key: finalSignature.s3Key, url: finalSignature.url },
-            sendPoliciesByEmail,
-          }),
-        }
-      );
+      const response = await fetch(`/api/v1/onboarding/${id}/policies-consents`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          signature: { s3Key: finalSignature.s3Key, url: finalSignature.url },
+          sendPoliciesByEmail,
+        }),
+      });
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data?.message || "Failed to save signature.");
@@ -337,10 +291,7 @@ export default function PoliciesConsentsClient({
 
   return (
     <div className="space-y-6">
-      <PoliciesPdfGrid
-        pdfs={[hiringPdf!, ...pdfList].filter(Boolean)}
-        onOpenModal={setModalUrl}
-      />
+      <PoliciesPdfGrid pdfs={[hiringPdf!, ...pdfList].filter(Boolean)} onOpenModal={setModalUrl} />
 
       <div className="rounded-xl bg-gray-50/60 ring-1 ring-gray-100 p-4">
         <p className="text-sm text-gray-700 text-center">
@@ -351,15 +302,10 @@ export default function PoliciesConsentsClient({
         </p>
       </div>
 
-      <PoliciesSignatureBox
-        canvasRef={canvasRef}
-        signaturePreview={signaturePreview}
-        onDrawEnd={() => setIsDrawnSignature(true)}
-      />
+      <PoliciesSignatureBox canvasRef={canvasRef} signaturePreview={signaturePreview} onDrawEnd={() => setIsDrawnSignature(true)} />
 
       <p className="text-sm text-gray-600 text-center mt-2">
-        Please <strong>draw</strong> your signature above or{" "}
-        <strong>upload</strong> a signature image.
+        Please <strong>draw</strong> your signature above or <strong>upload</strong> a signature image.
       </p>
 
       <PoliciesUploadButtons
@@ -374,13 +320,7 @@ export default function PoliciesConsentsClient({
         t={t}
       />
 
-      <input
-        type="file"
-        ref={fileInputRef}
-        accept="image/*"
-        className="hidden"
-        onChange={(e) => handleUpload(e.target.files?.[0] || null)}
-      />
+      <input type="file" ref={fileInputRef} accept="image/*" className="hidden" onChange={(e) => handleUpload(e.target.files?.[0] || null)} />
 
       {(uploadStatus === "uploading" || uploadStatus === "deleting") && (
         <p className="text-yellow-600 text-sm text-center flex items-center justify-center gap-2">
@@ -388,22 +328,12 @@ export default function PoliciesConsentsClient({
           {uploadStatus === "uploading" ? "Uploading..." : "Deleting..."}
         </p>
       )}
-      {uploadStatus === "error" && (
-        <p className="text-red-500 text-sm text-center">{uploadMessage}</p>
-      )}
-      {uploadStatus === "idle" && uploadMessage && (
-        <p className="text-green-600 text-sm text-center">{uploadMessage}</p>
-      )}
+      {uploadStatus === "error" && <p className="text-red-500 text-sm text-center">{uploadMessage}</p>}
+      {uploadStatus === "idle" && uploadMessage && <p className="text-green-600 text-sm text-center">{uploadMessage}</p>}
 
-      <PoliciesPdfViewerModal
-        modalUrl={modalUrl}
-        onClose={() => setModalUrl(null)}
-      />
+      <PoliciesPdfViewerModal modalUrl={modalUrl} onClose={() => setModalUrl(null)} />
 
-      <PoliciesConsentCheckbox
-        checked={sendPoliciesByEmail}
-        onChange={setSendPoliciesByEmail}
-      />
+      <PoliciesConsentCheckbox checked={sendPoliciesByEmail} onChange={setSendPoliciesByEmail} />
 
       <PoliciesSubmitSection onSubmit={handleSubmit} submitting={submitting} />
     </div>

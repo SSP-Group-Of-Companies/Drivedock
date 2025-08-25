@@ -6,8 +6,9 @@ import ApplicationForm from "@/mongoose/models/ApplicationForm";
 import CarriersEdgeTraining from "@/mongoose/models/CarriersEdgeTraining";
 import DrugTest from "@/mongoose/models/DrugTest";
 import { EStepPath } from "@/types/onboardingTracker.types";
-import { onboardingStepFlow } from "@/lib/utils/onboardingUtils";
 import type { DashboardOnboardingItem } from "@/types/adminDashboard.types";
+import { guard } from "@/lib/auth/authUtils";
+import { getOnboardingStepFlow } from "@/lib/utils/onboardingUtils";
 
 // ---------- helpers ----------
 function toBool(v: string | null): boolean | undefined {
@@ -42,14 +43,7 @@ function buildSort(sortParam: string | null) {
   if (!sortParam) return { spec: { updatedAt: -1 } };
   const token = sortParam.trim();
 
-  if (
-    [
-      "driverNameAsc",
-      "driverNameDesc",
-      "progress:asc",
-      "progress:desc",
-    ].includes(token)
-  ) {
+  if (["driverNameAsc", "driverNameDesc", "progress:asc", "progress:desc"].includes(token)) {
     return { token };
   }
 
@@ -71,8 +65,7 @@ async function buildBaseFilter(searchParams: URLSearchParams) {
   if (companyIds?.length) filter.companyId = { $in: companyIds };
 
   const applicationTypes = toArray(searchParams.get("applicationType"));
-  if (applicationTypes?.length)
-    filter.applicationType = { $in: applicationTypes };
+  if (applicationTypes?.length) filter.applicationType = { $in: applicationTypes };
 
   const completed = toBool(searchParams.get("completed"));
   if (typeof completed === "boolean") filter["status.completed"] = completed;
@@ -146,10 +139,7 @@ async function buildBaseFilter(searchParams: URLSearchParams) {
           $expr: {
             $regexMatch: {
               input: {
-                $concat: [
-                  { $ifNull: ["$page1.firstName", ""] },
-                  { $ifNull: ["$page1.lastName", ""] },
-                ],
+                $concat: [{ $ifNull: ["$page1.firstName", ""] }, { $ifNull: ["$page1.lastName", ""] }],
               },
               regex: fuzzyPattern, // <- string pattern, not $regexReplace
               options: "i",
@@ -168,10 +158,7 @@ async function buildBaseFilter(searchParams: URLSearchParams) {
 
     // Constrain trackers by driverApplication (ObjectId or legacy string)
     const driverAppConstraint = {
-      $or: [
-        { "forms.driverApplication": { $in: objIds } },
-        { "forms.driverApplication": { $in: strIds } },
-      ],
+      $or: [{ "forms.driverApplication": { $in: objIds } }, { "forms.driverApplication": { $in: strIds } }],
     };
 
     if (filter.$and) filter.$and.push(driverAppConstraint);
@@ -187,6 +174,8 @@ async function buildBaseFilter(searchParams: URLSearchParams) {
 export async function GET(req: NextRequest) {
   try {
     await connectDB();
+    await guard();
+
     const { searchParams } = new URL(req.url);
 
     const appFormColl = ApplicationForm.collection.name;
@@ -194,24 +183,16 @@ export async function GET(req: NextRequest) {
     const dtColl = DrugTest.collection.name;
 
     const page = Math.max(1, toNumber(searchParams.get("page")) ?? 1);
-    const limit = Math.max(
-      1,
-      Math.min(200, toNumber(searchParams.get("limit")) ?? 20)
-    );
+    const limit = Math.max(1, Math.min(200, toNumber(searchParams.get("limit")) ?? 20));
     const skip = (page - 1) * limit;
 
     const sortParsed = buildSort(searchParams.get("sort") || "updatedAt:desc");
     const baseFilter = await buildBaseFilter(searchParams);
 
-    const currentStep = (searchParams.get("currentStep") ||
-      searchParams.get("status.currentStep")) as EStepPath | undefined;
+    const currentStep = (searchParams.get("currentStep") || searchParams.get("status.currentStep")) as EStepPath | undefined;
 
-    const ceEmailSent = toBool(
-      searchParams.get("carriersEdgeTrainingEmailSent")
-    );
-    const dtDocsUploaded = toBool(
-      searchParams.get("drugTestDocumentsUploaded")
-    );
+    const ceEmailSent = toBool(searchParams.get("carriersEdgeTrainingEmailSent"));
+    const dtDocsUploaded = toBool(searchParams.get("drugTestDocumentsUploaded"));
 
     // ---------------- pipeline ----------------
     const matchBase: Record<string, any> = { ...baseFilter };
@@ -247,11 +228,7 @@ export async function GET(req: NextRequest) {
               { $eq: [{ $type: "$forms.driverApplication" }, "objectId"] },
               "$forms.driverApplication",
               {
-                $cond: [
-                  { $eq: [{ $type: "$forms.driverApplication" }, "string"] },
-                  { $toObjectId: "$forms.driverApplication" },
-                  null,
-                ],
+                $cond: [{ $eq: [{ $type: "$forms.driverApplication" }, "string"] }, { $toObjectId: "$forms.driverApplication" }, null],
               },
             ],
           },
@@ -312,12 +289,8 @@ export async function GET(req: NextRequest) {
           driverName: { $ifNull: ["$driverAppObj.driverName", null] },
           driverEmail: { $ifNull: ["$driverAppObj.email", null] },
           ceEmailSent: { $ifNull: [{ $first: "$ce.emailSent" }, false] },
-          dtDocumentsUploaded: {
-            $ifNull: [{ $first: "$dt.documentsUploaded" }, false],
-          },
-          progressStepIndex: {
-            $indexOfArray: [onboardingStepFlow, "$status.currentStep"],
-          },
+          dtDocumentsUploaded: { $ifNull: [{ $first: "$dt.documentsUploaded" }, false] },
+          progressStepIndex: { $indexOfArray: [getOnboardingStepFlow({ needsFlatbedTraining: true }), "$status.currentStep"] },
         },
       },
 
@@ -368,15 +341,14 @@ export async function GET(req: NextRequest) {
           terminated: 1,
           resumeExpiresAt: 1,
           forms: 1,
+          needsFlatbedTraining: 1,
           itemSummary: 1,
         },
       },
     ];
 
     const [rawItems, total, counts] = await Promise.all([
-      OnboardingTracker.aggregate(pipeline)
-        .collation({ locale: "en", strength: 2 })
-        .allowDiskUse(true),
+      OnboardingTracker.aggregate(pipeline).collation({ locale: "en", strength: 2 }).allowDiskUse(true),
       OnboardingTracker.countDocuments(matchItems),
       (async () => {
         const [all, driveTest, ce, dt] = await Promise.all([
@@ -388,16 +360,12 @@ export async function GET(req: NextRequest) {
           OnboardingTracker.countDocuments({
             ...matchBase,
             "status.currentStep": EStepPath.CARRIERS_EDGE_TRAINING,
-            ...(typeof ceEmailSent === "boolean"
-              ? { "forms.carriersEdgeTraining": { $exists: true } }
-              : {}),
+            ...(typeof ceEmailSent === "boolean" ? { "forms.carriersEdgeTraining": { $exists: true } } : {}),
           }),
           OnboardingTracker.countDocuments({
             ...matchBase,
             "status.currentStep": EStepPath.DRUG_TEST,
-            ...(typeof dtDocsUploaded === "boolean"
-              ? { "forms.drugTest": { $exists: true } }
-              : {}),
+            ...(typeof dtDocsUploaded === "boolean" ? { "forms.drugTest": { $exists: true } } : {}),
           }),
         ]);
         return { all, driveTest, carriersEdgeTraining: ce, drugTest: dt };
@@ -417,8 +385,6 @@ export async function GET(req: NextRequest) {
       items,
     });
   } catch (err: any) {
-    return errorResponse(500, "Failed to fetch onboarding trackers", {
-      error: err?.message ?? String(err),
-    });
+    return errorResponse(err);
   }
 }

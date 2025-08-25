@@ -1,56 +1,33 @@
 /**
- * Resume Modal Component — DriveDock
+ * Resume Modal Component — DriveDock (with Loading State)
  *
- * Description:
- * A modal dialog that allows drivers to resume an existing onboarding application
- * by entering their SIN. Once validated, the system retrieves their onboarding context
- * and redirects them to their last completed step.
- *
- * Key Components & Hooks:
- * - `useOnboardingTracker`: Zustand store for persisting onboarding tracker context.
- * - `useTranslation`: Loads multilingual strings for the modal UI.
- * - `useRouter`: Handles redirect after successfully resuming.
- * - `@headlessui/react` `Dialog` + `Transition`: Provides accessible modal with animations.
- *
- * Props:
- * - `isOpen` (boolean): Controls modal visibility.
- * - `onClose` (function): Callback to close the modal.
- *
- * Functionality:
- * - Accepts SIN input (digits only, max length 9).
- * - Validates that SIN is present and exactly 9 digits before making the request.
- * - Sends GET request to `/api/v1/onboarding/resume/:sin`.
- * - If successful:
- *   - Updates the onboarding tracker in Zustand.
- *   - Redirects to the returned `redirectUrl`.
- * - If failure:
- *   - Displays a translated error message.
- * - Shows live feedback (success or error) based on request state.
- *
- * Routing:
- * Triggered from the "Resume Application" CTA button on the landing page hero.
- * Successful resume redirects the user to their latest onboarding step.
- *
- * Author: Faruq Adebayo Atanda
- * Created: 2025-08-08
+ * Changes:
+ * - Introduced "loading" state in status union.
+ * - Shows spinner + "Resuming..." feedback while fetching.
+ * - Disables input/buttons during loading to prevent double-submits.
+ * - Sets "success" only after a successful response.
  */
 
 "use client";
 
 import { Dialog, Transition } from "@headlessui/react";
-import { Fragment, useState, startTransition } from "react";
-import { CheckCircle, XCircle } from "lucide-react";
+import { Fragment, useRef, useState, startTransition } from "react";
+import { CheckCircle, Loader2, XCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
 import { useOnboardingTracker } from "@/store/useOnboardingTracker";
 
 // Components & hooks
 import useMounted from "@/hooks/useMounted";
+import { EStepPath } from "@/types/onboardingTracker.types";
+import { buildOnboardingStepPath } from "@/lib/utils/onboardingUtils";
 
 interface ResumeModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
+type Status = "idle" | "loading" | "success" | "error";
 
 export default function ResumeModal({ isOpen, onClose }: ResumeModalProps) {
   const mounted = useMounted();
@@ -60,11 +37,15 @@ export default function ResumeModal({ isOpen, onClose }: ResumeModalProps) {
   const { setTracker } = useOnboardingTracker();
 
   const [sin, setSin] = useState("");
-  const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
+  const [status, setStatus] = useState<Status>("idle");
   const [errorMessage, setErrorMessage] = useState("");
 
-  // Handle resume request
+  const abortRef = useRef<AbortController | null>(null);
+  const isLoading = status === "loading";
+
   const handleSubmit = async () => {
+    if (isLoading) return; // guard against double clicks
+
     const cleanedSin = sin.trim();
 
     // Basic client-side validations
@@ -80,44 +61,65 @@ export default function ResumeModal({ isOpen, onClose }: ResumeModalProps) {
     }
 
     try {
-      setStatus("success");
+      // cancel any previous in-flight request
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
 
-      const res = await fetch(`/api/v1/onboarding/resume/${cleanedSin}`);
-      const data = await res.json();
+      setStatus("loading");
+      setErrorMessage("");
+
+      const res = await fetch(`/api/v1/onboarding/resume/${cleanedSin}`, {
+        method: "GET",
+        signal: controller.signal,
+        headers: { Accept: "application/json" },
+      });
+
+      // Try to parse JSON safely
+      let data: any = null;
+      try {
+        data = await res.json();
+      } catch {
+        // If response isn't JSON, force an error path
+        if (!res.ok) {
+          throw new Error("Invalid response from server");
+        }
+      }
+
+      if (!res.ok) {
+        const serverMsg = data?.message || data?.error || "Could not resume application. Please try again.";
+        throw new Error(serverMsg);
+      }
 
       const trackerContext = data?.data?.onboardingContext;
-      const redirectUrl = data?.data?.redirectUrl;
+      const currentStep: EStepPath | undefined = trackerContext?.status?.currentStep;
 
-      if (trackerContext && redirectUrl) {
-        // Wrap in React transition to ensure safe redirect after state update
+      if (trackerContext && currentStep) {
+        setStatus("success");
         startTransition(() => {
           setTracker(trackerContext);
-          router.replace(redirectUrl);
+          router.replace(buildOnboardingStepPath(trackerContext));
         });
       } else {
         throw new Error("Resume info missing");
       }
-    } catch {
+    } catch (err: unknown) {
+      // Ignore abort errors
+      if ((err as any)?.name === "AbortError") return;
+
       setStatus("error");
-      setErrorMessage("Could not resume application. Please try again.");
+      setErrorMessage(err instanceof Error ? err.message : "Could not resume application. Please try again.");
     }
   };
 
   // Prevent rendering until mounted to avoid hydration mismatch
   if (!mounted) return null;
+
   return (
     <Transition show={isOpen} as={Fragment}>
       <Dialog as="div" className="relative z-50" onClose={onClose}>
         {/* Backdrop overlay */}
-        <Transition.Child
-          as={Fragment}
-          enter="ease-out duration-200"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="ease-in duration-150"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
+        <Transition.Child as={Fragment} enter="ease-out duration-200" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-150" leaveFrom="opacity-100" leaveTo="opacity-0">
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
         </Transition.Child>
 
@@ -134,12 +136,8 @@ export default function ResumeModal({ isOpen, onClose }: ResumeModalProps) {
           >
             <Dialog.Panel className="w-full max-w-md transform rounded-xl bg-white p-6 shadow-xl transition-all">
               {/* Title & description */}
-              <Dialog.Title className="text-lg font-semibold text-gray-900 mb-2">
-                {t("resume.title")}
-              </Dialog.Title>
-              <Dialog.Description className="text-sm text-gray-600 mb-4">
-                {t("resume.description")}
-              </Dialog.Description>
+              <Dialog.Title className="text-lg font-semibold text-gray-900 mb-2">{t("resume.title")}</Dialog.Title>
+              <Dialog.Description className="text-sm text-gray-600 mb-4">{t("resume.description")}</Dialog.Description>
 
               {/* SIN input field */}
               <input
@@ -147,14 +145,25 @@ export default function ResumeModal({ isOpen, onClose }: ResumeModalProps) {
                 placeholder={t("resume.placeholder")}
                 value={sin}
                 maxLength={9}
+                disabled={isLoading}
                 onChange={(e) => {
                   const value = e.target.value.replace(/\D/g, "");
                   setSin(value);
                   setStatus("idle");
                   setErrorMessage("");
                 }}
-                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-blue-500 focus:outline-none focus:border-blue-500"
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-blue-500 focus:outline-none focus:border-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                aria-invalid={status === "error" ? "true" : "false"}
+                aria-busy={isLoading ? "true" : "false"}
               />
+
+              {/* Loading message */}
+              {status === "loading" && (
+                <p className="mt-2 flex items-center text-sm text-blue-700">
+                  <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                  {t("resume.loading") ?? "Resuming..."}
+                </p>
+              )}
 
               {/* Success message */}
               {status === "success" && (
@@ -176,15 +185,24 @@ export default function ResumeModal({ isOpen, onClose }: ResumeModalProps) {
               <div className="mt-6 flex justify-end gap-2">
                 <button
                   onClick={onClose}
-                  className="px-4 py-2 text-sm rounded-md border border-gray-300 text-gray-600 hover:bg-gray-100 transition"
+                  disabled={isLoading}
+                  className="px-4 py-2 text-sm rounded-md border border-gray-300 text-gray-600 hover:bg-gray-100 transition disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   {t("resume.cancel")}
                 </button>
                 <button
                   onClick={handleSubmit}
-                  className="px-4 py-2 text-sm rounded-md bg-blue-700 text-white hover:bg-blue-800 transition"
+                  disabled={isLoading}
+                  className="px-4 py-2 text-sm rounded-md bg-blue-700 text-white hover:bg-blue-800 transition disabled:opacity-60 disabled:cursor-not-allowed flex items-center"
                 >
-                  {t("resume.continue")}
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      {t("resume.loadingCta") ?? "Resuming..."}
+                    </>
+                  ) : (
+                    t("resume.continue")
+                  )}
                 </button>
               </div>
             </Dialog.Panel>

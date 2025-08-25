@@ -13,6 +13,7 @@ export enum ES3Folder {
   SIGNATURES = "signatures",
   MEDICAL_CERT_PHOTOS = "medical-cert-photos",
   FAST_CARD_PHOTOS = "fast-card-photos",
+  DRUG_TEST_PHOTOS = "drug-test-photos",
 }
 
 export interface IPresignRequest {

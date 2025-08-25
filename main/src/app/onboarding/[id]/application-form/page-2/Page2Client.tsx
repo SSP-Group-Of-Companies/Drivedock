@@ -10,29 +10,22 @@
 
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  applicationFormPage2Schema,
-  ApplicationFormPage2Schema,
-} from "@/lib/zodSchemas/applicationFormPage2.schema";
+import { applicationFormPage2Schema, ApplicationFormPage2Schema } from "@/lib/zodSchemas/applicationFormPage2.schema";
 
 import EmploymentSection from "./components/EmploymentSection";
 import ContinueButton from "@/app/onboarding/[id]/ContinueButton";
 import { page2ConfigFactory } from "@/lib/frontendConfigs/applicationFormConfigs/page2Config";
 import { useEffect } from "react";
 import { useOnboardingTracker } from "@/store/useOnboardingTracker";
-import type { ITrackerContext } from "@/types/onboardingTracker.types";
+import type { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
 
 type Page2ClientProps = {
   defaultValues: ApplicationFormPage2Schema;
   trackerId: string;
-  trackerContextFromGet?: ITrackerContext | null;
+  trackerContextFromGet?: IOnboardingTrackerContext | null;
 };
 
-export default function Page2Client({
-  defaultValues,
-  trackerId,
-  trackerContextFromGet,
-}: Page2ClientProps) {
+export default function Page2Client({ defaultValues, trackerId, trackerContextFromGet }: Page2ClientProps) {
   const methods = useForm<ApplicationFormPage2Schema>({
     resolver: zodResolver(applicationFormPage2Schema),
     mode: "onChange",
@@ -46,11 +39,7 @@ export default function Page2Client({
 
   return (
     <FormProvider {...methods}>
-      <form
-        className="space-y-8"
-        onSubmit={(e) => e.preventDefault()}
-        noValidate
-      >
+      <form className="space-y-8" onSubmit={(e) => e.preventDefault()} noValidate>
         <EmploymentSection />
 
         <ContinueButton<ApplicationFormPage2Schema>

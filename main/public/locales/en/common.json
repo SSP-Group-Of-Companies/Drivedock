@@ -399,6 +399,13 @@
       }
     },
 
+    "step6": {
+      "title": "Drug Test",
+      "description": "Please upload clear photos of your drug test documents. You can add up to {{count}} photos. Once uploaded, documents will be verified before you can continue.",
+      "verified": "Documents verified.",
+      "pending": "Documents uploaded. Pending verification. Uploads are disabled.",
+      "labelDocuments": "Drug Test Documents"
+    },
     "errors": {
       "minimum5Years": "You must provide at least 5 years of address history.",
       "addressDurationError": "Address provided should span for the last 5 years. Please add previous address if you lived in more than one location."
@@ -414,7 +421,8 @@
     "success": "Match found! Redirecting...",
     "error": "No application found for that SIN.",
     "cancel": "Cancel",
-    "continue": "Continue"
+    "continue": "Continue",
+    "loading": "Loading..."
   },
 
   "wizard": {
@@ -475,7 +483,9 @@
     "clear": "Clear",
     "processing": "Processing...",
     "submitAnswers": "Submit Answers",
-    "continue": "Continue"
+    "continue": "Continue",
+    "submitDocuments": "Submit Documents",
+    "pendingVerification": "Pending Verification"
   },
 
   "photoGroup": {

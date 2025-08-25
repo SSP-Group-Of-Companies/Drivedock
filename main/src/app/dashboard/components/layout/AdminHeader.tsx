@@ -11,18 +11,15 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { UserCircle } from "lucide-react";
 import AppLauncher from "./AppLauncher";
+import ProfileDropdown from "@/components/shared/ProfileDropdown";
 
 interface AdminHeaderProps {
   onToggleSidebar?: () => void;
   sidebarOpen?: boolean;
 }
 
-export default function AdminHeader({
-  onToggleSidebar,
-  sidebarOpen,
-}: AdminHeaderProps) {
+export default function AdminHeader({ onToggleSidebar, sidebarOpen }: AdminHeaderProps) {
   return (
     <header
       className="sticky top-0 z-50 w-full b shadow-sm transition-colors duration-200"
@@ -49,20 +46,14 @@ export default function AdminHeader({
           >
             {/* Arrow icon that rotates like SSP-Portal */}
             <svg
-              className={`h-4 w-4 transition-transform duration-500 ease-in-out ${
-                sidebarOpen ? "rotate-180 -translate-x-0.5 scale-110" : ""
-              }`}
+              className={`h-4 w-4 transition-transform duration-500 ease-in-out ${sidebarOpen ? "rotate-180 -translate-x-0.5 scale-110" : ""}`}
               fill="none"
               stroke="currentColor"
               strokeWidth="3"
               viewBox="0 0 24 24"
               aria-hidden="true"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9 5l7 7-7 7"
-              />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
           </button>
         </div>
@@ -84,17 +75,7 @@ export default function AdminHeader({
         {/* Right: app launcher + profile */}
         <div className="flex items-center justify-end gap-1 sm:gap-2">
           <AppLauncher />
-          <button
-            type="button"
-            aria-label="Open profile menu"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-lg transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-            style={{
-              backgroundColor: "var(--color-primary)",
-              color: "white",
-            }}
-          >
-            <UserCircle className="h-5 w-5" aria-hidden="true" />
-          </button>
+          <ProfileDropdown />
         </div>
       </div>
     </header>

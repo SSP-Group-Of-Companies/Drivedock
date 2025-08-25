@@ -1,13 +1,13 @@
 // main/src/lib/frontendConfigs/formPageConfig.types.ts
 import { FieldValues } from "react-hook-form";
 import { IPreQualifications } from "@/types/preQualifications.types";
-import { ITrackerContext } from "@/types/onboardingTracker.types";
+import { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
 
 export type BuildPayloadCtx = {
   prequalifications?: IPreQualifications;
   companyId?: string;
   applicationType?: string;
-  tracker?: ITrackerContext | null;
+  tracker?: IOnboardingTrackerContext | null;
   isPatch?: boolean;
   effectiveTrackerId?: string;
 };
@@ -20,6 +20,4 @@ export interface FormPageConfig<T extends FieldValues> {
   validateBusinessRules?: (values: T) => string | null;
 }
 
-export type FormPageConfigFactory<T extends FieldValues> = (
-  ctx: BuildPayloadCtx
-) => FormPageConfig<T>;
+export type FormPageConfigFactory<T extends FieldValues> = (ctx: BuildPayloadCtx) => FormPageConfig<T>;

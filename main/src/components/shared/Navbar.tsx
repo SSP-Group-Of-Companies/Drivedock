@@ -45,6 +45,7 @@ import useMounted from "@/hooks/useMounted";
 import LanguageDropdown from "@/components/shared/LanguageDropdown";
 
 import { handleBackNavigation } from "@/lib/utils/onboardingUtils";
+import ProfileDropdown from "./ProfileDropdown";
 
 export default function Navbar() {
   const mounted = useMounted();
@@ -59,7 +60,7 @@ export default function Navbar() {
    */
   const handleBackClick = () => {
     const trackerId = (params?.id as string) || undefined;
-    handleBackNavigation(pathname, trackerId, router);
+    handleBackNavigation(pathname, trackerId, router, { needsFlatbedTraining: false });
   };
 
   // UI control flags
@@ -100,16 +101,13 @@ export default function Navbar() {
               aria-label="Go Back"
             >
               {/* Back arrow with hover animation */}
-              <motion.span
-                initial={{ x: 0 }}
-                whileHover={{ x: -8 }}
-                transition={{ type: "spring", stiffness: 300, damping: 20 }}
-              >
+              <motion.span initial={{ x: 0 }} whileHover={{ x: -8 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}>
                 <ArrowLeft size={18} />
               </motion.span>
               <span className="hidden sm:inline">{t("navbar.backButton")}</span>
             </button>
           )}
+          <ProfileDropdown />
         </div>
       </div>
     </header>

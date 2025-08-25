@@ -2,7 +2,7 @@ import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
 import PreQualifications from "@/mongoose/models/Prequalifications";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import connectDB from "@/lib/utils/connectDB";
-import { COMPANIES } from "@/constants/companies";
+import { COMPANIES, ECompanyApplicationType } from "@/constants/companies";
 import { advanceProgress, buildTrackerContext, nextResumeExpiry, onboardingExpired } from "@/lib/utils/onboardingUtils";
 import { EStepPath } from "@/types/onboardingTracker.types";
 import { isValidObjectId } from "mongoose";
@@ -58,8 +58,11 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       return errorResponse(404, "PreQualifications not found");
     }
 
+    // check if flatbed training is required
+    onboardingDoc.needsFlatbedTraining = onboardingDoc.applicationType === ECompanyApplicationType.FLATBED ? !Boolean(preQualDoc.flatbedExperience) : false;
+
     // Step 5: Update onboarding tracker status
-    onboardingDoc.status = advanceProgress(onboardingDoc.status, EStepPath.PRE_QUALIFICATIONS);
+    onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.PRE_QUALIFICATIONS);
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();
     await onboardingDoc.save();
 

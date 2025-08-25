@@ -15,14 +15,7 @@ export type DashboardOnboardingItemSummary = {
  */
 export type DashboardOnboardingItem = Pick<
   IOnboardingTracker,
-  | "status"
-  | "companyId"
-  | "applicationType"
-  | "createdAt"
-  | "updatedAt"
-  | "terminated"
-  | "resumeExpiresAt"
-  | "forms"
+  "status" | "companyId" | "applicationType" | "createdAt" | "updatedAt" | "terminated" | "resumeExpiresAt" | "forms" | "needsFlatbedTraining"
 > & {
   _id: string;
   itemSummary: DashboardOnboardingItemSummary;
