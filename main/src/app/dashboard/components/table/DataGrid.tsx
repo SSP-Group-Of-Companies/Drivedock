@@ -297,8 +297,12 @@ export default function DataGrid({
   /* ---------------- Render ---------------- */
   return (
     <div
-      className="flex h-full min-h-0 flex-col rounded-xl overflow-hidden shadow-sm border border-gray-200"
-      style={{ backgroundColor: "var(--color-card)" }}
+      className="flex flex-col rounded-xl overflow-hidden"
+      style={{
+        backgroundColor: "var(--color-card)",
+        boxShadow: "var(--elevation-1)",
+        border: "1px solid var(--card-border-color)",
+      }}
     >
       {/* Header with results count and pagination */}
       <div
@@ -382,11 +386,14 @@ export default function DataGrid({
         </div>
       </div>
 
-      {/* Table (scrolls inside; page scroll resumes after end) */}
-      <div className="relative -mx-2 flex-1 min-h-0 overflow-x-auto overflow-y-auto overscroll-auto no-scrollbar sm:mx-0">
+      {/* Table (responsive scrolling) */}
+      <div
+        className="relative -mx-2 overflow-x-auto overflow-y-auto overscroll-auto no-scrollbar sm:mx-0"
+        style={{ maxHeight: "60vh" }}
+      >
         {/* Fixed layout on mobile; auto on desktop */}
         <table className="w-full border-separate border-spacing-0 text-sm table-fixed sm:table-auto">
-          {/* Mobile column widths so “All” never collapses actions */}
+          {/* Mobile column widths so "All" never collapses actions */}
           <colgroup>
             <col className="w-[46%] sm:w-auto" />
             <col className="w-[34%] sm:w-auto" />

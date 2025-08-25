@@ -48,11 +48,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           Skip to content
         </a>
 
-        {/* FIXED-HEIGHT APP SHELL (no document scrolling) */}
+        {/* RESPONSIVE APP SHELL */}
         <div
           className="
-            flex h-dvh flex-col overflow-hidden transition-colors duration-200
-            supports-[height:100svh]:h-[100svh]
+            flex min-h-screen flex-col overflow-x-hidden transition-colors duration-200
+            lg:h-screen lg:overflow-hidden
           "
           style={{
             backgroundColor: "var(--color-background)",
@@ -67,8 +67,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             />
           </Suspense>
 
-          {/* Fill the remaining height; prevent page scroll */}
-          <div className="flex min-h-0 flex-1 overflow-hidden">
+          {/* Main content area */}
+          <div className="flex min-h-0 flex-1 lg:overflow-hidden">
             {/* Desktop sidebar */}
             <div className="hidden lg:block shrink-0">
               {/* Keep a fixed-width fallback to avoid layout shift */}
@@ -81,20 +81,20 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               </Suspense>
             </div>
 
-            {/* Main column (no overflow here) */}
+            {/* Main column */}
             <main
               id="main"
               role="main"
-              className="min-w-0 flex-1 overflow-hidden transition-colors duration-200"
+              className="min-w-0 flex-1 transition-colors duration-200"
               style={{ backgroundColor: "var(--color-surface)" }}
             >
-              {/* Container that holds the page’s own scrollable region(s) */}
+              {/* Container that holds the page's own scrollable region(s) */}
               <div
                 className="
                   mx-auto w-full max-w-screen-2xl
                   px-3 sm:px-4 lg:pl-0 md:pr-4 lg:pr-6 xl:pr-8
                   pt-4 pb-8
-                  h-full min-h-0 overflow-hidden
+                  min-h-0
                 "
               >
                 {/* If a child page uses useSearchParams, this boundary keeps 404 prerender safe */}
