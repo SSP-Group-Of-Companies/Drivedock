@@ -354,7 +354,8 @@
     "success": "Correspondance trouvée ! Redirection en cours...",
     "error": "Aucune candidature trouvée pour ce NAS.",
     "cancel": "Annuler",
-    "continue": "Continuer"
+    "continue": "Continuer",
+    "loading": "Chargement..."
   },
   "wizard": {
     "infoTitle": "Que signifient les étapes ?",

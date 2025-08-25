@@ -354,7 +354,8 @@
     "success": "¡Coincidencia encontrada! Redirigiendo...",
     "error": "No se encontró ninguna solicitud para ese SIN.",
     "cancel": "Cancelar",
-    "continue": "Continuar"
+    "continue": "Continuar",
+    "loading": "Cargando..."
   },
   "wizard": {
     "infoTitle": "¿Qué significan los pasos?",
