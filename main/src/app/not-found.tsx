@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+// This component is completely static and doesn't use any client-side hooks
 export default function NotFound() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
