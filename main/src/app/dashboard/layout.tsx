@@ -1,8 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { useState, useCallback, useEffect } from "react";
 
 import QueryProvider from "@/lib/dashboard/providers/QueryProvider";
 import ThemeProvider from "@/components/shared/ThemeProvider";
@@ -22,18 +22,21 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     const savedTheme = localStorage.getItem("drivedock_theme");
     if (savedTheme) {
-      const parsed = JSON.parse(savedTheme);
-      const resolvedTheme = parsed.state?.resolvedTheme || "light";
-      const root = document.documentElement;
-      root.classList.remove("light", "dark");
-      root.classList.add(resolvedTheme);
+      try {
+        const parsed = JSON.parse(savedTheme);
+        const resolvedTheme = parsed.state?.resolvedTheme || "light";
+        const root = document.documentElement;
+        root.classList.remove("light", "dark");
+        root.classList.add(resolvedTheme);
+      } catch {
+        // ignore bad localStorage
+      }
     }
   }, []);
 
   useEffect(() => {
     closeSidebar();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);
+  }, [pathname, closeSidebar]);
 
   return (
     <QueryProvider>
@@ -57,20 +60,25 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           }}
         >
           {/* Header should not scroll; keep it out of the scroll area */}
-          <AdminHeader
-            onToggleSidebar={toggleSidebar}
-            sidebarOpen={sidebarOpen}
-          />
+          <Suspense fallback={null}>
+            <AdminHeader
+              onToggleSidebar={toggleSidebar}
+              sidebarOpen={sidebarOpen}
+            />
+          </Suspense>
 
           {/* Fill the remaining height; prevent page scroll */}
           <div className="flex min-h-0 flex-1 overflow-hidden">
             {/* Desktop sidebar */}
             <div className="hidden lg:block shrink-0">
-              <AdminSidebar
-                variant={isContract ? "contract" : "home"}
-                activePath={pathname}
-                trackerId={trackerId}
-              />
+              {/* Keep a fixed-width fallback to avoid layout shift */}
+              <Suspense fallback={<div className="w-72" aria-hidden="true" />}>
+                <AdminSidebar
+                  variant={isContract ? "contract" : "home"}
+                  activePath={pathname}
+                  trackerId={trackerId}
+                />
+              </Suspense>
             </div>
 
             {/* Main column (no overflow here) */}
@@ -89,16 +97,15 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                   h-full min-h-0 overflow-hidden
                 "
               >
-                {/* Tip:
-                   Make ONE child inside your page the scroll container, e.g.:
-                   <div className='min-h-0 flex-1 overflow-auto'>…grid…</div>
-                   That keeps the overall page non-scrollable. */}
-                {children}
+                {/* If a child page uses useSearchParams, this boundary keeps 404 prerender safe */}
+                <Suspense fallback={null}>{children}</Suspense>
               </div>
             </main>
           </div>
 
-          <MobileSidebarDrawer open={sidebarOpen} onClose={closeSidebar} />
+          <Suspense fallback={null}>
+            <MobileSidebarDrawer open={sidebarOpen} onClose={closeSidebar} />
+          </Suspense>
         </div>
       </ThemeProvider>
     </QueryProvider>
