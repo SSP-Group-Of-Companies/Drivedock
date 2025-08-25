@@ -341,6 +341,7 @@ export async function GET(req: NextRequest) {
           terminated: 1,
           resumeExpiresAt: 1,
           forms: 1,
+          needsFlatbedTraining: 1,
           itemSummary: 1,
         },
       },
