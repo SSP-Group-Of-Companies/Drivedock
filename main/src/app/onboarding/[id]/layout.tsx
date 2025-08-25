@@ -4,7 +4,13 @@ import getOnboardingTrackerContext from "@/lib/services/getOnboardingTrackerCont
 import { OnboardingTrackerContextProvider } from "@/app/providers/OnboardingTrackerContextProvider";
 import OnboardingLayoutClientShell from "../components/OnboardingLayoutClientShell";
 
-export default async function OnboardingIdLayout({ children, params }: { children: ReactNode; params: Promise<{ id: string }> }) {
+export default async function OnboardingIdLayout({
+  children,
+  params,
+}: {
+  children: ReactNode;
+  params: Promise<{ id: string }>;
+}) {
   const ctx = await getOnboardingTrackerContext((await params).id); // may be null: expired/terminated/not-found
 
   return (
