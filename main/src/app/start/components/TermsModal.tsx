@@ -114,7 +114,7 @@ export default function TermsModal({ onAgree, onCancel }: TermsModalProps) {
       </label>
 
       {/* Actions */}
-      <div className="mt-5 flex justify-between gap-2">
+      <div className="mt-5 flex justify-between gap-2 pb-6">
         <button
           onClick={handleCancel}
           className="px-4 py-2 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -185,7 +185,7 @@ export default function TermsModal({ onAgree, onCancel }: TermsModalProps) {
         <p className="mt-1">{t("start.policiesModal.section.duration")}</p>
       </div>
 
-      <div className="mt-5 flex justify-between gap-2">
+      <div className="mt-5 flex justify-between gap-2 pb-6">
         <button
           onClick={handleBack}
           className="px-4 py-2 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -226,10 +226,10 @@ export default function TermsModal({ onAgree, onCancel }: TermsModalProps) {
         </Transition.Child>
 
         {/* Panel */}
-        <div className="fixed inset-0 overflow-y-auto flex items-center justify-center px-4">
-          <Dialog.Panel className="w-full max-w-2xl transform overflow-hidden rounded-xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+        <div className="fixed inset-0 overflow-y-auto flex items-center justify-center px-4 py-4">
+          <Dialog.Panel className="w-full max-w-2xl transform overflow-hidden rounded-xl bg-white shadow-xl transition-all flex flex-col max-h-[90vh]">
             {/* Step indicator */}
-            <div className="flex items-center justify-center mb-4">
+            <div className="flex items-center justify-center p-6 pb-4 flex-shrink-0">
               <div className="flex items-center space-x-2">
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
@@ -261,7 +261,10 @@ export default function TermsModal({ onAgree, onCancel }: TermsModalProps) {
               </div>
             </div>
 
-            {currentStep === "terms" ? renderTermsStep() : renderPoliciesStep()}
+            {/* Scrollable content area */}
+            <div className="flex-1 overflow-y-auto px-6">
+              {currentStep === "terms" ? renderTermsStep() : renderPoliciesStep()}
+            </div>
           </Dialog.Panel>
         </div>
       </Dialog>
