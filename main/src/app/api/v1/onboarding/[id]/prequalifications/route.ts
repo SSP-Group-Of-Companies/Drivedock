@@ -2,12 +2,11 @@ import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
 import PreQualifications from "@/mongoose/models/Prequalifications";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import connectDB from "@/lib/utils/connectDB";
-import { COMPANIES } from "@/constants/companies";
+import { COMPANIES, ECompanyApplicationType } from "@/constants/companies";
 import { advanceProgress, buildTrackerContext, nextResumeExpiry, onboardingExpired } from "@/lib/utils/onboardingUtils";
 import { EStepPath } from "@/types/onboardingTracker.types";
 import { isValidObjectId } from "mongoose";
 import { NextRequest } from "next/server";
-import { ECompanyApplicationType } from "@/hooks/frontendHooks/useCompanySelection";
 
 export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
