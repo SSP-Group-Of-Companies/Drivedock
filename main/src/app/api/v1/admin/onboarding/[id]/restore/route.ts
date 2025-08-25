@@ -3,14 +3,16 @@ import connectDB from "@/lib/utils/connectDB";
 import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 
-export const runtime = "nodejs";
-
-export async function PATCH(_req: Request, ctx: { params: { id: string } }) {
+export async function PATCH(
+  _req: Request,
+  ctx: { params: Promise<{ id: string }> }
+) {
   try {
+    const { id } = await ctx.params;
     await connectDB();
 
     const doc = await OnboardingTracker.findByIdAndUpdate(
-      ctx.params.id,
+      id,
       { $set: { terminated: false } },
       { new: true, runValidators: true }
     );
