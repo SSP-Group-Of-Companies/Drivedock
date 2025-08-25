@@ -42,7 +42,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     if (!hasReachedStep(onboardingDoc, EStepPath.APPLICATION_PAGE_5)) {
       return errorResponse(400, "Please complete previous steps first");
     }
-    if (hasReachedStep(onboardingDoc, EStepPath.APPLICATION_PAGE_5)) {
+    if (appFormDoc.page5?.score) {
       return errorResponse(400, "cannot retake competency questions");
     }
 
