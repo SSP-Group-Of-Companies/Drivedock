@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   description: "Digital onboarding for truck drivers at SSP Truck Line",
 };
 
-export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // Decode JWT once per request
   const user = await currentUser();
 
