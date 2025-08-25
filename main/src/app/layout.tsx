@@ -13,7 +13,6 @@ import GlobalLayoutWrapper from "@/components/shared/GlobalLayoutWrapper";
 // NEW: read user once and provide globally
 import { currentUser } from "@/lib/auth/authUtils";
 import { AuthProvider } from "./providers/authProvider";
-import { Suspense } from "react";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -36,17 +35,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {/* Make user available to the entire app */}
         <AuthProvider user={user}>
           <I18nProvider>
-            <Suspense fallback={null}>
-              {/* Background Gradient Layer */}
-              <div className="absolute inset-0 z-[-2] bg-gradient-to-br from-white via-blue-100 to-blue-600 opacity-40" />
+            {/* Background Gradient Layer */}
+            <div className="absolute inset-0 z-[-2] bg-gradient-to-br from-white via-blue-100 to-blue-600 opacity-40" />
 
-              {/* Main Content Area with Smooth Transitions and Global Loading */}
-              <GlobalLayoutWrapper>
-                <PageTransitionWrapper>
-                  <main className="relative z-10">{children}</main>
-                </PageTransitionWrapper>
-              </GlobalLayoutWrapper>
-            </Suspense>
+            {/* Main Content Area with Smooth Transitions and Global Loading */}
+            <GlobalLayoutWrapper>
+              <PageTransitionWrapper>
+                <main className="relative z-10">{children}</main>
+              </PageTransitionWrapper>
+            </GlobalLayoutWrapper>
           </I18nProvider>
         </AuthProvider>
       </body>

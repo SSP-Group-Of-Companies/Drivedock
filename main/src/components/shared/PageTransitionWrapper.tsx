@@ -11,6 +11,8 @@
  * - Automatic pathname-based key management
  * - Fast, subtle animation (0.1s) to prevent white screen flicker
  * - Prevents jarring page jumps during navigation
+ * - Production-safe with proper fallback behavior
+ * - SSR and hydration safe
  *
  * Author: Faruq Adebayo Atanda
  * Company: SSP Group of Companies
@@ -21,7 +23,7 @@
 
 import { motion } from "framer-motion";
 import { usePathname } from "next/navigation";
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 
 interface PageTransitionWrapperProps {
   children: ReactNode;
@@ -31,6 +33,17 @@ export default function PageTransitionWrapper({
   children,
 }: PageTransitionWrapperProps) {
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
+
+  // Ensure component is mounted before showing animations
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // During SSR or before hydration, show content immediately without animation
+  if (!mounted) {
+    return <div>{children}</div>;
+  }
 
   return (
     <motion.div
@@ -40,6 +53,11 @@ export default function PageTransitionWrapper({
       transition={{
         duration: 0.15,
         ease: "easeOut",
+      }}
+      style={{
+        // Ensure content is always visible
+        minHeight: "100%",
+        width: "100%",
       }}
     >
       {children}
