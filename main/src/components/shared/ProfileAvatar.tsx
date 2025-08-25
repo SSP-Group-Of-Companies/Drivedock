@@ -14,8 +14,23 @@ export default function ProfileAvatar({ size = 32, user }: ProfileAvatarProps) {
   const userImage = user?.picture;
 
   if (userImage) {
-    return <Image src={userImage} alt="User Profile" width={size} height={size} className="rounded-full object-cover" />;
+    return (
+      <Image 
+        src={userImage} 
+        alt="User Profile" 
+        width={size} 
+        height={size} 
+        className="rounded-full object-cover border-2"
+        style={{ borderColor: "var(--color-outline)" }}
+      />
+    );
   }
 
-  return <UserCircle className="text-gray-600" width={size} height={size} />;
+  return (
+    <UserCircle 
+      width={size} 
+      height={size}
+      style={{ color: "var(--color-on-surface-variant)" }}
+    />
+  );
 }

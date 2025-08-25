@@ -58,7 +58,11 @@ const EMPTY_DEFAULTS: ApplicationFormPage1Schema = {
   addresses: [BLANK_ADDRESS],
 };
 
-export default async function Page1ServerWrapper({ params }: { params: Promise<{ id: string }> }) {
+export default async function Page1ServerWrapper({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const { id: trackerId } = await params;
 
   // Build same-origin absolute URL (dev + Vercel preview safe)
@@ -69,7 +73,9 @@ export default async function Page1ServerWrapper({ params }: { params: Promise<{
   const { data, error } = await fetchServerPageData<Page1Result>(url);
 
   if (error) {
-    return <div className="p-6 text-center text-red-600 font-semibold">{error}</div>;
+    return (
+      <div className="p-6 text-center text-red-600 font-semibold">{error}</div>
+    );
   }
 
   const pageData = data?.page1;
@@ -79,7 +85,10 @@ export default async function Page1ServerWrapper({ params }: { params: Promise<{
     ? {
         firstName: pageData.firstName || "",
         lastName: pageData.lastName || "",
-        sin: typeof pageData.sin === "string" && /^\d{9}$/.test(pageData.sin) ? pageData.sin : "",
+        sin:
+          typeof pageData.sin === "string" && /^\d{9}$/.test(pageData.sin)
+            ? pageData.sin
+            : "",
         sinPhoto: pageData.sinPhoto || emptyS3Photo(),
         dob: formatInputDate(pageData.dob),
         phoneHome: pageData.phoneHome || "",

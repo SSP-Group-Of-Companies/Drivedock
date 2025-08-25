@@ -15,11 +15,18 @@ export async function submitFormStep({
   submitSegment: string;
   urlTrackerId?: string;
   scope?: Scope;
-}): Promise<{ trackerContext?: IOnboardingTrackerContext; nextUrl?: string | null }> {
+}): Promise<{
+  trackerContext?: IOnboardingTrackerContext;
+  nextUrl?: string | null;
+}> {
   const id = tracker?.id || urlTrackerId;
   const isPatch = !!id;
 
-  const url = !isPatch ? "/api/v1/onboarding/application-form" : scope === "application-form" ? `/api/v1/onboarding/${id}/application-form/${submitSegment}` : `/api/v1/onboarding/${id}/${scope}`;
+  const url = !isPatch
+    ? "/api/v1/onboarding/application-form"
+    : scope === "application-form"
+    ? `/api/v1/onboarding/${id}/application-form/${submitSegment}`
+    : `/api/v1/onboarding/${id}/${scope}`;
 
   const res = await fetch(url, {
     method: isPatch ? "PATCH" : "POST",
@@ -29,10 +36,13 @@ export async function submitFormStep({
 
   if (!res.ok) throw new Error((await res.text()) || "Submission failed");
   const data = await res.json();
-  const trackerContext: IOnboardingTrackerContext = data?.data?.onboardingContext;
+  const trackerContext: IOnboardingTrackerContext =
+    data?.data?.onboardingContext;
   const nextStep = trackerContext.nextStep || null;
   if (!trackerContext) throw new Error("trackerContext missing");
-  const nextUrl = nextStep ? buildOnboardingStepPath(trackerContext, nextStep) : null;
+  const nextUrl = nextStep
+    ? buildOnboardingStepPath(trackerContext, nextStep)
+    : null;
   return {
     trackerContext,
     nextUrl,
