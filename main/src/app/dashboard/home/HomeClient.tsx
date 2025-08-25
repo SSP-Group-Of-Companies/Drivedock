@@ -9,6 +9,7 @@
  * - Adds min-w-0 so children can shrink without causing overflow on mobile
  */
 
+import { Suspense } from "react";
 import { useOnboardingList } from "@/hooks/dashboard/useOnboardingList";
 import { useAdminOnboardingQueryState } from "@/hooks/dashboard/useAdminOnboardingQueryState";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -22,7 +23,7 @@ import {
   APPLICATION_TYPE_OPTIONS,
 } from "@/constants/dashboard/filters";
 
-export default function HomeClient() {
+function HomeClientContent() {
   // Data (React Query)
   const { data, isLoading, isFetching, isError, error, refetch, uiQuery } =
     useOnboardingList();
@@ -50,7 +51,7 @@ export default function HomeClient() {
   const clearAllFilters = () => {
     const sp = new URLSearchParams(searchParams.toString());
 
-    // remove everything that’s a filter/search/slice of the grid
+    // remove everything that's a filter/search/slice of the grid
     [
       "driverName",
       "companyId",
@@ -136,5 +137,13 @@ export default function HomeClient() {
         onPageChange={(p) => setPagination(p)}
       />
     </div>
+  );
+}
+
+export default function HomeClient() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <HomeClientContent />
+    </Suspense>
   );
 }
