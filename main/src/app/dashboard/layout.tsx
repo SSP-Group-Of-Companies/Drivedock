@@ -11,20 +11,13 @@ import AdminSidebar from "./components/layout/AdminSidebar";
 import MobileSidebarDrawer from "./components/layout/MobileSidebarDrawer";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
-  const [mounted, setMounted] = useState(false);
+  const pathname = usePathname() || "/dashboard";
+  const isContract = pathname.startsWith("/dashboard/contract/");
+  const trackerId = isContract ? pathname.split("/")[3] ?? "" : undefined;
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  
   const toggleSidebar = useCallback(() => setSidebarOpen((v) => !v), []);
   const closeSidebar = useCallback(() => setSidebarOpen(false), []);
-
-  // Call usePathname unconditionally (will be undefined during SSR)
-  const pathname = usePathname() || "/dashboard";
-  const isContract = mounted ? pathname.startsWith("/dashboard/contract/") : false;
-  const trackerId = mounted && isContract ? pathname.split("/")[3] ?? "" : undefined;
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem("drivedock_theme");
@@ -38,30 +31,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (mounted) {
-      closeSidebar();
-    }
+    closeSidebar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname, mounted]);
-
-  // During SSR/static generation, render without client-side functionality
-  if (!mounted) {
-    return (
-      <QueryProvider>
-        <ThemeProvider>
-          <div className="flex h-dvh flex-col overflow-hidden">
-            <div className="flex min-h-0 flex-1 overflow-hidden">
-              <main className="min-w-0 flex-1 overflow-hidden">
-                <div className="mx-auto w-full max-w-screen-2xl px-3 sm:px-4 pt-4 pb-8 h-full min-h-0 overflow-hidden">
-                  {children}
-                </div>
-              </main>
-            </div>
-          </div>
-        </ThemeProvider>
-      </QueryProvider>
-    );
-  }
+  }, [pathname]);
 
   return (
     <QueryProvider>
