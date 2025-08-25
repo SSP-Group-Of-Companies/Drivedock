@@ -371,7 +371,8 @@
     "success": "Match found! Redirecting...",
     "error": "No application found for that SIN.",
     "cancel": "Cancel",
-    "continue": "Continue"
+    "continue": "Continue",
+    "loading": "Loading..."
   },
 
   "wizard": {
