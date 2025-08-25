@@ -34,36 +34,68 @@
     }
   },
   "start": {
-    "heading": "Comienza tu solicitud",
-    "subheading": "Inicia tu camino con SSP Group of Companies",
+    "heading": "Inicie su solicitud",
+    "subheading": "Comience su camino con SSP Group of Companies",
     "languageLabel": "🌐 Seleccionar idioma",
     "beforeYouBegin": "Antes de comenzar",
-    "readAndAgree": "Lee y acepta lo siguiente:",
+    "ensureDoc": "Asegúrese de contar con los documentos indicados a continuación para completar este proceso de solicitud",
     "continue": "Continuar a la solicitud",
     "estimatedTime": "Tiempo estimado: 15–20 minutos",
-    "agreeToTerms": "Acepto las condiciones anteriores",
-    "checklist": {
-      "accurateInfo": "Toda la información proporcionada debe ser precisa y veraz",
-      "digitalProcess": "Entiendes que este es un proceso de solicitud digital",
-      "consentChecks": "Das tu consentimiento para las verificaciones de antecedentes y de historial de conducción",
-      "termsAgreement": "Aceptas los términos y condiciones de SSP Group of Companies"
+    "agreeToTerms": "Acepto las políticas de la empresa y los principios de uso de datos",
+
+    "CanadaDocChecklist": {
+      "driverLicense": "Licencia de conducir",
+      "SINnumber": "Número de SIN",
+      "healthCard": "Tarjeta sanitaria",
+      "Passport": "Pasaporte",
+      "visa": "Visa estadounidense (para conductores transfronterizos)",
+      "permit": "Residencia permanente / Permiso de trabajo / Ciudadano canadiense",
+      "option": "Documentos opcionales:",
+      "fastCard": "Tarjeta FAST",
+      "IncorporateDocuments": "Documentos de constitución (empresa)",
+      "bankingInfo": "Información bancaria (para empresa constituida)"
     },
-    "termsModal": {
-      "title": "Términos y condiciones",
-      "intro": "Al continuar, aceptas que:",
-      "items": {
-        "subcontractor": "Estás solicitando como subcontratista o empleado",
-        "truthfulInfo": "Toda la información que envíes es verdadera y exacta",
-        "backgroundChecks": "Das tu consentimiento para verificaciones de antecedentes y de historial de conducción",
-        "companyRules": {
-          "title": "Comprendes y aceptas las normas de la empresa sobre:",
-          "drugPolicy": "Políticas de alcohol y drogas",
-          "dashCam": "Grabación con cámara a bordo en los vehículos",
-          "safetyRules": "Exceso de velocidad, reporte de accidentes y uso del teléfono",
-          "seals": "Sellos de remolque e inspecciones transfronterizas"
+
+    "USAChecklist": {
+      "driverLicense": "Licencia de conducir",
+      "SSNnumber": "Número de SSN",
+      "healthCard": "Certificado médico",
+      "Passport": "Pasaporte / Residente permanente / Ciudadano estadounidense",
+      "option": "Documentos opcionales:",
+      "IncorporateDocuments": "Documentos de constitución (empresa)",
+      "bankingInfo": "Información bancaria (para empresa constituida)"
+    },
+    "docs": {
+      "OptionalDocuments": "Documentos opcionales:",
+      "RequiredDocuments": "Documentos obligatorios:"
+    },
+
+    "policiesModal": {
+      "title": "Aviso de políticas y uso de datos",
+      "sub-title": "Como parte de su solicitud para convertirse en conductor con [Company Name], debemos recopilar cierta información personal para confirmar sus calificaciones y cumplir con las normativas legales y de seguridad",
+      "section": {
+        "WhatInfo": "Qué información recopilamos:",
+        "WhatInfoItems": {
+          "itemOne": "Sus datos personales (nombre, dirección, información de contacto)",
+          "itemTwo": "Su licencia de conducir y su historial de manejo (abstracto)",
+          "itemThree": "Historial laboral y referencias",
+          "itemFour": "Resultados de verificaciones de antecedentes y pruebas de drogas/alcohol"
         },
-        "discipline": "Las medidas disciplinarias pueden incluir multas, suspensión o despido",
-        "laws": "Eres responsable de cumplir las leyes canadienses y estadounidenses de transporte por carretera"
+        "whyInfo": "Por qué recopilamos esta información",
+        "WhyInfoItems": {
+          "itemOne": "Verificar que cumple con los requisitos legales para la conducción comercial",
+          "itemTwo": "Garantizar la seguridad en el trabajo y en la carretera",
+          "itemThree": "Completar las verificaciones laborales y de antecedentes exigidas por la ley",
+          "itemFour": "Mantener registros exactos de empleo y de cumplimiento"
+        },
+        "whoInfo": "Quién tiene acceso a esta información",
+        "WhoInfoItems": {
+          "itemOne": "Los equipos de Recursos Humanos y Cumplimiento de [Company Name]",
+          "itemTwo": "Las autoridades reguladoras (p. ej., Transport Canada, FMCSA si es transfronterizo)",
+          "itemThree": "Terceros autorizados (p. ej., proveedores de verificaciones de antecedentes, aseguradoras)"
+        },
+        "howLong": "Cuánto tiempo conservamos su información",
+        "duration": "Su información se almacenará de forma segura durante el período requerido por la ley (generalmente de 3 a 7 años, según el tipo de documento y la jurisdicción)."
       },
       "cancel": "Cancelar",
       "agree": "Acepto"
@@ -358,33 +390,49 @@
     "loading": "Cargando..."
   },
   "wizard": {
-    "infoTitle": "¿Qué significan los pasos?",
-    "modalTitle": "Pasos de la solicitud",
+    "modalTitle": "Acerca de esta aplicación",
     "close": "Cerrar",
-    "step1": {
-      "label": "Paso 1",
-      "desc": "Preselección"
+    "aboutTitle": "Acerca de esta aplicación",
+    "stepsTitle": "Pasos a simple vista",
+    "savingTitle": "Guardado y seguridad",
+    "tipsTitle": "Consejos",
+    "steps": {
+      "step1": {
+        "label": "1. Precalificación",
+        "desc": "Verificación rápida de elegibilidad (≈2 min): edad, licencia AZ, elegibilidad para trabajar (Canadá/EE. UU.) y preparación básica."
+      },
+      "step2": {
+        "label": "2. Formulario de solicitud",
+        "desc": "Formulario de 5 páginas que abarca datos personales, historial de direcciones de 5 años, licencias y carga de archivos, historial laboral y declaraciones."
+      },
+      "step3": {
+        "label": "3. Políticas y consentimientos",
+        "desc": "Revise las políticas de la empresa y proporcione los consentimientos/firmas requeridos."
+      },
+      "step4": {
+        "label": "4. CarriersEdge",
+        "desc": "Complete la capacitación de seguridad en línea asignada; le guiaremos para iniciar sesión."
+      },
+      "step5": {
+        "label": "5. Prueba de manejo",
+        "desc": "Programación y resultados de la evaluación en carretera y en patio (gestionado por Seguridad)."
+      },
+      "step6": {
+        "label": "6. Prueba de drogas",
+        "desc": "Si se requiere, recibirá instrucciones y la ubicación de referencia."
+      },
+      "step7": {
+        "label": "7. Capacitación en patio (si corresponde)",
+        "desc": "Orientación en sitio y recorrido del equipo."
+      }
     },
-    "step2": {
-      "label": "Paso 2",
-      "desc": "Formulario de solicitud del conductor"
+    "saving": {
+      "autoSignOut": "Cierre de sesión automático: por su seguridad, se cerrará la sesión después de 10 minutos de inactividad.",
+      "progressSaves": "Cuándo se guarda el progreso: su información solo se guarda cuando hace clic en Siguiente/Continuar en una página.",
+      "resumeLater": "Reanudar después: use su SIN (Número de Seguro Social) con el botón Reanudar en la pantalla de inicio para continuar en cualquier dispositivo.",
+      "privacyNote": "Nota de privacidad: su SIN se usa únicamente para localizar su solicitud y se almacena de forma segura."
     },
-    "step3": {
-      "label": "Paso 3",
-      "desc": "Políticas y consentimientos"
-    },
-    "step4": {
-      "label": "Paso 4",
-      "desc": "Capacitación CarrierEdge"
-    },
-    "step5": {
-      "label": "Paso 5",
-      "desc": "Prueba de manejo"
-    },
-    "step6": {
-      "label": "Paso 6",
-      "desc": "Prueba de drogas"
-    }
+    "tips": "Tenga a mano su licencia AZ, el historial de direcciones de 5 años y los datos recientes de empleo para agilizar la experiencia."
   },
   "actions": {
     "addPhoto": "Agregar foto",

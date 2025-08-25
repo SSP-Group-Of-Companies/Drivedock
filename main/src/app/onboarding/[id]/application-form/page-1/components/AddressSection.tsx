@@ -18,7 +18,7 @@ type AddressFieldName =
   | "from"
   | "to";
 
-// Config array, typed so AddressFieldName is actually used
+// Config array for address fields
 const ADDRESS_FIELDS = [
   { name: "address", labelKey: "form.step2.page1.fields.address" },
   { name: "city", labelKey: "form.step2.page1.fields.city" },
@@ -26,7 +26,7 @@ const ADDRESS_FIELDS = [
     name: "stateOrProvince",
     labelKey: "form.step2.page1.fields.stateOrProvince",
   },
-  { name: "postalCode", labelKey: "form.step2.page1.fields.postalCode" }, // label adjusted below per country
+  { name: "postalCode", labelKey: "form.step2.page1.fields.postalCode" },
   {
     name: "from",
     labelKey: "form.step2.page1.fields.from",
@@ -39,14 +39,19 @@ const ADDRESS_FIELDS = [
   type?: "date";
 }>;
 
-// Robustly extract array-root error message for RHF+Zod
-function getAddressesRootErrorMessage(errs: any): string | undefined {
-  const e = errs?.addresses;
-  if (!e) return undefined;
+// Extract root error message for addresses array
+function getAddressesRootErrorMessage(errors: any): string | undefined {
+  const addressErrors = errors?.addresses;
+  if (!addressErrors) return undefined;
+
   return (
-    e?.root?.message ??
-    (typeof e?.message === "string" ? e.message : undefined) ??
-    (Array.isArray(e?._errors) ? e._errors[0] : undefined)
+    addressErrors?.root?.message ??
+    (typeof addressErrors?.message === "string"
+      ? addressErrors.message
+      : undefined) ??
+    (Array.isArray(addressErrors?._errors)
+      ? addressErrors._errors[0]
+      : undefined)
   );
 }
 
@@ -70,7 +75,7 @@ export default function AddressSection() {
     name: "addresses",
   });
 
-  // Ensure exactly one blank address appears on first load (when empty)
+  // Ensure exactly one blank address appears on first load
   useEffect(() => {
     if (fields.length === 0) {
       append({
@@ -82,7 +87,7 @@ export default function AddressSection() {
         to: "",
       });
     }
-  }, [fields, append]);
+  }, [fields.length, append]);
 
   const watchedAddresses = watch("addresses");
   const addressErrors = errors.addresses as any[] | undefined;
@@ -90,16 +95,20 @@ export default function AddressSection() {
 
   // Mark that we attempted submit once we see any array error
   useEffect(() => {
-    if (errors.addresses) setHasSubmitted(true);
+    if (errors.addresses) {
+      setHasSubmitted(true);
+    }
   }, [errors.addresses]);
 
-  // Re-validate only after user edits following a submit attempt
+  // Re-validate addresses after user edits following a submit attempt
   useEffect(() => {
     if (!hasSubmitted) return;
-    const id = setTimeout(() => {
+
+    const timeoutId = setTimeout(() => {
       trigger("addresses");
     }, 200);
-    return () => clearTimeout(id);
+
+    return () => clearTimeout(timeoutId);
   }, [hasSubmitted, watchedAddresses, trigger]);
 
   const getPostalCodeLabel = () =>

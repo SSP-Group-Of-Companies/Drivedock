@@ -1,5 +1,11 @@
 import { ECountryCode } from "@/types/shared.types";
 
+/** Application types live with companies to avoid scattered sources of truth */
+export enum ECompanyApplicationType {
+  FLATBED = "FLAT_BED",
+  DRY_VAN = "DRY_VAN",
+}
+
 export enum ECompanyId {
   SSP_CA = "ssp-ca",
   SSP_US = "ssp-us",
@@ -107,7 +113,6 @@ export const COMPANIES: Company[] = [
       "bg-gradient-to-r from-purple-700 via-purple-500 to-pink-400",
   },
 ];
-
 
 export function getCompanyById(companyId: string): Company | undefined {
   return COMPANIES.find((company) => company.id === companyId);

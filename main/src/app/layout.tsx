@@ -33,6 +33,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased relative min-h-screen overflow-x-hidden bg-white text-gray-900`}>
         {/* Make user available to the entire app */}
+        suppressHydrationWarning
         <AuthProvider user={user}>
           <I18nProvider>
             {/* Background Gradient Layer */}

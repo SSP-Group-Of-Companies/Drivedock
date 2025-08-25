@@ -7,7 +7,7 @@
 import { Document, ObjectId } from "mongoose";
 import { IApplicationFormPage1 } from "./applicationForm.types";
 import { IPreQualifications } from "./preQualifications.types";
-import { ECompanyApplicationType } from "@/hooks/frontendHooks/useCompanySelection";
+import { ECompanyApplicationType } from "@/constants/companies";
 import { ECompanyId } from "@/constants/companies";
 
 /**

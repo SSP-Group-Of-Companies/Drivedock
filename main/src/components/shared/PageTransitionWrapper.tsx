@@ -21,14 +21,26 @@
 
 import { motion } from "framer-motion";
 import { usePathname } from "next/navigation";
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 
 interface PageTransitionWrapperProps {
   children: ReactNode;
 }
 
-export default function PageTransitionWrapper({ children }: PageTransitionWrapperProps) {
+export default function PageTransitionWrapper({
+  children,
+}: PageTransitionWrapperProps) {
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // During SSR/static generation, render without animation
+  if (!mounted) {
+    return <div>{children}</div>;
+  }
 
   return (
     <motion.div

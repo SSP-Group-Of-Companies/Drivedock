@@ -3,7 +3,7 @@ import { ELicenseType } from "@/types/shared.types";
 import { hasRecentAddressCoverage } from "@/lib/utils/hasMinimumAddressDuration";
 
 // Helpers
-const dateYMD = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD");
+const dateYMD = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date is required");
 
 // Accepts digits, spaces, (), -, + but must contain at least 10 digits overall
 const phoneLoose = z
@@ -24,7 +24,33 @@ export const licenseEntrySchema = z.object({
   licenseNumber: z.string().min(1, "License number is required"),
   licenseStateOrProvince: z.string().min(1, "Province is required"),
   licenseType: z.nativeEnum(ELicenseType),
-  licenseExpiry: dateYMD,
+  licenseExpiry: dateYMD.refine(
+    (date) => {
+      const selectedDate = new Date(date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // Check if date is in the past or today
+      if (selectedDate <= today) {
+        return false;
+      }
+
+      // Check if date is 30 days or less from now
+      const thirtyDaysFromNow = new Date();
+      thirtyDaysFromNow.setDate(today.getDate() + 30);
+      thirtyDaysFromNow.setHours(0, 0, 0, 0);
+
+      if (selectedDate <= thirtyDaysFromNow) {
+        return false;
+      }
+
+      return true;
+    },
+    {
+      message:
+        "License expiry date cannot be a past, current date, or within 30 days",
+    }
+  ),
   licenseFrontPhoto: z.union([photoSchema, z.undefined()]).optional(),
   licenseBackPhoto: z.union([photoSchema, z.undefined()]).optional(),
 });
@@ -37,7 +63,15 @@ export const addressEntrySchema = z
     stateOrProvince: z.string().min(1, "Province is required"),
     postalCode: z.string().min(3, "Postal code is required"),
     from: dateYMD,
-    to: dateYMD,
+    to: dateYMD.refine(
+      (date) => {
+        const toDate = new Date(date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return toDate <= today;
+      },
+      { message: "End date cannot be in the future" }
+    ),
   })
   .refine(
     (data) => {

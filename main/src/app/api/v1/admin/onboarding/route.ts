@@ -122,7 +122,9 @@ async function buildBaseFilter(searchParams: URLSearchParams) {
       tokens.length > 0
         ? tokens.map((tok) => {
             const rx = new RegExp(escapeRegex(tok), "i");
-            return { $or: [{ "page1.firstName": rx }, { "page1.lastName": rx }] };
+            return {
+              $or: [{ "page1.firstName": rx }, { "page1.lastName": rx }],
+            };
           })
         : [];
 
@@ -147,7 +149,9 @@ async function buildBaseFilter(searchParams: URLSearchParams) {
       ],
     };
 
-    const appIdsDocs = await ApplicationForm.find(appFormNameQuery, { _id: 1 }).lean();
+    const appIdsDocs = await ApplicationForm.find(appFormNameQuery, {
+      _id: 1,
+    }).lean();
 
     const objIds = appIdsDocs.map((d: any) => d._id);
     const strIds = objIds.map((id: any) => id.toString());
@@ -248,7 +252,9 @@ export async function GET(req: NextRequest) {
                       fn: { $ifNull: ["$page1.firstName", ""] },
                       ln: { $ifNull: ["$page1.lastName", ""] },
                     },
-                    in: { $trim: { input: { $concat: ["$$fn", " ", "$$ln"] } } },
+                    in: {
+                      $trim: { input: { $concat: ["$$fn", " ", "$$ln"] } },
+                    },
                   },
                 },
                 email: "$page1.email",
@@ -288,8 +294,26 @@ export async function GET(req: NextRequest) {
         },
       },
 
-      ...(typeof ceEmailSent === "boolean" ? [{ $match: { "status.currentStep": EStepPath.CARRIERS_EDGE_TRAINING, ceEmailSent } }] : []),
-      ...(typeof dtDocsUploaded === "boolean" ? [{ $match: { "status.currentStep": EStepPath.DRUG_TEST, dtDocumentsUploaded: dtDocsUploaded } }] : []),
+      ...(typeof ceEmailSent === "boolean"
+        ? [
+            {
+              $match: {
+                "status.currentStep": EStepPath.CARRIERS_EDGE_TRAINING,
+                ceEmailSent,
+              },
+            },
+          ]
+        : []),
+      ...(typeof dtDocsUploaded === "boolean"
+        ? [
+            {
+              $match: {
+                "status.currentStep": EStepPath.DRUG_TEST,
+                dtDocumentsUploaded: dtDocsUploaded,
+              },
+            },
+          ]
+        : []),
 
       sortStage,
       { $skip: skip },
@@ -328,7 +352,10 @@ export async function GET(req: NextRequest) {
       (async () => {
         const [all, driveTest, ce, dt] = await Promise.all([
           OnboardingTracker.countDocuments({ ...matchBase }),
-          OnboardingTracker.countDocuments({ ...matchBase, "status.currentStep": EStepPath.DRIVE_TEST }),
+          OnboardingTracker.countDocuments({
+            ...matchBase,
+            "status.currentStep": EStepPath.DRIVE_TEST,
+          }),
           OnboardingTracker.countDocuments({
             ...matchBase,
             "status.currentStep": EStepPath.CARRIERS_EDGE_TRAINING,

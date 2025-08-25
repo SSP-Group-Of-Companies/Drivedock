@@ -7,7 +7,7 @@ import PreQualifications from "@/mongoose/models/Prequalifications";
 import { finalizePhoto } from "@/lib/utils/s3Upload";
 import { COMPANIES, ECompanyId } from "@/constants/companies";
 import { EStepPath, ICreateOnboardingPayload, IOnboardingTrackerDoc } from "@/types/onboardingTracker.types";
-import { ECompanyApplicationType } from "@/hooks/frontendHooks/useCompanySelection";
+import { ECompanyApplicationType } from "@/constants/companies";
 import { ILicenseEntry } from "@/types/applicationForm.types";
 import { HydratedDocument } from "mongoose";
 import { hasRecentAddressCoverage } from "@/lib/utils/hasMinimumAddressDuration";

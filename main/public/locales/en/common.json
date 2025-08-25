@@ -43,37 +43,87 @@
     "subheading": "Begin your journey with SSP Group of Companies",
     "languageLabel": "🌐 Select Language",
     "beforeYouBegin": "Before You Begin",
-    "readAndAgree": "Please read and agree to the following:",
+    "ensureDoc": "Please ensure you have the documents listed below to complete this application process",
     "continue": "Continue to Application",
     "estimatedTime": "Estimated time: 15–20 minutes",
-    "agreeToTerms": "I agree to the terms above",
+    "agreeToTerms": "I agree to the Terms & Conditions and Privacy Policy",
 
-    "checklist": {
-      "accurateInfo": "All information provided must be accurate and truthful",
-      "digitalProcess": "You understand this is a digital application process",
-      "consentChecks": "You consent to background and driving record checks",
-      "termsAgreement": "You agree to SSP Group of Companies terms and conditions"
+    "CanadaDocChecklist": {
+      "driverLicense": "Driver's License",
+      "SINnumber": "SIN Number",
+      "healthCard": "Health Card",
+      "Passport": "Passport",
+      "visa": "US Visa (for cross-border drivers)",
+      "permit": "PR/Work Permit/Canadian Citizen",
+      "option": "Optional documents:",
+      "fastCard": "Fast Card",
+      "IncorporateDocuments": "Incorporate documents",
+      "bankingInfo": "Banking Info (For Incorporate)"
+    },
+
+    "USAChecklist": {
+      "driverLicense": "Driver's License",
+      "SSNnumber": "SSN Number",
+      "healthCard": "Medical Certificate",
+      "Passport": "Passport/PR/US Citizen",
+      "option": "Optional documents:",
+      "IncorporateDocuments": "Incorporate documents",
+      "bankingInfo": "Banking Info (For Incorporate)"
+    },
+    "docs": {
+      "OptionalDocuments": "Optional Documents:",
+      "RequiredDocuments": "Required Documents:"
     },
 
     "termsModal": {
       "title": "Terms & Conditions",
-      "intro": "By continuing, you agree that:",
-      "items": {
-        "subcontractor": "You are applying as a subcontractor, or an employee",
-        "truthfulInfo": "All information you submit is true and accurate",
-        "backgroundChecks": "You consent to background checks and driving record verification",
-        "companyRules": {
-          "title": "You understand and agree to company rules on:",
-          "drugPolicy": "Drug & Alcohol policies",
-          "dashCam": "Dash cam recording in vehicles",
-          "safetyRules": "Speeding, accident reporting, and phone use",
-          "seals": "Trailer seals and cross-border inspections"
-        },
-        "discipline": "Disciplinary action may include fines, suspension, or termination",
-        "laws": "You are responsible for following Canadian and US trucking laws"
+      "intro": "Please review the terms below. To continue, confirm your agreement.",
+      "points": {
+        "accurateInfo": "All information I provide will be accurate and truthful.",
+        "digitalProcess": "I understand this is a digital application and that records may be stored electronically.",
+        "truthfulInfo": "I confirm that all information I submit is true and accurate.",
+        "applicationType": "I acknowledge my selected application type (contractor or employee) in this application.",
+        "rulesTitle": "I understand and agree to the following company rules:",
+        "drugPolicy": "Drug & Alcohol policies",
+        "dashCam": "Dash cam recording in vehicles",
+        "safetyRules": "Speed limits, incident reporting, and no phone use while driving",
+        "seals": "Trailer seals and cross-border inspection requirements",
+        "laws": "I am responsible for complying with Canadian and U.S. trucking laws."
       },
+      "masterConsent": "I have read and agree to the Terms & Conditions listed above.",
       "cancel": "Cancel",
-      "agree": "I Agree"
+      "next": "I Agree & Continue"
+    },
+
+    "policiesModal": {
+      "title": "Policies & Data Usage Notice",
+      "sub-title": "As part of your application to become a driver with [Company Name], we collect and use certain personal information to confirm your qualifications and comply with legal and safety requirements.",
+      "section": {
+        "whatInfo": "What information we collect",
+        "whatInfoItems": {
+          "itemOne": "Personal details (name, address, contact information)",
+          "itemTwo": "Driver’s licence details and driving record (abstract)",
+          "itemThree": "Employment history and references",
+          "itemFour": "Results of background checks and drug/alcohol testing"
+        },
+        "whyInfo": "Why we collect this information",
+        "whyInfoItems": {
+          "itemOne": "To verify you meet legal requirements for commercial driving",
+          "itemTwo": "To ensure workplace and road safety",
+          "itemThree": "To complete background and employment checks as required by law",
+          "itemFour": "To maintain accurate employment and compliance records"
+        },
+        "whoInfo": "Who has access to this information",
+        "whoInfoItems": {
+          "itemOne": "[Company Name] Human Resources and Compliance teams",
+          "itemTwo": "Regulatory authorities (e.g., Transport Canada; FMCSA if cross-border)",
+          "itemThree": "Authorized third parties (e.g., background check providers, insurers)"
+        },
+        "howLong": "How long we keep your information",
+        "duration": "Your information will be securely stored for the period required by law (typically 3–7 years, depending on document type and jurisdiction)."
+      },
+      "back": "Back",
+      "agree": "I Agree & Finish"
     }
   },
   "company": {
@@ -376,33 +426,49 @@
   },
 
   "wizard": {
-    "infoTitle": "What do the steps mean?",
-    "modalTitle": "Application Steps",
+    "modalTitle": "About this application",
     "close": "Close",
-    "step1": {
-      "label": "Step 1",
-      "desc": "Pre-Qualification"
+    "aboutTitle": "About this application",
+    "stepsTitle": "Steps at a glance",
+    "savingTitle": "Saving & security",
+    "tipsTitle": "Tips",
+    "steps": {
+      "step1": {
+        "label": "1. Pre-Qualification",
+        "desc": "Quick eligibility check (≈2 min): age, AZ licence, work eligibility (Canada/US), and basic readiness."
+      },
+      "step2": {
+        "label": "2. Application Form",
+        "desc": "5-page form covering personal details, 5-year address history, licences & uploads, employment history, and declarations."
+      },
+      "step3": {
+        "label": "3. Policies & Consents",
+        "desc": "Review company policies and provide required acknowledgements/signatures."
+      },
+      "step4": {
+        "label": "4. CarriersEdge",
+        "desc": "Complete assigned online safety training; we'll guide you to sign in."
+      },
+      "step5": {
+        "label": "5. Drive Test",
+        "desc": "Scheduling and results for road/in-yard evaluation (managed by Safety)."
+      },
+      "step6": {
+        "label": "6. Drug Test",
+        "desc": "If required, you'll receive instructions and a referral location."
+      },
+      "step7": {
+        "label": "7. Yard Training (if applicable)",
+        "desc": "On-site orientation and equipment walkthrough."
+      }
     },
-    "step2": {
-      "label": "Step 2",
-      "desc": "Driver Application Form"
+    "saving": {
+      "autoSignOut": "Auto sign-out: For your security, you'll be signed out after 10 minutes of inactivity.",
+      "progressSaves": "When progress saves: Your information is saved only when you click Next/Continue on a page.",
+      "resumeLater": "Resume later: Use your SIN (Social Insurance Number) with the Resume button on the Welcome screen to continue on any device.",
+      "privacyNote": "Privacy note: Your SIN is used only to locate your application and is stored securely."
     },
-    "step3": {
-      "label": "Step 3",
-      "desc": "Policies and Consents"
-    },
-    "step4": {
-      "label": "Step 4",
-      "desc": "CarrierEdge Training"
-    },
-    "step5": {
-      "label": "Step 5",
-      "desc": "Drive Test"
-    },
-    "step6": {
-      "label": "Step 6",
-      "desc": "Drug Test"
-    }
+    "tips": "Have your AZ licence, 5-year address history, and recent employment details handy for a faster experience."
   },
   "actions": {
     "addPhoto": "Add Photo",
