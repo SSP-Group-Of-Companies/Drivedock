@@ -4,36 +4,8 @@
  * ========================================================================
  * DriveDock – PreQualificationClient (Resume/Edit Path)
  * ------------------------------------------------------------------------
- * WHAT THIS IS
- *   Client-side UI for Step 1 (Pre-Qualification) when a driver returns to
- *   the flow using a tracker ID: /onboarding/[id]/prequalifications.
- *   This page lets the driver review/update their prequalification answers.
- *
- * HOW IT WORKS
- *   - Receives `defaultValues` (already transformed for RHF) and `trackerId`
- *     from the server route. Optionally receives latest `trackerContext`.
- *   - Hydrates the Onboarding tracker in Zustand so other pages know where
- *     the user is in the wizard.
- *   - Renders questions defined in central constants:
- *       preQualificationQuestions (booleans, sometimes single-Yes)
- *       categoryQuestions (enums: driverType, haulPreference, teamStatus)
- *   - Hides Canada-only questions for US companies.
- *   - When the "Next" button is clicked, it:
- *       1) Validates that every visible question has a value.
- *       2) Transforms string values into IPreQualifications (booleans + enums).
- *       3) PATCHes to /api/v1/onboarding/[trackerId]/prequalifications.
- *       4) Navigates using server-provided nextUrl from onboarding context.
- *
- * KEY POINTS
- *   - Values for boolean questions are the i18n keys "form.yes"/"form.no".
- *   - Values for category questions are enum values (EDriverType, etc.),
- *     not i18n keys. (The labels are translated; the values are typed.)
- *   - Flatbed popup appears when the user selects "yes" or "no" on
- *     `flatbedExperience`, per business rules.
- *   - Uses `useMounted()` to avoid hydration mismatches in Next.js.
- *
- * OWNER
- *   SSP Tech Team – Faruq Adebayo Atanda
+ * - Prefers company from trackerContext (getSelectedCompany(companyId))
+ *   and falls back to useCompanySelection() when missing.
  * ========================================================================
  */
 
@@ -44,7 +16,8 @@ import { preQualificationQuestions, categoryQuestions } from "@/constants/form-q
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { ArrowRight } from "lucide-react";
-//components, hooks, and types
+
+// components, hooks, and types
 import useMounted from "@/hooks/useMounted";
 import QuestionGroup from "@/app/onboarding/components/QuestionGroup";
 import FlatbedPopup from "@/app/onboarding/components/FlatbedPopup";
@@ -54,22 +27,17 @@ import { useGlobalLoading } from "@/store/useGlobalLoading";
 import { EDriverType, EHaulPreference, ETeamStatus, IPreQualifications } from "@/types/preQualifications.types";
 import { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
 import { buildOnboardingStepPath } from "@/lib/utils/onboardingUtils";
+import { getCompanyById } from "@/constants/companies";
 
 /**
- * RHF form shape used on this page.
- * - Keys correspond to question `name`s.
- * - Values are strings:
- *    • For booleans: "form.yes" | "form.no"
- *    • For categories: enum values (e.g., EDriverType.Company)
+ * RHF form shape for this page.
+ * - Keys = question names
+ * - Values:
+ *    • Booleans: "form.yes" | "form.no"
+ *    • Categories: enum values (EDriverType, EHaulPreference, ETeamStatus)
  */
 type FormValues = Record<string, string>;
 
-/**
- * Props expected from the server parent page ([id]/prequalifications/page.tsx)
- * - defaultValues: RHF-ready values (already transformed)
- * - trackerId: Onboarding tracker ID from the URL
- * - trackerContext: (optional) Latest context to hydrate Zustand
- */
 type Props = {
   defaultValues: FormValues;
   trackerId: string;
@@ -80,7 +48,19 @@ export default function PreQualificationClient({ defaultValues, trackerId, track
   const mounted = useMounted(); // Prevent SSR/CSR mismatch
   const { t } = useTranslation("common");
   const router = useRouter();
-  const { selectedCompany } = useCompanySelection(); // Determines US/CA behavior
+
+  // 1) Pull currently selected company from UI (fallback)
+  const { selectedCompany } = useCompanySelection();
+
+  // 2) Prefer company from trackerContext if available; else fallback to UI selection
+  //    This ensures the "resume" path uses the persisted company choice.
+  const effectiveCompany = useMemo(() => {
+    if (trackerContext?.companyId) {
+      return getCompanyById(trackerContext.companyId) ?? selectedCompany ?? null;
+    }
+    return selectedCompany ?? null;
+  }, [trackerContext?.companyId, selectedCompany]);
+
   const { setTracker } = useOnboardingTracker(); // Hydrate tracker into Zustand
   const { show, hide } = useGlobalLoading();
 
@@ -94,13 +74,13 @@ export default function PreQualificationClient({ defaultValues, trackerId, track
 
   // Conditionally exclude Canada-only questions for US companies
   const filteredPreQualificationQuestions = useMemo(() => {
-    if (!selectedCompany) return preQualificationQuestions;
-    if (selectedCompany.countryCode === "US") {
+    if (!effectiveCompany) return preQualificationQuestions;
+    if (effectiveCompany.countryCode === "US") {
       // Hide "canCrossBorderUSA" and "hasFASTCard" for US company
       return preQualificationQuestions.filter((q) => q.name !== "canCrossBorderUSA" && q.name !== "hasFASTCard");
     }
     return preQualificationQuestions;
-  }, [selectedCompany]);
+  }, [effectiveCompany]);
 
   // Initialize RHF with defaults; validate on change for button enablement
   const { control, handleSubmit, watch } = useForm<FormValues>({
@@ -143,7 +123,7 @@ export default function PreQualificationClient({ defaultValues, trackerId, track
     };
 
     // Append Canada-only fields if they exist on this form (i.e., not US)
-    if (selectedCompany?.countryCode !== "US") {
+    if (effectiveCompany?.countryCode !== "US") {
       transformed.canCrossBorderUSA = data.canCrossBorderUSA === "form.yes";
       transformed.hasFASTCard = data.hasFASTCard === "form.yes";
     }
@@ -159,7 +139,10 @@ export default function PreQualificationClient({ defaultValues, trackerId, track
         body: JSON.stringify(transformed),
       });
 
-      if (!res.ok) throw new Error("Failed to update prequalifications");
+      if (!res.ok) {
+        const { message } = await res.json().catch(() => ({ message: "Failed to update prequalifications" }));
+        throw new Error(message || "Failed to update prequalifications");
+      }
 
       // Expect onboardingContext.nextUrl to be returned for navigation
       const result = await res.json();
@@ -169,18 +152,21 @@ export default function PreQualificationClient({ defaultValues, trackerId, track
 
       // Navigate to the next step in the wizard
       router.push(buildOnboardingStepPath(onboardingContext, nextStep));
+      // ensure the *destination* layout refetches with the new doc
+      router.refresh();
     } catch (err) {
       // Log for debugging; show a basic alert for the MVP
       console.error("Prequalification submit error:", err);
       hide(); // Hide loading screen on error
       alert(t("form.errors.saveFailed") || "Failed to save your answers. Please try again.");
     } finally {
-      // Only hide loading screen on error - successful navigation will be handled by navigation loading system
+      // Success path navigates away; we leave loading to route transition UI
     }
   };
 
   // Only render after mount to avoid hydration mismatch issues with SSR
   if (!mounted) return null;
+
   return (
     <>
       <div className="space-y-6">
@@ -205,7 +191,7 @@ export default function PreQualificationClient({ defaultValues, trackerId, track
                 return (
                   <QuestionGroup
                     // For US companies, substitute the label for the legal-work question
-                    question={q.name === "legalRightToWorkCanada" && selectedCompany?.countryCode === "US" ? t("form.step1.questions.legalRightToWorkUS") : t(q.label)}
+                    question={q.name === "legalRightToWorkCanada" && effectiveCompany?.countryCode === "US" ? t("form.step1.questions.legalRightToWorkUS") : t(q.label)}
                     options={q.options} // Centralized options (Yes/No or single-Yes)
                     value={field.value} // Controlled value
                     onChange={handleChange} // Controlled onChange

@@ -11,6 +11,7 @@ export default function FormWizardNav() {
 
   // Default to 6 steps without context; add flatbed step when the app needs it
   const includeFlatbed = Boolean(ctx?.needsFlatbedTraining);
+  console.log(ctx, includeFlatbed);
   const totalSteps = includeFlatbed ? 7 : 6;
   const steps = Array.from({ length: totalSteps }, (_, i) => i + 1);
 

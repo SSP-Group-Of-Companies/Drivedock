@@ -13,7 +13,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { applicationFormPage1Schema, ApplicationFormPage1Schema } from "@/lib/zodSchemas/applicationFormPage1.schema";
 import { ELicenseType } from "@/types/shared.types";
 
-// ✅ Use the factory (not the old object)
+// Use the factory (not the old object)
 import { page1ConfigFactory } from "@/lib/frontendConfigs/applicationFormConfigs/page1Config";
 import PersonalDetails from "../../[id]/application-form/page-1/components/PersonalDetails";
 import PlaceOfBirth from "../../[id]/application-form/page-1/components/PlaceOfBirth";
@@ -71,7 +71,7 @@ export default function ApplicationFormPage1() {
     <FormProvider {...methods}>
       <form
         className="space-y-8"
-        onSubmit={(e) => e.preventDefault()} // ✅ prevent native submit
+        onSubmit={(e) => e.preventDefault()} // prevent native submit
         noValidate
       >
         <PersonalDetails />
@@ -79,7 +79,7 @@ export default function ApplicationFormPage1() {
         <LicenseSection />
         <AddressSection />
 
-        {/* ✅ Pass the factory directly. No trackerId here (POST flow). */}
+        {/* Pass the factory directly. No trackerId here (POST flow). */}
         <ContinueButton<ApplicationFormPage1Schema> config={page1ConfigFactory} />
       </form>
     </FormProvider>

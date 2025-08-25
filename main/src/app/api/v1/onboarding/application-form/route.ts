@@ -5,7 +5,7 @@ import connectDB from "@/lib/utils/connectDB";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import PreQualifications from "@/mongoose/models/Prequalifications";
 import { finalizePhoto } from "@/lib/utils/s3Upload";
-import { COMPANIES, ECompanyId } from "@/constants/companies";
+import { COMPANIES, ECompanyId, needsFlatbedTraining } from "@/constants/companies";
 import { EStepPath, ICreateOnboardingPayload, IOnboardingTrackerDoc } from "@/types/onboardingTracker.types";
 import { ECompanyApplicationType } from "@/constants/companies";
 import { ILicenseEntry } from "@/types/applicationForm.types";
@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
     onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.APPLICATION_PAGE_1);
 
     // check if flatbed training is required
-    onboardingDoc.needsFlatbedTraining = applicationType === ECompanyApplicationType.FLATBED ? !Boolean(prequalifications.flatbedExperience) : false;
+    onboardingDoc.needsFlatbedTraining = needsFlatbedTraining(companyId, applicationType, prequalifications.flatbedExperience);
     await onboardingDoc.save();
 
     // Finalize files only after successful DB save
