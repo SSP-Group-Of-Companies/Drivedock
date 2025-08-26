@@ -89,6 +89,10 @@ export interface IOnboardingTrackerContext {
   notes?: string;
   prevStep: EStepPath | null;
   nextStep: EStepPath | null;
+  itemSummary?: {
+    driverName?: string;
+    driverEmail?: string;
+  };
 }
 
 /**

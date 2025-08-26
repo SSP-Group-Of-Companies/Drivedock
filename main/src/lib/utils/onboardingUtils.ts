@@ -196,7 +196,11 @@ export function buildTrackerContext(tracker: IOnboardingTrackerDoc, defaultStep?
     nextStep,
   };
 
-  if (includeAdminData) context.notes = tracker.notes;
+  if (includeAdminData) {
+    context.notes = tracker.notes;
+    // Note: itemSummary will be added by the API route that calls this function
+    // since it needs to fetch from related ApplicationForm documents
+  }
 
   return context;
 }
