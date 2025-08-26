@@ -2,6 +2,7 @@
 "use server";
 import "server-only";
 
+import { unstable_noStore as noStore } from "next/cache";
 import connectDB from "@/lib/utils/connectDB";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import { onboardingExpired, buildTrackerContext } from "@/lib/utils/onboardingUtils";
@@ -22,9 +23,16 @@ import { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
  *  - any unexpected error occurs
  *
  * This function NEVER throws; it always resolves to a value.
+ *
+ * Caching:
+ *  - Calls `noStore()` to disable the RSC cache for this computation,
+ *    ensuring fresh data after mutations + `router.refresh()`.
  */
 export async function getOnboardingTrackerContext(id?: string | null): Promise<IOnboardingTrackerContext | null> {
   try {
+    // Always opt out of the RSC cache for this read
+    noStore();
+
     // No id provided → no context
     if (!id) return null;
 

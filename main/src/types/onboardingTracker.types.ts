@@ -67,6 +67,8 @@ export interface IOnboardingTracker {
 
   terminated: boolean;
 
+  notes: string;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -84,6 +86,7 @@ export interface IOnboardingTrackerContext {
   applicationType?: ECompanyApplicationType;
   needsFlatbedTraining: boolean;
   status: IOnboardingStatus;
+  notes?: string;
   prevStep: EStepPath | null;
   nextStep: EStepPath | null;
 }

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Hourglass } from "lucide-react";
+import { CheckCircle2, Hourglass, XCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import useMounted from "@/hooks/useMounted";
@@ -10,6 +10,7 @@ import { ES3Folder } from "@/types/aws.types";
 import type { IPhoto } from "@/types/shared.types";
 import type { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
 import type { IDrugTestDoc } from "@/types/drugTest.types";
+import { EDrugTestStatus } from "@/types/drugTest.types";
 import OnboardingPhotoGroupControlled from "../../components/OnboardingPhotoGroupControlled";
 
 export type DrugTestClientProps = {
@@ -26,12 +27,19 @@ export default function DrugTestClient({ drugTest, onboardingContext }: DrugTest
 
   const trackerId = onboardingContext.id;
 
-  const documentsUploaded = !!drugTest.documentsUploaded;
-  const completed = !!drugTest.completed;
-  const canUpload = !documentsUploaded && !completed;
+  // ---- New status-driven flags ----
+  const status = drugTest.status ?? EDrugTestStatus.NOT_UPLOADED;
 
-  // RULE: ignore any server-provided documents if documentsUploaded === false
-  const [photos, setPhotos] = useState<IPhoto[]>(drugTest.documents ?? []);
+  const completed = status === EDrugTestStatus.APPROVED;
+  const isPending = status === EDrugTestStatus.AWAITING_REVIEW;
+  const isRejected = status === EDrugTestStatus.REJECTED;
+
+  // canUpload when nothing uploaded yet OR previously rejected
+  const canUpload = status === EDrugTestStatus.NOT_UPLOADED || isRejected;
+
+  // RULE: ignore any server-provided documents if NOT_UPLOADED
+  const initialPhotos: IPhoto[] = status === EDrugTestStatus.NOT_UPLOADED ? [] : drugTest.documents ?? [];
+  const [photos, setPhotos] = useState<IPhoto[]>(initialPhotos);
 
   const headerBlock = useMemo(() => {
     if (completed) {
@@ -42,11 +50,19 @@ export default function DrugTestClient({ drugTest, onboardingContext }: DrugTest
         </div>
       );
     }
-    if (documentsUploaded) {
+    if (isPending) {
       return (
         <div className="rounded-xl bg-amber-50 ring-1 ring-amber-100 p-4 flex items-center gap-2 justify-center">
           <Hourglass className="text-amber-600 w-5 h-5" />
           <p className="text-sm text-amber-800 font-medium">{t("form.step6.pending")}</p>
+        </div>
+      );
+    }
+    if (isRejected) {
+      return (
+        <div className="rounded-xl bg-red-50 ring-1 ring-red-100 p-4 flex items-center gap-2">
+          <XCircle className="text-red-600 w-5 h-5" />
+          <p className="text-sm text-red-800 font-medium">{t("form.step6.rejected", "Your drug test documents were rejected. Please re-upload and resubmit.")}</p>
         </div>
       );
     }
@@ -55,7 +71,7 @@ export default function DrugTestClient({ drugTest, onboardingContext }: DrugTest
         <p className="text-sm text-gray-700 text-center">{t("form.step6.description", { count: MAX_PHOTOS })}</p>
       </div>
     );
-  }, [completed, documentsUploaded, t]);
+  }, [completed, isPending, isRejected, t]);
 
   const submit = async () => {
     if (!canUpload) {
@@ -72,6 +88,7 @@ export default function DrugTestClient({ drugTest, onboardingContext }: DrugTest
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           documents: photos.map((p) => ({ s3Key: p.s3Key, url: p.url })),
+          // Backend should set status -> AWAITING_REVIEW after successful save
         }),
       });
       if (!res.ok) {
@@ -103,7 +120,7 @@ export default function DrugTestClient({ drugTest, onboardingContext }: DrugTest
               className={`px-8 py-2 mt-2 rounded-full font-semibold transition-colors shadow-md
                 ${photos.length === 0 ? "bg-gray-400 text-white cursor-not-allowed" : "bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 text-white hover:opacity-90"}`}
             >
-              {t("actions.submitDocuments")}
+              {isRejected ? t("actions.resubmitDocuments", "Re-submit Documents") : t("actions.submitDocuments")}
             </button>
           </div>
         </>

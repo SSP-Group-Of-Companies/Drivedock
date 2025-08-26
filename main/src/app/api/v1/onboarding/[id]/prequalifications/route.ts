@@ -2,7 +2,7 @@ import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
 import PreQualifications from "@/mongoose/models/Prequalifications";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import connectDB from "@/lib/utils/connectDB";
-import { COMPANIES, ECompanyApplicationType } from "@/constants/companies";
+import { COMPANIES, ECompanyId, needsFlatbedTraining } from "@/constants/companies";
 import { advanceProgress, buildTrackerContext, nextResumeExpiry, onboardingExpired } from "@/lib/utils/onboardingUtils";
 import { EStepPath } from "@/types/onboardingTracker.types";
 import { isValidObjectId } from "mongoose";
@@ -32,7 +32,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     }
 
     // Step 2: Get country from companyId
-    const companyId = onboardingDoc.companyId;
+    const companyId = onboardingDoc.companyId as ECompanyId;
     const company = COMPANIES.find((c) => c.id === companyId);
     if (!company) {
       return errorResponse(400, "Invalid companyId in onboarding tracker");
@@ -59,8 +59,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     }
 
     // check if flatbed training is required
-    onboardingDoc.needsFlatbedTraining = onboardingDoc.applicationType === ECompanyApplicationType.FLATBED ? !Boolean(preQualDoc.flatbedExperience) : false;
-
+    onboardingDoc.needsFlatbedTraining = needsFlatbedTraining(companyId, onboardingDoc.applicationType, preQualDoc.flatbedExperience);
     // Step 5: Update onboarding tracker status
     onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.PRE_QUALIFICATIONS);
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();

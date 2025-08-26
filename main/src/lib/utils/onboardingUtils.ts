@@ -16,9 +16,7 @@ export type FlowOpts = { needsFlatbedTraining: boolean };
 
 /** Helper: derive flow options from the onboarding document (robust). */
 export function getFlowOptsFromTracker(tracker: IOnboardingTrackerDoc & { needsFlatbedTraining?: boolean }): FlowOpts {
-  // If the current step is flatbed, the flow MUST include flatbed
-  const inferredFromStep = tracker?.status?.currentStep === EStepPath.FLATBED_TRAINING;
-  const needsFlatbedTraining = Boolean(tracker.needsFlatbedTraining ?? inferredFromStep);
+  const needsFlatbedTraining = Boolean(tracker.needsFlatbedTraining);
   return { needsFlatbedTraining };
 }
 
@@ -183,12 +181,12 @@ export function hasReachedStep(doc: IOnboardingTrackerDoc, step: EStepPath): boo
  * - Provides prev/current/next steps from the doc-aware flow.
  * - Exposes needsFlatbedTraining and a top-level completed boolean.
  */
-export function buildTrackerContext(tracker: IOnboardingTrackerDoc, defaultStep?: EStepPath): IOnboardingTrackerContext {
+export function buildTrackerContext(tracker: IOnboardingTrackerDoc, defaultStep?: EStepPath | null, includeAdminData = false): IOnboardingTrackerContext {
   const step = defaultStep || tracker.status.currentStep;
-  const opts = getFlowOptsFromTracker(tracker as IOnboardingTrackerDoc & { needsFlatbedTraining?: boolean });
+  const opts = getFlowOptsFromTracker(tracker);
   const { prevStep, nextStep } = getNeighborSteps(step, opts);
 
-  return {
+  const context: IOnboardingTrackerContext = {
     id: tracker.id,
     companyId: tracker.companyId,
     applicationType: tracker.applicationType,
@@ -197,6 +195,10 @@ export function buildTrackerContext(tracker: IOnboardingTrackerDoc, defaultStep?
     prevStep,
     nextStep,
   };
+
+  if (includeAdminData) context.notes = tracker.notes;
+
+  return context;
 }
 
 /**

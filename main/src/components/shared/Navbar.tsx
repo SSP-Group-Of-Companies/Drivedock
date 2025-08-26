@@ -45,7 +45,6 @@ import useMounted from "@/hooks/useMounted";
 import LanguageDropdown from "@/components/shared/LanguageDropdown";
 
 import { handleBackNavigation } from "@/lib/utils/onboardingUtils";
-import ProfileDropdown from "./ProfileDropdown";
 
 export default function Navbar() {
   const mounted = useMounted();
@@ -107,7 +106,6 @@ export default function Navbar() {
               <span className="hidden sm:inline">{t("navbar.backButton")}</span>
             </button>
           )}
-          <ProfileDropdown />
         </div>
       </div>
     </header>

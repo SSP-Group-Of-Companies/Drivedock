@@ -14,11 +14,7 @@ export enum ECompanyId {
   NESH = "nesh",
 }
 
-export type CanadianCompanyId =
-  | ECompanyId.SSP_CA
-  | ECompanyId.FELLOW_TRANS
-  | ECompanyId.NESH
-  | ECompanyId.WEB_FREIGHT;
+export type CanadianCompanyId = ECompanyId.SSP_CA | ECompanyId.FELLOW_TRANS | ECompanyId.NESH | ECompanyId.WEB_FREIGHT;
 
 export interface Company {
   id: string;
@@ -33,6 +29,7 @@ export interface Company {
   buttonColor: string;
   buttonTextColor: string;
   buttonGradient: string; // new
+  hasFlatbed: boolean;
 }
 
 export const COMPANIES: Company[] = [
@@ -43,13 +40,13 @@ export const COMPANIES: Company[] = [
     country: "Canada",
     countryCode: ECountryCode.CA,
     countryBadgeColor: "bg-green-100 text-green-700",
-    description:
-      "Leading transportation solutions across Canada with specialized freight services",
+    description: "Leading transportation solutions across Canada with specialized freight services",
     location: "Toronto, Ontario",
     operations: "Canada Operations",
     buttonColor: "", // not used
     buttonTextColor: "text-white",
     buttonGradient: "bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400",
+    hasFlatbed: true,
   },
   {
     id: ECompanyId.SSP_US,
@@ -58,13 +55,13 @@ export const COMPANIES: Company[] = [
     country: "USA",
     countryCode: ECountryCode.US,
     countryBadgeColor: "bg-blue-100 text-blue-700",
-    description:
-      "Premier freight solutions across the United States with cross-border coverage",
+    description: "Premier freight solutions across the United States with cross-border coverage",
     location: "Cross-border Operations",
     operations: "United States Operations",
     buttonColor: "",
     buttonTextColor: "text-white",
     buttonGradient: "bg-gradient-to-r from-blue-800 via-blue-600 to-blue-400",
+    hasFlatbed: false,
   },
   {
     id: ECompanyId.FELLOW_TRANS,
@@ -73,13 +70,13 @@ export const COMPANIES: Company[] = [
     country: "Canada",
     countryCode: ECountryCode.CA,
     countryBadgeColor: "bg-green-100 text-green-700",
-    description:
-      "Reliable freight solutions with a focus on customer satisfaction",
+    description: "Reliable freight solutions with a focus on customer satisfaction",
     location: "Canada Operations",
     operations: "Canada Operations",
     buttonColor: "",
     buttonTextColor: "text-white",
     buttonGradient: "bg-gradient-to-r from-red-600 via-red-500 to-pink-400",
+    hasFlatbed: true,
   },
   {
     id: ECompanyId.WEB_FREIGHT,
@@ -88,13 +85,13 @@ export const COMPANIES: Company[] = [
     country: "Canada",
     countryCode: ECountryCode.CA,
     countryBadgeColor: "bg-green-100 text-green-700",
-    description:
-      "Modern logistics solutions powered by technology and innovation",
+    description: "Modern logistics solutions powered by technology and innovation",
     location: "Canada Operations",
     operations: "Canada Operations",
     buttonColor: "",
     buttonTextColor: "text-white",
     buttonGradient: "bg-gradient-to-r from-blue-500 via-cyan-400 to-blue-300",
+    hasFlatbed: true,
   },
   {
     id: ECompanyId.NESH,
@@ -103,14 +100,13 @@ export const COMPANIES: Company[] = [
     country: "Canada",
     countryCode: ECountryCode.CA,
     countryBadgeColor: "bg-green-100 text-green-700",
-    description:
-      "Specialized steel and heavy materials transportation across North America",
+    description: "Specialized steel and heavy materials transportation across North America",
     location: "United States Operations",
     operations: "United States Operations",
     buttonColor: "",
     buttonTextColor: "text-white",
-    buttonGradient:
-      "bg-gradient-to-r from-purple-700 via-purple-500 to-pink-400",
+    buttonGradient: "bg-gradient-to-r from-purple-700 via-purple-500 to-pink-400",
+    hasFlatbed: true,
   },
 ];
 
@@ -121,4 +117,36 @@ export function getCompanyById(companyId: string): Company | undefined {
 export function isCanadianCompany(companyId: string): boolean {
   const company = getCompanyById(companyId);
   return company ? company.countryCode === ECountryCode.CA : false;
+}
+
+/**
+ * Determine whether flatbed training is required.
+ *
+ * Rules:
+ * 1. If applicant already has flatbed experience → no training needed.
+ * 2. If company does not operate flatbeds → no training needed.
+ * 3. If company is SSP-Canada and applicant applies for DRY_VAN → no training needed.
+ * 4. Otherwise, if company operates flatbeds and applicant lacks experience → training required.
+ */
+export function needsFlatbedTraining(
+  companyId: string,
+  applicationType?: ECompanyApplicationType, // optional now
+  hasFlatbedExperience: boolean = false
+): boolean {
+  // Rule 1
+  if (hasFlatbedExperience) return false;
+
+  const company = getCompanyById(companyId);
+  if (!company) return false;
+
+  // Rule 2
+  if (!company.hasFlatbed) return false;
+
+  // Rule 3 (only applies when type is explicitly DRY_VAN)
+  if (company.id === ECompanyId.SSP_CA && applicationType === ECompanyApplicationType.DRY_VAN) {
+    return false;
+  }
+
+  // Rule 4: flatbed company + no experience → needs training
+  return true;
 }
