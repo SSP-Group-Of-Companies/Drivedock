@@ -181,12 +181,12 @@ export function hasReachedStep(doc: IOnboardingTrackerDoc, step: EStepPath): boo
  * - Provides prev/current/next steps from the doc-aware flow.
  * - Exposes needsFlatbedTraining and a top-level completed boolean.
  */
-export function buildTrackerContext(tracker: IOnboardingTrackerDoc, defaultStep?: EStepPath): IOnboardingTrackerContext {
+export function buildTrackerContext(tracker: IOnboardingTrackerDoc, defaultStep?: EStepPath | null, includeAdminData = false): IOnboardingTrackerContext {
   const step = defaultStep || tracker.status.currentStep;
   const opts = getFlowOptsFromTracker(tracker);
   const { prevStep, nextStep } = getNeighborSteps(step, opts);
 
-  return {
+  const context: IOnboardingTrackerContext = {
     id: tracker.id,
     companyId: tracker.companyId,
     applicationType: tracker.applicationType,
@@ -195,6 +195,10 @@ export function buildTrackerContext(tracker: IOnboardingTrackerDoc, defaultStep?
     prevStep,
     nextStep,
   };
+
+  if (includeAdminData) context.notes = tracker.notes;
+
+  return context;
 }
 
 /**

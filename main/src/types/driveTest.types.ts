@@ -242,6 +242,7 @@ export interface IOnRoadAssessment {
 export interface IDriveTest {
   preTrip?: IPreTripAssessment;
   onRoad?: IOnRoadAssessment;
+  completed: boolean;
 
   createdAt?: Date;
   updatedAt?: Date;

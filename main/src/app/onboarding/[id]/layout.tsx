@@ -15,7 +15,6 @@ export default async function OnboardingIdLayout({ children, params }: { childre
 
   const { id } = await params;
   const ctx = await getOnboardingTrackerContext(id); // fresh each navigation
-  console.log(ctx);
   return (
     <OnboardingTrackerContextProvider context={ctx}>
       <OnboardingLayoutClientShell>{children}</OnboardingLayoutClientShell>

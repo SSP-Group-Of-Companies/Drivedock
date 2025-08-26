@@ -1,7 +1,16 @@
 import { Document } from "mongoose";
+import { IPhoto } from "./shared.types";
 
 export interface ICarriersEdgeTraining {
   emailSent: boolean;
+
+  // NEW: who sent the email (admin's name)
+  emailSentBy?: string;
+
+  // NEW: when the email was sent
+  emailSentAt?: Date;
+
+  certificates: IPhoto[];
   completed: boolean;
 }
 

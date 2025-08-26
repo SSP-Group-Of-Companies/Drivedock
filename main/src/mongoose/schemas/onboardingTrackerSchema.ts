@@ -1,8 +1,5 @@
 import mongoose, { Schema } from "mongoose";
-import {
-  EStepPath,
-  IOnboardingTrackerDoc,
-} from "@/types/onboardingTracker.types";
+import { EStepPath, IOnboardingTrackerDoc } from "@/types/onboardingTracker.types";
 import { ECompanyApplicationType } from "@/constants/companies";
 import PreQualifications from "../models/Prequalifications";
 import { decryptString } from "@/lib/utils/cryptoUtils";
@@ -34,9 +31,7 @@ const onboardingTrackerSchema = new Schema<IOnboardingTrackerDoc>(
       type: String,
       enum: {
         values: Object.values(ECompanyApplicationType),
-        message: `application type can only be one of ${Object.values(
-          ECompanyApplicationType
-        )}`,
+        message: `application type can only be one of ${Object.values(ECompanyApplicationType)}`,
       },
     },
     status: {
@@ -44,9 +39,7 @@ const onboardingTrackerSchema = new Schema<IOnboardingTrackerDoc>(
         type: String,
         enum: {
           values: Object.values(EStepPath),
-          message: `Current step must be one of: ${Object.values(
-            EStepPath
-          ).join(", ")}`,
+          message: `Current step must be one of: ${Object.values(EStepPath).join(", ")}`,
         },
         required: [true, "Current onboarding step is required."],
       },
@@ -104,6 +97,10 @@ const onboardingTrackerSchema = new Schema<IOnboardingTrackerDoc>(
       default: false,
       required: [true, "Termination status is required."],
     },
+    notes: {
+      type: String,
+      default: "",
+    },
   },
   {
     timestamps: true,
@@ -132,32 +129,19 @@ onboardingTrackerSchema.post("findOneAndDelete", async function (doc) {
   const { forms } = doc;
   const tasks = [];
 
-  if (forms.preQualification)
-    tasks.push(PreQualifications.deleteOne({ _id: forms.preQualification }));
+  if (forms.preQualification) tasks.push(PreQualifications.deleteOne({ _id: forms.preQualification }));
 
-  if (forms.driverApplication)
-    tasks.push(ApplicationForm.deleteOne({ _id: forms.driverApplication }));
+  if (forms.driverApplication) tasks.push(ApplicationForm.deleteOne({ _id: forms.driverApplication }));
 
-  if (forms.policiesConsents)
-    tasks.push(PoliciesConsents.deleteOne({ _id: forms.consents }));
+  if (forms.policiesConsents) tasks.push(PoliciesConsents.deleteOne({ _id: forms.consents }));
 
-  if (forms.carriersEdgeTraining)
-    tasks.push(
-      mongoose.model("CarrierEdgeStatus").deleteOne({ _id: forms.carrierEdge })
-    );
+  if (forms.carriersEdgeTraining) tasks.push(mongoose.model("CarrierEdgeStatus").deleteOne({ _id: forms.carrierEdge }));
 
-  if (forms.driveTest)
-    tasks.push(mongoose.model("DriveTest").deleteOne({ _id: forms.driveTest }));
+  if (forms.driveTest) tasks.push(mongoose.model("DriveTest").deleteOne({ _id: forms.driveTest }));
 
-  if (forms.drugTest)
-    tasks.push(mongoose.model("DrugTest").deleteOne({ _id: forms.drugTest }));
+  if (forms.drugTest) tasks.push(mongoose.model("DrugTest").deleteOne({ _id: forms.drugTest }));
 
-  if (forms.flatbedTraining)
-    tasks.push(
-      mongoose
-        .model("FlatbedTraining")
-        .deleteOne({ _id: forms.flatbedTraining })
-    );
+  if (forms.flatbedTraining) tasks.push(mongoose.model("FlatbedTraining").deleteOne({ _id: forms.flatbedTraining }));
 
   await Promise.all(tasks);
 });

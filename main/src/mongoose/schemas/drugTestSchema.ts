@@ -1,6 +1,8 @@
 import { Schema } from "mongoose";
-import { IDrugTestDoc } from "@/types/drugTest.types";
+import { IDrugTestDoc, EDrugTestStatus } from "@/types/drugTest.types";
 import { photoSchema } from "./sharedSchemas";
+
+const allowedStatuses = Object.values(EDrugTestStatus);
 
 const drugTestSchema = new Schema<IDrugTestDoc>(
   {
@@ -9,16 +11,12 @@ const drugTestSchema = new Schema<IDrugTestDoc>(
       default: [],
       required: [true, "documents is required"],
     },
-    documentsUploaded: {
-      type: Boolean,
-      default: false,
-      required: [true, "documentsUploaded is required"],
-    },
-
-    completed: {
-      type: Boolean,
-      default: false,
-      required: [true, "completed is required"],
+    status: {
+      type: String,
+      enum: {
+        values: allowedStatuses,
+        message: `Invalid status . Allowed values are: ${allowedStatuses.join(", ")}`,
+      },
     },
   },
   {
@@ -28,6 +26,6 @@ const drugTestSchema = new Schema<IDrugTestDoc>(
   }
 );
 
-drugTestSchema.index({ documentsUploaded: 1 }, { name: "documentsUploaded" });
+drugTestSchema.index({ status: 1, updatedAt: -1 }, { name: "status_updatedAt" });
 
 export default drugTestSchema;

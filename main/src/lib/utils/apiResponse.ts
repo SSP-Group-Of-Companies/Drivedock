@@ -2,11 +2,7 @@ import mongoose from "mongoose";
 import { NextResponse } from "next/server";
 import formatMongooseValidationError from "./formatMongooseValidationError";
 
-export function successResponse(
-  status: number = 200,
-  message: string = "Request successful",
-  data = {}
-) {
+export function successResponse(status: number = 200, message: string = "Request successful", data = {}) {
   return NextResponse.json(
     {
       success: true,
@@ -17,11 +13,7 @@ export function successResponse(
   );
 }
 
-export function errorResponse(
-  statusOrError: unknown,
-  msgOrError?: unknown,
-  extraErrors: Record<string, unknown> = {}
-) {
+export function errorResponse(statusOrError: unknown, msgOrError?: unknown, extraErrors: Record<string, unknown> = {}) {
   let status = 500;
   let message = "An error occurred";
 

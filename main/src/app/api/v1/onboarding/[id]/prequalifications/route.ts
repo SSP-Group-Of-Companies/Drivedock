@@ -70,7 +70,6 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       preQualifications: preQualDoc,
     });
   } catch (error) {
-    console.log(error);
     return errorResponse(error);
   }
 };
