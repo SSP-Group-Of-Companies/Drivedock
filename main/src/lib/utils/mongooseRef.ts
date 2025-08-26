@@ -1,27 +1,37 @@
 // src/lib/utils/mongooseRef.ts
 import { Types } from "mongoose";
+import type { ObjectId as MongoObjectId } from "mongodb";
 
-/** A union for a reference that might be an ObjectId, a populated doc, or nullish. */
-export type MaybeMongooseRef<TDoc> = Types.ObjectId | TDoc | null | undefined;
+/** Runtime guards for both Mongoose and MongoDB ObjectId implementations */
+function isMongooseObjectId(v: unknown): v is Types.ObjectId {
+  return v instanceof Types.ObjectId;
+}
+function isMongoDriverObjectId(v: unknown): v is MongoObjectId {
+  return (
+    !!v &&
+    typeof v === "object" &&
+    ((v as any).constructor?.name === "ObjectId" || // common
+      (v as any)._bsontype === "ObjectID") // legacy
+  );
+}
 
 /**
  * Read a field from a maybe-populated Mongoose reference.
  *
- * - If populated doc → run `pick` and return its value.
- * - If ObjectId or null/undefined → return `fallback`.
+ * - If populated doc → return the doc (typed as TDoc).
+ * - If ObjectId or null/undefined → return null.
  * - Never performs a DB fetch.
+ *
+ * Accepts `unknown` to avoid TS mismatches between different ObjectId types.
  */
-export function readMongooseRefField<TDoc extends object, TValue>(ref: MaybeMongooseRef<TDoc>, pick: (doc: TDoc) => TValue, fallback?: TValue): TValue | undefined {
-  if (!ref) return fallback;
+export function readMongooseRefField<TDoc extends object>(ref: unknown): TDoc | null {
+  if (!ref) return null;
 
-  if (typeof ref === "object" && !(ref instanceof Types.ObjectId)) {
-    try {
-      return pick(ref as TDoc);
-    } catch {
-      return fallback;
-    }
-  }
+  // If it's any kind of ObjectId, it's not populated
+  if (isMongooseObjectId(ref) || isMongoDriverObjectId(ref)) return null;
 
-  // Not populated (still ObjectId) → skip, return fallback
-  return fallback;
+  // Otherwise assume it's the populated document
+  if (typeof ref === "object") return ref as TDoc;
+
+  return null;
 }

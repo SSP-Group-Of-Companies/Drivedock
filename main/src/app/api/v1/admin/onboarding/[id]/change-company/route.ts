@@ -24,8 +24,8 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     const validCompany = getCompanyById(companyId);
     if (!validCompany) return errorResponse(400, "invalid company id");
 
-    const flatbedExperience = readMongooseRefField<IPreQualificationsDoc, boolean>(onboardingDoc.forms?.preQualification as any, (doc) => doc.flatbedExperience, false) ?? false;
-
+    const preQualification = readMongooseRefField<IPreQualificationsDoc>(onboardingDoc.forms?.preQualification);
+    const flatbedExperience = preQualification?.flatbedExperience ?? false;
     onboardingDoc.companyId = companyId;
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();
     onboardingDoc.needsFlatbedTraining = needsFlatbedTraining(companyId, onboardingDoc.applicationType, flatbedExperience);
