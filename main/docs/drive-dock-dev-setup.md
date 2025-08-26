@@ -11,6 +11,8 @@
 - **Git**
 - **Caddy** (local HTTPS reverse proxy). Download **the binary** for your OS from [https://caddyserver.com/download](https://caddyserver.com/download) and place it somewhere convenient. **No global install needed.**
 
+> **Note:** The downloaded Caddy file may not be named exactly `caddy` or `caddy.exe`. For convenience, **rename it to `caddy.exe` (Windows)** or `caddy` (macOS/Linux) so you can run the same commands shown below.
+
 > **Note:** We use `lvh.me` subdomains (they resolve to `127.0.0.1`) so cookies and redirects behave like prod.
 
 ---
@@ -83,7 +85,7 @@ drivedock.sspportal.lvh.me:4443 {
 - **Windows (PowerShell/CMD)**
 
 ```powershell
-.\ncaddy.exe run --config "C:\\Users\\Ridoy\\projects\\Drivedock\\main\\CaddyFile"
+.\caddy.exe run --config "C:\\Users\\Ridoy\\projects\\Drivedock\\main\\CaddyFile"
 ```
 
 - **macOS/Linux**
