@@ -93,6 +93,11 @@ const driveTestSchema = new Schema<IDriveTest>(
   {
     preTrip: preTripSchema,
     onRoad: onRoadSchema,
+    completed: {
+      type: Boolean,
+      default: false,
+      required: [true, "completed is required"],
+    },
   },
   {
     timestamps: true,
