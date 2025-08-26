@@ -73,6 +73,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               {/* Keep a fixed-width fallback to avoid layout shift */}
               <Suspense fallback={<div className="w-72" aria-hidden="true" />}>
                 <AdminSidebar
+                  key={isContract ? `contract-${trackerId}` : "home"}
                   variant={isContract ? "contract" : "home"}
                   activePath={pathname}
                   trackerId={trackerId}
@@ -103,7 +104,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </div>
 
           <Suspense fallback={null}>
-            <MobileSidebarDrawer open={sidebarOpen} onClose={closeSidebar} />
+            <MobileSidebarDrawer
+              open={sidebarOpen}
+              onClose={closeSidebar}
+              variant={isContract ? "contract" : "home"}
+              trackerId={trackerId}
+            />
           </Suspense>
         </div>
       </ThemeProvider>

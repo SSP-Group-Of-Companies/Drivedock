@@ -4,16 +4,46 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import AdminSidebar from "./AdminSidebar";
 
+type Props = Readonly<{
+  open: boolean;
+  onClose: () => void;
+  /**
+   * Optional explicit variant. If omitted, we infer from the current pathname.
+   */
+  variant?: "home" | "contract";
+  /**
+   * Optional explicit trackerId. If omitted and variant is not provided,
+   * we infer from the current pathname (/dashboard/contract/[id]/...).
+   */
+  trackerId?: string;
+}>;
+
+/**
+ * MobileSidebarDrawer (animated)
+ * - Keeps the drawer mounted at all times; toggles visibility with CSS so close animation can play.
+ * - ESC to close + scroll lock while open.
+ * - Accepts optional `variant` / `trackerId` or auto-detects from URL.
+ */
 export default function MobileSidebarDrawer({
   open,
   onClose,
-}: {
-  open: boolean;
-  onClose: () => void;
-}) {
+  variant,
+  trackerId,
+}: Props) {
   const pathname = usePathname() || "/dashboard";
-  const isContract = pathname.startsWith("/dashboard/contract/");
-  const trackerId = isContract ? pathname.split("/")[3] ?? "" : undefined;
+
+  // Derive when props aren't provided
+  const derivedIsContract = pathname.startsWith("/dashboard/contract/");
+  const derivedTrackerId = derivedIsContract
+    ? pathname.split("/")[3] ?? ""
+    : undefined;
+
+  const resolvedVariant: "home" | "contract" =
+    variant ?? (derivedIsContract ? "contract" : "home");
+
+  const resolvedTrackerId: string | undefined = variant
+    ? trackerId
+    : derivedTrackerId;
 
   // ESC to close
   useEffect(() => {
@@ -55,12 +85,10 @@ export default function MobileSidebarDrawer({
             ? "opacity-100 pointer-events-auto"
             : "opacity-0 pointer-events-none",
         ].join(" ")}
-        style={{
-          backgroundColor: 'var(--color-shadow-high)'
-        }}
+        style={{ backgroundColor: "var(--color-shadow-high)" }}
       />
 
-      {/* Slide-over panel (SSP-Portal look & transitions) */}
+      {/* Slide-over panel */}
       <div
         className={[
           "absolute inset-y-0 left-0 z-10 w-72 sm:w-80",
@@ -71,9 +99,10 @@ export default function MobileSidebarDrawer({
             : "-translate-x-full opacity-0 scale-[0.98] pointer-events-none",
         ].join(" ")}
         style={{
-          backgroundColor: 'var(--color-card)',
-          borderRight: '1px solid var(--color-outline)',
-          boxShadow: 'var(--color-shadow-elevated) 0 10px 15px -3px, var(--color-shadow-elevated) 0 4px 6px -2px'
+          backgroundColor: "var(--color-card)",
+          borderRight: "1px solid var(--color-outline)",
+          boxShadow:
+            "var(--color-shadow-elevated) 0 10px 15px -3px, var(--color-shadow-elevated) 0 4px 6px -2px",
         }}
       >
         <div className="h-14 flex items-center justify-end px-4">
@@ -82,8 +111,8 @@ export default function MobileSidebarDrawer({
             onClick={onClose}
             className="group w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 shadow-md backdrop-blur-sm"
             style={{
-              backgroundColor: 'var(--color-sidebar)',
-              color: 'var(--color-on-surface)'
+              backgroundColor: "var(--color-sidebar)",
+              color: "var(--color-on-surface)",
             }}
             title="Close sidebar"
             aria-label="Close sidebar"
@@ -107,10 +136,15 @@ export default function MobileSidebarDrawer({
         {/* Nav content (mobile variant) */}
         <div className="flex-1 overflow-y-auto">
           <AdminSidebar
+            key={
+              resolvedVariant === "contract"
+                ? `contract-${resolvedTrackerId ?? "?"}`
+                : "home"
+            }
             display="mobile"
-            variant={isContract ? "contract" : "home"}
+            variant={resolvedVariant}
             activePath={pathname}
-            trackerId={trackerId}
+            trackerId={resolvedTrackerId}
           />
         </div>
       </div>

@@ -1,8 +1,6 @@
 /**
  * Sidebar configuration (no JSX, just data).
- * AdminSidebar consumes this and renders appropriate links.
  */
-
 import {
   Home,
   FileX,
@@ -20,28 +18,32 @@ import {
 } from "lucide-react";
 import type { ElementType } from "react";
 
-export type SidebarItem = {
-  href: string;
-  label: string;
-  icon: ElementType;
+export type SidebarItem = { href: string; label: string; icon: ElementType };
+export type SidebarSection = { title: string; items: SidebarItem[] };
+
+/** Home-only Settings item */
+export const HOME_SETTINGS_ITEM: SidebarItem = {
+  href: "/dashboard/settings",
+  label: "Settings",
+  icon: Settings,
 };
 
-export type SidebarSection = {
-  title: string;
-  items: SidebarItem[];
-};
-
-/** Home/Terminated items (no trackerId needed) */
+/** Home/Terminated (non-contract) */
 export const HOME_SIDEBAR_ITEMS: SidebarItem[] = [
   { href: "/dashboard/home", label: "Home", icon: Home },
   { href: "/dashboard/terminated", label: "Terminated", icon: FileX },
-  { href: "/dashboard/settings", label: "Settings", icon: Settings },
+  HOME_SETTINGS_ITEM,
 ];
 
-/** Returns Contract sections for a given trackerId */
+/** Contract sections for a given trackerId */
 export function contractSidebarSections(trackerId: string): SidebarSection[] {
   const base = `/dashboard/contract/${trackerId}`;
   return [
+    //  First item: Home (top-level section so it renders first)
+    {
+      title: "Navigation",
+      items: [{ href: "/dashboard/home", label: "Home", icon: Home }],
+    },
     {
       title: "Application",
       items: [
@@ -94,6 +96,11 @@ export function contractSidebarSections(trackerId: string): SidebarSection[] {
     {
       title: "PDFs",
       items: [{ href: `${base}/print`, label: "Print", icon: Printer }],
+    },
+    {
+      title: "System",
+      // 🔑 Contract-scoped alias to keep the contract sidebar active
+      items: [{ href: `${base}/settings`, label: "Settings", icon: Settings }],
     },
   ];
 }
