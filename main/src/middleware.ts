@@ -2,11 +2,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
-import { AUTH_COOKIE_NAME, NEXTAUTH_SECRET, NEXT_PUBLIC_PORTAL_BASE_URL } from "./config/env";
+import { AUTH_COOKIE_NAME, DISABLE_AUTH, NEXTAUTH_SECRET, NEXT_PUBLIC_PORTAL_BASE_URL } from "./config/env";
 import { resolveBaseUrl } from "./lib/utils/urlHelper.server";
-
-// Flag to disable auth (to bypass checks)
-const DISABLE_AUTH = true;
 
 export async function middleware(req: NextRequest) {
   // If auth disabled, allow all

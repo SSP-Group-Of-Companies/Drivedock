@@ -12,3 +12,4 @@ export const NEXTAUTH_SECRET = process.env.NEXTAUTH_SECRET!;
 export const NEXT_PUBLIC_PORTAL_BASE_URL = process.env.NEXT_PUBLIC_PORTAL_BASE_URL!;
 export const isProd = process.env.NODE_ENV === "production";
 export const PORT = process.env.PORT! ?? 3000;
+export const DISABLE_AUTH = process.env.DISABLE_AUTH === "true";

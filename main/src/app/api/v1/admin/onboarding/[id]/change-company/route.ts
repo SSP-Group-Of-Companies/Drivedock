@@ -8,11 +8,13 @@ import { getCompanyById, needsFlatbedTraining } from "@/constants/companies";
 import { buildTrackerContext, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
 import { readMongooseRefField } from "@/lib/utils/mongooseRef";
 import { IPreQualificationsDoc } from "@/types/preQualifications.types";
+import { guard } from "@/lib/auth/authUtils";
 
 export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await ctx.params;
     await connectDB();
+    await guard();
 
     const onboardingDoc = await OnboardingTracker.findById(id).populate("forms.preQualification");
     if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");

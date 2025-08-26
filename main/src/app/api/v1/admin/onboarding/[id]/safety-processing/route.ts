@@ -19,6 +19,7 @@ import { IPhoto } from "@/types/shared.types";
 import { EStepPath } from "@/types/onboardingTracker.types";
 import { EDrugTestStatus } from "@/types/drugTest.types";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
+import { guard } from "@/lib/auth/authUtils";
 
 /**
  * GET /api/v1/admin/onboarding/[id]/safety-processing
@@ -30,6 +31,7 @@ import ApplicationForm from "@/mongoose/models/ApplicationForm";
 export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
     await connectDB();
+    await guard();
 
     const { id: onboardingId } = await params;
     if (!isValidObjectId(onboardingId)) {
@@ -188,6 +190,7 @@ async function deleteRemovedFinalized(prev: IPhoto[] | undefined, next: IPhoto[]
 export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
     await connectDB();
+    await guard();
 
     const { id: onboardingId } = await params;
     if (!isValidObjectId(onboardingId)) return errorResponse(400, "Invalid onboarding ID");
@@ -276,9 +279,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       updatedDrugTest = drugTestDoc.toObject();
 
       // update tracker status - move on to next step and will be marked as completed if last step
-      console.log("drug test", onboardingDoc.status);
       onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.DRUG_TEST);
-      console.log("drug test", onboardingDoc.status);
     }
 
     /* ----------------------- CARRIERS EDGE TRAINING ---------------------- */
@@ -353,9 +354,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       updatedCarriersEdge = ceDoc.toObject();
 
       // update tracker status - move on to next step and will be marked as completed if last step
-      console.log("carriers edge training", onboardingDoc.status);
       onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.CARRIERS_EDGE_TRAINING);
-      console.log("carriers edge training", onboardingDoc.status);
     }
 
     // Save tracker

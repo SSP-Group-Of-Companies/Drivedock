@@ -2,6 +2,7 @@
 import connectDB from "@/lib/utils/connectDB";
 import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
+import { guard } from "@/lib/auth/authUtils";
 
 export async function PATCH(
   _req: Request,
@@ -10,12 +11,9 @@ export async function PATCH(
   try {
     const { id } = await ctx.params; //  await it
     await connectDB();
+    await guard();
 
-    const doc = await OnboardingTracker.findByIdAndUpdate(
-      id,
-      { $set: { terminated: true } },
-      { new: true, runValidators: true }
-    );
+    const doc = await OnboardingTracker.findByIdAndUpdate(id, { $set: { terminated: true } }, { new: true, runValidators: true });
 
     if (!doc) return errorResponse(404, "Onboarding tracker not found");
 

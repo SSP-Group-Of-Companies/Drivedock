@@ -6,7 +6,7 @@ import { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 import type { IUser } from "@/types/user.types";
 import { AppError } from "@/lib/utils/apiResponse";
-import { AUTH_COOKIE_NAME, NEXTAUTH_SECRET } from "@/config/env";
+import { AUTH_COOKIE_NAME, DISABLE_AUTH, NEXTAUTH_SECRET } from "@/config/env";
 
 interface AppJWT {
   userId?: string;
@@ -64,7 +64,8 @@ export const currentUser = cache(async (): Promise<IUser | null> => {
  * - Calls `currentUser`
  * - Throws `AppError(401)` if no valid user is found
  */
-export const guard = cache(async (): Promise<IUser> => {
+export const guard = cache(async (): Promise<IUser | null> => {
+  if (DISABLE_AUTH) return null;
   const user = await currentUser();
   if (!user) throw new AppError(401, "Unauthenticated");
   return user;
