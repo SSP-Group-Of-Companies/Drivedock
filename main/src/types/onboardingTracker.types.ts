@@ -67,7 +67,7 @@ export interface IOnboardingTracker {
 
   terminated: boolean;
 
-  notes: string;
+  notes?: string;
 
   createdAt: Date;
   updatedAt: Date;
@@ -78,15 +78,16 @@ export interface IOnboardingTrackerDoc extends IOnboardingTracker, Document {
 }
 
 /**
- * Public-facing (unchanged) tracker context
+ * Public-facing tracker context
+ * - Reuses fields from IOnboardingTracker to avoid duplication.
+ * - `id` is provided by Mongoose docs (stringified _id), so it remains explicit here.
+ * - `notes` is exposed optionally to keep the public surface minimal by default.
  */
-export interface IOnboardingTrackerContext {
+type TrackerContextBase = Pick<IOnboardingTracker, "companyId" | "applicationType" | "needsFlatbedTraining" | "status">;
+
+export interface IOnboardingTrackerContext extends TrackerContextBase {
   id: string;
-  companyId: string;
-  applicationType?: ECompanyApplicationType;
-  needsFlatbedTraining: boolean;
-  status: IOnboardingStatus;
-  notes?: string;
+  notes?: IOnboardingTracker["notes"];
   prevStep: EStepPath | null;
   nextStep: EStepPath | null;
 }

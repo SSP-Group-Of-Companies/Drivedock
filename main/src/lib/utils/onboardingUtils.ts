@@ -110,7 +110,7 @@ export function getNeighborSteps(step: EStepPath, opts: FlowOpts): { prevStep: E
  * - Otherwise, move currentStep to the step after the one just completed.
  * - If completing the final step, mark as fully completed.
  */
-export function advanceProgress(doc: IOnboardingTrackerDoc & { needsFlatbedTraining?: boolean }, completedNow: EStepPath): IOnboardingStatus {
+export function advanceProgress(doc: IOnboardingTrackerDoc, completedNow: EStepPath): IOnboardingStatus {
   const opts = getFlowOptsFromTracker(doc);
   const flow = getOnboardingStepFlow(opts);
 
@@ -121,7 +121,7 @@ export function advanceProgress(doc: IOnboardingTrackerDoc & { needsFlatbedTrain
     // Already ahead → no change
     return {
       currentStep: doc.status.currentStep,
-      completed: isFinalStep(doc.status.currentStep, opts),
+      completed: doc.status.completed,
     };
   }
 
@@ -196,7 +196,7 @@ export function buildTrackerContext(tracker: IOnboardingTrackerDoc, defaultStep?
     nextStep,
   };
 
-  if (includeAdminData) context.notes = tracker.notes;
+  if (includeAdminData) context.notes = tracker.notes ?? "";
 
   return context;
 }

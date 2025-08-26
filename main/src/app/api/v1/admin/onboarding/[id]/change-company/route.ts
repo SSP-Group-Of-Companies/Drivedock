@@ -21,8 +21,16 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     const { companyId } = await parseJsonBody(req);
     if (!companyId) return errorResponse(400, "companyId is required");
 
-    const validCompany = getCompanyById(companyId);
-    if (!validCompany) return errorResponse(400, "invalid company id");
+    const newCompany = getCompanyById(companyId);
+    if (!newCompany) return errorResponse(400, "invalid company id");
+
+    const currentCompany = getCompanyById(onboardingDoc.companyId);
+
+    if (!currentCompany) return errorResponse(400, "invalid company id in existing onboarding document");
+
+    const changedCountry = currentCompany.countryCode !== newCompany.countryCode;
+
+    if (changedCountry) return errorResponse(400, "cannot change between companies in different countries");
 
     const preQualification = readMongooseRefField<IPreQualificationsDoc>(onboardingDoc.forms?.preQualification);
     const flatbedExperience = preQualification?.flatbedExperience ?? false;

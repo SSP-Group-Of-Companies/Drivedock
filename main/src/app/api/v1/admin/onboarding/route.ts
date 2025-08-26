@@ -8,6 +8,7 @@ import DrugTest from "@/mongoose/models/DrugTest";
 import { EStepPath } from "@/types/onboardingTracker.types";
 import type { DashboardOnboardingItem } from "@/types/adminDashboard.types";
 import { getOnboardingStepFlow } from "@/lib/utils/onboardingUtils";
+import { EDrugTestStatus } from "@/types/drugTest.types";
 
 // ---------- helpers ----------
 function toBool(v: string | null): boolean | undefined {
@@ -190,7 +191,7 @@ export async function GET(req: NextRequest) {
     const currentStep = (searchParams.get("currentStep") || searchParams.get("status.currentStep")) as EStepPath | undefined;
 
     const ceEmailSent = toBool(searchParams.get("carriersEdgeTrainingEmailSent"));
-    const dtDocsUploaded = toBool(searchParams.get("drugTestDocumentsUploaded"));
+    const dtStatus = searchParams.get("drugTestStatus") as EDrugTestStatus | null;
 
     // ---------------- pipeline ----------------
     const matchBase: Record<string, any> = { ...baseFilter };
@@ -200,7 +201,7 @@ export async function GET(req: NextRequest) {
     if (typeof ceEmailSent === "boolean" && !currentStep) {
       matchItems["status.currentStep"] = EStepPath.CARRIERS_EDGE_TRAINING;
     }
-    if (typeof dtDocsUploaded === "boolean" && !currentStep) {
+    if (dtStatus && !currentStep) {
       matchItems["status.currentStep"] = EStepPath.DRUG_TEST;
     }
 
@@ -276,7 +277,7 @@ export async function GET(req: NextRequest) {
           localField: "forms.drugTest",
           foreignField: "_id",
           as: "dt",
-          pipeline: [{ $project: { _id: 1, documentsUploaded: 1 } }],
+          pipeline: [{ $project: { _id: 1, status: 1 } }],
         },
       },
 
@@ -287,7 +288,7 @@ export async function GET(req: NextRequest) {
           driverName: { $ifNull: ["$driverAppObj.driverName", null] },
           driverEmail: { $ifNull: ["$driverAppObj.email", null] },
           ceEmailSent: { $ifNull: [{ $first: "$ce.emailSent" }, false] },
-          dtDocumentsUploaded: { $ifNull: [{ $first: "$dt.documentsUploaded" }, false] },
+          dtStatus: { $ifNull: [{ $first: "$dt.status" }, EDrugTestStatus.NOT_UPLOADED] },
           progressStepIndex: { $indexOfArray: [getOnboardingStepFlow({ needsFlatbedTraining: true }), "$status.currentStep"] },
         },
       },
@@ -302,12 +303,12 @@ export async function GET(req: NextRequest) {
             },
           ]
         : []),
-      ...(typeof dtDocsUploaded === "boolean"
+      ...(dtStatus
         ? [
             {
               $match: {
                 "status.currentStep": EStepPath.DRUG_TEST,
-                dtDocumentsUploaded: dtDocsUploaded,
+                dtStatus,
               },
             },
           ]
@@ -322,8 +323,8 @@ export async function GET(req: NextRequest) {
           itemSummary: {
             driverName: "$driverName",
             driverEmail: "$driverEmail",
-            carrierEdgeTraining: { emailSent: "$ceEmailSent" },
-            drugTest: { documentsUploaded: "$dtDocumentsUploaded" },
+            carriersEdgeTraining: { emailSent: "$ceEmailSent" },
+            drugTest: { status: "$dtStatus" },
           },
         },
       },
@@ -363,7 +364,7 @@ export async function GET(req: NextRequest) {
           OnboardingTracker.countDocuments({
             ...matchBase,
             "status.currentStep": EStepPath.DRUG_TEST,
-            ...(typeof dtDocsUploaded === "boolean" ? { "forms.drugTest": { $exists: true } } : {}),
+            ...(dtStatus ? { "forms.drugTest": { $exists: true } } : {}),
           }),
         ]);
         return { all, driveTest, carriersEdgeTraining: ce, drugTest: dt };
