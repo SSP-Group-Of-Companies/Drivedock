@@ -63,6 +63,7 @@ export const currentUser = cache(async (): Promise<IUser | null> => {
  * Guard method: ensures a user is authenticated.
  * - Calls `currentUser`
  * - Throws `AppError(401)` if no valid user is found
+ * - returns null user if DISABLE_AUTH env is set to true
  */
 export const guard = cache(async (): Promise<IUser | null> => {
   if (DISABLE_AUTH) return null;
