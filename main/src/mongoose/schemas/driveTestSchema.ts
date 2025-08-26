@@ -1,5 +1,5 @@
 import { Schema } from "mongoose";
-import { IDriveTest } from "@/types/driveTest.types";
+import { IDriveTestDoc, IOnRoadAssessment, IPreTripAssessment } from "@/types/driveTest.types";
 import { photoSchema } from "./sharedSchemas";
 
 const assessmentItemSchema = new Schema(
@@ -22,7 +22,7 @@ const assessmentSectionSchema = new Schema(
   { _id: false }
 );
 
-const preTripSchema = new Schema(
+const preTripSchema = new Schema<IPreTripAssessment>(
   {
     sections: {
       underHood: assessmentSectionSchema,
@@ -48,15 +48,15 @@ const preTripSchema = new Schema(
     trailerType: { type: String },
     comments: { type: String },
     supervisorSignature: {
-      url: { type: String },
-      key: { type: String },
+      type: photoSchema,
+      required: [true, "supervisorSignature is required"],
     },
     assessedAt: { type: Date, default: Date.now },
   },
   { _id: false }
 );
 
-const onRoadSchema = new Schema(
+const onRoadSchema = new Schema<IOnRoadAssessment>(
   {
     sections: {
       placingVehicleInMotion: assessmentSectionSchema,
@@ -82,14 +82,14 @@ const onRoadSchema = new Schema(
     comments: { type: String },
     supervisorSignature: {
       type: photoSchema,
-      required: [true, "supervisor signature is required"],
+      required: [true, "supervisorSignature is required"],
     },
     assessedAt: { type: Date, default: Date.now },
   },
   { _id: false }
 );
 
-const driveTestSchema = new Schema<IDriveTest>(
+const driveTestSchema = new Schema<IDriveTestDoc>(
   {
     preTrip: preTripSchema,
     onRoad: onRoadSchema,
