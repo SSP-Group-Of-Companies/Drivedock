@@ -28,8 +28,8 @@ import ApplicationForm from "@/mongoose/models/ApplicationForm";
  * GET /api/v1/admin/onboarding/[id]/safety-processing
  * Returns:
  *  - onboardingContext (now enriched with itemSummary: { driverName, driverEmail })
- *  - driveTest / carriersEdge / drugTest (as before)
- *  - identifications: { driverLicenseExpiration }   <-- NEW (for notifications)
+ *  - driveTest / carriersEdge / drugTest (populated snapshots)
+ *  - identifications: { driverLicenseExpiration }   <-- optional (for notifications)
  */
 export const GET = async (
   _req: NextRequest,
@@ -43,13 +43,29 @@ export const GET = async (
       return errorResponse(400, "Not a valid onboarding tracker ID");
     }
 
-    const onboardingDoc = await OnboardingTracker.findById(onboardingId);
+    // ⭐ Populate referenced form docs so snapshots are *never* empty objects.
+    const onboardingDoc = await OnboardingTracker.findById(onboardingId)
+      .populate({
+        path: "forms.carriersEdgeTraining",
+        select:
+          "emailSent emailSentBy emailSentAt certificates completed createdAt updatedAt",
+      })
+      .populate({
+        path: "forms.drugTest",
+        select: "documents status createdAt updatedAt",
+      })
+      .populate({
+        path: "forms.driveTest",
+        // adjust the fields to your DriveTest schema as needed
+        select: "completed createdAt updatedAt",
+      });
+
     if (!onboardingDoc)
       return errorResponse(404, "Onboarding document not found");
     if (onboardingDoc.terminated)
       return errorResponse(400, "Onboarding document terminated");
 
-    // Existing form snapshots
+    // Populated form snapshots
     const drugTest = readMongooseRefField(onboardingDoc.forms?.drugTest) ?? {};
     const carriersEdge =
       readMongooseRefField(onboardingDoc.forms?.carriersEdgeTraining) ?? {};
@@ -108,8 +124,6 @@ export const GET = async (
       // This is already a populated document
       tryExtractFromDoc(driverAppRef);
     } else {
-      // No driverAppRef at all, try fallback
-
       // Fallback: try to find any ApplicationForm associated with this onboarding tracker
       const fallbackAppDoc = await ApplicationForm.findOne(
         { onboardingTrackerId: onboardingId },
@@ -148,7 +162,7 @@ export const GET = async (
       drugTest,
       carriersEdge,
       driveTest,
-      identifications, // <-- NEW (optional if not found)
+      identifications, // optional if not found
     };
 
     return successResponse(200, "Onboarding test data retrieved", responseData);
@@ -322,7 +336,7 @@ export const PATCH = async (
           );
         }
 
-        // NEW: require at least one document when approving
+        // Require at least one document when approving
         if (incomingStatus === EDrugTestStatus.APPROVED) {
           const hasExisting =
             Array.isArray(drugTestDoc.documents) &&
@@ -344,13 +358,11 @@ export const PATCH = async (
       await drugTestDoc.save();
       updatedDrugTest = drugTestDoc.toObject();
 
-      // update tracker status - move on to next step and will be marked as completed if last step
-      console.log("drug test", onboardingDoc.status);
+      // Advance tracker status
       onboardingDoc.status = advanceProgress(
         onboardingDoc,
         EStepPath.DRUG_TEST
       );
-      console.log("drug test", onboardingDoc.status);
     }
 
     /* ----------------------- CARRIERS EDGE TRAINING ---------------------- */
@@ -462,13 +474,11 @@ export const PATCH = async (
       await ceDoc.save();
       updatedCarriersEdge = ceDoc.toObject();
 
-      // update tracker status - move on to next step and will be marked as completed if last step
-      console.log("carriers edge training", onboardingDoc.status);
+      // Advance tracker status
       onboardingDoc.status = advanceProgress(
         onboardingDoc,
         EStepPath.CARRIERS_EDGE_TRAINING
       );
-      console.log("carriers edge training", onboardingDoc.status);
     }
 
     // Save tracker
@@ -477,7 +487,23 @@ export const PATCH = async (
 
     /* ---------------------- Build GET-like response ---------------------- */
 
-    // Fresh snapshots (prefer updated docs; else resolve from refs)
+    // ⭐ Ensure populated refs before building response (avoids empty snapshots)
+    await onboardingDoc.populate([
+      {
+        path: "forms.carriersEdgeTraining",
+        select:
+          "emailSent emailSentBy emailSentAt certificates completed createdAt updatedAt",
+      },
+      {
+        path: "forms.drugTest",
+        select: "documents status createdAt updatedAt",
+      },
+      {
+        path: "forms.driveTest",
+        select: "completed createdAt updatedAt",
+      },
+    ]);
+
     const drugTestOut =
       updatedDrugTest ??
       readMongooseRefField(onboardingDoc.forms?.drugTest) ??

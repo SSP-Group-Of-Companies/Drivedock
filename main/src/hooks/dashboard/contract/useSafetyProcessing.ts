@@ -22,31 +22,87 @@ export function useSafetyProcessing(trackerId: string) {
   const mutate = useMutation({
     mutationKey: ["safety-processing:patch", trackerId],
     mutationFn: (body: SafetyPatchBody) => patchSafety(trackerId, body),
+
+    // ⭐ Optimistic update so the checkbox/cert count don't vanish during refetch
     onMutate: async (body) => {
       await qc.cancelQueries({ queryKey: ["safety-processing", trackerId] });
       const prev = qc.getQueryData<SafetyGetResponse>([
         "safety-processing",
         trackerId,
       ]);
-      // Minimal optimistic touches (notes only). Files/status keep server-as-source-of-truth.
-      if (prev && typeof body.notes === "string") {
-        qc.setQueryData<SafetyGetResponse>(["safety-processing", trackerId], {
-          ...prev,
-          onboardingContext: { ...prev.onboardingContext, notes: body.notes },
-        });
+
+      if (prev) {
+        const next: SafetyGetResponse = structuredClone(prev);
+
+        // notes
+        if (typeof body.notes === "string") {
+          next.onboardingContext.notes = body.notes;
+        }
+
+        // Carrier's Edge (request uses carriersEdgeTraining)
+        if (body.carriersEdgeTraining) {
+          const inc = body.carriersEdgeTraining;
+          const ce = (next.carriersEdge ??= {});
+
+          if (Array.isArray(inc.certificates)) {
+            ce.certificates = inc.certificates;
+          }
+          if (inc.emailSent === true) {
+            ce.emailSent = true;
+            ce.emailSentBy = inc.emailSentBy || ce.emailSentBy || "Admin";
+            ce.emailSentAt =
+              (typeof inc.emailSentAt === "string"
+                ? inc.emailSentAt
+                : inc.emailSentAt?.toISOString()) ||
+              ce.emailSentAt ||
+              new Date().toISOString();
+          }
+          if (inc.completed === true) {
+            ce.completed = true;
+          }
+        }
+
+        // Drug Test (optional; keeps UI steady when approving/uploading)
+        if (body.drugTest) {
+          const dt = (next.drugTest ??= {});
+          if (Array.isArray(body.drugTest.documents))
+            dt.documents = body.drugTest.documents;
+          if (typeof body.drugTest.status === "string")
+            dt.status = body.drugTest.status;
+        }
+
+        qc.setQueryData(["safety-processing", trackerId], next);
       }
+
       return { prev };
     },
+
     onError: (_e, _body, ctx) => {
       if (ctx?.prev)
         qc.setQueryData(["safety-processing", trackerId], ctx.prev);
     },
-    onSuccess: (data) => {
-      // Keep contract header & wizard in sync
-      qc.setQueryData(["safety-processing", trackerId], data);
-      qc.setQueryData(["contract-context", trackerId], data.onboardingContext);
+
+    onSuccess: (server) => {
+      // Write server truth, but don't drop CE if the server momentarily omits it
+      const current =
+        qc.getQueryData<SafetyGetResponse>(["safety-processing", trackerId]) ??
+        server;
+
+      qc.setQueryData<SafetyGetResponse>(["safety-processing", trackerId], {
+        ...server,
+        carriersEdge: server.carriersEdge ?? current.carriersEdge ?? {},
+        drugTest: server.drugTest ?? current.drugTest,
+      });
+
+      // keep header/wizard in sync
+      qc.setQueryData(
+        ["contract-context", trackerId],
+        server.onboardingContext
+      );
     },
+
     onSettled: () => {
+      // still refetch to converge with backend
       qc.invalidateQueries({ queryKey: ["safety-processing", trackerId] });
       qc.invalidateQueries({ queryKey: ["contract-context", trackerId] });
       qc.invalidateQueries({ queryKey: ["admin-onboarding-list"] });
