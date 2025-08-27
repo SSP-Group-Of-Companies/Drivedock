@@ -226,19 +226,19 @@ export default function DrugTestCard({
             <p id={descId} className="sr-only">
               Locked until step is reached.
             </p>
-            <div
-              className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-black/10 backdrop-blur-[1px] pointer-events-none"
-              aria-hidden
-            >
-              <div
-                className="rounded-lg px-3 py-1.5 text-xs font-medium"
-                style={{
-                  background: "var(--color-surface)",
-                  color: "var(--color-on-surface)",
-                  border: "1px solid var(--color-outline)",
-                  boxShadow: "var(--elevation-1)",
-                }}
-              >
+                         <div
+               className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 shadow-lg pointer-events-none"
+               aria-hidden
+             >
+                             <div
+                 className="rounded-lg px-3 py-1.5 text-xs font-medium backdrop-blur-sm"
+                 style={{
+                   background: "var(--color-surface)",
+                   color: "var(--color-on-surface)",
+                   border: "1px solid var(--color-outline)",
+                   boxShadow: "var(--elevation-2)",
+                 }}
+               >
                 Locked until step is reached
               </div>
             </div>
