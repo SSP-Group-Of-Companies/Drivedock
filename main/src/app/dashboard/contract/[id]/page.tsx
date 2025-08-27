@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
-export default function ContractIndex({ params }: { params: { id: string } }) {
-  redirect(`/dashboard/contract/${params.id}/safety-processing`);
+export default async function ContractIndex({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  redirect(`/dashboard/contract/${id}/safety-processing`);
 }
