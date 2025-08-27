@@ -131,6 +131,13 @@ export default function CarriersEdgeCard({
     }
   }
 
+  console.log("CE cache snapshot", {
+    emailSent: carriersEdge?.emailSent,
+    by: carriersEdge?.emailSentBy,
+    at: carriersEdge?.emailSentAt,
+    certs: carriersEdge?.certificates?.length,
+  });
+
   /* ------------------------------- Render ------------------------------- */
   return (
     <section
