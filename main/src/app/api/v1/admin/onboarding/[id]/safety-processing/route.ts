@@ -24,6 +24,7 @@ import { IPhoto } from "@/types/shared.types";
 import { EStepPath } from "@/types/onboardingTracker.types";
 import { EDrugTestStatus } from "@/types/drugTest.types";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
+import { guard } from "@/lib/auth/authUtils";
 
 /**
  * GET /api/v1/admin/onboarding/[id]/safety-processing
@@ -38,6 +39,7 @@ export const GET = async (
 ) => {
   try {
     await connectDB();
+    await guard();
 
     const { id: onboardingId } = await params;
     if (!isValidObjectId(onboardingId)) {
@@ -239,6 +241,7 @@ export const PATCH = async (
 ) => {
   try {
     await connectDB();
+    await guard();
 
     const { id: onboardingId } = await params;
     if (!isValidObjectId(onboardingId))
@@ -395,30 +398,11 @@ export const PATCH = async (
       await drugTestDoc.save();
       updatedDrugTest = drugTestDoc.toObject();
 
-      // Advance logic:
-      // - If APPROVED: advance; if DRUG_TEST is the last step, mark completed=true.
-      // - Else: keep user at DRUG_TEST (completed=false).
-      if (drugTestDoc.status === EDrugTestStatus.APPROVED) {
-        const advanced = advanceProgress(onboardingDoc, EStepPath.DRUG_TEST);
-
-        // Determine if DRUG_TEST is the last step for this tracker
-        const flow = getOnboardingStepFlow({
-          needsFlatbedTraining: !!onboardingDoc.needsFlatbedTraining,
-        });
-        const isLastStep = flow[flow.length - 1] === EStepPath.DRUG_TEST;
-
-        if (isLastStep) {
-          advanced.completed = true;
-          advanced.currentStep = EStepPath.DRUG_TEST;
-        }
-        onboardingDoc.status = advanced;
-      } else {
-        onboardingDoc.status = {
-          ...(onboardingDoc.status ?? {}),
-          currentStep: EStepPath.DRUG_TEST,
-          completed: false,
-        } as any;
-      }
+      // update tracker status - move on to next step and will be marked as completed if last step
+      onboardingDoc.status = advanceProgress(
+        onboardingDoc,
+        EStepPath.DRUG_TEST
+      );
     }
 
     /* ----------------------- CARRIERS EDGE TRAINING ---------------------- */
@@ -530,7 +514,7 @@ export const PATCH = async (
       await ceDoc.save();
       updatedCarriersEdge = ceDoc.toObject();
 
-      // Advance tracker status
+      // update tracker status - move on to next step and will be marked as completed if last step
       onboardingDoc.status = advanceProgress(
         onboardingDoc,
         EStepPath.CARRIERS_EDGE_TRAINING

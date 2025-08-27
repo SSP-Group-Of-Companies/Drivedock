@@ -8,23 +8,25 @@ import { buildTrackerContext, onboardingExpired, hasReachedStep, advanceProgress
 import { isValidObjectId } from "mongoose";
 import { NextRequest } from "next/server";
 import { validateEmploymentHistory } from "@/lib/utils/validationUtils";
+import { guard } from "@/lib/auth/authUtils";
 
 /**
- * PATCH /page-2
- * - Validates & saves Page 2
- * - Requires that the user can access Page 2 (i.e., has progressed to it)
- * - Advances progress to Page 2 (furthest) and refreshes resume expiry
+ * PATCH /employment-history
+ * - Validates & saves empoloyment history
+ * - Requires that the user can access empoloyment history (i.e., has progressed to it)
+ * - Advances progress to empoloyment history (furthest) and refreshes resume expiry
  */
 export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
     await connectDB();
+    await guard();
 
     const { id } = await params;
     if (!isValidObjectId(id)) return errorResponse(400, "not a valid id");
 
     const body = (await req.json()) as IApplicationFormPage2;
 
-    // Page-2 specific business validation
+    // employment-history specific business validation
     const validationError = validateEmploymentHistory(body.employments);
     if (validationError) return errorResponse(400, validationError);
 
@@ -38,9 +40,9 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     const appFormDoc = await ApplicationForm.findById(appFormId);
     if (!appFormDoc) return errorResponse(404, "ApplicationForm not found");
 
-    // GATE: must be allowed to access Page 2
+    // GATE: must be allowed to access empoloyment history
     if (!hasReachedStep(onboardingDoc, EStepPath.APPLICATION_PAGE_2)) {
-      return errorResponse(403, "Please complete previous steps first");
+      return errorResponse(403, "driver hasn't reached this step yet");
     }
 
     // ---------------------------
@@ -60,8 +62,8 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
     await onboardingDoc.save();
 
-    return successResponse(200, "ApplicationForm Page 2 updated", {
-      onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_2),
+    return successResponse(200, "employment history updated", {
+      onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_2, true),
       page2: appFormDoc.page2,
     });
   } catch (error) {
@@ -70,14 +72,15 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 };
 
 /**
- * GET /page-2
- * - Gated by access to Page 2 (furthest >= PAGE_2)
- * - Updates lastVisitedStep to Page 2 (resume UX)
+ * GET /employment-history
+ * - Gated by access to empoloyment history (furthest >= PAGE_2)
+ * - Updates lastVisitedStep to empoloyment history (resume UX)
  * - Returns page2 data + context (built from lastVisited for UX)
  */
 export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
     await connectDB();
+    await guard();
 
     const { id: onboardingId } = await params;
     if (!isValidObjectId(onboardingId)) return errorResponse(400, "Not a valid onboarding tracker ID");
@@ -92,14 +95,14 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
     const appFormDoc = await ApplicationForm.findById(appFormId);
     if (!appFormDoc) return errorResponse(404, "ApplicationForm not found");
 
-    // GATE: must be allowed to view Page 2
+    // GATE: must be allowed to view empoloyment history
     if (!hasReachedStep(onboardingDoc, EStepPath.APPLICATION_PAGE_2)) {
-      return errorResponse(403, "Please complete previous steps first");
+      return errorResponse(403, "driver hasn't reached this step yet");
     }
 
-    return successResponse(200, "Page 2 data retrieved", {
+    return successResponse(200, "empoloyment history data retrieved", {
       // For page rendering/resume, build context from lastVisited
-      onboardingContext: buildTrackerContext(onboardingDoc),
+      onboardingContext: buildTrackerContext(onboardingDoc, null, true),
       page2: appFormDoc.page2,
     });
   } catch (error) {

@@ -1,3 +1,4 @@
+// src/app/onboarding/[id]/drug-test/DrugTestClient.tsx
 "use client";
 
 import { useMemo, useState } from "react";
@@ -11,6 +12,7 @@ import type { IPhoto } from "@/types/shared.types";
 import type { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
 import type { IDrugTestDoc } from "@/types/drugTest.types";
 import { EDrugTestStatus } from "@/types/drugTest.types";
+import { buildOnboardingStepPath } from "@/lib/utils/onboardingUtils";
 import OnboardingPhotoGroupControlled from "../../components/OnboardingPhotoGroupControlled";
 
 export type DrugTestClientProps = {
@@ -25,10 +27,18 @@ export default function DrugTestClient({ drugTest, onboardingContext }: DrugTest
   const router = useRouter();
   const { t } = useTranslation();
 
-  const trackerId = onboardingContext.id;
+  // Keep a local, mutable copy of onboardingContext so we can update from PATCH response
+  const [ctx, setCtx] = useState<IOnboardingTrackerContext>(onboardingContext);
+  const trackerId = ctx.id;
 
-  // ---- New status-driven flags ----
-  const status = drugTest.status ?? EDrugTestStatus.NOT_UPLOADED;
+  // Drive UI from local status; initialize from server
+  const [status, setStatus] = useState<EDrugTestStatus>(drugTest.status ?? EDrugTestStatus.NOT_UPLOADED);
+
+  // RULE: ignore any server-provided documents if NOT_UPLOADED
+  const initialPhotos: IPhoto[] = (drugTest.status ?? EDrugTestStatus.NOT_UPLOADED) === EDrugTestStatus.NOT_UPLOADED ? [] : drugTest.documents ?? [];
+
+  const [photos, setPhotos] = useState<IPhoto[]>(initialPhotos);
+  const [submitting, setSubmitting] = useState(false);
 
   const completed = status === EDrugTestStatus.APPROVED;
   const isPending = status === EDrugTestStatus.AWAITING_REVIEW;
@@ -36,10 +46,6 @@ export default function DrugTestClient({ drugTest, onboardingContext }: DrugTest
 
   // canUpload when nothing uploaded yet OR previously rejected
   const canUpload = status === EDrugTestStatus.NOT_UPLOADED || isRejected;
-
-  // RULE: ignore any server-provided documents if NOT_UPLOADED
-  const initialPhotos: IPhoto[] = status === EDrugTestStatus.NOT_UPLOADED ? [] : drugTest.documents ?? [];
-  const [photos, setPhotos] = useState<IPhoto[]>(initialPhotos);
 
   const headerBlock = useMemo(() => {
     if (completed) {
@@ -62,7 +68,7 @@ export default function DrugTestClient({ drugTest, onboardingContext }: DrugTest
       return (
         <div className="rounded-xl bg-red-50 ring-1 ring-red-100 p-4 flex items-center gap-2">
           <XCircle className="text-red-600 w-5 h-5" />
-          <p className="text-sm text-red-800 font-medium">{t("form.step6.rejected", "Your drug test documents were rejected. Please re-upload and resubmit.")}</p>
+          <p className="text-sm text-red-800 font-medium">{t("form.step6.rejected", "Your drug test documents were rejected. Please re-upload and re-submit.")}</p>
         </div>
       );
     }
@@ -73,32 +79,50 @@ export default function DrugTestClient({ drugTest, onboardingContext }: DrugTest
     );
   }, [completed, isPending, isRejected, t]);
 
-  const submit = async () => {
-    if (!canUpload) {
-      if (completed) {
-        router.push(`/onboarding/${trackerId}/carriers-edge-training`);
-      }
-      return;
+  const goNextFromApproved = () => {
+    const next = ctx.nextStep;
+    if (next) {
+      router.push(buildOnboardingStepPath(ctx, next));
+    } else {
+      router.push(`/onboarding/${trackerId}/finished`);
     }
-    if (photos.length === 0) return;
+  };
+
+  const submit = async () => {
+    if (!canUpload || photos.length === 0 || submitting) return;
 
     try {
+      setSubmitting(true);
       const res = await fetch(`/api/v1/onboarding/${trackerId}/drug-test`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           documents: photos.map((p) => ({ s3Key: p.s3Key, url: p.url })),
-          // Backend should set status -> AWAITING_REVIEW after successful save
         }),
       });
+
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
         throw new Error(data?.message || "Failed to submit documents.");
       }
-      router.push(`/onboarding/${trackerId}/carriers-edge-training`);
+
+      // Update local state from server response:
+      // - finalized docs (now in submissions folder)
+      // - status -> AWAITING_REVIEW
+      // - onboardingContext updated for future navigation
+      const updatedDrugTest: Partial<IDrugTestDoc> = data?.data?.drugTest ?? {};
+      const updatedCtx: IOnboardingTrackerContext | undefined = data?.data?.onboardingContext;
+
+      if (updatedCtx) setCtx(updatedCtx);
+      if (Array.isArray(updatedDrugTest.documents)) setPhotos(updatedDrugTest.documents as IPhoto[]);
+      setStatus(updatedDrugTest.status ?? EDrugTestStatus.AWAITING_REVIEW);
+
+      // Stay on the page; UI will now show "Pending review"
     } catch (e) {
       console.error(e);
       // Optional: toast error
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -116,11 +140,11 @@ export default function DrugTestClient({ drugTest, onboardingContext }: DrugTest
             <button
               type="button"
               onClick={submit}
-              disabled={photos.length === 0}
+              disabled={photos.length === 0 || submitting}
               className={`px-8 py-2 mt-2 rounded-full font-semibold transition-colors shadow-md
-                ${photos.length === 0 ? "bg-gray-400 text-white cursor-not-allowed" : "bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 text-white hover:opacity-90"}`}
+                ${photos.length === 0 || submitting ? "bg-gray-400 text-white cursor-not-allowed" : "bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 text-white hover:opacity-90"}`}
             >
-              {isRejected ? t("actions.resubmitDocuments", "Re-submit Documents") : t("actions.submitDocuments")}
+              {isRejected ? t("actions.resubmitDocuments", "Re-submit Documents") : submitting ? t("actions.submitting", "Submitting...") : t("actions.submitDocuments")}
             </button>
           </div>
         </>
@@ -128,7 +152,7 @@ export default function DrugTestClient({ drugTest, onboardingContext }: DrugTest
         <div className="flex justify-center">
           <button
             type="button"
-            onClick={() => completed && router.push(`/onboarding/${trackerId}/carriers-edge-training`)}
+            onClick={() => completed && goNextFromApproved()}
             disabled={!completed}
             className={`px-8 py-2 mt-2 rounded-full font-semibold transition-colors shadow-md
               ${completed ? "bg-emerald-600 text-white hover:bg-emerald-700" : "bg-gray-400 text-white cursor-not-allowed"}`}

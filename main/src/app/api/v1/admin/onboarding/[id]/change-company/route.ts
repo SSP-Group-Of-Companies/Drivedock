@@ -11,6 +11,7 @@ import {
 } from "@/lib/utils/onboardingUtils";
 import { readMongooseRefField } from "@/lib/utils/mongooseRef";
 import { IPreQualificationsDoc } from "@/types/preQualifications.types";
+import { guard } from "@/lib/auth/authUtils";
 
 export async function PATCH(
   req: NextRequest,
@@ -19,6 +20,7 @@ export async function PATCH(
   try {
     const { id } = await ctx.params;
     await connectDB();
+    await guard();
 
     const onboardingDoc = await OnboardingTracker.findById(id).populate(
       "forms.preQualification"

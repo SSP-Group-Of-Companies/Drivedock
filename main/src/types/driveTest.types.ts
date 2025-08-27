@@ -26,10 +26,10 @@ export enum EDriveTestOverall {
 }
 
 export enum EExpectedStandard {
-  POOR = "poor",
+  NOT_SATISFACTORY = "not_satisfactory",
   FAIR = "fair",
-  GOOD = "good",
-  EXCELLENT = "excellent",
+  SATISFACTORY = "satisfactory",
+  VERY_GOOD = "very_good",
 }
 
 /* ─────────────── Generic item & section building blocks ───── */
@@ -100,7 +100,8 @@ export type PreTripAirSystemKey =
   | "tractor_protection"
   | "system"
   | "brake_stroke_adjustments"
-  | "spring_service_brake_test";
+  | "spring_service_brake_test"
+  | "inspects_drains_air_tanks";
 
 /* ----- Section: In‑Cab Inspection ----- */
 export type PreTripInCabKey =
@@ -143,11 +144,9 @@ export interface IPreTripAssessment {
   supervisorName: string;
   expectedStandard: EExpectedStandard;
   overallAssessment: EDriveTestOverall;
-  powerUnitType?: string;
-  trailerType?: string;
   comments?: string;
-  supervisorSignature?: IPhoto;
-  assessedAt?: Date;
+  supervisorSignature: IPhoto;
+  assessedAt: Date;
 }
 
 /* ============================================================
@@ -242,11 +241,10 @@ export interface IOnRoadAssessment {
   supervisorName: string;
   expectedStandard: EExpectedStandard;
   overallAssessment: EDriveTestOverall;
-  powerUnitType?: string;
-  trailerType?: string;
+  needsFlatbedTraining?: boolean;
   comments?: string;
-  supervisorSignature?: IPhoto;
-  assessedAt?: Date;
+  supervisorSignature: IPhoto;
+  assessedAt: Date;
 }
 
 /* ============================================================
@@ -256,6 +254,8 @@ export interface IOnRoadAssessment {
 export interface IDriveTest {
   preTrip?: IPreTripAssessment;
   onRoad?: IOnRoadAssessment;
+  powerUnitType: string;
+  trailerType: string;
   completed: boolean;
 
   createdAt?: Date;
@@ -364,6 +364,7 @@ export const PreTripLabels = {
     { key: "system", label: "System" },
     { key: "brake_stroke_adjustments", label: "Brake Stroke/Adjustments" },
     { key: "spring_service_brake_test", label: "Spring / Service Brake Test" },
+    { key: "inspects_drains_air_tanks", label: "Inspects / Drains Air Tanks" },
   ] as Array<{ key: PreTripAirSystemKey; label: string }>,
 
   inCab: [

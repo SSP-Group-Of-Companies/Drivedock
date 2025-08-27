@@ -12,6 +12,7 @@ import { S3_SUBMISSIONS_FOLDER, S3_TEMP_FOLDER } from "@/constants/aws";
 import { ES3Folder } from "@/types/aws.types";
 import { advanceProgress, buildTrackerContext, hasReachedStep, nextResumeExpiry, onboardingExpired } from "@/lib/utils/onboardingUtils";
 import { EStepPath } from "@/types/onboardingTracker.types";
+import { EDrugTestStatus } from "@/types/drugTest.types";
 
 /** Payload: { documents: IPhoto[] } */
 type PatchBody = { documents: IPhoto[] };
@@ -85,8 +86,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     // -------- Persist (single save, validation ON) --------
     drugTestDoc.set({
       documents: finalizedDocs,
-      documentsUploaded: true, // per requirement
-      completed: false, // always false here
+      status: EDrugTestStatus.AWAITING_REVIEW,
     });
     await drugTestDoc.save(); // normal validation
 
@@ -116,6 +116,7 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
     if (onboardingExpired(onboardingDoc)) return errorResponse(400, "Onboarding session expired");
 
     if (!hasReachedStep(onboardingDoc, EStepPath.DRUG_TEST)) {
+      console.log(onboardingDoc);
       return errorResponse(403, "Please complete previous steps first");
     }
 

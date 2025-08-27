@@ -9,6 +9,7 @@ import { EStepPath } from "@/types/onboardingTracker.types";
 import type { DashboardOnboardingItem } from "@/types/adminDashboard.types";
 import { getOnboardingStepFlow } from "@/lib/utils/onboardingUtils";
 import { EDrugTestStatus } from "@/types/drugTest.types";
+import { guard } from "@/lib/auth/authUtils";
 
 // ---------- helpers ----------
 function toBool(v: string | null): boolean | undefined {
@@ -174,6 +175,7 @@ async function buildBaseFilter(searchParams: URLSearchParams) {
 export async function GET(req: NextRequest) {
   try {
     await connectDB();
+    await guard();
 
     const { searchParams } = new URL(req.url);
 
