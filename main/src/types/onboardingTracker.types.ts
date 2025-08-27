@@ -83,7 +83,10 @@ export interface IOnboardingTrackerDoc extends IOnboardingTracker, Document {
  * - `id` is provided by Mongoose docs (stringified _id), so it remains explicit here.
  * - `notes` is exposed optionally to keep the public surface minimal by default.
  */
-type TrackerContextBase = Pick<IOnboardingTracker, "companyId" | "applicationType" | "needsFlatbedTraining" | "status">;
+type TrackerContextBase = Pick<
+  IOnboardingTracker,
+  "companyId" | "applicationType" | "needsFlatbedTraining" | "status"
+>;
 
 export interface IOnboardingTrackerContext extends TrackerContextBase {
   id: string;

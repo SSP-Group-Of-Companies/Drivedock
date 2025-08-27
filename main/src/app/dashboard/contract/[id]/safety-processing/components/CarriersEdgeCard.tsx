@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useId } from "react";
+import { useEffect, useMemo, useState, useId } from "react";
 import type { IPhoto } from "@/types/shared.types";
 import { uploadToS3Presigned } from "@/lib/utils/s3Upload";
 import { ES3Folder } from "@/types/aws.types";
@@ -30,6 +30,17 @@ type Props = {
   }) => Promise<unknown>;
 };
 
+/** Normalize CE object to avoid undefined checks everywhere */
+function normalizeCE(ce: Props["carriersEdge"]) {
+  return {
+    emailSent: !!ce.emailSent,
+    emailSentBy: ce.emailSentBy ?? undefined,
+    emailSentAt: ce.emailSentAt ?? undefined,
+    certificates: Array.isArray(ce.certificates) ? ce.certificates : [],
+    completed: !!ce.completed,
+  };
+}
+
 export default function CarriersEdgeCard({
   trackerId,
   driverEmail,
@@ -41,22 +52,33 @@ export default function CarriersEdgeCard({
   const [err, setErr] = useState<string | null>(null);
   const [fileKey, setFileKey] = useState(0); // force-reset <input type="file" />
 
+  // Local optimistic state — prevents flicker during mutation/refetch
+  const [localCE, setLocalCE] = useState(() => normalizeCE(carriersEdge));
+
+  // When server data changes and we're NOT mid-action, sync local state
+  useEffect(() => {
+    if (!busy) setLocalCE(normalizeCE(carriersEdge));
+  }, [carriersEdge, busy]);
+
   const headingId = useId();
   const descId = useId();
 
   const locked = !canEdit;
   const busyOrLocked = busy || locked;
 
-  const certs = carriersEdge.certificates ?? [];
-  const certificatesCount = certs.length;
+  const certificates = localCE.certificates;
+  const certificatesCount = certificates.length;
 
+  // UX rule: must have ≥1 certificate before marking email sent or completing
+  const canMarkEmailSent =
+    !localCE.emailSent && certificatesCount >= 1 && canEdit && !busy;
   const canComplete =
-    certificatesCount >= 1 && carriersEdge.completed !== true && canEdit;
+    certificatesCount >= 1 && localCE.completed !== true && canEdit;
 
-  // gallery wiring
+  // gallery wiring (uses local certificates so it won’t flicker)
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
-  const galleryItems: GalleryItem[] = certs
+  const galleryItems: GalleryItem[] = certificates
     .filter((p) => !!p?.url)
     .map((p) => ({
       url: String(p.url),
@@ -64,30 +86,39 @@ export default function CarriersEdgeCard({
     }));
 
   const sentLine = useMemo(() => {
-    if (!carriersEdge.emailSent) return "Not sent";
-    const by = carriersEdge.emailSentBy?.trim() || "—";
-    const at = carriersEdge.emailSentAt
-      ? new Date(carriersEdge.emailSentAt).toLocaleString()
+    if (!localCE.emailSent) return "Not sent";
+    const by = localCE.emailSentBy?.trim() || "—";
+    const at = localCE.emailSentAt
+      ? new Date(localCE.emailSentAt).toLocaleString()
       : "—";
     return `Sent by ${by} on ${at}`;
-  }, [
-    carriersEdge.emailSent,
-    carriersEdge.emailSentAt,
-    carriersEdge.emailSentBy,
-  ]);
+  }, [localCE.emailSent, localCE.emailSentAt, localCE.emailSentBy]);
 
   async function handleMarkSent() {
-    if (busyOrLocked || carriersEdge.emailSent) return;
+    if (busyOrLocked || !canMarkEmailSent) return;
     setBusy(true);
     setErr(null);
+
+    // optimistic
+    const prev = localCE;
+    const admin = window.localStorage.getItem("admin_name") || "Admin";
+    const atIso = new Date().toISOString();
+    setLocalCE({
+      ...prev,
+      emailSent: true,
+      emailSentBy: admin,
+      emailSentAt: atIso,
+    });
+
     try {
-      const admin = window.localStorage.getItem("admin_name") || "Admin";
       await onPatch({
         emailSent: true,
         emailSentBy: admin,
-        emailSentAt: new Date().toISOString(),
+        emailSentAt: atIso,
       });
     } catch (e: any) {
+      // revert on error
+      setLocalCE(prev);
       setErr(e?.message || "Failed to mark email as sent");
     } finally {
       setBusy(false);
@@ -99,6 +130,9 @@ export default function CarriersEdgeCard({
     if (busyOrLocked || !files || files.length === 0) return;
     setBusy(true);
     setErr(null);
+
+    // optimistic append
+    const prev = localCE;
     try {
       const uploaded: IPhoto[] = [];
       for (const file of Array.from(files)) {
@@ -109,9 +143,17 @@ export default function CarriersEdgeCard({
         });
         uploaded.push(result);
       }
-      await onPatch({ certificates: [...certs, ...uploaded] });
-      setFileKey((k) => k + 1); // clear the input so the same filename can be re-selected
+
+      const nextCertificates = [...prev.certificates, ...uploaded];
+      setLocalCE({ ...prev, certificates: nextCertificates });
+
+      await onPatch({ certificates: nextCertificates });
+
+      // clear the input so the same filename can be re-selected
+      setFileKey((k) => k + 1);
     } catch (e: any) {
+      // revert on error
+      setLocalCE(prev);
       setErr(e?.message || "Failed to upload certificates");
     } finally {
       setBusy(false);
@@ -122,9 +164,15 @@ export default function CarriersEdgeCard({
     if (!canComplete || busyOrLocked) return;
     setBusy(true);
     setErr(null);
+
+    // optimistic
+    const prev = localCE;
+    setLocalCE({ ...prev, completed: true });
+
     try {
       await onPatch({ completed: true });
     } catch (e: any) {
+      setLocalCE(prev);
       setErr(e?.message || "Failed to mark as completed");
     } finally {
       setBusy(false);
@@ -198,18 +246,27 @@ export default function CarriersEdgeCard({
               <span>Send Email:</span>
               <input
                 type="checkbox"
-                disabled={busyOrLocked || !!carriersEdge.emailSent}
-                checked={!!carriersEdge.emailSent}
+                disabled={
+                  busyOrLocked || localCE.emailSent || certificatesCount === 0
+                }
+                checked={!!localCE.emailSent}
                 onChange={handleMarkSent}
                 className="h-4 w-4"
               />
             </label>
+
             <div
               className="text-xs"
               style={{ color: "var(--color-on-surface-variant)" }}
             >
               {sentLine} {driverEmail ? `(${driverEmail})` : ""}
             </div>
+
+            {certificatesCount === 0 && !localCE.emailSent && (
+              <div className="text-xs opacity-70">
+                Upload at least one certificate to enable sending credentials.
+              </div>
+            )}
           </div>
 
           {/* See certificates button */}
@@ -275,7 +332,7 @@ export default function CarriersEdgeCard({
               onClick={handleComplete}
               disabled={busyOrLocked || !canComplete}
             >
-              {carriersEdge.completed ? "Completed" : "Mark as Completed"}
+              {localCE.completed ? "Completed" : "Mark as Completed"}
             </button>
           </div>
         </div>
