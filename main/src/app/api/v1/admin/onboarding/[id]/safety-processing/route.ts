@@ -12,6 +12,7 @@ import {
   buildTrackerContext,
   hasReachedStep,
   nextResumeExpiry,
+  getOnboardingStepFlow, // ⬅️ NEW: to detect last step
 } from "@/lib/utils/onboardingUtils";
 import { readMongooseRefField } from "@/lib/utils/mongooseRef";
 import { parseJsonBody } from "@/lib/utils/reqParser";
@@ -188,7 +189,7 @@ export const GET = async (
  *         * once emailSent===true, cannot set back to false; emailSentBy/At immutable
  *         * once completed===true, cannot set back to false
  *     - Certificates always updatable
- *     - **NEW RULE**: cannot set completed=true unless certificates length ≥ 1 (post-update)
+ *     - **Rule**: cannot set completed=true unless certificates length ≥ 1 (post-update)
  * ===================================================================================== */
 
 const TEMP_PREFIX = `${S3_TEMP_FOLDER}/`;
@@ -296,8 +297,14 @@ export const PATCH = async (
       const prevDocs = Array.isArray(drugTestDoc.documents)
         ? [...drugTestDoc.documents]
         : [];
-      const incomingDocs = body.drugTest.documents;
 
+      const incomingDocs = body.drugTest.documents;
+      const incomingStatusProvided = typeof body.drugTest.status === "string";
+      const incomingStatus = incomingStatusProvided
+        ? (body.drugTest.status as EDrugTestStatus)
+        : undefined;
+
+      // Handle documents replacement (if provided)
       if (Array.isArray(incomingDocs)) {
         const finalFolder = `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.DRUG_TEST_PHOTOS}/${onboardingDoc.id}`;
         const nextDocs = await finalizePhotosIfNeeded(
@@ -316,16 +323,28 @@ export const PATCH = async (
         drugTestDoc.documents = nextDocs;
       }
 
-      // status no-go-back + require ≥1 doc for APPROVED
-      if (typeof body.drugTest.status === "string") {
-        const incomingStatus = body.drugTest.status as EDrugTestStatus;
+      // If no explicit status provided but we now have docs, move NOT_UPLOADED -> AWAITING_REVIEW
+      if (
+        !incomingStatusProvided &&
+        Array.isArray(drugTestDoc.documents) &&
+        drugTestDoc.documents.length > 0 &&
+        (drugTestDoc.status === undefined ||
+          drugTestDoc.status === EDrugTestStatus.NOT_UPLOADED)
+      ) {
+        drugTestDoc.status = EDrugTestStatus.AWAITING_REVIEW;
+      }
+
+      // Status transitions
+      if (incomingStatusProvided) {
         const allowed = Object.values(EDrugTestStatus);
-        if (!allowed.includes(incomingStatus)) {
+        if (!allowed.includes(incomingStatus!)) {
           return errorResponse(
             400,
             `Invalid status. Allowed values are: ${allowed.join(", ")}`
           );
         }
+
+        // No-go-back from APPROVED
         if (
           drugTestDoc.status === EDrugTestStatus.APPROVED &&
           incomingStatus !== EDrugTestStatus.APPROVED
@@ -336,7 +355,7 @@ export const PATCH = async (
           );
         }
 
-        // Require at least one document when approving
+        // Approve requires ≥1 document (existing or incoming)
         if (incomingStatus === EDrugTestStatus.APPROVED) {
           const hasExisting =
             Array.isArray(drugTestDoc.documents) &&
@@ -352,17 +371,54 @@ export const PATCH = async (
           }
         }
 
-        drugTestDoc.status = incomingStatus;
+        // If REJECTED: nuke all docs (and S3) so the step isn't considered "done"
+        if (incomingStatus === EDrugTestStatus.REJECTED) {
+          const keysToDelete = (drugTestDoc.documents ?? [])
+            .map((p: any) => p?.s3Key)
+            .filter(
+              (k: string | undefined): k is string =>
+                !!k && !k.startsWith(TEMP_PREFIX)
+            );
+          if (keysToDelete.length) {
+            try {
+              await deleteS3Objects(keysToDelete);
+            } catch (e) {
+              console.warn("Failed to delete rejected drug test S3 keys:", e);
+            }
+          }
+          drugTestDoc.documents = [];
+        }
+
+        drugTestDoc.status = incomingStatus!;
       }
 
       await drugTestDoc.save();
       updatedDrugTest = drugTestDoc.toObject();
 
-      // Advance tracker status
-      onboardingDoc.status = advanceProgress(
-        onboardingDoc,
-        EStepPath.DRUG_TEST
-      );
+      // Advance logic:
+      // - If APPROVED: advance; if DRUG_TEST is the last step, mark completed=true.
+      // - Else: keep user at DRUG_TEST (completed=false).
+      if (drugTestDoc.status === EDrugTestStatus.APPROVED) {
+        const advanced = advanceProgress(onboardingDoc, EStepPath.DRUG_TEST);
+
+        // Determine if DRUG_TEST is the last step for this tracker
+        const flow = getOnboardingStepFlow({
+          needsFlatbedTraining: !!onboardingDoc.needsFlatbedTraining,
+        });
+        const isLastStep = flow[flow.length - 1] === EStepPath.DRUG_TEST;
+
+        if (isLastStep) {
+          advanced.completed = true;
+          advanced.currentStep = EStepPath.DRUG_TEST;
+        }
+        onboardingDoc.status = advanced;
+      } else {
+        onboardingDoc.status = {
+          ...(onboardingDoc.status ?? {}),
+          currentStep: EStepPath.DRUG_TEST,
+          completed: false,
+        } as any;
+      }
     }
 
     /* ----------------------- CARRIERS EDGE TRAINING ---------------------- */

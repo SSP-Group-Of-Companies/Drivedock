@@ -12,65 +12,70 @@ import ImageGalleryDialog, {
 type Props = {
   trackerId: string;
   drugTest: { documents?: IPhoto[]; status?: EDrugTestStatus };
-  /** The card is interactive only when canEdit = true (step reached, not completed) */
   canEdit: boolean;
-  /** Must return a Promise so we can await and render busy/error states */
-  onPatch: (payload: {
+  onChange: (partial: {
     documents?: IPhoto[];
     status?: EDrugTestStatus;
-  }) => Promise<unknown>;
-};
-
-const STATUSES: EDrugTestStatus[] = [
-  EDrugTestStatus.NOT_UPLOADED,
-  EDrugTestStatus.AWAITING_REVIEW,
-  EDrugTestStatus.APPROVED,
-  EDrugTestStatus.REJECTED,
-];
-
-const STATUS_LABEL: Record<EDrugTestStatus, string> = {
-  [EDrugTestStatus.NOT_UPLOADED]: "Not uploaded",
-  [EDrugTestStatus.AWAITING_REVIEW]: "Awaiting review",
-  [EDrugTestStatus.APPROVED]: "Approved",
-  [EDrugTestStatus.REJECTED]: "Rejected",
+  }) => void;
 };
 
 export default function DrugTestCard({
   trackerId,
   drugTest,
   canEdit,
-  onPatch,
+  onChange,
 }: Props) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
-  const [fileKey, setFileKey] = useState(0); // reset file input after upload
+  const [fileKey, setFileKey] = useState(0);
 
   const titleId = useId();
   const descId = useId();
 
   const docs = drugTest.documents ?? [];
   const count = docs.length;
-  const isApproved = drugTest.status === EDrugTestStatus.APPROVED;
 
   const locked = !canEdit;
   const busyOrLocked = busy || locked;
 
+  // UI-derived status (we still send the chosen status via onChange)
+  const baseStatus =
+    count > 0 ? EDrugTestStatus.AWAITING_REVIEW : EDrugTestStatus.NOT_UPLOADED;
+  const derivedStatus = useMemo<EDrugTestStatus>(() => {
+    // If admin explicitly chose Approved/Rejected, keep showing it
+    if (
+      drugTest.status === EDrugTestStatus.APPROVED ||
+      drugTest.status === EDrugTestStatus.REJECTED
+    ) {
+      return drugTest.status;
+    }
+    return baseStatus;
+  }, [drugTest.status, baseStatus]);
+
+  // Approve/Reject buttons are enabled only when there’s something to review,
+  // i.e., not “Not uploaded”. (We now ALLOW un-toggling from Approved/Rejected.)
+  const canDecide =
+    !busyOrLocked && derivedStatus !== EDrugTestStatus.NOT_UPLOADED;
+
+  // Gallery state
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
-
-  const galleryItems: GalleryItem[] = (docs || [])
+  const galleryItems: GalleryItem[] = docs
     .filter((p) => !!p?.url)
     .map((p) => ({
       url: String(p.url),
       uploadedAt: (p as any).uploadedAt,
+      name: (p as any).name,
     }));
 
+  /* ---------------------------- Handlers ---------------------------- */
+
+  // Upload to S3 temp, then stage the combined list + auto status
   async function handleSelectFiles(files: FileList | null) {
     if (!files || files.length === 0 || busyOrLocked) return;
     setBusy(true);
     setErr(null);
     try {
-      // Upload each file to S3 using the presigned flow (temp location)
       const uploaded: IPhoto[] = await Promise.all(
         [...files].map(async (file) => {
           const result = await uploadToS3Presigned({
@@ -78,7 +83,6 @@ export default function DrugTestCard({
             folder: ES3Folder.DRUG_TEST_PHOTOS,
             trackerId,
           });
-          // result already contains { s3Key, url }; enrich with local metadata
           return {
             ...result,
             name: file.name,
@@ -88,9 +92,21 @@ export default function DrugTestCard({
           } as IPhoto;
         })
       );
-
-      // Backend requires ≥1 doc if "documents" is sent
-      await onPatch({ documents: uploaded });
+      const nextDocs = [...docs, ...uploaded];
+      onChange({
+        documents: nextDocs,
+        // If the admin had not explicitly picked Approved/Rejected,
+        // reflect auto status based on presence of docs.
+        ...(drugTest.status === EDrugTestStatus.APPROVED ||
+        drugTest.status === EDrugTestStatus.REJECTED
+          ? {}
+          : {
+              status:
+                nextDocs.length > 0
+                  ? EDrugTestStatus.AWAITING_REVIEW
+                  : EDrugTestStatus.NOT_UPLOADED,
+            }),
+      });
       setFileKey((k) => k + 1);
     } catch (e: any) {
       setErr(e?.message || "Failed to upload drug test document(s).");
@@ -99,33 +115,55 @@ export default function DrugTestCard({
     }
   }
 
-  async function handleChangeStatus(s: EDrugTestStatus) {
-    if (busyOrLocked) return;
-
-    // no-go-back from APPROVED
-    if (isApproved && s !== EDrugTestStatus.APPROVED) return;
-
-    // approving requires ≥1 document
-    if (s === EDrugTestStatus.APPROVED && count < 1) {
-      setErr("Attach at least one document before approving.");
-      return;
-    }
-
-    setBusy(true);
-    setErr(null);
-    try {
-      await onPatch({ status: s });
-    } catch (e: any) {
-      setErr(e?.message || "Failed to update status.");
-    } finally {
-      setBusy(false);
+  // Toggle approve: if already approved → revert to auto status; else approve (requires a doc)
+  function handleApprove() {
+    if (!canDecide) return;
+    if (drugTest.status === EDrugTestStatus.APPROVED) {
+      onChange({ status: baseStatus });
+    } else {
+      if (count < 1) {
+        setErr("Attach at least one document before approving.");
+        return;
+      }
+      setErr(null);
+      onChange({ status: EDrugTestStatus.APPROVED });
     }
   }
 
-  const hint = useMemo(() => {
-    switch (drugTest.status) {
+  // Toggle reject: if already rejected → revert to auto status; else reject
+  function handleReject() {
+    if (!canDecide) return;
+    if (drugTest.status === EDrugTestStatus.REJECTED) {
+      onChange({ status: baseStatus });
+    } else {
+      setErr(null);
+      onChange({ status: EDrugTestStatus.REJECTED });
+    }
+  }
+
+  // Delete from gallery (and auto status if admin hasn’t locked in Approved)
+  function handleDeleteFromGallery(index: number) {
+    const next = docs.filter((_, i) => i !== index);
+    const partial: { documents: IPhoto[]; status?: EDrugTestStatus } = {
+      documents: next,
+    };
+    if (
+      drugTest.status !== EDrugTestStatus.APPROVED &&
+      drugTest.status !== EDrugTestStatus.REJECTED
+    ) {
+      partial.status =
+        next.length > 0
+          ? EDrugTestStatus.AWAITING_REVIEW
+          : EDrugTestStatus.NOT_UPLOADED;
+    }
+    onChange(partial);
+  }
+
+  // Copy (no badge)
+  const info = useMemo(() => {
+    switch (derivedStatus) {
       case EDrugTestStatus.NOT_UPLOADED:
-        return "Prompt the driver to complete test and upload the result.";
+        return "Prompt the driver to complete the test and upload the result, or upload on behalf of the driver.";
       case EDrugTestStatus.AWAITING_REVIEW:
         return "Documents uploaded — awaiting admin verification.";
       case EDrugTestStatus.APPROVED:
@@ -135,11 +173,13 @@ export default function DrugTestCard({
       default:
         return "";
     }
-  }, [drugTest.status]);
+  }, [derivedStatus]);
+
+  /* ----------------------------- Render ----------------------------- */
 
   return (
     <section
-      className="relative rounded-xl border p-3 sm:p-4"
+      className="relative rounded-xl border p-3 sm:p-4 lg:max-h-[20rem] lg:overflow-y-auto"
       style={{
         background: "var(--color-card)",
         borderColor: "var(--color-outline)",
@@ -148,7 +188,6 @@ export default function DrugTestCard({
       aria-describedby={locked ? descId : undefined}
       aria-busy={busy || undefined}
     >
-      {/* Centered lock overlay (non-blocking so gallery can still open) */}
       {locked && (
         <>
           <p id={descId} className="sr-only">
@@ -173,7 +212,6 @@ export default function DrugTestCard({
         </>
       )}
 
-      {/* Header */}
       <header className="mb-3 flex items-center justify-between">
         <h2 id={titleId} className="text-base font-semibold">
           Drug Test
@@ -181,59 +219,78 @@ export default function DrugTestCard({
         <span className="text-xs opacity-70">Documents: {count}</span>
       </header>
 
-      {/* Body */}
       <div
         className={`grid grid-cols-1 gap-3 md:grid-cols-2 ${
           locked ? "pointer-events-none" : ""
         }`}
       >
-        {/* LEFT PANEL: status + see docs */}
+        {/* LEFT */}
         <div
           className="rounded-xl border"
           style={{ borderColor: "var(--color-outline-variant)" }}
         >
           <div
-            className="p-3 sm:p-4"
+            className="p-3 sm:p-4 space-y-3"
             style={{ borderBottom: "1px solid var(--color-outline-variant)" }}
           >
-            <div className="mb-2 text-xs opacity-70">Status</div>
-            <div className="flex flex-wrap gap-1.5">
-              {STATUSES.map((s) => {
-                const selected = drugTest.status === s;
-                const disabled =
-                  busyOrLocked ||
-                  (isApproved && s !== EDrugTestStatus.APPROVED);
-                return (
-                  <button
-                    key={s}
-                    type="button"
-                    className={`rounded-lg px-2.5 py-1.5 text-sm transition-colors ${
-                      selected ? "font-semibold" : ""
-                    } disabled:opacity-50`}
-                    style={{
-                      background: selected
-                        ? "var(--color-primary)"
-                        : "var(--color-surface)",
-                      color: selected ? "white" : "var(--color-on-surface)",
-                      border: "1px solid var(--color-outline)",
-                    }}
-                    disabled={disabled}
-                    onClick={() => handleChangeStatus(s)}
-                  >
-                    {STATUS_LABEL[s]}
-                  </button>
-                );
-              })}
-            </div>
-            <div
-              className="mt-2 text-xs"
+            <p
+              className="text-sm"
               style={{ color: "var(--color-on-surface-variant)" }}
             >
-              {hint}
+              {info}
+            </p>
+
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                className={`rounded-lg px-2.5 py-1.5 text-sm transition-colors disabled:opacity-50 ${
+                  drugTest.status === EDrugTestStatus.APPROVED
+                    ? "font-semibold"
+                    : ""
+                }`}
+                style={{
+                  background:
+                    drugTest.status === EDrugTestStatus.APPROVED
+                      ? "var(--color-primary)"
+                      : "var(--color-surface)",
+                  color:
+                    drugTest.status === EDrugTestStatus.APPROVED
+                      ? "white"
+                      : "var(--color-on-surface)",
+                  border: "1px solid var(--color-outline)",
+                }}
+                disabled={!canDecide}
+                onClick={handleApprove}
+              >
+                Approve
+              </button>
+
+              <button
+                type="button"
+                className={`rounded-lg px-2.5 py-1.5 text-sm transition-colors disabled:opacity-50 ${
+                  drugTest.status === EDrugTestStatus.REJECTED
+                    ? "font-semibold"
+                    : ""
+                }`}
+                style={{
+                  background:
+                    drugTest.status === EDrugTestStatus.REJECTED
+                      ? "var(--color-primary)"
+                      : "var(--color-surface)",
+                  color:
+                    drugTest.status === EDrugTestStatus.REJECTED
+                      ? "white"
+                      : "var(--color-on-surface)",
+                  border: "1px solid var(--color-outline)",
+                }}
+                disabled={!canDecide}
+                onClick={handleReject}
+              >
+                Reject
+              </button>
             </div>
           </div>
 
-          {/* See documents */}
           <div className="p-3 sm:p-4">
             <button
               type="button"
@@ -248,13 +305,14 @@ export default function DrugTestCard({
                 setGalleryOpen(true);
               }}
               disabled={busyOrLocked || galleryItems.length === 0}
+              title={galleryItems.length ? "Open gallery" : "No documents yet"}
             >
-              See Documents{galleryItems.length ? "" : " (none)"}
+              See Documents
             </button>
           </div>
         </div>
 
-        {/* RIGHT PANEL: dashed upload zone */}
+        {/* RIGHT: upload */}
         <div
           className="flex flex-col items-stretch justify-between rounded-xl border p-3 sm:p-4"
           style={{ borderColor: "var(--color-outline-variant)" }}
@@ -294,7 +352,6 @@ export default function DrugTestCard({
         </div>
       </div>
 
-      {/* Error */}
       {err && (
         <div
           className="mt-3 rounded-lg border px-2 py-1 text-xs"
@@ -308,7 +365,6 @@ export default function DrugTestCard({
         </div>
       )}
 
-      {/* Busy overlay */}
       {busy && (
         <div
           className="pointer-events-none absolute inset-0 rounded-xl bg-black/5"
@@ -327,6 +383,7 @@ export default function DrugTestCard({
         initialIndex={galleryIndex}
         title="Drug Test Documents"
         onClose={() => setGalleryOpen(false)}
+        onDelete={(index) => handleDeleteFromGallery(index)}
       />
     </section>
   );

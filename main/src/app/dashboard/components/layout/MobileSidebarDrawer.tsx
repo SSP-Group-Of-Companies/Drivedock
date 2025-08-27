@@ -68,7 +68,7 @@ export default function MobileSidebarDrawer({
     <div
       id="dd-mobile-sidebar"
       className={[
-        "fixed inset-0 z-[2000] lg:hidden",
+        "fixed inset-0 z-[2000] xl:hidden",
         open ? "pointer-events-auto" : "pointer-events-none",
       ].join(" ")}
       role="dialog"

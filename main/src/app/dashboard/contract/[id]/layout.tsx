@@ -1,16 +1,18 @@
 import type { ReactNode } from "react";
 import ContractSummaryBar from "./components/ContractSummaryBar";
 
-export default function ContractLayout({
+export default async function ContractLayout({
   children,
   params,
 }: {
   children: ReactNode;
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
+  
   return (
-    <div className="max-w-[1400px] space-y-3 sm:space-y-4 flex h-full min-h-0 flex-col ">
-      <ContractSummaryBar trackerId={params.id} />
+    <div className="max-w-[1400px] space-y-3 sm:space-y-4 flex flex-col">
+      <ContractSummaryBar trackerId={id} />
       {children}
     </div>
   );

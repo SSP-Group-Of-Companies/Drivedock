@@ -15,6 +15,9 @@ type Props = Readonly<{
   initialIndex?: number;
   title?: string;
   onClose: () => void;
+
+  /** Optional: if provided, a "Delete" button appears and calls this with (index, item) */
+  onDelete?: (index: number, item: GalleryItem) => void;
 }>;
 
 /**
@@ -30,6 +33,7 @@ export default function ImageGalleryDialog({
   initialIndex = 0,
   title = "Documents",
   onClose,
+  onDelete,
 }: Props) {
   const [idx, setIdx] = useState(initialIndex);
   const labelId = useId();
@@ -124,14 +128,36 @@ export default function ImageGalleryDialog({
               {items.length ? `${idx + 1} / ${items.length}` : "No images"}
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg px-2 py-1 text-sm transition-colors hover:bg-black/5 dark:hover:bg-white/5"
-            aria-label="Close"
-          >
-            ✕
-          </button>
+
+          <div className="flex items-center gap-2">
+            {!!onDelete && current ? (
+              <button
+                type="button"
+                onClick={() => {
+                  if (!current) return;
+                  onDelete?.(idx, current); // ← call directly, no confirm
+                  // parent updates `items`; our idx is clamped by the effect watching `items`
+                }}
+                className="rounded-lg border px-3 py-1 text-sm transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+                style={{
+                  borderColor: "var(--color-outline)",
+                  color: "var(--color-error)",
+                }}
+                aria-label="Delete image"
+              >
+                Delete
+              </button>
+            ) : null}
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg px-2 py-1 text-sm transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+              aria-label="Close"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {/* Hero image */}
@@ -193,7 +219,7 @@ export default function ImageGalleryDialog({
                 download
                 target="_blank"
                 rel="noreferrer"
-                className="rounded-lg border px-3 py-1 text-sm transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+                className="rounded-lg border px-3 py-1 text-sm transition-colors hover:bg-black/5 dark:hover:bg:white/5"
                 style={{ borderColor: "var(--color-outline)" }}
               >
                 Download

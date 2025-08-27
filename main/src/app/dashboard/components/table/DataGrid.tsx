@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { DashboardOnboardingItem } from "@/types/adminDashboard.types";
 import type { CategoryTab } from "@/hooks/dashboard/useAdminOnboardingQueryState";
 import { getOnboardingStepFlow } from "@/lib/utils/onboardingUtils";
@@ -8,7 +9,7 @@ import { EStepPath } from "@/types/onboardingTracker.types";
 
 import ConfirmTerminateDialog from "@/app/dashboard/components/dialogs/ConfirmTerminateDialog";
 import VerifyDrugTestDialog from "@/app/dashboard/components/dialogs/VerifyDrugTestDialog";
-import AssignCarriersEdgeDialog from "@/app/dashboard/components/dialogs/AssignCarriersEdgeDialog";
+
 import UploadCarriersEdgeCertificateDialog from "@/app/dashboard/components/dialogs/UploadCarriersEdgeCertificateDialog";
 
 import { useOnboardingMutations } from "@/hooks/dashboard/useOnboardingMutations";
@@ -192,29 +193,12 @@ export default function DataGrid({
     verify.isPending && dtPending?.id === rowId;
 
   /* ---------- Carrier's Edge ---------- */
-  const { assign, uploadCertificate } = useCarriersEdgeMutations();
+  const { uploadCertificate } = useCarriersEdgeMutations();
+  const router = useRouter();
 
-  const [ceAssign, setCeAssign] = useState<null | {
-    id: string;
-    name?: string;
-  }>(null);
-  const [ceAssignErr, setCeAssignErr] = useState<string | null>(null);
-  const openCeAssign = (id: string, name?: string) => {
-    setCeAssignErr(null);
-    setCeAssign({ id, name });
+  const navigateToCarriersEdge = (trackerId: string) => {
+    router.push(`/dashboard/contract/${trackerId}/safety-processing?highlight=carriers-edge`);
   };
-  const closeCeAssign = () => setCeAssign(null);
-  const confirmCeAssign = async () => {
-    if (!ceAssign) return;
-    try {
-      await assign.mutateAsync({ trackerId: ceAssign.id });
-      closeCeAssign();
-    } catch (e) {
-      setCeAssignErr((e as Error).message || "Failed to assign CE test");
-    }
-  };
-  const isCEAssignBusy = (rowId: string) =>
-    assign.isPending && ceAssign?.id === rowId;
 
   const [ceUpload, setCeUpload] = useState<null | {
     id: string;
@@ -515,11 +499,11 @@ export default function DataGrid({
                     className="px-2 py-4 sm:px-3 align-middle"
                     style={{ borderBottom: "1px solid var(--color-outline)" }}
                   >
-                    {/* Mobile */}
-                    <div className="sm:hidden min-w-0">
-                      <div className="mb-2">
+                    {/* Mobile + Tablet */}
+                    <div className="xl:hidden min-w-0">
+                      <div className="flex items-center gap-2 mb-2">
                         <div
-                          className="h-4 w-4 sm:h-2.5 sm:w-2.5 rounded-full"
+                          className="h-3 w-3 rounded-full flex-shrink-0"
                           style={{
                             backgroundColor: inProgress
                               ? "var(--color-warning)"
@@ -527,49 +511,56 @@ export default function DataGrid({
                           }}
                           aria-hidden
                         />
-                      </div>
-                      <div className="flex items-center gap-2">
                         <span
-                          className="min-w-0 flex-1 truncate text-xs"
-                          style={{ color: "var(--color-on-surface-variant)" }}
+                          className="min-w-0 flex-1 truncate text-xs font-medium"
+                          style={{ color: "var(--color-on-surface)" }}
                           title={step}
                         >
                           {step}
                         </span>
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 16 16"
-                          className="flex-shrink-0"
-                          aria-hidden
+                        <span
+                          className="text-xs font-medium flex-shrink-0"
+                          style={{ color: "var(--color-primary)" }}
                         >
-                          <circle
-                            cx="8"
-                            cy="8"
-                            r="6"
-                            stroke="var(--color-outline-variant)"
-                            strokeWidth="2"
-                            fill="none"
-                          />
-                          <circle
-                            cx="8"
-                            cy="8"
-                            r="6"
-                            stroke="var(--color-primary)"
-                            strokeWidth="2"
-                            fill="none"
-                            strokeDasharray={2 * Math.PI * 6}
-                            strokeDashoffset={2 * Math.PI * 6 * (1 - pct / 100)}
-                            strokeLinecap="round"
-                            transform="rotate(-90 8 8)"
-                          />
-                        </svg>
-                        <span className="sr-only">{pct}% complete</span>
+                          {pct}%
+                        </span>
                       </div>
+                      <div className="flex items-center gap-1">
+                        {(() => {
+                          const stepFlow = getOnboardingStepFlow({
+                            needsFlatbedTraining: it.needsFlatbedTraining,
+                          });
+                          const currentIndex = stepFlow.indexOf(it.status?.currentStep);
+                          return stepFlow.map((_, index) => (
+                            <div
+                              key={index}
+                              className={`h-1.5 flex-1 rounded-full transition-colors duration-200 ${
+                                index <= currentIndex
+                                  ? "bg-blue-500"
+                                  : "bg-gray-300 dark:bg-gray-600"
+                              }`}
+                              aria-hidden="true"
+                            />
+                          ));
+                        })()}
+                      </div>
+                      <span className="sr-only">
+                        Step {(() => {
+                          const stepFlow = getOnboardingStepFlow({
+                            needsFlatbedTraining: it.needsFlatbedTraining,
+                          });
+                          return stepFlow.indexOf(it.status?.currentStep) + 1;
+                        })()} of {(() => {
+                          const stepFlow = getOnboardingStepFlow({
+                            needsFlatbedTraining: it.needsFlatbedTraining,
+                          });
+                          return stepFlow.length;
+                        })()}
+                      </span>
                     </div>
 
                     {/* Desktop */}
-                    <div className="hidden sm:block">
+                    <div className="hidden xl:block">
                       <div className="w-full sm:max-w-xs">
                         <div className="mb-2 flex items-center gap-3 w-full">
                           <span
@@ -685,13 +676,7 @@ export default function DataGrid({
                             ) : (
                               <ActionBtn
                                 icon={Send}
-                                disabled={isCEAssignBusy(it._id)}
-                                onClick={() =>
-                                  openCeAssign(
-                                    it._id,
-                                    it.itemSummary?.driverName ?? undefined
-                                  )
-                                }
+                                onClick={() => navigateToCarriersEdge(it._id)}
                               >
                                 Assign test
                               </ActionBtn>
@@ -781,14 +766,7 @@ export default function DataGrid({
         isBusy={verify.isPending}
         errorText={dtError}
       />
-      <AssignCarriersEdgeDialog
-        open={!!ceAssign}
-        driverName={ceAssign?.name}
-        onCancel={closeCeAssign}
-        onConfirm={confirmCeAssign}
-        isBusy={assign.isPending}
-        errorText={ceAssignErr}
-      />
+
       <UploadCarriersEdgeCertificateDialog
         open={!!ceUpload}
         driverName={ceUpload?.name}

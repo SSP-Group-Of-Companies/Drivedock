@@ -10,11 +10,13 @@ export const metadata = {
   title: "DriveDock Admin — Safety Processing",
 };
 
-export default function SafetyProcessingPage({
+export default async function SafetyProcessingPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
+  
   // Server component wrapper; keeps URL routing minimal.
-  return <SafetyProcessingClient trackerId={params.id} />;
+  return <SafetyProcessingClient trackerId={id} />;
 }

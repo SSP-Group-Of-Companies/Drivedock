@@ -46,7 +46,7 @@ export default function DriveTestCard({
 
   return (
     <section
-      className="relative rounded-xl border p-3 sm:p-4"
+      className="relative rounded-xl border p-3 sm:p-4 lg:max-h-[20rem] lg:overflow-y-auto"
       style={{
         background: "var(--color-card)",
         borderColor: "var(--color-outline)",

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo, useRef } from "react";
 import type { ContractContext } from "@/lib/dashboard/api/contracts";
 import { EStepPath } from "@/types/onboardingTracker.types";
 import { EDrugTestStatus } from "@/types/drugTest.types";
@@ -26,28 +27,30 @@ function computeNotifications(ctx: ContractContext | null) {
     });
   }
 
-  // Drive Test pending
-  if (
-    ctx.status?.currentStep === EStepPath.DRIVE_TEST &&
-    ctx.forms?.driveTest?.completed === false
-  ) {
-    notes.push({ id: "dt", text: "Driver is waiting for drive test" });
+  const step = ctx.status?.currentStep;
+
+  // Drive Test: if current step is DRIVE_TEST and NOT completed (undefined counts as false)
+  if (step === EStepPath.DRIVE_TEST) {
+    const completed = ctx.forms?.driveTest?.completed === true;
+    if (!completed) {
+      notes.push({ id: "dt", text: "Driver is waiting for drive test" });
+    }
   }
 
-  // Carrier's Edge credentials not sent
-  if (
-    ctx.status?.currentStep === EStepPath.CARRIERS_EDGE_TRAINING &&
-    ctx.forms?.carriersEdgeTraining?.emailSent === false
-  ) {
-    notes.push({
-      id: "ce",
-      text: "Driver is waiting for Carrier’s Edge test credentials",
-    });
+  // Carrier's Edge: if current step is CARRIERS_EDGE_TRAINING and email NOT sent (undefined counts as false)
+  if (step === EStepPath.CARRIERS_EDGE_TRAINING) {
+    const emailSent = ctx.forms?.carriersEdgeTraining?.emailSent === true;
+    if (!emailSent) {
+      notes.push({
+        id: "ce",
+        text: "Driver is waiting for Carrier’s Edge test credentials",
+      });
+    }
   }
 
-  // Drug Test awaiting review
+  // Drug Test: only when AWAITING_REVIEW (we don't notify just for 'no docs')
   if (
-    ctx.status?.currentStep === EStepPath.DRUG_TEST &&
+    step === EStepPath.DRUG_TEST &&
     ctx.forms?.drugTest?.status === EDrugTestStatus.AWAITING_REVIEW
   ) {
     notes.push({
@@ -66,10 +69,22 @@ export default function NotificationsMenu({
   onClose: () => void;
   context: ContractContext | null;
 }) {
-  const items = computeNotifications(context);
+  const items = useMemo(() => computeNotifications(context), [context]);
+  const menuRef = useRef<HTMLDivElement | null>(null);
+
+  // Close on click outside
+  useEffect(() => {
+    function onDocClick(e: MouseEvent) {
+      if (!menuRef.current) return;
+      if (!menuRef.current.contains(e.target as Node)) onClose();
+    }
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [onClose]);
 
   return (
     <div
+      ref={menuRef}
       role="menu"
       className="absolute right-0 z-40 mt-2 w-[22rem] rounded-xl border p-2 shadow-lg"
       style={{
@@ -78,10 +93,19 @@ export default function NotificationsMenu({
       }}
     >
       <div
-        className="px-2 pb-2 text-xs"
+        className="flex items-center justify-between px-2 pb-2 text-xs"
         style={{ color: "var(--color-on-surface-variant)" }}
       >
-        Safety notifications ({items.length})
+        <span>Safety notifications</span>
+        <span
+          className="ml-2 inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-2 py-0.5 text-[10px] font-semibold"
+          style={{
+            background: "var(--color-error-container)",
+            color: "var(--color-error-on-container)",
+          }}
+        >
+          {items.length}
+        </span>
       </div>
 
       {items.length === 0 ? (
@@ -109,10 +133,10 @@ export default function NotificationsMenu({
         <button
           type="button"
           onClick={onClose}
-          className="rounded-lg border px-3 py-1.5 text-sm transition-colors cursor-pointer active:scale-95"
-          style={{ 
+          className="cursor-pointer rounded-lg border px-3 py-1.5 text-sm transition-colors active:scale-95"
+          style={{
             borderColor: "var(--color-outline)",
-            color: "var(--color-on-surface)"
+            color: "var(--color-on-surface)",
           }}
         >
           Close
@@ -121,3 +145,6 @@ export default function NotificationsMenu({
     </div>
   );
 }
+
+// Export for reuse (ContractSummaryBar badge)
+export { computeNotifications };

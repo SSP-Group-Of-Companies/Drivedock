@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useContract } from "@/hooks/dashboard/contract/useContract";
 import {
   resolveCompanyMeta,
@@ -13,7 +13,7 @@ import { ECountryCode } from "@/types/shared.types";
 import { ChevronDown, Bell, Building2 } from "lucide-react";
 import Image from "next/image";
 
-import NotificationsMenu from "./NotificationsMenu";
+import NotificationsMenu, { computeNotifications } from "./NotificationsMenu";
 import CompanyChangeConfirm from "./CompanyChangeConfirm";
 
 type Props = { trackerId: string };
@@ -39,19 +39,47 @@ function stepLabel(step?: EStepPath) {
 export default function ContractSummaryBar({ trackerId }: Props) {
   const { data, isLoading, isError, error, changeCompany } =
     useContract(trackerId);
+
   const [confirmTarget, setConfirmTarget] = useState<null | {
     id: string;
     name: string;
   }>(null);
+
   const [companyMenuOpen, setCompanyMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+
+  // Refs for click-outside
+  const companyMenuRef = useRef<HTMLDivElement | null>(null);
+  const notifMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    function onDocClick(e: MouseEvent | TouchEvent) {
+      const target = e.target as Node | null;
+
+      if (companyMenuOpen && companyMenuRef.current && target) {
+        if (!companyMenuRef.current.contains(target)) {
+          setCompanyMenuOpen(false);
+        }
+      }
+      if (notifOpen && notifMenuRef.current && target) {
+        if (!notifMenuRef.current.contains(target)) {
+          setNotifOpen(false);
+        }
+      }
+    }
+    document.addEventListener("mousedown", onDocClick);
+    document.addEventListener("touchstart", onDocClick);
+    return () => {
+      document.removeEventListener("mousedown", onDocClick);
+      document.removeEventListener("touchstart", onDocClick);
+    };
+  }, [companyMenuOpen, notifOpen]);
 
   const company = useMemo(
     () => resolveCompanyMeta(data?.companyId),
     [data?.companyId]
   );
 
-  // Improved data extraction with fallbacks
   const driverName = data?.itemSummary?.driverName || "—";
   const driverEmail = data?.itemSummary?.driverEmail || "—";
 
@@ -69,15 +97,21 @@ export default function ContractSummaryBar({ trackerId }: Props) {
     return Math.min(100, Math.max(0, Math.round((idx / denom) * 100)));
   }, [data?.status?.currentStep, data?.needsFlatbedTraining]);
 
-  // Build switchable companies by *current* country
+  // Build switchable companies by current country
   const switchableCompanies = useMemo(() => {
     const cc = company.countryCode ?? ECountryCode.CA;
     return listCompaniesByCountry(cc);
   }, [company.countryCode]);
 
-  const canEditCompany = company.countryCode === ECountryCode.CA; // per requirement
+  const canEditCompany = company.countryCode === ECountryCode.CA;
 
-  // Show loading state if data is not available
+  // Notification count ribbon
+  const notifCount = useMemo(
+    () => computeNotifications(data ?? null).length,
+    [data]
+  );
+
+  // Loading
   if (isLoading) {
     return (
       <div
@@ -99,7 +133,7 @@ export default function ContractSummaryBar({ trackerId }: Props) {
     );
   }
 
-  // Show error state if there's an error
+  // Error
   if (isError) {
     return (
       <div
@@ -118,7 +152,6 @@ export default function ContractSummaryBar({ trackerId }: Props) {
     );
   }
 
-  // Render
   return (
     <div
       className="mb-4 rounded-xl border p-3 sm:p-4"
@@ -228,7 +261,7 @@ export default function ContractSummaryBar({ trackerId }: Props) {
                 {stepLabel(step)}
               </span>
               <div className="ml-auto">
-                <div className="relative h-3.5 w-5 overflow-hidden rounded-sm ring-1 ring-[var(--color-outline-variant)]">
+                <div className="relative h-3.5 w-5 overflow-hidden ring-1 ring-[var(--color-outline-variant)] opacity-[.5]">
                   <Image
                     src={flagSrcFor(company.countryCode)}
                     alt={
@@ -257,8 +290,8 @@ export default function ContractSummaryBar({ trackerId }: Props) {
 
         {/* Right: company switcher + notifications */}
         <div className="flex items-center justify-end gap-2">
-          {/* Company dropdown */}
-          <div className="relative">
+          {/* Company dropdown (click-outside closes) */}
+          <div className="relative" ref={companyMenuRef}>
             <button
               type="button"
               onClick={() => setCompanyMenuOpen((v) => !v)}
@@ -271,9 +304,24 @@ export default function ContractSummaryBar({ trackerId }: Props) {
               aria-haspopup="menu"
               aria-expanded={companyMenuOpen}
             >
-              <Building2 className="h-4 w-4" />
+              {/* Mobile: company logo only */}
+              <span className="relative h-5 w-5 overflow-hidden rounded sm:hidden">
+                <Image
+                  src={company.logoSrc}
+                  alt={`${company.label} logo`}
+                  fill
+                  className="object-contain"
+                  sizes="20px"
+                />
+              </span>
+
+              {/* Desktop: icon + label + name */}
+              <Building2 className="hidden h-4 w-4 sm:inline" />
               <span className="hidden sm:inline">Company:</span>
-              <span className="font-medium">{company.label}</span>
+              <span className="hidden sm:inline font-medium">
+                {company.label}
+              </span>
+
               <ChevronDown className="h-4 w-4 opacity-60" />
             </button>
 
@@ -298,7 +346,7 @@ export default function ContractSummaryBar({ trackerId }: Props) {
                 <ul className="max-h-72 overflow-auto">
                   {switchableCompanies.map((c) => {
                     const active = c.id === data?.companyId;
-                    const disabled = !canEditCompany || active; // US cannot edit; also disable current
+                    const disabled = !canEditCompany || active;
                     return (
                       <li key={c.id}>
                         <button
@@ -336,12 +384,12 @@ export default function ContractSummaryBar({ trackerId }: Props) {
             )}
           </div>
 
-          {/* Notifications */}
-          <div className="relative">
+          {/* Notifications (click-outside closes) */}
+          <div className="relative" ref={notifMenuRef}>
             <button
               type="button"
               onClick={() => setNotifOpen((v) => !v)}
-              className="inline-flex items-center gap-1.5 rounded-lg border px-2 py-1.5 text-sm"
+              className="relative inline-flex items-center gap-1.5 rounded-lg border px-2 py-1.5 text-sm"
               style={{
                 background: "var(--color-surface)",
                 borderColor: "var(--color-outline)",
@@ -351,6 +399,22 @@ export default function ContractSummaryBar({ trackerId }: Props) {
             >
               <Bell className="h-4 w-4" />
               <span className="hidden sm:inline">Notifications</span>
+
+              {notifCount > 0 && (
+                <span
+                  className="ml-1 inline-flex items-center justify-center rounded-full px-1 text-[10px] font-bold leading-none"
+                  style={{
+                    minWidth: "1rem",
+                    background: "var(--color-error)",
+                    color: "white",
+                    border: "1px solid var(--color-surface)",
+                  }}
+                  aria-label={`${notifCount} pending notifications`}
+                >
+                  {notifCount}
+                </span>
+              )}
+
               <ChevronDown className="h-4 w-4 opacity-60" />
             </button>
 
@@ -364,7 +428,7 @@ export default function ContractSummaryBar({ trackerId }: Props) {
         </div>
       </div>
 
-      {/* Error / loading line (optional inline) */}
+      {/* Optional inline error (already handled above) */}
       {isError && (
         <div className="mt-2 text-xs" style={{ color: "var(--color-error)" }}>
           {(error as Error)?.message ?? "Failed to load"}

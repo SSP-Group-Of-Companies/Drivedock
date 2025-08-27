@@ -40,7 +40,7 @@ export default function AdminHeader({
             aria-expanded={sidebarOpen}
             aria-controls="dd-mobile-sidebar"
             onClick={onToggleSidebar}
-            className="group flex h-11 w-11 sm:h-10 sm:w-10 items-center justify-center rounded-full transition-all duration-300 shadow-md lg:hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            className="group flex h-11 w-11 sm:h-10 sm:w-10 items-center justify-center rounded-full transition-all duration-300 shadow-md xl:hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             style={{
               backgroundColor: "var(--color-sidebar)",
               color: "var(--color-on-surface)",
