@@ -19,7 +19,10 @@ interface AdminHeaderProps {
   sidebarOpen?: boolean;
 }
 
-export default function AdminHeader({ onToggleSidebar, sidebarOpen }: AdminHeaderProps) {
+export default function AdminHeader({
+  onToggleSidebar,
+  sidebarOpen,
+}: AdminHeaderProps) {
   return (
     <header
       className="sticky top-0 z-50 w-full b shadow-sm transition-colors duration-200"
@@ -37,7 +40,7 @@ export default function AdminHeader({ onToggleSidebar, sidebarOpen }: AdminHeade
             aria-expanded={sidebarOpen}
             aria-controls="dd-mobile-sidebar"
             onClick={onToggleSidebar}
-            className="group flex h-11 w-11 sm:h-10 sm:w-10 items-center justify-center rounded-full transition-all duration-300 shadow-md lg:hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            className="group flex h-11 w-11 sm:h-10 sm:w-10 items-center justify-center rounded-full transition-all duration-300 shadow-md xl:hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
             style={{
               backgroundColor: "var(--color-sidebar)",
               color: "var(--color-on-surface)",
@@ -46,14 +49,20 @@ export default function AdminHeader({ onToggleSidebar, sidebarOpen }: AdminHeade
           >
             {/* Arrow icon that rotates like SSP-Portal */}
             <svg
-              className={`h-4 w-4 transition-transform duration-500 ease-in-out ${sidebarOpen ? "rotate-180 -translate-x-0.5 scale-110" : ""}`}
+              className={`h-4 w-4 transition-transform duration-500 ease-in-out ${
+                sidebarOpen ? "rotate-180 -translate-x-0.5 scale-110" : ""
+              }`}
               fill="none"
               stroke="currentColor"
               strokeWidth="3"
               viewBox="0 0 24 24"
               aria-hidden="true"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M9 5l7 7-7 7"
+              />
             </svg>
           </button>
         </div>

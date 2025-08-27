@@ -1,4 +1,3 @@
-// src/app/api/v1/onboarding/[id]/drug-test/route.ts
 import { NextRequest } from "next/server";
 import { isValidObjectId } from "mongoose";
 
@@ -8,7 +7,13 @@ import DrugTest from "@/mongoose/models/DrugTest";
 import CarriersEdgeTraining from "@/mongoose/models/CarriersEdgeTraining";
 
 import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
-import { advanceProgress, buildTrackerContext, hasReachedStep, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
+import {
+  advanceProgress,
+  buildTrackerContext,
+  hasReachedStep,
+  nextResumeExpiry,
+  getOnboardingStepFlow, // ⬅️ NEW: to detect last step
+} from "@/lib/utils/onboardingUtils";
 import { readMongooseRefField } from "@/lib/utils/mongooseRef";
 import { parseJsonBody } from "@/lib/utils/reqParser";
 
@@ -25,8 +30,8 @@ import { guard } from "@/lib/auth/authUtils";
  * GET /api/v1/admin/onboarding/[id]/safety-processing
  * Returns:
  *  - onboardingContext (now enriched with itemSummary: { driverName, driverEmail })
- *  - driveTest / carriersEdge / drugTest (as before)
- *  - identifications: { driverLicenseExpiration }   <-- NEW (for notifications)
+ *  - driveTest / carriersEdge / drugTest (populated snapshots)
+ *  - identifications: { driverLicenseExpiration }   <-- optional (for notifications)
  */
 export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
@@ -38,11 +43,26 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
       return errorResponse(400, "Not a valid onboarding tracker ID");
     }
 
-    const onboardingDoc = await OnboardingTracker.findById(onboardingId);
+    // ⭐ Populate referenced form docs so snapshots are *never* empty objects.
+    const onboardingDoc = await OnboardingTracker.findById(onboardingId)
+      .populate({
+        path: "forms.carriersEdgeTraining",
+        select: "emailSent emailSentBy emailSentAt certificates completed createdAt updatedAt",
+      })
+      .populate({
+        path: "forms.drugTest",
+        select: "documents status createdAt updatedAt",
+      })
+      .populate({
+        path: "forms.driveTest",
+        // adjust the fields to your DriveTest schema as needed
+        select: "completed createdAt updatedAt",
+      });
+
     if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
     if (onboardingDoc.terminated) return errorResponse(400, "Onboarding document terminated");
 
-    // Existing form snapshots
+    // Populated form snapshots
     const drugTest = readMongooseRefField(onboardingDoc.forms?.drugTest) ?? {};
     const carriersEdge = readMongooseRefField(onboardingDoc.forms?.carriersEdgeTraining) ?? {};
     const driveTest = readMongooseRefField(onboardingDoc.forms?.driveTest) ?? {};
@@ -91,8 +111,6 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
       // This is already a populated document
       tryExtractFromDoc(driverAppRef);
     } else {
-      // No driverAppRef at all, try fallback
-
       // Fallback: try to find any ApplicationForm associated with this onboarding tracker
       const fallbackAppDoc = await ApplicationForm.findOne(
         { onboardingTrackerId: onboardingId },
@@ -128,7 +146,7 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
       drugTest,
       carriersEdge,
       driveTest,
-      identifications, // <-- NEW (optional if not found)
+      identifications, // optional if not found
     };
 
     return successResponse(200, "Onboarding test data retrieved", responseData);
@@ -154,7 +172,7 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
  *         * once emailSent===true, cannot set back to false; emailSentBy/At immutable
  *         * once completed===true, cannot set back to false
  *     - Certificates always updatable
- *     - **NEW RULE**: cannot set completed=true unless certificates length ≥ 1 (post-update)
+ *     - **Rule**: cannot set completed=true unless certificates length ≥ 1 (post-update)
  * ===================================================================================== */
 
 const TEMP_PREFIX = `${S3_TEMP_FOLDER}/`;
@@ -238,8 +256,12 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       }
 
       const prevDocs = Array.isArray(drugTestDoc.documents) ? [...drugTestDoc.documents] : [];
-      const incomingDocs = body.drugTest.documents;
 
+      const incomingDocs = body.drugTest.documents;
+      const incomingStatusProvided = typeof body.drugTest.status === "string";
+      const incomingStatus = incomingStatusProvided ? (body.drugTest.status as EDrugTestStatus) : undefined;
+
+      // Handle documents replacement (if provided)
       if (Array.isArray(incomingDocs)) {
         const finalFolder = `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.DRUG_TEST_PHOTOS}/${onboardingDoc.id}`;
         const nextDocs = await finalizePhotosIfNeeded(incomingDocs, finalFolder);
@@ -252,18 +274,29 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
         drugTestDoc.documents = nextDocs;
       }
 
-      // status no-go-back + require ≥1 doc for APPROVED
-      if (typeof body.drugTest.status === "string") {
-        const incomingStatus = body.drugTest.status as EDrugTestStatus;
+      // If no explicit status provided but we now have docs, move NOT_UPLOADED -> AWAITING_REVIEW
+      if (
+        !incomingStatusProvided &&
+        Array.isArray(drugTestDoc.documents) &&
+        drugTestDoc.documents.length > 0 &&
+        (drugTestDoc.status === undefined || drugTestDoc.status === EDrugTestStatus.NOT_UPLOADED)
+      ) {
+        drugTestDoc.status = EDrugTestStatus.AWAITING_REVIEW;
+      }
+
+      // Status transitions
+      if (incomingStatusProvided) {
         const allowed = Object.values(EDrugTestStatus);
-        if (!allowed.includes(incomingStatus)) {
+        if (!allowed.includes(incomingStatus!)) {
           return errorResponse(400, `Invalid status. Allowed values are: ${allowed.join(", ")}`);
         }
+
+        // No-go-back from APPROVED
         if (drugTestDoc.status === EDrugTestStatus.APPROVED && incomingStatus !== EDrugTestStatus.APPROVED) {
           return errorResponse(400, "Drug test status is already APPROVED and cannot be changed");
         }
 
-        // NEW: require at least one document when approving
+        // Approve requires ≥1 document (existing or incoming)
         if (incomingStatus === EDrugTestStatus.APPROVED) {
           const hasExisting = Array.isArray(drugTestDoc.documents) && drugTestDoc.documents.length > 0;
           const hasIncoming = Array.isArray(body.drugTest.documents) && body.drugTest.documents.length > 0;
@@ -272,14 +305,49 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
           }
         }
 
-        drugTestDoc.status = incomingStatus;
+        // If REJECTED: nuke all docs (and S3) so the step isn't considered "done"
+        if (incomingStatus === EDrugTestStatus.REJECTED) {
+          const keysToDelete = (drugTestDoc.documents ?? []).map((p: any) => p?.s3Key).filter((k: string | undefined): k is string => !!k && !k.startsWith(TEMP_PREFIX));
+          if (keysToDelete.length) {
+            try {
+              await deleteS3Objects(keysToDelete);
+            } catch (e) {
+              console.warn("Failed to delete rejected drug test S3 keys:", e);
+            }
+          }
+          drugTestDoc.documents = [];
+        }
+
+        drugTestDoc.status = incomingStatus!;
       }
 
       await drugTestDoc.save();
       updatedDrugTest = drugTestDoc.toObject();
 
-      // update tracker status - move on to next step and will be marked as completed if last step
-      onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.DRUG_TEST);
+      // Advance logic:
+      // - If APPROVED: advance; if DRUG_TEST is the last step, mark completed=true.
+      // - Else: keep user at DRUG_TEST (completed=false).
+      if (drugTestDoc.status === EDrugTestStatus.APPROVED) {
+        const advanced = advanceProgress(onboardingDoc, EStepPath.DRUG_TEST);
+
+        // Determine if DRUG_TEST is the last step for this tracker
+        const flow = getOnboardingStepFlow({
+          needsFlatbedTraining: !!onboardingDoc.needsFlatbedTraining,
+        });
+        const isLastStep = flow[flow.length - 1] === EStepPath.DRUG_TEST;
+
+        if (isLastStep) {
+          advanced.completed = true;
+          advanced.currentStep = EStepPath.DRUG_TEST;
+        }
+        onboardingDoc.status = advanced;
+      } else {
+        onboardingDoc.status = {
+          ...(onboardingDoc.status ?? {}),
+          currentStep: EStepPath.DRUG_TEST,
+          completed: false,
+        } as any;
+      }
     }
 
     /* ----------------------- CARRIERS EDGE TRAINING ---------------------- */
@@ -353,7 +421,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       await ceDoc.save();
       updatedCarriersEdge = ceDoc.toObject();
 
-      // update tracker status - move on to next step and will be marked as completed if last step
+      // Advance tracker status
       onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.CARRIERS_EDGE_TRAINING);
     }
 
@@ -363,7 +431,22 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
     /* ---------------------- Build GET-like response ---------------------- */
 
-    // Fresh snapshots (prefer updated docs; else resolve from refs)
+    // ⭐ Ensure populated refs before building response (avoids empty snapshots)
+    await onboardingDoc.populate([
+      {
+        path: "forms.carriersEdgeTraining",
+        select: "emailSent emailSentBy emailSentAt certificates completed createdAt updatedAt",
+      },
+      {
+        path: "forms.drugTest",
+        select: "documents status createdAt updatedAt",
+      },
+      {
+        path: "forms.driveTest",
+        select: "completed createdAt updatedAt",
+      },
+    ]);
+
     const drugTestOut = updatedDrugTest ?? readMongooseRefField(onboardingDoc.forms?.drugTest) ?? {};
 
     const carriersEdgeOut = updatedCarriersEdge ?? readMongooseRefField(onboardingDoc.forms?.carriersEdgeTraining) ?? {};

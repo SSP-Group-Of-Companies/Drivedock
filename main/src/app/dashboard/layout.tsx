@@ -50,9 +50,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
         {/* RESPONSIVE APP SHELL */}
         <div
-          className="
-            flex h-screen flex-col overflow-hidden transition-colors duration-200
-          "
+          className={`
+            flex flex-col transition-colors duration-200
+            ${isContract ? 'min-h-screen' : 'h-screen overflow-hidden'}
+          `}
           style={{
             backgroundColor: "var(--color-background)",
             color: "var(--color-on-background)",
@@ -66,13 +67,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             />
           </Suspense>
 
-          {/* Main content area */}
-          <div className="flex min-h-0 flex-1 overflow-hidden">
+                      {/* Main content area */}
+            <div className={`flex min-h-0 flex-1 ${isContract ? '' : 'overflow-hidden'}`}>
             {/* Desktop sidebar */}
-            <div className="hidden lg:block shrink-0">
+            <div className="hidden xl:block shrink-0">
               {/* Keep a fixed-width fallback to avoid layout shift */}
               <Suspense fallback={<div className="w-72" aria-hidden="true" />}>
                 <AdminSidebar
+                  key={isContract ? `contract-${trackerId}` : "home"}
                   variant={isContract ? "contract" : "home"}
                   activePath={pathname}
                   trackerId={trackerId}
@@ -84,17 +86,17 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             <main
               id="main"
               role="main"
-              className="min-w-0 flex-1 transition-colors duration-200 overflow-hidden"
+              className={`min-w-0 flex-1 transition-colors duration-200 ${isContract ? '' : 'overflow-hidden'}`}
               style={{ backgroundColor: "var(--color-surface)" }}
             >
               {/* Container that holds the page's own scrollable region(s) */}
               <div
-                className="
+                className={`
                   mx-auto w-full max-w-screen-2xl
-                  px-3 sm:px-4 lg:pl-0 md:pr-4 lg:pr-6 xl:pr-8
+                  px-3 sm:px-4 md:px-6 lg:px-8
                   pt-4 pb-8
-                  h-full min-h-0 overflow-hidden
-                "
+                  ${isContract ? 'min-h-0' : 'h-full min-h-0 overflow-hidden'}
+                `}
               >
                 {/* If a child page uses useSearchParams, this boundary keeps 404 prerender safe */}
                 <Suspense fallback={null}>{children}</Suspense>
@@ -103,7 +105,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </div>
 
           <Suspense fallback={null}>
-            <MobileSidebarDrawer open={sidebarOpen} onClose={closeSidebar} />
+            <MobileSidebarDrawer
+              open={sidebarOpen}
+              onClose={closeSidebar}
+              variant={isContract ? "contract" : "home"}
+              trackerId={trackerId}
+            />
           </Suspense>
         </div>
       </ThemeProvider>

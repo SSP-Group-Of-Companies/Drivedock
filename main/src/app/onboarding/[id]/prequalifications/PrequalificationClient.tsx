@@ -12,7 +12,10 @@
 import { useForm, Controller } from "react-hook-form";
 import { useEffect, useState, useMemo } from "react";
 
-import { preQualificationQuestions, categoryQuestions } from "@/constants/form-questions/preQualification";
+import {
+  preQualificationQuestions,
+  categoryQuestions,
+} from "@/constants/form-questions/preQualification";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { ArrowRight } from "lucide-react";
@@ -24,7 +27,12 @@ import FlatbedPopup from "@/app/onboarding/components/FlatbedPopup";
 import { useCompanySelection } from "@/hooks/frontendHooks/useCompanySelection";
 import { useOnboardingTracker } from "@/store/useOnboardingTracker";
 import { useGlobalLoading } from "@/store/useGlobalLoading";
-import { EDriverType, EHaulPreference, ETeamStatus, IPreQualifications } from "@/types/preQualifications.types";
+import {
+  EDriverType,
+  EHaulPreference,
+  ETeamStatus,
+  IPreQualifications,
+} from "@/types/preQualifications.types";
 import { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
 import { buildOnboardingStepPath } from "@/lib/utils/onboardingUtils";
 import { getCompanyById } from "@/constants/companies";
@@ -44,7 +52,11 @@ type Props = {
   trackerContext?: IOnboardingTrackerContext | null;
 };
 
-export default function PreQualificationClient({ defaultValues, trackerId, trackerContext }: Props) {
+export default function PreQualificationClient({
+  defaultValues,
+  trackerId,
+  trackerContext,
+}: Props) {
   const mounted = useMounted(); // Prevent SSR/CSR mismatch
   const { t } = useTranslation("common");
   const router = useRouter();
@@ -56,7 +68,9 @@ export default function PreQualificationClient({ defaultValues, trackerId, track
   //    This ensures the "resume" path uses the persisted company choice.
   const effectiveCompany = useMemo(() => {
     if (trackerContext?.companyId) {
-      return getCompanyById(trackerContext.companyId) ?? selectedCompany ?? null;
+      return (
+        getCompanyById(trackerContext.companyId) ?? selectedCompany ?? null
+      );
     }
     return selectedCompany ?? null;
   }, [trackerContext?.companyId, selectedCompany]);
@@ -65,7 +79,9 @@ export default function PreQualificationClient({ defaultValues, trackerId, track
   const { show, hide } = useGlobalLoading();
 
   // Controls visibility/content of the flatbed training popup
-  const [showFlatbedPopup, setShowFlatbedPopup] = useState<null | "yes" | "no">(null);
+  const [showFlatbedPopup, setShowFlatbedPopup] = useState<null | "yes" | "no">(
+    null
+  );
 
   // On first render or when trackerContext changes, sync it into Zustand
   useEffect(() => {
@@ -77,7 +93,9 @@ export default function PreQualificationClient({ defaultValues, trackerId, track
     if (!effectiveCompany) return preQualificationQuestions;
     if (effectiveCompany.countryCode === "US") {
       // Hide "canCrossBorderUSA" and "hasFASTCard" for US company
-      return preQualificationQuestions.filter((q) => q.name !== "canCrossBorderUSA" && q.name !== "hasFASTCard");
+      return preQualificationQuestions.filter(
+        (q) => q.name !== "canCrossBorderUSA" && q.name !== "hasFASTCard"
+      );
     }
     return preQualificationQuestions;
   }, [effectiveCompany]);
@@ -92,7 +110,10 @@ export default function PreQualificationClient({ defaultValues, trackerId, track
   const watchAllFields = watch();
   const allAnswered = Object.keys(watchAllFields).every((key) => {
     // Only enforce answered state for fields currently shown on screen
-    const isFieldRendered = [...filteredPreQualificationQuestions, ...categoryQuestions].some((q) => q.name === key);
+    const isFieldRendered = [
+      ...filteredPreQualificationQuestions,
+      ...categoryQuestions,
+    ].some((q) => q.name === key);
     // Answered if non-empty (booleans: "form.yes"/"form.no"; categories: enum value)
     return !isFieldRendered || watchAllFields[key] !== "";
   });
@@ -107,10 +128,12 @@ export default function PreQualificationClient({ defaultValues, trackerId, track
       over23Local: data.over23Local === "form.yes",
       over25CrossBorder: data.over25CrossBorder === "form.yes",
       canDriveManual: data.canDriveManual === "form.yes",
-      experienceDrivingTractorTrailer: data.experienceDrivingTractorTrailer === "form.yes",
+      experienceDrivingTractorTrailer:
+        data.experienceDrivingTractorTrailer === "form.yes",
       faultAccidentIn3Years: data.faultAccidentIn3Years === "form.yes",
       zeroPointsOnAbstract: data.zeroPointsOnAbstract === "form.yes",
-      noUnpardonedCriminalRecord: data.noUnpardonedCriminalRecord === "form.yes",
+      noUnpardonedCriminalRecord:
+        data.noUnpardonedCriminalRecord === "form.yes",
       legalRightToWorkCanada: data.legalRightToWorkCanada === "form.yes",
       // Category fields are enum values, so we can assert:
       driverType: data.driverType as EDriverType,
@@ -133,22 +156,29 @@ export default function PreQualificationClient({ defaultValues, trackerId, track
       show(t("form.loading", "Processing..."));
 
       // PATCH to backend for this tracker
-      const res = await fetch(`/api/v1/onboarding/${trackerId}/prequalifications`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(transformed),
-      });
+      const res = await fetch(
+        `/api/v1/onboarding/${trackerId}/prequalifications`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(transformed),
+        }
+      );
 
       if (!res.ok) {
-        const { message } = await res.json().catch(() => ({ message: "Failed to update prequalifications" }));
+        const { message } = await res
+          .json()
+          .catch(() => ({ message: "Failed to update prequalifications" }));
         throw new Error(message || "Failed to update prequalifications");
       }
 
       // Expect onboardingContext.nextUrl to be returned for navigation
       const result = await res.json();
-      const onboardingContext: IOnboardingTrackerContext = result?.data?.onboardingContext;
+      const onboardingContext: IOnboardingTrackerContext =
+        result?.data?.onboardingContext;
       const nextStep = onboardingContext?.nextStep;
-      if (!onboardingContext || !nextStep) throw new Error("nextStep missing from onboardingContext");
+      if (!onboardingContext || !nextStep)
+        throw new Error("nextStep missing from onboardingContext");
 
       // Navigate to the next step in the wizard
       router.push(buildOnboardingStepPath(onboardingContext, nextStep));
@@ -158,7 +188,10 @@ export default function PreQualificationClient({ defaultValues, trackerId, track
       // Log for debugging; show a basic alert for the MVP
       console.error("Prequalification submit error:", err);
       hide(); // Hide loading screen on error
-      alert(t("form.errors.saveFailed") || "Failed to save your answers. Please try again.");
+      alert(
+        t("form.errors.saveFailed") ||
+          "Failed to save your answers. Please try again."
+      );
     } finally {
       // Success path navigates away; we leave loading to route transition UI
     }
@@ -191,7 +224,12 @@ export default function PreQualificationClient({ defaultValues, trackerId, track
                 return (
                   <QuestionGroup
                     // For US companies, substitute the label for the legal-work question
-                    question={q.name === "legalRightToWorkCanada" && effectiveCompany?.countryCode === "US" ? t("form.step1.questions.legalRightToWorkUS") : t(q.label)}
+                    question={
+                      q.name === "legalRightToWorkCanada" &&
+                      effectiveCompany?.countryCode === "US"
+                        ? t("form.step1.questions.legalRightToWorkUS")
+                        : t(q.label)
+                    }
                     options={q.options} // Centralized options (Yes/No or single-Yes)
                     value={field.value} // Controlled value
                     onChange={handleChange} // Controlled onChange
@@ -203,7 +241,9 @@ export default function PreQualificationClient({ defaultValues, trackerId, track
         </div>
 
         {/* Category questions (enums) */}
-        <h2 className="text-xl text-center font-bold text-gray-800">{t("form.step1.questions.categories")}</h2>
+        <h2 className="text-xl text-center font-bold text-gray-800">
+          {t("form.step1.questions.categories")}
+        </h2>
 
         <div className="space-y-4">
           {categoryQuestions.map((q) => (
@@ -241,7 +281,12 @@ export default function PreQualificationClient({ defaultValues, trackerId, track
       </div>
 
       {/* Flatbed informational popup – content driven by i18n */}
-      {showFlatbedPopup && <FlatbedPopup type={showFlatbedPopup} onClose={() => setShowFlatbedPopup(null)} />}
+      {showFlatbedPopup && (
+        <FlatbedPopup
+          type={showFlatbedPopup}
+          onClose={() => setShowFlatbedPopup(null)}
+        />
+      )}
     </>
   );
 }
