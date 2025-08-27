@@ -15,6 +15,7 @@ export enum ES3Folder {
   FAST_CARD_PHOTOS = "fast-card-photos",
   DRUG_TEST_PHOTOS = "drug-test-photos",
   CARRIERS_EDGE_CERTIFICATES = "carriers-edge-certificates",
+  DRIVE_TEST = "drive-test",
 }
 
 export interface IPresignRequest {

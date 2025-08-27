@@ -120,13 +120,34 @@ export function isCanadianCompany(companyId: string): boolean {
 }
 
 /**
+ * Whether flatbed training is even *possible* for the given company/application type.
+ * Ignores applicant experience.
+ *
+ * Rules:
+ * - Company must operate flatbeds.
+ * - Special case: SSP-Canada with DRY_VAN application → not possible.
+ * - Otherwise → possible.
+ */
+export function canHaveFlatbedTraining(companyId: string, applicationType?: ECompanyApplicationType): boolean {
+  const company = getCompanyById(companyId);
+  if (!company) return false;
+
+  if (!company.hasFlatbed) return false;
+
+  if (company.id === ECompanyId.SSP_CA && applicationType === ECompanyApplicationType.DRY_VAN) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
  * Determine whether flatbed training is required.
  *
  * Rules:
  * 1. If applicant already has flatbed experience → no training needed.
- * 2. If company does not operate flatbeds → no training needed.
- * 3. If company is SSP-Canada and applicant applies for DRY_VAN → no training needed.
- * 4. Otherwise, if company operates flatbeds and applicant lacks experience → training required.
+ * 2. If flatbed training isn't even possible for this company/application → no training needed.
+ * 3. Otherwise (possible + no experience) → training required.
  */
 export function needsFlatbedTraining(
   companyId: string,
@@ -136,17 +157,9 @@ export function needsFlatbedTraining(
   // Rule 1
   if (hasFlatbedExperience) return false;
 
-  const company = getCompanyById(companyId);
-  if (!company) return false;
+  // Rule 2 (delegates shared logic to the helper above)
+  if (!canHaveFlatbedTraining(companyId, applicationType)) return false;
 
-  // Rule 2
-  if (!company.hasFlatbed) return false;
-
-  // Rule 3 (only applies when type is explicitly DRY_VAN)
-  if (company.id === ECompanyId.SSP_CA && applicationType === ECompanyApplicationType.DRY_VAN) {
-    return false;
-  }
-
-  // Rule 4: flatbed company + no experience → needs training
+  // Rule 3
   return true;
 }
