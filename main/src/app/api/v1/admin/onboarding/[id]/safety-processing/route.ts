@@ -22,6 +22,10 @@ import { guard } from "@/lib/auth/authUtils";
 
 /**
  * GET /api/v1/admin/onboarding/[id]/safety-processing
+ * Returns:
+ *  - onboardingContext (enriched with itemSummary: { driverName, driverEmail })
+ *  - driveTest / carriersEdge / drugTest (populated snapshots)
+ *  - identifications: { driverLicenseExpiration }   <-- optional (for notifications)
  */
 export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
@@ -33,6 +37,7 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
       return errorResponse(400, "Not a valid onboarding tracker ID");
     }
 
+    // ⭐ Populate referenced form docs so snapshots are *never* empty objects.
     const onboardingDoc = await OnboardingTracker.findById(onboardingId)
       .populate({
         path: "forms.carriersEdgeTraining",
@@ -51,11 +56,12 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
     if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
     if (onboardingDoc.terminated) return errorResponse(400, "Onboarding document terminated");
 
+    // Populated form snapshots
     const drugTest = readMongooseRefField(onboardingDoc.forms?.drugTest) ?? {};
     const carriersEdge = readMongooseRefField(onboardingDoc.forms?.carriersEdgeTraining) ?? {};
     const driveTest = readMongooseRefField(onboardingDoc.forms?.driveTest) ?? {};
 
-    // --- Resolve driver name/email + license expiry from ApplicationForm ---
+    // --- Resolve driver name/email + license expiry (index 0) from ApplicationForm ---
     let driverName: string | undefined;
     let driverEmail: string | undefined;
     let driverLicenseExpiration: Date | undefined;
@@ -69,6 +75,7 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
       driverName = nm || undefined;
       driverEmail = doc?.page1?.email ?? undefined;
 
+      // licenses can be either at page1.licenses[] or (rarely) root.licenses[]
       const licensesArr = (Array.isArray(doc?.page1?.licenses) ? doc.page1.licenses : undefined) ?? (Array.isArray(doc?.licenses) ? doc.licenses : undefined);
 
       const first = Array.isArray(licensesArr) ? licensesArr[0] : undefined;
@@ -80,7 +87,9 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
     };
 
     if (driverAppRef?._id && typeof driverAppRef === "object" && !driverAppRef.page1) {
+      // This is an ObjectId reference, not a populated document
       const driverAppId = driverAppRef.toString();
+
       if (driverAppId && isValidObjectId(driverAppId)) {
         const appDoc = await ApplicationForm.findById(driverAppId, {
           "page1.firstName": 1,
@@ -89,11 +98,14 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
           "page1.licenses": 1,
           licenses: 1,
         }).lean();
+
         if (appDoc) tryExtractFromDoc(appDoc);
       }
     } else if (driverAppRef?.page1) {
+      // This is already a populated document
       tryExtractFromDoc(driverAppRef);
     } else {
+      // Fallback: try to find any ApplicationForm associated with this onboarding tracker
       const fallbackAppDoc = await ApplicationForm.findOne(
         { onboardingTrackerId: onboardingId },
         {
@@ -104,10 +116,14 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
           licenses: 1,
         }
       ).lean();
+
       if (fallbackAppDoc) tryExtractFromDoc(fallbackAppDoc);
     }
 
+    // Base context
     const onboardingContext = buildTrackerContext(onboardingDoc, null, true);
+
+    // Enrich with itemSummary
     const enrichedContext = {
       ...onboardingContext,
       itemSummary: {
@@ -116,15 +132,18 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
       },
     };
 
+    // identifications block (license expiry for notifications)
     const identifications = driverLicenseExpiration != null ? { driverLicenseExpiration } : undefined;
 
-    return successResponse(200, "Onboarding test data retrieved", {
+    const responseData = {
       onboardingContext: enrichedContext,
       drugTest,
       carriersEdge,
       driveTest,
-      identifications,
-    });
+      identifications, // optional if not found
+    };
+
+    return successResponse(200, "Onboarding test data retrieved", responseData);
   } catch (error) {
     return errorResponse(error);
   }
@@ -132,21 +151,22 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
 
 /* =====================================================================================
  * PATCH
- * - notes?: string
+ * - notes?: string                                    -> updates OnboardingTracker.notes
  * - drugTest?: { documents?: IPhoto[], status?: EDrugTestStatus }
- *     - Gate: must have reached DRUG_TEST
+ *     - Step gate: must have reached DRUG_TEST
  *     - No-go-back: if current status === APPROVED, status cannot change
- *     - Docs: if provided, must contain ≥1 (server enforces non-empty replacement)
- *     - ✔ Proceed: ONLY when incomingStatus === APPROVED
+ *     - Docs: always updatable; if a docs array is provided, it must contain ≥1
  * - carriersEdgeTraining?: {
  *       certificates?: IPhoto[],
  *       emailSent?: boolean, emailSentBy?: string, emailSentAt?: string|Date,
  *       completed?: boolean
  *   }
- *     - Gate: must have reached CARRIERS_EDGE_TRAINING
- *     - No-go-back for emailSent & completed
- *     - Rule: completed=true requires ≥1 certificate
- *     - (Proceed behavior for CE depends on your policy; unchanged here)
+ *     - Step gate: must have reached CARRIERS_EDGE_TRAINING
+ *     - No-go-back:
+ *         * once emailSent===true, cannot set back to false; emailSentBy/At immutable
+ *         * once completed===true, cannot set back to false
+ *     - Certificates always updatable
+ *     - **Rule**: cannot set completed=true unless certificates length ≥ 1 (post-update)
  * ===================================================================================== */
 
 const TEMP_PREFIX = `${S3_TEMP_FOLDER}/`;
@@ -204,6 +224,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     }>(req);
     if (!body || typeof body !== "object") return errorResponse(400, "Invalid payload");
 
+    // Track updated docs to return fresh snapshots
     let updatedDrugTest: any | null = null;
     let updatedCarriersEdge: any | null = null;
 
@@ -231,21 +252,24 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       const prevDocs = Array.isArray(drugTestDoc.documents) ? [...drugTestDoc.documents] : [];
 
       const incomingDocs = body.drugTest.documents;
-      const incomingStatusProvided = body.drugTest.status !== undefined;
+      const incomingStatusProvided = typeof body.drugTest.status === "string";
       const incomingStatus = incomingStatusProvided ? (body.drugTest.status as EDrugTestStatus) : undefined;
 
-      // Replace documents if provided (must be non-empty)
+      // Track approval transition
+      const wasApproved = drugTestDoc.status === EDrugTestStatus.APPROVED;
+
+      // Handle documents replacement (if provided)
+      // Handle documents replacement (if provided)
+      // Allow empty arrays (needed when rejecting). We'll only forbid empty when APPROVING.
       if (Array.isArray(incomingDocs)) {
         const finalFolder = `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.DRUG_TEST_PHOTOS}/${onboardingDoc.id}`;
         const nextDocs = await finalizePhotosIfNeeded(incomingDocs, finalFolder);
-        if (!nextDocs || nextDocs.length === 0) {
-          return errorResponse(400, "At least one drug test document is required");
-        }
-        await deleteRemovedFinalized(prevDocs, nextDocs);
-        drugTestDoc.documents = nextDocs;
+
+        await deleteRemovedFinalized(prevDocs, nextDocs ?? []);
+        drugTestDoc.documents = nextDocs ?? [];
       }
 
-      // Auto bump to AWAITING_REVIEW on first docs upload (if no explicit status)
+      // If no explicit status provided but we now have docs, move NOT_UPLOADED -> AWAITING_REVIEW
       if (
         !incomingStatusProvided &&
         Array.isArray(drugTestDoc.documents) &&
@@ -255,7 +279,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
         drugTestDoc.status = EDrugTestStatus.AWAITING_REVIEW;
       }
 
-      // Status transitions (with invariants)
+      // Status transitions
       if (incomingStatusProvided) {
         const allowed = Object.values(EDrugTestStatus);
         if (!allowed.includes(incomingStatus!)) {
@@ -276,7 +300,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
           }
         }
 
-        // Reject nukes all docs (and S3) so the step isn't considered "done"
+        // If REJECTED: nuke all docs (and S3) so the step isn't considered "done"
         if (incomingStatus === EDrugTestStatus.REJECTED) {
           const keysToDelete = (drugTestDoc.documents ?? []).map((p: any) => p?.s3Key).filter((k: string | undefined): k is string => !!k && !k.startsWith(TEMP_PREFIX));
           if (keysToDelete.length) {
@@ -292,15 +316,15 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
         drugTestDoc.status = incomingStatus!;
       }
 
+      // ✅ Only advance when the status just transitioned to APPROVED
+      const approvedJustNow = !wasApproved && drugTestDoc.status === EDrugTestStatus.APPROVED;
+
       await drugTestDoc.save();
       updatedDrugTest = drugTestDoc.toObject();
 
-      // ✅ PROCEED ONLY WHEN APPROVED
-      if (incomingStatusProvided && incomingStatus === EDrugTestStatus.APPROVED) {
+      if (approvedJustNow) {
         onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.DRUG_TEST);
       }
-      // For NOT_UPLOADED / AWAITING_REVIEW / REJECTED (or no status field),
-      // do NOT change tracker.currentStep here.
     }
 
     /* ----------------------- CARRIERS EDGE TRAINING ---------------------- */
@@ -320,6 +344,9 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
         onboardingDoc.set("forms.carriersEdgeTraining", ceDoc._id);
       }
 
+      // Track completion transition
+      const wasCompleted = !!ceDoc.completed;
+
       // Certificates are always updatable
       if (Array.isArray(body.carriersEdgeTraining.certificates)) {
         const prev = Array.isArray(ceDoc.certificates) ? [...ceDoc.certificates] : [];
@@ -329,7 +356,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
         ceDoc.certificates = next ?? [];
       }
 
-      // emailSent (no-go-back; require by/at when first set to true)
+      // emailSent (no-go-back; and when first set to true, require by/at)
       if (typeof body.carriersEdgeTraining.emailSent === "boolean") {
         const incoming = body.carriersEdgeTraining.emailSent;
         if (ceDoc.emailSent && !incoming) {
@@ -354,7 +381,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
         }
       }
 
-      // completed (no-go-back; requires ≥1 certificate)
+      // completed (no-go-back; requires ≥1 certificate on transition to true)
       if (typeof body.carriersEdgeTraining.completed === "boolean") {
         const incoming = body.carriersEdgeTraining.completed;
 
@@ -374,9 +401,11 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       await ceDoc.save();
       updatedCarriersEdge = ceDoc.toObject();
 
-      // (Proceed behavior for CE left as-is; if you want to only advance when completed===true,
-      // you can make this conditional similar to Drug Test above.)
-      onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.CARRIERS_EDGE_TRAINING);
+      // ✅ Only advance when CE transitions to *completed*.
+      const completedJustNow = !wasCompleted && !!ceDoc.completed;
+      if (completedJustNow) {
+        onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.CARRIERS_EDGE_TRAINING);
+      }
     }
 
     // Save tracker
@@ -384,6 +413,8 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     await onboardingDoc.save();
 
     /* ---------------------- Build GET-like response ---------------------- */
+
+    // ⭐ Ensure populated refs before building response (avoids empty snapshots)
     await onboardingDoc.populate([
       {
         path: "forms.carriersEdgeTraining",
@@ -400,15 +431,18 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     ]);
 
     const drugTestOut = updatedDrugTest ?? readMongooseRefField(onboardingDoc.forms?.drugTest) ?? {};
+
     const carriersEdgeOut = updatedCarriersEdge ?? readMongooseRefField(onboardingDoc.forms?.carriersEdgeTraining) ?? {};
+
     const driveTestOut = readMongooseRefField(onboardingDoc.forms?.driveTest) ?? {};
 
-    // Enrich onboardingContext again
+    // Enrich onboardingContext with driverName/email like GET
     let driverName: string | undefined;
     let driverEmail: string | undefined;
     let driverLicenseExpiration: Date | undefined;
 
     const driverAppRef: any = onboardingDoc.forms?.driverApplication;
+
     const tryExtractFromDoc = (doc: any) => {
       const fn = doc?.page1?.firstName ?? "";
       const ln = doc?.page1?.lastName ?? "";

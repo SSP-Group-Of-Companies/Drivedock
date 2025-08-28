@@ -204,6 +204,9 @@ export default function PreTripClient({ driverName, driverLicense, defaultValues
   return (
     <FormProvider {...methods}>
       <form onSubmit={orchestrateSubmit} className="space-y-8" noValidate>
+        {/* Title */}
+        <h2 className="text-2xl font-bold text-gray-900 p-5 text-center">Pre-Trip Assessment</h2>
+
         {/* Locked banner if already taken */}
         {isLocked && (
           <div className="rounded-2xl bg-white p-4 ring-1 ring-gray-200 shadow-sm border-l-4 border-amber-500">

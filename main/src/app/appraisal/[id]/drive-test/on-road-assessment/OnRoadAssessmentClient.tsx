@@ -173,14 +173,14 @@ export default function OnRoadClient({ onboardingContext, driverName, driverLice
   return (
     <FormProvider {...methods}>
       <form onSubmit={orchestrateSubmit} className="space-y-8" noValidate>
+        {/* Title */}
+        <h2 className="text-2xl font-bold text-gray-900 p-5 text-center">On-Road Assessment</h2>
+
         {isLocked && (
           <div className="rounded-2xl bg-white p-4 ring-1 ring-gray-200 shadow-sm border-l-4 border-amber-500">
             <p className="text-amber-800">This on-road assessment has already been completed and the outcome cannot be changed.</p>
           </div>
         )}
-
-        {/* Title */}
-        <h2 className="text-2xl font-bold text-gray-900 p-5 text-center">On-Road Assessment</h2>
 
         <fieldset disabled={effectiveLocked} className="space-y-8">
           <OnRoadHeader driverName={driverName} driverLicense={driverLicense} />

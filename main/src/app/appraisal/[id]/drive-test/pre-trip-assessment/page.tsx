@@ -48,7 +48,7 @@ export default async function PreTripAssessmentPage({ params }: { params: Promis
   const baseSections = makePreTripSections();
   const driveTest = data?.driveTest;
   const preTrip = driveTest?.preTrip;
-  console.log(data);
+
   const defaultValues: PreTripWrapperInput = {
     powerUnitType: driveTest?.powerUnitType || "",
     trailerType: driveTest?.trailerType || "",
