@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import type { DashboardOnboardingItem } from "@/types/adminDashboard.types";
 import type { CategoryTab } from "@/hooks/dashboard/useAdminOnboardingQueryState";
 import { getOnboardingStepFlow } from "@/lib/utils/onboardingUtils";
@@ -238,7 +239,7 @@ export default function DataGrid({
       </>
     );
     return href ? (
-      <a
+      <Link
         href={href}
         className={`${base} whitespace-nowrap`}
         style={styleBtn}
@@ -246,7 +247,7 @@ export default function DataGrid({
         data-testid={testId}
       >
         {content}
-      </a>
+      </Link>
     ) : (
       <button
         onClick={onClick}

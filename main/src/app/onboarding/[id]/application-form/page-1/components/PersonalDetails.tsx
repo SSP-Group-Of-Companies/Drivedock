@@ -12,7 +12,7 @@
 
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Eye, EyeOff, Camera, X } from "lucide-react";
 import Image from "next/image";
 import { uploadToS3Presigned } from "@/lib/utils/s3Upload";
@@ -24,6 +24,10 @@ import useMounted from "@/hooks/useMounted";
 import TextInput from "@/app/onboarding/components/TextInput";
 import PhoneInput from "@/app/onboarding/components/PhoneInput";
 import type { ApplicationFormPage1Schema } from "@/lib/zodSchemas/applicationFormPage1.schema";
+import type { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
+import { ECountryCode } from "@/types/shared.types";
+import { COMPANIES } from "@/constants/companies";
+import { useCompanySelection } from "@/hooks/frontendHooks/useCompanySelection";
 
 // Helpers
 const formatPhoneNumber = (value: string) => {
@@ -45,7 +49,11 @@ const calculateAge = (dob: string) => {
   return monthDiff < 0 || (monthDiff === 0 && dayDiff < 0) ? age - 1 : age;
 };
 
-export default function PersonalDetails() {
+interface PersonalDetailsProps {
+  onboardingContext?: IOnboardingTrackerContext | null;
+}
+
+export default function PersonalDetails({ onboardingContext }: PersonalDetailsProps) {
   const {
     register,
     setValue,
@@ -56,6 +64,7 @@ export default function PersonalDetails() {
   const mounted = useMounted();
   const { t } = useTranslation("common");
   const { id } = useParams<{ id: string }>();
+  const { selectedCompany, clearSelectedCompany } = useCompanySelection();
 
   //  WATCH ALL FIELDS UP FRONT (no hooks in JSX, no conditional hooks)
   const sinValue = useWatch({ control, name: "sin" });
@@ -80,6 +89,36 @@ export default function PersonalDetails() {
   const [sinValidationMessage, setSinValidationMessage] = useState("");
 
   const calculatedAge = dobValue ? calculateAge(dobValue) : null;
+
+  // Clear company selection when resuming an application to prevent conflicts
+  useEffect(() => {
+    if (onboardingContext?.companyId) {
+      clearSelectedCompany();
+    }
+  }, [onboardingContext?.companyId, clearSelectedCompany]);
+
+  // Determine the label based on country code
+  const getSINLabel = () => {
+    // ALWAYS prioritize onboarding context if it exists (for resumed applications)
+    if (onboardingContext?.companyId) {
+      const company = COMPANIES.find(c => c.id === onboardingContext.companyId);
+      if (company) {
+        return company.countryCode === ECountryCode.US 
+          ? "SSN (Social Security Number)"
+          : "SIN (Social Insurance Number)";
+      }
+    }
+    
+    // Only use selected company if we have NO onboarding context (truly new application)
+    if (selectedCompany && !onboardingContext) {
+      return selectedCompany.countryCode === ECountryCode.US 
+        ? "SSN (Social Security Number)"
+        : "SIN (Social Insurance Number)";
+    }
+    
+    // Final fallback to translation
+    return t("form.step2.page1.fields.sin");
+  };
 
   const [displaySIN, setDisplaySIN] = useState(() => (sinValue ? sinValue.replace(/^(\d{3})(\d)/, "$1-$2").replace(/^(\d{3})-(\d{3})(\d)/, "$1-$2-$3") : ""));
 
@@ -216,7 +255,7 @@ export default function PersonalDetails() {
 
         {/* SIN Number */}
         <div className="relative">
-          <label className="block text-sm font-medium text-gray-700">{t("form.step2.page1.fields.sin")}</label>
+          <label className="block text-sm font-medium text-gray-700">{getSINLabel()}</label>
 
           <input
             type={showSIN ? "text" : "password"}

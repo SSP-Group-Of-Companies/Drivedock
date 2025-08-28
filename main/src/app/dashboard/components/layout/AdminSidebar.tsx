@@ -9,6 +9,7 @@
  * - Desktop only by default; "mobile" display used inside drawer.
  */
 
+import { useMemo } from "react";
 import Link from "next/link";
 import {
   HOME_SIDEBAR_ITEMS,
@@ -20,8 +21,21 @@ function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
+// Memoized style objects to prevent re-creation on every render
+const ACTIVE_STYLES = {
+  backgroundColor: "var(--color-primary)",
+  color: "white",
+} as const;
+
+const INACTIVE_STYLES = {
+  backgroundColor: "transparent",
+  color: "var(--color-on-surface-variant)",
+} as const;
+
 function NavItem({ item, active }: { item: SidebarItem; active: boolean }) {
   const Icon = item.icon;
+  const styles = useMemo(() => active ? ACTIVE_STYLES : INACTIVE_STYLES, [active]);
+  
   return (
     <Link
       href={item.href}
@@ -30,10 +44,7 @@ function NavItem({ item, active }: { item: SidebarItem; active: boolean }) {
         "group flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-0",
         active ? "font-semibold" : "hover:scale-[1.02]"
       )}
-      style={{
-        backgroundColor: active ? "var(--color-primary)" : "transparent",
-        color: active ? "white" : "var(--color-on-surface-variant)",
-      }}
+      style={styles}
     >
       <Icon
         className={cx(
@@ -58,6 +69,12 @@ function SidebarNav({
   trackerId?: string;
   navLabel: string;
 }) {
+  // Memoize sections calculation to prevent unnecessary re-renders
+  const sections = useMemo(() => {
+    if (variant === "home") return null;
+    return contractSidebarSections(trackerId ?? "");
+  }, [variant, trackerId]);
+
   if (variant === "home") {
     return (
       <nav role="navigation" aria-label={navLabel} className="space-y-4">
@@ -81,10 +98,9 @@ function SidebarNav({
     );
   }
 
-  const sections = contractSidebarSections(trackerId ?? "");
   return (
     <nav role="navigation" aria-label={navLabel} className="space-y-4">
-      {sections.map((section, idx) => (
+      {sections?.map((section, idx) => (
         <div key={section.title}>
           <h3
             className="mb-2 text-xs font-semibold uppercase tracking-wider"

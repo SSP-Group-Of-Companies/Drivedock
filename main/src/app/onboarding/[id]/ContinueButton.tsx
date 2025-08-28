@@ -51,7 +51,7 @@ export default function ContinueButton<T extends FieldValues>({
 
   const { data: prequalifications, clearData } = usePrequalificationStore();
   const { tracker, setTracker } = useOnboardingTracker();
-  const { selectedCompany } = useCompanySelection();
+  const { selectedCompany, clearSelectedCompany } = useCompanySelection();
   const { handleFormError } = useFormErrorScroll<T>();
 
   const [submitting, setSubmitting] = useState(false);
@@ -62,7 +62,8 @@ export default function ContinueButton<T extends FieldValues>({
 
     const urlTrackerId = params?.id as string | undefined;
     const effectiveTrackerId = trackerId || urlTrackerId;
-    const isPost = !effectiveTrackerId; // POST for new, PATCH for existing
+    // For POST flow, we should not have a trackerId and should be on (noid) route
+    const isPost = !effectiveTrackerId && !urlTrackerId; // POST for new, PATCH for existing
 
     const ctx: BuildPayloadCtx = {
       prequalifications: prequalifications ?? undefined,
@@ -147,6 +148,7 @@ export default function ContinueButton<T extends FieldValues>({
           throw new Error("Tracker not returned from POST");
         setTracker(trackerContext);
         clearData();
+        clearSelectedCompany(); // Clear company selection after successful POST
         router.push(nextUrl ?? resolvedConfig.nextRoute);
       } else {
         if (trackerContext) setTracker(trackerContext);

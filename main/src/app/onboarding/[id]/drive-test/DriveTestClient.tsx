@@ -2,9 +2,10 @@
 
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle2, Award, Users, AlertTriangle } from "lucide-react";
+import { CheckCircle2, Users, AlertTriangle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import { useTranslation } from "react-i18next";
 
 import useMounted from "@/hooks/useMounted";
 import type { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
@@ -61,8 +62,9 @@ export default function DriveTestClient({
 }: DriveTestClientProps) {
   const mounted = useMounted();
   const router = useRouter();
+  const { t } = useTranslation("common");
 
-  const trackerId = onboardingContext.id;
+  const { id: trackerId, nextStep } = onboardingContext;
   const completed = driveTest.completed ?? false;
   const [showConfetti, setShowConfetti] = useState(false);
 
@@ -76,11 +78,10 @@ export default function DriveTestClient({
   }, [completed]);
 
   const handleContinue = useCallback(() => {
-    if (completed) {
-      // Navigate to the next step (carriers-edge-training)
-      router.push(`/onboarding/${trackerId}/carriers-edge-training`);
+    if (nextStep) {
+      router.push(`/onboarding/${trackerId}/${nextStep}`);
     }
-  }, [completed, router, trackerId]);
+  }, [router, trackerId, nextStep]);
 
   const contentBlock = useMemo(() => {
     if (completed) {
@@ -91,44 +92,23 @@ export default function DriveTestClient({
           transition={{ duration: 0.6 }}
           className="text-center space-y-6"
         >
-          {/* Success Icon */}
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-            className="mx-auto w-20 h-20 bg-green-100 rounded-full flex items-center justify-center"
-          >
-            <Award className="w-10 h-10 text-green-600" />
-          </motion.div>
-
           {/* Congratulations Message */}
-          <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-gray-800">
-              Congratulations! 🎉
+          <div className="bg-green-50 border border-green-200 rounded-xl p-4 max-w-2xl mx-auto">
+            <h2 className="text-lg font-bold text-gray-800 pb-2">
+              {t("form.step4.success.title")}
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              You have successfully completed your Drive Test! Your driving
-              skills have been evaluated and approved.
+            <p className="text-sm text-green-800 max-w-2xl mx-auto">
+              {t("form.step4.success.message")}
             </p>
-            <div className="bg-green-50 border border-green-200 rounded-xl p-4 max-w-2xl mx-auto">
-              <p className="text-sm text-green-800">
-                <strong>Next Step:</strong> You will now proceed to
-                Carrier&apos;s Edge Training (Step 5) to complete your
-                onboarding process.
-              </p>
-            </div>
           </div>
 
           {/* Continue Button */}
-          <motion.button
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8 }}
+          <button
             onClick={handleContinue}
-            className="px-8 py-3 bg-gradient-to-r from-green-600 to-green-500 text-white font-semibold rounded-full shadow-lg hover:from-green-700 hover:to-green-600 transition-all duration-200 transform hover:scale-105"
+            className="px-8 py-3 bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 text-white font-semibold rounded-full shadow-lg hover:opacity-90 transition-all duration-200 transform hover:scale-105"
           >
-            Continue to Next Step
-          </motion.button>
+            {t("form.step4.success.continueButton")}
+          </button>
         </motion.div>
       );
     }
@@ -145,7 +125,7 @@ export default function DriveTestClient({
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-          className="mx-auto w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center p-2"
+          className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center p-2"
         >
           <Image
             src="/assets/ssp-truck.png"
@@ -158,44 +138,37 @@ export default function DriveTestClient({
 
         {/* Instructions */}
         <div className="space-y-4">
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 max-w-3xl mx-auto text-left space-y-4">
-            <p className="text-gray-700 leading-relaxed">
-              You have reached the Drive Test stage of the application process.
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-6 max-w-3xl mx-auto text-left space-y-4">
+            <p className="text-gray-700 leading-relaxed text-sm text-center font-semibold">
+              {t("form.step4.instructions.header")}
             </p>
 
             <div className="flex items-start gap-3">
               <Users className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-              <p className="text-gray-700">
-                <strong>
-                  Please speak with Balkaran or Dixit to begin your test.
-                </strong>
+              <p className="text-gray-700 text-sm">
+                {t("form.step4.instructions.contactSafety")}
               </p>
             </div>
 
             <div className="space-y-3">
               <div className="flex items-start gap-3">
                 <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                <p className="text-gray-700">
-                  <strong>If you pass:</strong> You will proceed to Step 5
-                  (Carrier&apos;s Edge Training).
+                <p className="text-gray-700 text-sm">
+                  {t("form.step4.instructions.passMessage")}
                 </p>
               </div>
 
               <div className="flex items-start gap-3">
                 <AlertTriangle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-                <p className="text-gray-700">
-                  <strong>If you do not pass:</strong> Your application will be
-                  terminated.
+                <p className="text-gray-700 text-sm">
+                  {t("form.step4.instructions.failMessage")}
                 </p>
               </div>
             </div>
 
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <p className="text-sm text-yellow-800">
-                <strong>Note:</strong> Based on your performance, you may also
-                be assigned Yard Training (Step 7) to further develop your
-                driving skills. If you never had experience to begin with, then
-                you will have Yard Training by default.
+              <p className="text-sm text-yellow-800 text-sm">
+                {t("form.step4.instructions.note")}
               </p>
             </div>
           </div>
@@ -207,12 +180,12 @@ export default function DriveTestClient({
             disabled
             className="px-8 py-3 bg-gray-400 text-white font-semibold rounded-full cursor-not-allowed opacity-60"
           >
-            Complete Drive Test to Continue
+            {t("form.step4.buttons.completeTest")}
           </button>
         </div>
       </motion.div>
     );
-  }, [completed, handleContinue]);
+  }, [completed, handleContinue, t]);
 
   if (!mounted) return null;
 

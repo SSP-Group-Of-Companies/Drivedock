@@ -80,7 +80,7 @@ export default function Page1Client({ defaultValues, trackerId, trackerContextFr
         onSubmit={(e) => e.preventDefault()}
         noValidate
       >
-        <PersonalDetails />
+        <PersonalDetails onboardingContext={trackerContextFromGet} />
         <PlaceOfBirth />
         <LicenseSection />
         <AddressSection />

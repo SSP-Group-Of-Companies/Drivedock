@@ -53,8 +53,8 @@ export function useNavigationLoadingSmart() {
   const router = useRouter();
 
   const { begin, end } = useSmartGlobalLoading({
-    delay: 300,
-    minVisible: 0,
+    delay: 150, // Faster response for dashboard
+    minVisible: 200, // Minimum visible time to prevent flicker
     message: "Loading…",
   });
 

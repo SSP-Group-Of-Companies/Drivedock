@@ -61,7 +61,7 @@ export default function SafetyProcessingClient({
   ): DrugTestBlock {
     return {
       status: stagedDT?.status ?? server?.status,
-      documents: stagedDT?.documents ?? server?.documents ?? [],
+      documents: stagedDT?.documents ?? server?.documents,
     };
   }
 
@@ -103,10 +103,9 @@ export default function SafetyProcessingClient({
     completed: ctx.status?.completed,
   });
 
-  // 🔆 Highlights from query string (e.g. navigation from grid actions)
-  const highlightParam = searchParams.get("highlight");
-  const shouldHighlightCarriersEdge = highlightParam === "carriers-edge";
-  const shouldHighlightDrugTest = highlightParam === "drug-test";
+  // Check if we should highlight the Carrier's Edge card
+  const shouldHighlightCarriersEdge =
+    searchParams.get("highlight") === "carriers-edge";
 
   // ---------------- Stage updaters ----------------
   const stageCE = (partial: Partial<CarriersEdgeBlock>) =>
@@ -157,8 +156,9 @@ export default function SafetyProcessingClient({
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <DriveTestCard
           trackerId={trackerId}
-          driveTest={data.driveTest ?? {}}
+          driveTest={data.driveTest as any}
           canEdit={gates.canEditDriveTest}
+          // (Drive test remains read-only here; wire later if needed)
         />
 
         <CarriersEdgeCard
@@ -175,11 +175,11 @@ export default function SafetyProcessingClient({
           drugTest={dtView}
           canEdit={gates.canEditDrugTest}
           onChange={(partial) => stageDT(partial)}
-          highlight={shouldHighlightDrugTest}
         />
 
         <NotesCard
           notes={staged.notes ?? ctx.notes ?? ""}
+          // stage notes, no immediate patch
           onSave={(value) => stageNotes(value)}
         />
       </div>

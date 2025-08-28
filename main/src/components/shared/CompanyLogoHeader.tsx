@@ -32,24 +32,32 @@
 
 import { useCompanySelection } from "@/hooks/frontendHooks/useCompanySelection";
 import Image from "next/image";
+import { COMPANIES } from "@/constants/companies";
+import type { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
 
 type Props = {
   logoOnly?: boolean;
+  onboardingContext?: IOnboardingTrackerContext | null;
 };
 
-export default function CompanyLogoHeader({ logoOnly = false }: Props) {
+export default function CompanyLogoHeader({ logoOnly = false, onboardingContext }: Props) {
   const { selectedCompany } = useCompanySelection();
 
-  // If no company is selected, render nothing
-  if (!selectedCompany) return null;
+  // Get company from onboarding context (for resumed applications) or selected company (for new applications)
+  const company = onboardingContext?.companyId 
+    ? COMPANIES.find(c => c.id === onboardingContext.companyId)
+    : selectedCompany;
+
+  // If no company is available, render nothing
+  if (!company) return null;
 
   return (
     <div className="flex items-center justify-center">
       <div className="flex flex-col items-center">
         {/* Company logo */}
         <Image
-          src={selectedCompany.logo}
-          alt={selectedCompany.name}
+          src={company.logo}
+          alt={company.name}
           width={160}
           height={60}
           priority
@@ -57,7 +65,7 @@ export default function CompanyLogoHeader({ logoOnly = false }: Props) {
         />
         {/* Company name (optional) */}
         {!logoOnly && (
-          <p className="text-sm text-gray-600 mt-1">{selectedCompany.name}</p>
+          <p className="text-sm text-gray-600 mt-1">{company.name}</p>
         )}
       </div>
     </div>

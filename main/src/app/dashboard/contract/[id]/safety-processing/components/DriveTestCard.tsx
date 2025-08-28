@@ -1,10 +1,13 @@
 "use client";
 
+import { formatInputDate } from "@/lib/utils/dateUtils";
+import { IDriveTest } from "@/types/driveTest.types";
 import { useId } from "react";
+import Link from "next/link";
 
 type Props = {
   trackerId: string;
-  driveTest: any; // server shape varies; read defensively
+  driveTest: IDriveTest; // server shape varies; read defensively
   canEdit: boolean; // enable interactivity only when step is reached
 };
 
@@ -21,16 +24,14 @@ export default function DriveTestCard({
   const titleId = useId();
   const descId = useId();
 
-  const pre = driveTest?.preTrip ?? {};
-  const onRoad = driveTest?.onRoad ?? {};
+  const pre = driveTest?.preTrip;
+  const onRoad = driveTest?.onRoad;
   const preDone = isCompleted(pre);
   const roadDone = isCompleted(onRoad);
 
-  const preDate = pre?.assessedAt
-    ? new Date(pre.assessedAt).toLocaleString()
-    : "N/A";
+  const preDate = pre?.assessedAt ? formatInputDate(pre.assessedAt) : "N/A";
   const roadDate = onRoad?.assessedAt
-    ? new Date(onRoad.assessedAt).toLocaleString()
+    ? formatInputDate(onRoad.assessedAt)
     : "N/A";
 
   const locked = !canEdit;
@@ -62,19 +63,19 @@ export default function DriveTestCard({
 
       {/* Overlay when locked — centered text */}
       {locked && (
-                 <div
-           className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 shadow-lg"
-           aria-hidden
-         >
-                     <div
-             className="rounded-lg px-3 py-1.5 text-xs font-medium backdrop-blur-sm"
-             style={{
-               background: "var(--color-surface)",
-               color: "var(--color-on-surface)",
-               border: "1px solid var(--color-outline)",
-               boxShadow: "var(--elevation-2)",
-             }}
-           >
+        <div
+          className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-black/10 backdrop-blur-[1px]"
+          aria-hidden
+        >
+          <div
+            className="rounded-lg px-3 py-1.5 text-xs font-medium"
+            style={{
+              background: "var(--color-surface)",
+              color: "var(--color-on-surface)",
+              border: "1px solid var(--color-outline)",
+              boxShadow: "var(--elevation-1)",
+            }}
+          >
             Locked until step is reached
           </div>
         </div>
@@ -126,20 +127,22 @@ export default function DriveTestCard({
             </>
           ) : (
             <>
-              <a
+              <Link
                 className={tileBase}
                 style={tileStyle}
-                href={`/dashboard/contract/${trackerId}/drive-test/yard-training`}
+                href={`/appraisal/${trackerId}/drive-test/pre-trip-assessment`}
+                target="_blank"
               >
                 Pre-Trip Assessment
-              </a>
-              <a
+              </Link>
+              <Link
                 className={tileBase}
                 style={tileStyle}
-                href={`/dashboard/contract/${trackerId}/drive-test/appraisal`}
+                href={`/appraisal/${trackerId}/drive-test/on-road-assessment`}
+                target="_blank"
               >
                 On-Road Evaluation
-              </a>
+              </Link>
             </>
           )}
         </div>

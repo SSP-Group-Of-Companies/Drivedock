@@ -1,8 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
-import Link from "next/link";
-import { Home, ArrowLeft, AlertTriangle } from "lucide-react";
+import { ArrowLeft, AlertTriangle } from "lucide-react";
 
 function NotFoundContent() {
   return (
@@ -57,24 +56,12 @@ function NotFoundContent() {
 
           {/* Action buttons */}
           <div className="flex flex-col gap-3">
-            <Link
-              href="/dashboard/home"
-              className="flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-medium transition-colors cursor-pointer active:scale-95"
-              style={{
-                backgroundColor: "var(--color-primary)",
-                color: "white",
-              }}
-            >
-              <Home className="h-4 w-4" aria-hidden="true" />
-              Go to Dashboard
-            </Link>
-
             <button
               onClick={() => window.history.back()}
               className="flex items-center justify-center gap-2 rounded-lg border px-4 py-3 text-sm font-medium transition-colors cursor-pointer active:scale-95"
               style={{
-                borderColor: "var(--color-outline)",
-                color: "var(--color-on-surface)",
+                backgroundColor: "var(--color-primary)",
+                color: "white",
               }}
             >
               <ArrowLeft className="h-4 w-4" aria-hidden="true" />

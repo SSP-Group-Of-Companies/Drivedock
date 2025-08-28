@@ -45,30 +45,35 @@ export default function ContractSummaryBar({ trackerId }: Props) {
     name: string;
   }>(null);
 
-  const [companyMenuOpen, setCompanyMenuOpen] = useState(false);
-  const [notifOpen, setNotifOpen] = useState(false);
+  // Single source of truth for which menu is open
+  const [whichOpen, setWhichOpen] = useState<"company" | "notif" | null>(null);
+  const isCompanyOpen = whichOpen === "company";
+  const isNotifOpen = whichOpen === "notif";
 
-  // Refs for click-outside
   const companyMenuRef = useRef<HTMLDivElement | null>(null);
   const notifMenuRef = useRef<HTMLDivElement | null>(null);
 
+  // Outside click (bubble phase) + Escape
   useEffect(() => {
-    function onDocClick(e: MouseEvent | TouchEvent) {
-      const target = e.target as Node | null;
-      if (companyMenuOpen && companyMenuRef.current && target) {
-        if (!companyMenuRef.current.contains(target)) setCompanyMenuOpen(false);
-      }
-      if (notifOpen && notifMenuRef.current && target) {
-        if (!notifMenuRef.current.contains(target)) setNotifOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", onDocClick);
-    document.addEventListener("touchstart", onDocClick);
-    return () => {
-      document.removeEventListener("mousedown", onDocClick);
-      document.removeEventListener("touchstart", onDocClick);
+    const onPointerDown = (e: PointerEvent) => {
+      const t = e.target as Node | null;
+      if (!t) return;
+      const inCompany = companyMenuRef.current?.contains(t);
+      const inNotif = notifMenuRef.current?.contains(t);
+      if (inCompany || inNotif) return;
+      if (whichOpen) setWhichOpen(null);
     };
-  }, [companyMenuOpen, notifOpen]);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setWhichOpen(null);
+    };
+
+    document.addEventListener("pointerdown", onPointerDown); // bubble phase
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [whichOpen]);
 
   const company = useMemo(
     () => resolveCompanyMeta(data?.companyId),
@@ -77,7 +82,6 @@ export default function ContractSummaryBar({ trackerId }: Props) {
 
   const driverName = data?.itemSummary?.driverName || "—";
   const driverEmail = data?.itemSummary?.driverEmail || "—";
-
   const step = data?.status?.currentStep;
   const inProgress = !data?.status?.completed;
 
@@ -92,21 +96,18 @@ export default function ContractSummaryBar({ trackerId }: Props) {
     return Math.min(100, Math.max(0, Math.round((idx / denom) * 100)));
   }, [data?.status?.currentStep, data?.needsFlatbedTraining]);
 
-  // Build switchable companies by current country
   const switchableCompanies = useMemo(() => {
     const cc = company.countryCode ?? ECountryCode.CA;
     return listCompaniesByCountry(cc);
   }, [company.countryCode]);
 
   const canEditCompany = company.countryCode === ECountryCode.CA;
-
-  // Notification count ribbon
   const notifCount = useMemo(
     () => computeNotifications(data ?? null).length,
     [data]
   );
 
-  // Loading
+  // Loading / Error states
   if (isLoading) {
     return (
       <div
@@ -128,7 +129,6 @@ export default function ContractSummaryBar({ trackerId }: Props) {
     );
   }
 
-  // Error
   if (isError) {
     return (
       <div
@@ -147,7 +147,19 @@ export default function ContractSummaryBar({ trackerId }: Props) {
     );
   }
 
-  /* ---------- Small screens layout (two rows) ---------- */
+  // Toggle handlers on POINTER DOWN (stopPropagation to avoid global closer)
+  const onToggleCompany = (e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setWhichOpen((w) => (w === "company" ? null : "company"));
+  };
+  const onToggleNotif = (e: React.PointerEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setWhichOpen((w) => (w === "notif" ? null : "notif"));
+  };
+
+  /* ---------- Mobile/Tablet (two rows) ---------- */
   const MobileRows = (
     <div className="xl:hidden flex flex-col gap-2">
       {/* Row 1: logo + name/email */}
@@ -215,13 +227,11 @@ export default function ContractSummaryBar({ trackerId }: Props) {
                 const currentIndex = step ? stepFlow.indexOf(step) : -1;
                 const totalSteps = stepFlow.length;
                 const angleStep = (2 * Math.PI) / totalSteps;
-
                 return stepFlow.map((_, index) => {
                   const angle = index * angleStep;
                   const x = 20 + 15 * Math.cos(angle);
                   const y = 20 + 15 * Math.sin(angle);
                   const isCompleted = index <= currentIndex;
-
                   return (
                     <circle
                       key={index}
@@ -252,18 +262,19 @@ export default function ContractSummaryBar({ trackerId }: Props) {
 
         {/* Right chunk: company + notifications */}
         <div className="flex items-center gap-2">
-          {/* Company dropdown */}
+          {/* Company */}
           <div className="relative" ref={companyMenuRef}>
             <button
               type="button"
-              onClick={() => setCompanyMenuOpen((v) => !v)}
+              onPointerDown={onToggleCompany}
               className="inline-flex items-center gap-1.5 rounded-lg border px-2 py-1.5 text-sm"
               style={{
                 background: "var(--color-surface)",
                 borderColor: "var(--color-outline)",
               }}
               aria-haspopup="menu"
-              aria-expanded={companyMenuOpen}
+              aria-expanded={isCompanyOpen}
+              aria-controls="company-menu"
             >
               <span className="relative h-5 w-5 overflow-hidden rounded">
                 <Image
@@ -277,8 +288,9 @@ export default function ContractSummaryBar({ trackerId }: Props) {
               <ChevronDown className="h-4 w-4 opacity-60" />
             </button>
 
-            {companyMenuOpen && (
+            {isCompanyOpen && (
               <div
+                id="company-menu"
                 role="menu"
                 className="absolute right-0 z-40 mt-2 w-72 rounded-xl border p-2 shadow-lg"
                 style={{
@@ -303,12 +315,15 @@ export default function ContractSummaryBar({ trackerId }: Props) {
                       <li key={c.id}>
                         <button
                           type="button"
+                          role="menuitem"
                           disabled={disabled}
-                          onClick={() => {
-                            setCompanyMenuOpen(false);
+                          onPointerDown={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
                             if (!active && canEditCompany) {
                               setConfirmTarget({ id: c.id, name: c.name });
                             }
+                            setWhichOpen(null);
                           }}
                           className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm disabled:opacity-50 hover:bg-black/5 dark:hover:bg-white/5"
                         >
@@ -340,14 +355,15 @@ export default function ContractSummaryBar({ trackerId }: Props) {
           <div className="relative" ref={notifMenuRef}>
             <button
               type="button"
-              onClick={() => setNotifOpen((v) => !v)}
+              onPointerDown={onToggleNotif}
               className="relative inline-flex items-center gap-1.5 rounded-lg border px-2 py-1.5 text-sm"
               style={{
                 background: "var(--color-surface)",
                 borderColor: "var(--color-outline)",
               }}
               aria-haspopup="menu"
-              aria-expanded={notifOpen}
+              aria-expanded={isNotifOpen}
+              aria-controls="notif-menu"
             >
               <Bell className="h-4 w-4" />
               {notifCount > 0 && (
@@ -367,9 +383,10 @@ export default function ContractSummaryBar({ trackerId }: Props) {
               <ChevronDown className="h-4 w-4 opacity-60" />
             </button>
 
-            {notifOpen && (
+            {isNotifOpen && (
               <NotificationsMenu
-                onClose={() => setNotifOpen(false)}
+                id="notif-menu"
+                onClose={() => setWhichOpen(null)}
                 context={data ?? null}
               />
             )}
@@ -379,15 +396,9 @@ export default function ContractSummaryBar({ trackerId }: Props) {
     </div>
   );
 
-  /* ---------- Desktop layout (grid for proper middle spacing) ---------- */
+  /* ---------- Desktop (grid so the middle stays centered/roomy) ---------- */
   const DesktopRow = (
-    <div
-      className="
-        hidden xl:grid
-        xl:grid-cols-[minmax(0,1fr)_minmax(320px,42%)_auto]
-        xl:items-center xl:gap-4
-      "
-    >
+    <div className="hidden xl:grid xl:grid-cols-[minmax(0,1fr)_minmax(320px,42%)_auto] xl:items-center xl:gap-4">
       {/* Left */}
       <div className="min-w-0 flex items-start gap-3">
         <div className="relative h-12 w-12 overflow-hidden rounded">
@@ -417,7 +428,7 @@ export default function ContractSummaryBar({ trackerId }: Props) {
         </div>
       </div>
 
-      {/* Middle (width controlled by the grid column) */}
+      {/* Middle */}
       <div className="min-w-0">
         <div className="mb-2 flex items-center gap-3">
           <span
@@ -458,6 +469,7 @@ export default function ContractSummaryBar({ trackerId }: Props) {
         <div
           className="h-2 w-full overflow-hidden rounded-full"
           style={{ background: "var(--color-outline-variant)" }}
+          aria-label="Onboarding progress"
         >
           <div
             className="h-full rounded-full transition-[width] duration-300"
@@ -468,18 +480,19 @@ export default function ContractSummaryBar({ trackerId }: Props) {
 
       {/* Right */}
       <div className="flex items-center justify-end gap-2">
-        {/* Company dropdown */}
+        {/* Company */}
         <div className="relative" ref={companyMenuRef}>
           <button
             type="button"
-            onClick={() => setCompanyMenuOpen((v) => !v)}
+            onPointerDown={onToggleCompany}
             className="inline-flex items-center gap-1.5 rounded-lg border px-2 py-1.5 text-sm"
             style={{
               background: "var(--color-surface)",
               borderColor: "var(--color-outline)",
             }}
             aria-haspopup="menu"
-            aria-expanded={companyMenuOpen}
+            aria-expanded={isCompanyOpen}
+            aria-controls="company-menu-desktop"
           >
             <Building2 className="h-4 w-4" />
             <span>Company:</span>
@@ -487,8 +500,9 @@ export default function ContractSummaryBar({ trackerId }: Props) {
             <ChevronDown className="h-4 w-4 opacity-60" />
           </button>
 
-          {companyMenuOpen && (
+          {isCompanyOpen && (
             <div
+              id="company-menu-desktop"
               role="menu"
               className="absolute right-0 z-40 mt-2 w-72 rounded-xl border p-2 shadow-lg"
               style={{
@@ -513,12 +527,15 @@ export default function ContractSummaryBar({ trackerId }: Props) {
                     <li key={c.id}>
                       <button
                         type="button"
+                        role="menuitem"
                         disabled={disabled}
-                        onClick={() => {
-                          setCompanyMenuOpen(false);
+                        onPointerDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
                           if (!active && canEditCompany) {
                             setConfirmTarget({ id: c.id, name: c.name });
                           }
+                          setWhichOpen(null);
                         }}
                         className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-sm disabled:opacity-50 hover:bg-black/5 dark:hover:bg-white/5"
                       >
@@ -548,14 +565,15 @@ export default function ContractSummaryBar({ trackerId }: Props) {
         <div className="relative" ref={notifMenuRef}>
           <button
             type="button"
-            onClick={() => setNotifOpen((v) => !v)}
+            onPointerDown={onToggleNotif}
             className="relative inline-flex items-center gap-1.5 rounded-lg border px-2 py-1.5 text-sm"
             style={{
               background: "var(--color-surface)",
               borderColor: "var(--color-outline)",
             }}
             aria-haspopup="menu"
-            aria-expanded={notifOpen}
+            aria-expanded={isNotifOpen}
+            aria-controls="notif-menu-desktop"
           >
             <Bell className="h-4 w-4" />
             <span>Notifications</span>
@@ -576,9 +594,10 @@ export default function ContractSummaryBar({ trackerId }: Props) {
             <ChevronDown className="h-4 w-4 opacity-60" />
           </button>
 
-          {notifOpen && (
+          {isNotifOpen && (
             <NotificationsMenu
-              onClose={() => setNotifOpen(false)}
+              id="notif-menu-desktop"
+              onClose={() => setWhichOpen(null)}
               context={data ?? null}
             />
           )}
@@ -598,13 +617,9 @@ export default function ContractSummaryBar({ trackerId }: Props) {
       role="region"
       aria-label="Contract summary"
     >
-      {/* Mobile/Tablet two-row layout */}
       {MobileRows}
-
-      {/* Desktop single-row layout (grid) */}
       {DesktopRow}
 
-      {/* Confirm change-company */}
       <CompanyChangeConfirm
         open={!!confirmTarget}
         currentName={company.label}
