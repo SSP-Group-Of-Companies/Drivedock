@@ -41,7 +41,6 @@ const assessmentItemSchema = new Schema(
     key: { type: String, required: [true, "items[].key is required"] },
     label: { type: String, required: [true, "items[].label is required"] },
     checked: { type: Boolean, default: false },
-    comment: { type: String },
   },
   { _id: false }
 );
@@ -56,7 +55,6 @@ const makeAssessmentSectionSchema = (sectionPath: string, expectedKeys: string[]
         default: [],
         validate: exactKeysValidator(expectedKeys, `${sectionPath}`),
       },
-      sectionNotes: { type: String },
     },
     { _id: false }
   );

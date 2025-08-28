@@ -11,20 +11,11 @@ import UpdateSubmitBar from "./components/UpdateSubmitBar";
 import DashboardFormWizard from "../components/DashboardFormWizard";
 import { computeSafetyGates } from "@/lib/dashboard/utils/stepGating";
 
-import type {
-  SafetyPatchBody,
-  CarriersEdgeBlock,
-  DrugTestBlock,
-} from "@/lib/dashboard/api/safetyProcessing";
+import type { SafetyPatchBody, CarriersEdgeBlock, DrugTestBlock } from "@/lib/dashboard/api/safetyProcessing";
 
-export default function SafetyProcessingClient({
-  trackerId,
-}: {
-  trackerId: string;
-}) {
+export default function SafetyProcessingClient({ trackerId }: { trackerId: string }) {
   const searchParams = useSearchParams();
-  const { data, isLoading, isError, error, mutate } =
-    useSafetyProcessing(trackerId);
+  const { data, isLoading, isError, error, mutate } = useSafetyProcessing(trackerId);
 
   // ---------------- Staged changes (page-level) ----------------
   const [staged, setStaged] = useState<SafetyPatchBody>({});
@@ -41,24 +32,17 @@ export default function SafetyProcessingClient({
   const clearStaged = () => setStaged({});
 
   // Merge helpers: prefer staged values, fall back to server
-  function mergeCEView(
-    server: CarriersEdgeBlock | undefined,
-    stagedCE?: SafetyPatchBody["carriersEdgeTraining"]
-  ): CarriersEdgeBlock {
+  function mergeCEView(server: CarriersEdgeBlock | undefined, stagedCE?: SafetyPatchBody["carriersEdgeTraining"]): CarriersEdgeBlock {
     return {
       emailSent: stagedCE?.emailSent ?? server?.emailSent,
       emailSentBy: stagedCE?.emailSentBy ?? server?.emailSentBy,
-      emailSentAt:
-        (stagedCE?.emailSentAt as string | undefined) ?? server?.emailSentAt,
+      emailSentAt: (stagedCE?.emailSentAt as string | undefined) ?? server?.emailSentAt,
       completed: stagedCE?.completed ?? server?.completed,
       certificates: stagedCE?.certificates ?? server?.certificates ?? [],
     };
   }
 
-  function mergeDTView(
-    server: DrugTestBlock | undefined,
-    stagedDT?: SafetyPatchBody["drugTest"]
-  ): DrugTestBlock {
+  function mergeDTView(server: DrugTestBlock | undefined, stagedDT?: SafetyPatchBody["drugTest"]): DrugTestBlock {
     return {
       status: stagedDT?.status ?? server?.status,
       documents: stagedDT?.documents ?? server?.documents,
@@ -104,7 +88,7 @@ export default function SafetyProcessingClient({
   });
 
   // Check if we should highlight the Carrier's Edge card
-  const shouldHighlightCarriersEdge = searchParams.get('highlight') === 'carriers-edge';
+  const shouldHighlightCarriersEdge = searchParams.get("highlight") === "carriers-edge";
 
   // ---------------- Stage updaters ----------------
   const stageCE = (partial: Partial<CarriersEdgeBlock>) =>
@@ -144,18 +128,13 @@ export default function SafetyProcessingClient({
       <DashboardFormWizard contractContext={ctx} />
 
       {/* Submit bar */}
-      <UpdateSubmitBar
-        dirty={isDirty}
-        busy={mutate.isPending}
-        onSubmit={handleSubmit}
-        onDiscard={clearStaged}
-      />
+      <UpdateSubmitBar dirty={isDirty} busy={mutate.isPending} onSubmit={handleSubmit} onDiscard={clearStaged} />
 
       {/* Cards grid (responsive 2x2 on desktop) */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <DriveTestCard
           trackerId={trackerId}
-          driveTest={data.driveTest ?? {}}
+          driveTest={data.driveTest as any}
           canEdit={gates.canEditDriveTest}
           // (Drive test remains read-only here; wire later if needed)
         />
@@ -169,12 +148,7 @@ export default function SafetyProcessingClient({
           highlight={shouldHighlightCarriersEdge}
         />
 
-        <DrugTestCard
-          trackerId={trackerId}
-          drugTest={dtView}
-          canEdit={gates.canEditDrugTest}
-          onChange={(partial) => stageDT(partial)}
-        />
+        <DrugTestCard trackerId={trackerId} drugTest={dtView} canEdit={gates.canEditDrugTest} onChange={(partial) => stageDT(partial)} />
 
         <NotesCard
           notes={staged.notes ?? ctx.notes ?? ""}

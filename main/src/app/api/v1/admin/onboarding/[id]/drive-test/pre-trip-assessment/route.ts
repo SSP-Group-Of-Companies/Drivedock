@@ -7,12 +7,12 @@ import DriveTest from "@/mongoose/models/DriveTest";
 import { EStepPath } from "@/types/onboardingTracker.types";
 import { buildTrackerContext, onboardingExpired, hasReachedStep, advanceProgress, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
 import { isValidObjectId } from "mongoose";
-import { guard } from "@/lib/auth/authUtils";
 import { deleteS3Objects, finalizePhoto } from "@/lib/utils/s3Upload";
 import { ES3Folder } from "@/types/aws.types";
 import { S3_SUBMISSIONS_FOLDER } from "@/constants/aws";
 import { IPreTripAssessment, IDriveTest, EDriveTestOverall } from "@/types/driveTest.types";
 import { parseJsonBody } from "@/lib/utils/reqParser";
+import ApplicationForm from "@/mongoose/models/ApplicationForm";
 
 /**
  * GET /drive-test/pre-trip-assessment
@@ -22,7 +22,6 @@ import { parseJsonBody } from "@/lib/utils/reqParser";
 export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
     await connectDB();
-    await guard();
 
     const { id: onboardingId } = await params;
     if (!isValidObjectId(onboardingId)) return errorResponse(400, "Not a valid onboarding tracker ID");
@@ -36,16 +35,40 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
     }
 
     const driveTestId = onboardingDoc.forms?.driveTest;
-    let preTrip: IPreTripAssessment | undefined;
 
+    let driveTestDoc: IDriveTest | null = null;
     if (driveTestId && isValidObjectId(driveTestId)) {
-      const driveTestDoc = await DriveTest.findById(driveTestId);
-      preTrip = driveTestDoc?.preTrip || undefined;
+      driveTestDoc = await DriveTest.findById(driveTestId);
     }
+
+    if (!driveTestDoc) return errorResponse(404, "drive test document not found");
+
+    // Pull driverName and driverLicense from ApplicationForm.page1
+    const appFormId = onboardingDoc.forms?.driverApplication;
+    let driverName: string | undefined;
+    let driverLicense: string | undefined;
+
+    if (appFormId && isValidObjectId(appFormId)) {
+      // Only fetch what we need from page1
+      const appForm = await ApplicationForm.findById(appFormId).select("page1.firstName page1.lastName page1.licenses").lean();
+
+      if (appForm?.page1) {
+        const first = (appForm.page1 as any).firstName?.toString().trim() || "";
+        const last = (appForm.page1 as any).lastName?.toString().trim() || "";
+        driverName = [first, last].filter(Boolean).join(" ") || undefined;
+
+        const licenses = (appForm.page1 as any).licenses as Array<{ licenseNumber?: string }> | undefined;
+        driverLicense = licenses && licenses.length > 0 ? licenses[0]?.licenseNumber : undefined;
+      }
+    }
+
+    if (!driverName || !driverLicense) return errorResponse(400, "driver information missing");
 
     return successResponse(200, "pre-trip assessment data retrieved", {
       onboardingContext: buildTrackerContext(onboardingDoc, null, true),
-      preTrip: preTrip ?? {}, // empty object when not present
+      driveTest: driveTestDoc,
+      driverName,
+      driverLicense,
     });
   } catch (error) {
     return errorResponse(error);
@@ -78,7 +101,6 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
 export const POST = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
     await connectDB();
-    await guard();
 
     const { id: onboardingId } = await params;
     if (!isValidObjectId(onboardingId)) return errorResponse(400, "Invalid onboarding ID");
@@ -111,6 +133,27 @@ export const POST = async (req: NextRequest, { params }: { params: Promise<{ id:
 
     if (existingDoc?.completed) return errorResponse(401, "Drive test is already marked as completed");
     if (existingDoc?.preTrip) return errorResponse(401, "Pre-trip assessment already submitted");
+
+    // Pull driverName and driverLicense from ApplicationForm.page1
+    const appFormId = onboardingDoc.forms?.driverApplication;
+    let driverName: string | undefined;
+    let driverLicense: string | undefined;
+
+    if (appFormId && isValidObjectId(appFormId)) {
+      // Only fetch what we need from page1
+      const appForm = await ApplicationForm.findById(appFormId).select("page1.firstName page1.lastName page1.licenses").lean();
+
+      if (appForm?.page1) {
+        const first = (appForm.page1 as any).firstName?.toString().trim() || "";
+        const last = (appForm.page1 as any).lastName?.toString().trim() || "";
+        driverName = [first, last].filter(Boolean).join(" ") || undefined;
+
+        const licenses = (appForm.page1 as any).licenses as Array<{ licenseNumber?: string }> | undefined;
+        driverLicense = licenses && licenses.length > 0 ? licenses[0]?.licenseNumber : undefined;
+      }
+    }
+
+    if (!driverName || !driverLicense) return errorResponse(400, "driver information missing");
 
     // A) Pure validation (in-memory)
     const validateDoc = new DriveTest({ powerUnitType, trailerType, preTrip });
@@ -157,8 +200,9 @@ export const POST = async (req: NextRequest, { params }: { params: Promise<{ id:
     // D) Business outcome
     if (driveTestDoc.preTrip?.overallAssessment === EDriveTestOverall.FAIL) {
       onboardingDoc.terminated = true;
-
-      // Reset preTrip on DriveTest
+      // Reset fields on DriveTest
+      driveTestDoc.set("powerUnitType", "");
+      driveTestDoc.set("trailerType", "");
       driveTestDoc.set("preTrip", undefined);
 
       await Promise.all([driveTestDoc.save({ validateBeforeSave: false }), onboardingDoc.save()]);
@@ -178,6 +222,8 @@ export const POST = async (req: NextRequest, { params }: { params: Promise<{ id:
     return successResponse(200, "Pre-trip assessment saved", {
       onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.DRIVE_TEST, true),
       driveTest: driveTestDoc,
+      driverName,
+      driverLicense,
     });
   } catch (error) {
     return errorResponse(error);

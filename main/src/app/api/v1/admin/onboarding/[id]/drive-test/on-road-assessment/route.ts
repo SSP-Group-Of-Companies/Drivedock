@@ -7,13 +7,13 @@ import DriveTest from "@/mongoose/models/DriveTest";
 import { EStepPath } from "@/types/onboardingTracker.types";
 import { buildTrackerContext, onboardingExpired, hasReachedStep, advanceProgress, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
 import { isValidObjectId } from "mongoose";
-import { guard } from "@/lib/auth/authUtils";
 import { deleteS3Objects, finalizePhoto } from "@/lib/utils/s3Upload";
 import { ES3Folder } from "@/types/aws.types";
 import { S3_SUBMISSIONS_FOLDER } from "@/constants/aws";
 import { IOnRoadAssessment, IDriveTest, EDriveTestOverall } from "@/types/driveTest.types";
 import { parseJsonBody } from "@/lib/utils/reqParser";
 import { canHaveFlatbedTraining } from "@/constants/companies";
+import ApplicationForm from "@/mongoose/models/ApplicationForm";
 
 /**
  * GET /drive-test/on-road-assessment
@@ -23,7 +23,6 @@ import { canHaveFlatbedTraining } from "@/constants/companies";
 export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
     await connectDB();
-    await guard();
 
     const { id: onboardingId } = await params;
     if (!isValidObjectId(onboardingId)) return errorResponse(400, "Not a valid onboarding tracker ID");
@@ -37,16 +36,40 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
     }
 
     const driveTestId = onboardingDoc.forms?.driveTest;
-    let onRoad: IOnRoadAssessment | undefined;
 
+    let driveTestDoc: IDriveTest | null = null;
     if (driveTestId && isValidObjectId(driveTestId)) {
-      const driveTestDoc = await DriveTest.findById(driveTestId);
-      onRoad = driveTestDoc?.onRoad || undefined;
+      driveTestDoc = await DriveTest.findById(driveTestId);
     }
+
+    if (!driveTestDoc) return errorResponse(404, "drive test document not found");
+
+    // Pull driverName and driverLicense from ApplicationForm.page1
+    const appFormId = onboardingDoc.forms?.driverApplication;
+    let driverName: string | undefined;
+    let driverLicense: string | undefined;
+
+    if (appFormId && isValidObjectId(appFormId)) {
+      // Only fetch what we need from page1
+      const appForm = await ApplicationForm.findById(appFormId).select("page1.firstName page1.lastName page1.licenses").lean();
+
+      if (appForm?.page1) {
+        const first = (appForm.page1 as any).firstName?.toString().trim() || "";
+        const last = (appForm.page1 as any).lastName?.toString().trim() || "";
+        driverName = [first, last].filter(Boolean).join(" ") || undefined;
+
+        const licenses = (appForm.page1 as any).licenses as Array<{ licenseNumber?: string }> | undefined;
+        driverLicense = licenses && licenses.length > 0 ? licenses[0]?.licenseNumber : undefined;
+      }
+    }
+
+    if (!driverName || !driverLicense) return errorResponse(400, "driver information missing");
 
     return successResponse(200, "on-road assessment data retrieved", {
       onboardingContext: buildTrackerContext(onboardingDoc, null, true),
-      onRoad: onRoad ?? {}, // empty object when not present
+      driveTest: driveTestDoc,
+      driverName,
+      driverLicense,
     });
   } catch (error) {
     return errorResponse(error);
@@ -118,7 +141,6 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
 export const POST = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
     await connectDB();
-    await guard();
 
     const { id: onboardingId } = await params;
     if (!isValidObjectId(onboardingId)) return errorResponse(400, "Invalid onboarding ID");
@@ -144,6 +166,27 @@ export const POST = async (req: NextRequest, { params }: { params: Promise<{ id:
       return errorResponse(401, "Pre-trip assessment must be pass or conditional_pass before on-road");
     }
     if (driveTestDoc.onRoad) return errorResponse(401, "On-road assessment already submitted");
+
+    // Pull driverName and driverLicense from ApplicationForm.page1
+    const appFormId = onboardingDoc.forms?.driverApplication;
+    let driverName: string | undefined;
+    let driverLicense: string | undefined;
+
+    if (appFormId && isValidObjectId(appFormId)) {
+      // Only fetch what we need from page1
+      const appForm = await ApplicationForm.findById(appFormId).select("page1.firstName page1.lastName page1.licenses").lean();
+
+      if (appForm?.page1) {
+        const first = (appForm.page1 as any).firstName?.toString().trim() || "";
+        const last = (appForm.page1 as any).lastName?.toString().trim() || "";
+        driverName = [first, last].filter(Boolean).join(" ") || undefined;
+
+        const licenses = (appForm.page1 as any).licenses as Array<{ licenseNumber?: string }> | undefined;
+        driverLicense = licenses && licenses.length > 0 ? licenses[0]?.licenseNumber : undefined;
+      }
+    }
+
+    if (!driverName || !driverLicense) return errorResponse(400, "driver information missing");
 
     // Body
     const body = await parseJsonBody<{ driveTest?: Partial<IDriveTest> }>(req);
@@ -210,8 +253,10 @@ export const POST = async (req: NextRequest, { params }: { params: Promise<{ id:
     if (outcome === EDriveTestOverall.FAIL) {
       onboardingDoc.terminated = true;
 
-      // Reset onRoad on DriveTest
-      driveTestDoc.set("onRoad", undefined);
+      // Reset fields on DriveTest
+      driveTestDoc.set("powerUnitType", "");
+      driveTestDoc.set("trailerType", "");
+      driveTestDoc.set("preTrip", undefined);
 
       await Promise.all([driveTestDoc.save({ validateBeforeSave: false }), onboardingDoc.save()]);
 
@@ -237,13 +282,9 @@ export const POST = async (req: NextRequest, { params }: { params: Promise<{ id:
 
     return successResponse(200, "On-road assessment saved", {
       onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.DRIVE_TEST, true),
-      driveTest: {
-        id: driveTestDoc._id,
-        powerUnitType: driveTestDoc.powerUnitType,
-        trailerType: driveTestDoc.trailerType,
-        completed: driveTestDoc.completed,
-        onRoad: driveTestDoc.onRoad,
-      },
+      driveTest: driveTestDoc,
+      driverName,
+      driverLicense,
     });
   } catch (error) {
     return errorResponse(error);

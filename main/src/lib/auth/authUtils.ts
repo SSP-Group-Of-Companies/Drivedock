@@ -50,13 +50,13 @@ export const currentUser = cache(async (): Promise<IUser | null> => {
   })) as AppJWT | null;
 
   if (!token?.userId || !token?.email || !token?.name) return null;
-
-  return {
+  const user = {
     id: token.userId,
     email: token.email,
     name: token.name,
     picture: token.picture,
   };
+  return user;
 });
 
 /**

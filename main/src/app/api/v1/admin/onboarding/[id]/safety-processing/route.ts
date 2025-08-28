@@ -56,7 +56,7 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
       .populate({
         path: "forms.driveTest",
         // adjust the fields to your DriveTest schema as needed
-        select: "completed createdAt updatedAt",
+        select: "preTrip.overallAssessment preTrip.assessedAt onRoad.overallAssessment onRoad.assessedAt completed createdAt updatedAt",
       });
 
     if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");

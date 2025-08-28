@@ -1,10 +1,12 @@
 "use client";
 
+import { formatInputDate } from "@/lib/utils/dateUtils";
+import { IDriveTest } from "@/types/driveTest.types";
 import { useId } from "react";
 
 type Props = {
   trackerId: string;
-  driveTest: any; // server shape varies; read defensively
+  driveTest: IDriveTest; // server shape varies; read defensively
   canEdit: boolean; // enable interactivity only when step is reached
 };
 
@@ -13,30 +15,21 @@ function isCompleted(block: any): boolean {
   return v === "pass" || v === "fail" || v === "conditional_pass";
 }
 
-export default function DriveTestCard({
-  trackerId,
-  driveTest,
-  canEdit,
-}: Props) {
+export default function DriveTestCard({ trackerId, driveTest, canEdit }: Props) {
   const titleId = useId();
   const descId = useId();
 
-  const pre = driveTest?.preTrip ?? {};
-  const onRoad = driveTest?.onRoad ?? {};
+  const pre = driveTest?.preTrip;
+  const onRoad = driveTest?.onRoad;
   const preDone = isCompleted(pre);
   const roadDone = isCompleted(onRoad);
 
-  const preDate = pre?.assessedAt
-    ? new Date(pre.assessedAt).toLocaleString()
-    : "N/A";
-  const roadDate = onRoad?.assessedAt
-    ? new Date(onRoad.assessedAt).toLocaleString()
-    : "N/A";
+  const preDate = pre?.assessedAt ? formatInputDate(pre.assessedAt) : "N/A";
+  const roadDate = onRoad?.assessedAt ? formatInputDate(onRoad.assessedAt) : "N/A";
 
   const locked = !canEdit;
 
-  const tileBase =
-    "block w-full text-center rounded-xl px-4 py-4 sm:py-5 text-sm font-medium shadow-sm";
+  const tileBase = "block w-full text-center rounded-xl px-4 py-4 sm:py-5 text-sm font-medium shadow-sm";
   const tileStyle: React.CSSProperties = {
     background: "var(--color-primary-container)",
     color: "var(--color-primary-on-container)",
@@ -62,10 +55,7 @@ export default function DriveTestCard({
 
       {/* Overlay when locked — centered text */}
       {locked && (
-        <div
-          className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-black/10 backdrop-blur-[1px]"
-          aria-hidden
-        >
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-black/10 backdrop-blur-[1px]" aria-hidden>
           <div
             className="rounded-lg px-3 py-1.5 text-xs font-medium"
             style={{
@@ -98,46 +88,24 @@ export default function DriveTestCard({
       </header>
 
       {/* Two-column layout: left = tiles, right = summary */}
-      <div
-        className={`grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 ${
-          locked ? "pointer-events-none" : ""
-        }`}
-      >
+      <div className={`grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 ${locked ? "pointer-events-none" : ""}`}>
         {/* Left: big action tiles */}
         <div className="grid grid-rows-2 gap-3 sm:gap-4">
           {locked ? (
             <>
-              <span
-                role="link"
-                aria-disabled="true"
-                className={spanTileClass}
-                style={tileStyle}
-              >
+              <span role="link" aria-disabled="true" className={spanTileClass} style={tileStyle}>
                 Pre-Trip Assessment
               </span>
-              <span
-                role="link"
-                aria-disabled="true"
-                className={spanTileClass}
-                style={tileStyle}
-              >
+              <span role="link" aria-disabled="true" className={spanTileClass} style={tileStyle}>
                 On-Road Evaluation
               </span>
             </>
           ) : (
             <>
-              <a
-                className={tileBase}
-                style={tileStyle}
-                href={`/dashboard/contract/${trackerId}/drive-test/yard-training`}
-              >
+              <a className={tileBase} style={tileStyle} href={`/appraisal/${trackerId}/drive-test/pre-trip-assessment`} target="_blank">
                 Pre-Trip Assessment
               </a>
-              <a
-                className={tileBase}
-                style={tileStyle}
-                href={`/dashboard/contract/${trackerId}/drive-test/appraisal`}
-              >
+              <a className={tileBase} style={tileStyle} href={`/appraisal/${trackerId}/drive-test/on-road-assessment`} target="_blank">
                 On-Road Evaluation
               </a>
             </>
@@ -145,14 +113,8 @@ export default function DriveTestCard({
         </div>
 
         {/* Right: details with separators like your screenshot */}
-        <div
-          className="grid grid-rows-2 rounded-xl border"
-          style={{ borderColor: "var(--color-outline-variant)" }}
-        >
-          <div
-            className="grid grid-cols-2 gap-1 rounded-t-xl p-3"
-            style={{ borderBottom: "1px solid var(--color-outline-variant)" }}
-          >
+        <div className="grid grid-rows-2 rounded-xl border" style={{ borderColor: "var(--color-outline-variant)" }}>
+          <div className="grid grid-cols-2 gap-1 rounded-t-xl p-3" style={{ borderBottom: "1px solid var(--color-outline-variant)" }}>
             <div className="text-sm">
               <div className="text-xs opacity-70">Completed Pre-Trip</div>
               <div>{preDone ? "Yes" : "No"}</div>
