@@ -8,11 +8,7 @@ import CarriersEdgeTraining from "@/mongoose/models/CarriersEdgeTraining";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
 
 import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
-import {
-  buildTrackerContext,
-  hasReachedStep,
-  onboardingExpired,
-} from "@/lib/utils/onboardingUtils";
+import { buildTrackerContext, hasReachedStep, onboardingExpired } from "@/lib/utils/onboardingUtils";
 import { EStepPath } from "@/types/onboardingTracker.types";
 
 /**
@@ -28,10 +24,7 @@ import { EStepPath } from "@/types/onboardingTracker.types";
  *  - Onboarding session not expired
  *  - Driver has reached the CARRIERS_EDGE_TRAINING step
  */
-export const GET = async (
-  _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) => {
+export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
     await connectDB();
 
@@ -64,11 +57,7 @@ export const GET = async (
       driverEmail = doc?.page1?.email ?? undefined;
     };
 
-    if (
-      driverAppRef?._id &&
-      typeof driverAppRef === "object" &&
-      !driverAppRef.page1
-    ) {
+    if (driverAppRef?._id && typeof driverAppRef === "object" && !driverAppRef.page1) {
       // This is an ObjectId reference, not a populated document
       const driverAppId = driverAppRef.toString();
 

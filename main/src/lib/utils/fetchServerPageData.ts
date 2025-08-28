@@ -3,6 +3,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { ensureLeadingSlash, isAbsoluteUrl, trimTrailingSlash } from "./urlHelper";
 import { getCurrentOrigin } from "./urlHelper.server";
+import { isProd } from "@/config/env";
 
 /** Standard result shape for server page data fetches. */
 export type ServerPageDataResult<T> = { data?: T; error?: string };
@@ -17,6 +18,19 @@ type NextFetchConfig = {
 export type ServerFetchInit = Omit<RequestInit, "headers"> & {
   headers?: HeadersInit;
   next?: NextFetchConfig;
+};
+
+/** Extra behavior flags. */
+type FetchExtras = {
+  /**
+   * Cookie forwarding strategy:
+   * - "auto" (default): prod=forward only if same-origin; dev=always forward
+   * - "always": always attach cookies() to the request
+   * - "never": never attach cookies()
+   */
+  forwardCookies?: "auto" | "always" | "never";
+  /** Enable tiny debug logging during auth debugging. */
+  debug?: boolean;
 };
 
 function isJsonResponse(res: Response) {
@@ -44,16 +58,30 @@ async function isSameOrigin(absoluteUrl: string): Promise<boolean> {
 /**
  * Server-only helper for Server Components.
  * - Accepts absolute URLs, or relative ("/api/...") and resolves to absolute.
- * - Auto-forwards cookies for same-origin requests (Vercel preview protection).
+ * - Cookie forwarding is configurable; defaults to "auto" which:
+ *     * in prod: forwards only when same-origin (Vercel preview protection friendly)
+ *     * in dev:  always forwards (covers http://localhost:<port> internal calls)
  * - Safe defaults: Accept JSON, no-store (unless caller sets cache/revalidate), redirect: "manual".
  * - Returns `{ data, error }`, unwrapping `{ data: ... }` if present.
  */
-export async function fetchServerPageData<T = unknown>(inputUrl: string, init: ServerFetchInit = {}): Promise<ServerPageDataResult<T>> {
+export async function fetchServerPageData<T = unknown>(inputUrl: string, init: ServerFetchInit & FetchExtras = {}): Promise<ServerPageDataResult<T>> {
+  const { forwardCookies = "auto", debug = false, ...initRest } = init;
+
   try {
     const url = await toAbsoluteUrlIfNeeded(inputUrl);
     const sameOrigin = await isSameOrigin(url);
 
-    const callerControlsCaching = init.cache !== undefined || init.next?.revalidate !== undefined;
+    const shouldForwardCookies =
+      forwardCookies === "always"
+        ? true
+        : forwardCookies === "never"
+        ? false
+        : // "auto"
+        isProd
+        ? sameOrigin
+        : true; // dev: always forward, prod: same-origin only
+
+    const callerControlsCaching = initRest.cache !== undefined || initRest.next?.revalidate !== undefined;
 
     const defaultInit: ServerFetchInit = {
       redirect: "manual",
@@ -61,17 +89,31 @@ export async function fetchServerPageData<T = unknown>(inputUrl: string, init: S
       ...(callerControlsCaching ? {} : { cache: "no-store" }),
     };
 
-    // Merge headers and forward cookies if same-origin (unless caller already set cookie)
     const defaultHeaders = new Headers(defaultInit.headers as HeadersInit);
-    const callerHeaders = new Headers(init.headers || {});
-    if (sameOrigin && !callerHeaders.has("cookie")) {
-      const cookieStr = cookies().toString();
+    const callerHeaders = new Headers(initRest.headers || {});
+
+    if (shouldForwardCookies && !callerHeaders.has("cookie")) {
+      const cookieStr = (await cookies()).toString();
       if (cookieStr) defaultHeaders.set("cookie", cookieStr);
+      if (debug) {
+        // lightweight debug so you can see when forwarding occurs
+        console.log(
+          "[fetchServerPageData] forwarding cookies ->",
+          cookieStr.split("; ").map((p) => p.split("=")[0])
+        );
+      }
+    } else if (debug) {
+      console.log("[fetchServerPageData] NOT forwarding cookies", {
+        isProd,
+        sameOrigin,
+        forwardCookies,
+        callerHasCookieHeader: callerHeaders.has("cookie"),
+      });
     }
 
     const merged: RequestInit = {
       ...defaultInit,
-      ...init,
+      ...initRest,
       headers: {
         ...Object.fromEntries(defaultHeaders.entries()),
         ...Object.fromEntries(callerHeaders.entries()),

@@ -58,7 +58,9 @@ export const GET = async (
       })
       .populate({
         path: "forms.driveTest",
-        select: "completed createdAt updatedAt",
+        // adjust the fields to your DriveTest schema as needed
+        select:
+          "preTrip.overallAssessment preTrip.assessedAt onRoad.overallAssessment onRoad.assessedAt completed createdAt updatedAt",
       });
 
     if (!onboardingDoc)

@@ -1,10 +1,5 @@
 import { FORM_RESUME_EXPIRES_AT_IN_MILSEC } from "@/config/env";
-import {
-  EStepPath,
-  IOnboardingStatus,
-  IOnboardingTrackerDoc,
-  IOnboardingTrackerContext,
-} from "@/types/onboardingTracker.types";
+import { EStepPath, IOnboardingStatus, IOnboardingTrackerDoc, IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
 
 /**
  * ======================================================================
@@ -20,9 +15,7 @@ import {
 export type FlowOpts = { needsFlatbedTraining: boolean };
 
 /** Helper: derive flow options from the onboarding document (robust). */
-export function getFlowOptsFromTracker(
-  tracker: IOnboardingTrackerDoc & { needsFlatbedTraining?: boolean }
-): FlowOpts {
+export function getFlowOptsFromTracker(tracker: IOnboardingTrackerDoc & { needsFlatbedTraining?: boolean }): FlowOpts {
   const needsFlatbedTraining = Boolean(tracker.needsFlatbedTraining);
   return { needsFlatbedTraining };
 }
@@ -55,9 +48,7 @@ const BASE_FLOW: EStepPath[] = [
  * Callers should pass FlowOpts unless the caller is an Onboarding doc (see helpers that accept the doc).
  */
 export function getOnboardingStepFlow(opts: FlowOpts): EStepPath[] {
-  return opts.needsFlatbedTraining
-    ? [...BASE_FLOW, EStepPath.FLATBED_TRAINING]
-    : BASE_FLOW;
+  return opts.needsFlatbedTraining ? [...BASE_FLOW, EStepPath.FLATBED_TRAINING] : BASE_FLOW;
 }
 
 /* ----------------------------------------------------------------------
@@ -70,11 +61,7 @@ export function getStepIndex(step: EStepPath, opts: FlowOpts): number {
 }
 
 /** Returns true if stepA occurs before stepB in the flow. */
-export function isStepBefore(
-  stepA: EStepPath,
-  stepB: EStepPath,
-  opts: FlowOpts
-): boolean {
+export function isStepBefore(stepA: EStepPath, stepB: EStepPath, opts: FlowOpts): boolean {
   const flow = getOnboardingStepFlow(opts);
   return flow.indexOf(stepA) < flow.indexOf(stepB);
 }
@@ -100,10 +87,7 @@ export function getPrevStep(step: EStepPath, opts: FlowOpts): EStepPath | null {
 }
 
 /** Convenience: get both neighbors for a step. */
-export function getNeighborSteps(
-  step: EStepPath,
-  opts: FlowOpts
-): { prevStep: EStepPath | null; nextStep: EStepPath | null } {
+export function getNeighborSteps(step: EStepPath, opts: FlowOpts): { prevStep: EStepPath | null; nextStep: EStepPath | null } {
   return {
     prevStep: getPrevStep(step, opts),
     nextStep: getNextStep(step, opts),
@@ -126,10 +110,7 @@ export function getNeighborSteps(
  * - Otherwise, move currentStep to the step after the one just completed.
  * - If completing the final step, mark as fully completed.
  */
-export function advanceProgress(
-  doc: IOnboardingTrackerDoc,
-  completedNow: EStepPath
-): IOnboardingStatus {
+export function advanceProgress(doc: IOnboardingTrackerDoc, completedNow: EStepPath): IOnboardingStatus {
   const opts = getFlowOptsFromTracker(doc);
   const flow = getOnboardingStepFlow(opts);
 
@@ -164,13 +145,8 @@ export function advanceProgress(
  *   retry with a maximal flow (flatbed included).
  * - If still not found but doc is `completed: true`, treat as reached.
  */
-export function hasReachedStep(
-  doc: IOnboardingTrackerDoc,
-  step: EStepPath
-): boolean {
-  const opts = getFlowOptsFromTracker(
-    doc as IOnboardingTrackerDoc & { needsFlatbedTraining?: boolean }
-  );
+export function hasReachedStep(doc: IOnboardingTrackerDoc, step: EStepPath): boolean {
+  const opts = getFlowOptsFromTracker(doc as IOnboardingTrackerDoc & { needsFlatbedTraining?: boolean });
   const flow = getOnboardingStepFlow(opts);
 
   const targetIdx = flow.indexOf(step);
@@ -205,11 +181,7 @@ export function hasReachedStep(
  * - Provides prev/current/next steps from the doc-aware flow.
  * - Exposes needsFlatbedTraining and a top-level completed boolean.
  */
-export function buildTrackerContext(
-  tracker: IOnboardingTrackerDoc,
-  defaultStep?: EStepPath | null,
-  includeAdminData = false
-): IOnboardingTrackerContext {
+export function buildTrackerContext(tracker: IOnboardingTrackerDoc, defaultStep?: EStepPath | null, includeAdminData = false): IOnboardingTrackerContext {
   const step = defaultStep || tracker.status.currentStep;
   const opts = getFlowOptsFromTracker(tracker);
   const { prevStep, nextStep } = getNeighborSteps(step, opts);
@@ -243,10 +215,7 @@ export function buildTrackerContext(
  * @param tracker Full onboarding tracker document (must include `id` and `status.currentStep`).
  * @returns Absolute onboarding URL string.
  */
-export function buildOnboardingStepPath(
-  tracker: IOnboardingTrackerDoc | IOnboardingTrackerContext,
-  defaultStep?: EStepPath
-): string {
+export function buildOnboardingStepPath(tracker: IOnboardingTrackerDoc | IOnboardingTrackerContext, defaultStep?: EStepPath): string {
   const step = defaultStep || tracker.status.currentStep;
   return `/onboarding/${tracker.id}/${step}`;
 }
@@ -256,9 +225,7 @@ export function buildOnboardingStepPath(
  * --------------------------------------------------------------------*/
 
 /** Returns true if the resume session has expired for this tracker. */
-export function onboardingExpired(
-  tracker?: IOnboardingTrackerDoc | null
-): boolean {
+export function onboardingExpired(tracker?: IOnboardingTrackerDoc | null): boolean {
   if (!tracker?.resumeExpiresAt) return true;
   return new Date() > tracker.resumeExpiresAt;
 }
@@ -268,14 +235,9 @@ export function onboardingExpired(
  * --------------------------------------------------------------------*/
 
 /** Build the full flow of routes (including start pages). */
-export function buildFullFlow(
-  trackerId: string | undefined,
-  opts: FlowOpts
-): string[] {
+export function buildFullFlow(trackerId: string | undefined, opts: FlowOpts): string[] {
   const flow = getOnboardingStepFlow(opts);
-  const onboardingAbs = trackerId
-    ? flow.map((seg) => `/onboarding/${trackerId}/${seg}`)
-    : flow.map((seg) => `/onboarding/${seg}`);
+  const onboardingAbs = trackerId ? flow.map((seg) => `/onboarding/${trackerId}/${seg}`) : flow.map((seg) => `/onboarding/${seg}`);
   return [...START_FLOW, ...onboardingAbs];
 }
 
@@ -291,20 +253,14 @@ export function findIndexInFlow(flow: string[], pathname: string): number {
  * - Pushes router to previous step in flow if available
  * - Otherwise redirects to root ("/").
  */
-export function handleBackNavigation(
-  pathname: string,
-  trackerId: string | undefined,
-  router: any,
-  opts: FlowOpts
-): void {
+export function handleBackNavigation(pathname: string, trackerId: string | undefined, router: any, opts: FlowOpts): void {
   const fullFlow = buildFullFlow(trackerId, opts);
   const currentIndex = findIndexInFlow(fullFlow, pathname);
 
   // handle edge cases for unconventional pathnames not matching with step flow
   if (currentIndex <= 0) {
     // if on application-form, go back to prequalifications
-    if (pathname === "/onboarding/application-form")
-      return router.push(fullFlow[2]);
+    if (pathname === "/onboarding/application-form") return router.push(fullFlow[2]);
 
     // else go to homepage
     return router.push("/");
