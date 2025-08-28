@@ -138,5 +138,5 @@ export default async function Page1ServerWrapper({
       }
     : EMPTY_DEFAULTS;
 
-  return <Page1Client defaultValues={defaultValues} trackerId={trackerId} />;
+  return <Page1Client defaultValues={defaultValues} trackerId={trackerId} trackerContextFromGet={data?.onboardingContext} />;
 }

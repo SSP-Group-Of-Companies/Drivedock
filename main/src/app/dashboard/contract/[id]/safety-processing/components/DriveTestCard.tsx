@@ -3,6 +3,7 @@
 import { formatInputDate } from "@/lib/utils/dateUtils";
 import { IDriveTest } from "@/types/driveTest.types";
 import { useId } from "react";
+import Link from "next/link";
 
 type Props = {
   trackerId: string;
@@ -18,7 +19,6 @@ function isCompleted(block: any): boolean {
 export default function DriveTestCard({ trackerId, driveTest, canEdit }: Props) {
   const titleId = useId();
   const descId = useId();
-
   const pre = driveTest?.preTrip;
   const onRoad = driveTest?.onRoad;
   const preDone = isCompleted(pre);
@@ -102,12 +102,12 @@ export default function DriveTestCard({ trackerId, driveTest, canEdit }: Props) 
             </>
           ) : (
             <>
-              <a className={tileBase} style={tileStyle} href={`/appraisal/${trackerId}/drive-test/pre-trip-assessment`} target="_blank">
+              <Link className={tileBase} style={tileStyle} href={`/appraisal/${trackerId}/drive-test/pre-trip-assessment`} target="_blank">
                 Pre-Trip Assessment
-              </a>
-              <a className={tileBase} style={tileStyle} href={`/appraisal/${trackerId}/drive-test/on-road-assessment`} target="_blank">
+              </Link>
+              <Link className={tileBase} style={tileStyle} href={`/appraisal/${trackerId}/drive-test/on-road-assessment`} target="_blank">
                 On-Road Evaluation
-              </a>
+              </Link>
             </>
           )}
         </div>

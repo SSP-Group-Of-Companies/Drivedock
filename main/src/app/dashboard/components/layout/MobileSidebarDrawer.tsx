@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { usePathname } from "next/navigation";
 import AdminSidebar from "./AdminSidebar";
 
@@ -32,18 +32,28 @@ export default function MobileSidebarDrawer({
 }: Props) {
   const pathname = usePathname() || "/dashboard";
 
-  // Derive when props aren't provided
-  const derivedIsContract = pathname.startsWith("/dashboard/contract/");
-  const derivedTrackerId = derivedIsContract
-    ? pathname.split("/")[3] ?? ""
-    : undefined;
+  // Memoize pathname-based calculations to prevent unnecessary re-renders
+  const pathnameData = useMemo(() => {
+    const derivedIsContract = pathname.startsWith("/dashboard/contract/");
+    const derivedTrackerId = derivedIsContract
+      ? pathname.split("/")[3] ?? ""
+      : undefined;
+    
+    return {
+      derivedIsContract,
+      derivedTrackerId,
+    };
+  }, [pathname]);
 
-  const resolvedVariant: "home" | "contract" =
-    variant ?? (derivedIsContract ? "contract" : "home");
+  const resolvedVariant: "home" | "contract" = useMemo(() => 
+    variant ?? (pathnameData.derivedIsContract ? "contract" : "home"),
+    [variant, pathnameData.derivedIsContract]
+  );
 
-  const resolvedTrackerId: string | undefined = variant
-    ? trackerId
-    : derivedTrackerId;
+  const resolvedTrackerId: string | undefined = useMemo(() => 
+    variant ? trackerId : pathnameData.derivedTrackerId,
+    [variant, trackerId, pathnameData.derivedTrackerId]
+  );
 
   // ESC to close
   useEffect(() => {

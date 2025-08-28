@@ -398,6 +398,46 @@
         "submissionFailed": "Submission failed."
       }
     },
+    "step4": {
+      "title": "Drive Test",
+      "instructions": {
+        "header": "You have reached the Drive Test stage of the application process.",
+        "contactSafety": "Please speak with Safety department to begin your test.",
+        "passMessage": "If you pass: You will proceed to Step 5 (Carrier's Edge Training).",
+        "failMessage": "If you do not pass: A decision would be made on either equipping you with additional training or terminating your application.",
+        "note": "Note: Based on your performance, if you are required to have flatbed driving experience and you do not have this skill yet, you may also be assigned Yard Training (Step 7) to further develop your driving skills. If you never had experience to begin with, then you will have Yard Training by default."
+      },
+      "success": {
+        "title": "Congratulations! 🎉",
+        "message": "You have successfully completed your Drive Test! Your driving skills have been evaluated and approved. Next Step: You will now proceed to (Step 5) Carrier's Edge Training to complete your onboarding process.",
+        "continueButton": "Next"
+      },
+      "buttons": {
+        "completeTest": "Next"
+      }
+    },
+
+    "step5": {
+      "title": "CarriersEdge Training",
+      "instructions": {
+        "header": "Our Safety Team will send your login credentials for the CarriersEdge training to the following email:",
+        "emailInfo": "{{email}}",
+        "completionRequired": "Please complete the training in full on the CarriersEdge website. Completion is required before you can proceed to the next step of the hiring process.",
+        "nextStepInfo": "Once completed, you will be able to proceed to the next step of your application."
+      },
+      "emailSent": {
+        "message": "Your Carrier edge training test credential has been sent to your email {{email}} please visit your email and follow the instruction to complete your test."
+      },
+      "completed": {
+        "congratulations": "Congratulations! 🎉",
+        "message": "Congratulations on the completion of your test, you can now proceed to step 6 of the application process. Next Step: You will now proceed to (Step 6) Drug Test to complete your onboarding process.",
+        "nextStep": "N",
+        "continueButton": "Next"
+      },
+      "button": {
+        "next": "Next"
+      }
+    },
 
     "step6": {
       "title": "Drug Test",
@@ -416,7 +456,7 @@
 
   "resume": {
     "title": "Resume Your Application",
-    "description": "Enter your SIN to continue your onboarding from where you stopped.",
+    "description": "Enter your SIN/SSN to continue your onboarding from where you stopped.",
     "placeholder": "999-888-777",
     "success": "Match found! Redirecting...",
     "error": "No application found for that SIN.",
@@ -425,8 +465,8 @@
     "loading": "Loading..."
   },
 
-  "wizard": {
-    "modalTitle": "About this application",
+  "infoPopUp": {
+    "modalTitle": "How it works",
     "close": "Close",
     "aboutTitle": "About this application",
     "stepsTitle": "Steps at a glance",
@@ -442,33 +482,32 @@
         "desc": "5-page form covering personal details, 5-year address history, licences & uploads, employment history, and declarations."
       },
       "step3": {
-        "label": "3. Policies & Consents",
+        "label": "3. Policies",
         "desc": "Review company policies and provide required acknowledgements/signatures."
       },
       "step4": {
-        "label": "4. CarriersEdge",
-        "desc": "Complete assigned online safety training; we'll guide you to sign in."
+        "label": "4. Drive Test",
+        "desc": "Scheduling and results for road/in-yard evaluation (managed by Safety)."
       },
       "step5": {
-        "label": "5. Drive Test",
-        "desc": "Scheduling and results for road/in-yard evaluation (managed by Safety)."
+        "label": "5. Carriers Edge",
+        "desc": "Complete assigned online safety training; we'll guide you to sign in."
       },
       "step6": {
         "label": "6. Drug Test",
         "desc": "If required, you'll receive instructions and a referral location."
       },
       "step7": {
-        "label": "7. Yard Training (if applicable)",
+        "label": "7. Yard Training (Potential)",
         "desc": "On-site orientation and equipment walkthrough."
       }
     },
     "saving": {
-      "autoSignOut": "Auto sign-out: For your security, you'll be signed out after 10 minutes of inactivity.",
-      "progressSaves": "When progress saves: Your information is saved only when you click Next/Continue on a page.",
-      "resumeLater": "Resume later: Use your SIN (Social Insurance Number) with the Resume button on the Welcome screen to continue on any device.",
+      "autoSignOut": "Auto-logout for security: If there’s no activity for 10 minutes, the form will automatically return to the Welcome screen.",
+      "progressSaves": "Your progress is saved: Once you enter your SIN (Social Insurance Number)/SSN on page 2 and continue, your progress will be securely saved.",
+      "resumeLater": "Resume anytime: If you disconnect or switch devices, you can use your SIN and the Resume button on the Welcome screen to continue where you left off.",
       "privacyNote": "Privacy note: Your SIN is used only to locate your application and is stored securely."
-    },
-    "tips": "Have your AZ licence, 5-year address history, and recent employment details handy for a faster experience."
+    }
   },
   "actions": {
     "addPhoto": "Add Photo",

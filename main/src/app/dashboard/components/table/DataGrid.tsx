@@ -2,18 +2,17 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import type { DashboardOnboardingItem } from "@/types/adminDashboard.types";
 import type { CategoryTab } from "@/hooks/dashboard/useAdminOnboardingQueryState";
 import { getOnboardingStepFlow } from "@/lib/utils/onboardingUtils";
 import { EStepPath } from "@/types/onboardingTracker.types";
+import { EDrugTestStatus } from "@/types/drugTest.types";
 
 import ConfirmTerminateDialog from "@/app/dashboard/components/dialogs/ConfirmTerminateDialog";
-import VerifyDrugTestDialog from "@/app/dashboard/components/dialogs/VerifyDrugTestDialog";
-
 import UploadCarriersEdgeCertificateDialog from "@/app/dashboard/components/dialogs/UploadCarriersEdgeCertificateDialog";
 
 import { useOnboardingMutations } from "@/hooks/dashboard/useOnboardingMutations";
-import { useDrugTestMutations } from "@/hooks/dashboard/useDrugTestMutations";
 import { useCarriersEdgeMutations } from "@/hooks/dashboard/useCarriersEdgeMutations";
 
 import CompanyBadge from "./atoms/CompanyBadge";
@@ -83,7 +82,6 @@ function buildPaginationItems(current: number, total: number): PageItem[] {
   pages.add(Math.max(1, current - 1));
   pages.add(Math.min(total, current + 1));
 
-  // Expand near the start/end for better feel
   if (current <= 3) {
     pages.add(2);
     pages.add(3);
@@ -165,39 +163,21 @@ export default function DataGrid({
     }
   };
 
-  /* ---------- Drug Test Verify ---------- */
-  const { verify } = useDrugTestMutations();
-  const [dtPending, setDtPending] = useState<null | {
-    id: string;
-    name?: string;
-  }>(null);
-  const [dtError, setDtError] = useState<string | null>(null);
-  const openVerify = (id: string, name?: string) => {
-    setDtError(null);
-    setDtPending({ id, name });
-  };
-  const closeVerify = () => setDtPending(null);
-  const confirmVerify = async (opts: {
-    result: "pass" | "fail";
-    notes?: string;
-  }) => {
-    if (!dtPending) return;
-    try {
-      await verify.mutateAsync({ trackerId: dtPending.id, body: opts });
-      closeVerify();
-    } catch (e) {
-      setDtError((e as Error).message || "Verification failed");
-    }
-  };
-  const isDTBusy = (rowId: string) =>
-    verify.isPending && dtPending?.id === rowId;
-
   /* ---------- Carrier's Edge ---------- */
   const { uploadCertificate } = useCarriersEdgeMutations();
   const router = useRouter();
 
   const navigateToCarriersEdge = (trackerId: string) => {
-    router.push(`/dashboard/contract/${trackerId}/safety-processing?highlight=carriers-edge`);
+    router.push(
+      `/dashboard/contract/${trackerId}/safety-processing?highlight=carriers-edge`
+    );
+  };
+
+  /* ---------- Drug test navigation ---------- */
+  const navigateToDrugTest = (trackerId: string) => {
+    router.push(
+      `/dashboard/contract/${trackerId}/safety-processing?highlight=drug-test`
+    );
   };
 
   const [ceUpload, setCeUpload] = useState<null | {
@@ -259,7 +239,7 @@ export default function DataGrid({
       </>
     );
     return href ? (
-      <a
+      <Link
         href={href}
         className={`${base} whitespace-nowrap`}
         style={styleBtn}
@@ -267,7 +247,7 @@ export default function DataGrid({
         data-testid={testId}
       >
         {content}
-      </a>
+      </Link>
     ) : (
       <button
         onClick={onClick}
@@ -376,9 +356,7 @@ export default function DataGrid({
 
       {/* Table (fills remaining space) */}
       <div className="relative -mx-2 flex-1 min-h-0 overflow-x-auto overflow-y-auto overscroll-auto no-scrollbar sm:mx-0">
-        {/* Fixed layout on mobile; auto on desktop */}
         <table className="w-full border-separate border-spacing-0 text-sm table-fixed sm:table-auto">
-          {/* Mobile column widths so "All" never collapses actions */}
           <colgroup>
             <col className="w-[46%] sm:w-auto" />
             <col className="w-[34%] sm:w-auto" />
@@ -501,7 +479,7 @@ export default function DataGrid({
                   >
                     {/* Mobile + Tablet */}
                     <div className="xl:hidden min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center gap-2">
                         <div
                           className="h-3 w-3 rounded-full flex-shrink-0"
                           style={{
@@ -518,39 +496,69 @@ export default function DataGrid({
                         >
                           {step}
                         </span>
-                        <span
-                          className="text-xs font-medium flex-shrink-0"
-                          style={{ color: "var(--color-primary)" }}
-                        >
-                          {pct}%
-                        </span>
+                        <div className="relative w-10 h-10 flex-shrink-0">
+                          {/* Circular progress with dots */}
+                          <svg
+                            width="40"
+                            height="40"
+                            viewBox="0 0 40 40"
+                            className="transform -rotate-90"
+                          >
+                            {(() => {
+                              const stepFlow = getOnboardingStepFlow({
+                                needsFlatbedTraining: it.needsFlatbedTraining,
+                              });
+                              const currentIndex = stepFlow.indexOf(
+                                it.status?.currentStep
+                              );
+                              const totalSteps = stepFlow.length;
+                              const angleStep = (2 * Math.PI) / totalSteps;
+                              
+                              return stepFlow.map((_, index) => {
+                                const angle = index * angleStep;
+                                const x = 20 + 15 * Math.cos(angle);
+                                const y = 20 + 15 * Math.sin(angle);
+                                const isCompleted = index <= currentIndex;
+                                
+                                return (
+                                  <circle
+                                    key={index}
+                                    cx={x}
+                                    cy={y}
+                                    r="2"
+                                    className={`transition-colors duration-200 ${
+                                      isCompleted
+                                        ? "fill-blue-500"
+                                        : "fill-gray-300 dark:fill-gray-600"
+                                    }`}
+                                    aria-hidden="true"
+                                  />
+                                );
+                              });
+                            })()}
+                          </svg>
+                          
+                          {/* Percentage in center */}
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span
+                              className="text-xs font-medium"
+                              style={{ color: "var(--color-primary)" }}
+                            >
+                              {pct}%
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1">
+                      <span className="sr-only">
+                        Step{" "}
                         {(() => {
                           const stepFlow = getOnboardingStepFlow({
                             needsFlatbedTraining: it.needsFlatbedTraining,
                           });
-                          const currentIndex = stepFlow.indexOf(it.status?.currentStep);
-                          return stepFlow.map((_, index) => (
-                            <div
-                              key={index}
-                              className={`h-1.5 flex-1 rounded-full transition-colors duration-200 ${
-                                index <= currentIndex
-                                  ? "bg-blue-500"
-                                  : "bg-gray-300 dark:bg-gray-600"
-                              }`}
-                              aria-hidden="true"
-                            />
-                          ));
-                        })()}
-                      </div>
-                      <span className="sr-only">
-                        Step {(() => {
-                          const stepFlow = getOnboardingStepFlow({
-                            needsFlatbedTraining: it.needsFlatbedTraining,
-                          });
                           return stepFlow.indexOf(it.status?.currentStep) + 1;
-                        })()} of {(() => {
+                        })()}{" "}
+                        of{" "}
+                        {(() => {
                           const stepFlow = getOnboardingStepFlow({
                             needsFlatbedTraining: it.needsFlatbedTraining,
                           });
@@ -684,33 +692,72 @@ export default function DataGrid({
                           </div>
                         )}
 
+                        {/* Actions → currentTab === "drug-test" */}
                         {currentTab === "drug-test" && (
                           <div className="inline-flex flex-wrap justify-end gap-1 sm:flex-nowrap sm:gap-1.5 lg:gap-2">
-                            {it.itemSummary?.drugTest?.documentsUploaded ? (
-                              <ActionBtn
-                                icon={CheckCircle2}
-                                disabled={isDTBusy(it._id)}
-                                onClick={() =>
-                                  openVerify(
-                                    it._id,
-                                    it.itemSummary?.driverName ?? undefined
-                                  )
-                                }
-                              >
-                                Verify result
-                              </ActionBtn>
-                            ) : (
-                              <span
-                                className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium"
-                                style={{
-                                  backgroundColor:
-                                    "var(--color-outline-variant)",
-                                  color: "var(--color-on-surface-variant)",
-                                }}
-                              >
-                                Pending upload
-                              </span>
-                            )}
+                            {(() => {
+                              const s = it.itemSummary?.drugTest?.status;
+
+                              if (s === EDrugTestStatus.AWAITING_REVIEW) {
+                                // Navigate to Safety Processing (highlight Drug Test card)
+                                return (
+                                  <ActionBtn
+                                    icon={CheckCircle2}
+                                    onClick={() => navigateToDrugTest(it._id)}
+                                  >
+                                    Verify result
+                                  </ActionBtn>
+                                );
+                              }
+
+                              if (s === EDrugTestStatus.NOT_UPLOADED || !s) {
+                                return (
+                                  <span
+                                    className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium"
+                                    style={{
+                                      backgroundColor:
+                                        "var(--color-outline-variant)",
+                                      color: "var(--color-on-surface-variant)",
+                                    }}
+                                  >
+                                    Pending upload
+                                  </span>
+                                );
+                              }
+
+                              if (s === EDrugTestStatus.APPROVED) {
+                                return (
+                                  <span
+                                    className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium"
+                                    style={{
+                                      backgroundColor:
+                                        "var(--color-success-container)",
+                                      color:
+                                        "var(--color-success-on-container)",
+                                    }}
+                                  >
+                                    Verified
+                                  </span>
+                                );
+                              }
+
+                              if (s === EDrugTestStatus.REJECTED) {
+                                return (
+                                  <span
+                                    className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium"
+                                    style={{
+                                      backgroundColor:
+                                        "var(--color-error-container)",
+                                      color: "var(--color-error-on-container)",
+                                    }}
+                                  >
+                                    Rejected
+                                  </span>
+                                );
+                              }
+
+                              return null;
+                            })()}
                           </div>
                         )}
                       </>
@@ -757,14 +804,6 @@ export default function DataGrid({
             ? terminate.isPending
             : restore.isPending
         }
-      />
-      <VerifyDrugTestDialog
-        open={!!dtPending}
-        driverName={dtPending?.name}
-        onCancel={closeVerify}
-        onConfirm={confirmVerify}
-        isBusy={verify.isPending}
-        errorText={dtError}
       />
 
       <UploadCarriersEdgeCertificateDialog

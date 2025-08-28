@@ -141,14 +141,14 @@ export default function DataOperationBar({
   // media query: initialize from mql, then listen for events (no unions)
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const mql = window.matchMedia("(min-width: 768px)");
+    const mql = window.matchMedia("(min-width: 1280px)");
     setIsMobile(!mql.matches); // desktop => matches=true => isMobile=false
     const onChange = (e: MediaQueryListEvent) => setIsMobile(!e.matches);
     mql.addEventListener("change", onChange);
     return () => mql.removeEventListener("change", onChange);
   }, []);
 
-  // compute panel top under the button
+  // compute panel top under the button (Sort)
   const recalcSortTop = useCallback(() => {
     if (!sortBtnRef.current) return;
     const r = sortBtnRef.current.getBoundingClientRect();
@@ -217,6 +217,29 @@ export default function DataOperationBar({
     query.terminated,
   ]);
 
+  // ---------- NEW: Filter dropdown viewport anchoring (mobile) ----------
+  const filterBtnRef = useRef<HTMLButtonElement | null>(null);
+  const [filterTop, setFilterTop] = useState(0);
+
+  const recalcFilterTop = useCallback(() => {
+    if (!filterBtnRef.current) return;
+    const r = filterBtnRef.current.getBoundingClientRect();
+    setFilterTop(Math.round(r.bottom + 8)); // 8px gap
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    recalcFilterTop();
+    const onUpdate = () => recalcFilterTop();
+    window.addEventListener("scroll", onUpdate, true);
+    window.addEventListener("resize", onUpdate);
+    return () => {
+      window.removeEventListener("scroll", onUpdate, true);
+      window.removeEventListener("resize", onUpdate);
+    };
+  }, [open, recalcFilterTop]);
+  // ---------------------------------------------------------------------
+
   return (
     <div
       className="rounded-2xl overflow-visible"
@@ -277,6 +300,7 @@ export default function DataOperationBar({
           {/* Filter by (col 2) */}
           <div className="relative min-w-0" ref={dropdownRef}>
             <button
+              ref={filterBtnRef}
               type="button"
               onClick={() => setOpen((v) => !v)}
               aria-expanded={open}
@@ -310,19 +334,22 @@ export default function DataOperationBar({
               />
             </button>
 
-            {/* Dropdown panel (full-bleed on phones, right-aligned on desktop) */}
+            {/* Dropdown panel (fixed on phones, right-aligned absolute on desktop) */}
             <div
               id="filters-dropdown"
-              className={`absolute z-[100] mt-2 w-[calc(100vw-2rem)] max-w-2xl lg:max-w-3xl rounded-xl shadow-lg overflow-visible
-                          left-1/2 -translate-x-1/2 md:left-auto md:right-0 md:translate-x-0 ${
-                            open ? "block" : "hidden"
-                          }`}
+              className={`${
+                isMobile
+                  ? "fixed left-1/2 -translate-x-1/2"
+                  : "absolute md:right-0 md:left-auto md:translate-x-0"
+              } z-[100] mt-2 w-[calc(100vw-2rem)] max-w-xl lg:max-w-2xl xl:max-w-3xl rounded-xl shadow-lg overflow-visible
+                ${open ? "block" : "hidden"}`}
               style={{
+                top: isMobile ? filterTop : undefined, // NEW dynamic top on mobile
                 backgroundColor: "var(--color-card)",
               }}
               role="menu"
             >
-              <div className="grid grid-cols-1 gap-3 p-3 sm:gap-4 sm:p-4 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-3 p-3 sm:gap-4 sm:p-4 md:grid-cols-2 xl:grid-cols-3">
                 {/* Category selector */}
                 {onCategoryChange && (
                   <div>

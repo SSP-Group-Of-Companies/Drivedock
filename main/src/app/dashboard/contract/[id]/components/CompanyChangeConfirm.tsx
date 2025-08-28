@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+
 type Props = {
   open: boolean;
   currentName: string;
@@ -17,17 +19,42 @@ export default function CompanyChangeConfirm({
   onCancel,
   isBusy,
 }: Props) {
+  const cancelBtnRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    cancelBtnRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onCancel();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open, onCancel]);
+
   if (!open) return null;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="company-change-title"
+      onPointerDown={(e) => {
+        // backdrop click closes
+        if (e.target === e.currentTarget) onCancel();
+      }}
+    >
       <div
         className="w-full max-w-md rounded-2xl border p-4 shadow-xl"
         style={{
           background: "var(--color-surface)",
           borderColor: "var(--color-outline)",
         }}
+        role="document"
       >
-        <div className="mb-2 text-lg font-semibold">Change company?</div>
+        <div id="company-change-title" className="mb-2 text-lg font-semibold">
+          Change company?
+        </div>
         <p
           className="mb-4 text-sm"
           style={{ color: "var(--color-on-surface-variant)" }}
@@ -37,6 +64,7 @@ export default function CompanyChangeConfirm({
         </p>
         <div className="flex justify-end gap-2">
           <button
+            ref={cancelBtnRef}
             className="rounded-lg border px-3 py-1.5 text-sm"
             style={{ borderColor: "var(--color-outline)" }}
             onClick={onCancel}

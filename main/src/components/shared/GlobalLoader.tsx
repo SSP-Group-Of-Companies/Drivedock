@@ -32,6 +32,9 @@ export default function GlobalLoader() {
   // Check if we're in dashboard context (theme is available)
   const isDashboard = typeof resolvedTheme !== 'undefined';
   
+  // Don't render if not visible
+  if (!visible) return null;
+  
   // Fallback colors for driver side
   const getBackgroundColor = () => {
     if (isDashboard) {

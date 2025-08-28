@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useMemo } from "react";
 import type { ContractContext } from "@/lib/dashboard/api/contracts";
 import { EStepPath } from "@/types/onboardingTracker.types";
 import { EDrugTestStatus } from "@/types/drugTest.types";
@@ -10,15 +10,13 @@ function daysUntil(dateIso?: string): number | null {
   const now = new Date();
   const d = new Date(dateIso);
   if (isNaN(d.getTime())) return null;
-  const diff = d.getTime() - now.getTime();
-  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  return Math.ceil((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 }
 
 function computeNotifications(ctx: ContractContext | null) {
   const notes: { id: string; text: string }[] = [];
   if (!ctx) return notes;
 
-  // License expiring in <= 60 days
   const days = daysUntil(ctx.forms?.identifications?.driverLicenseExpiration);
   if (days !== null && days <= 60) {
     notes.push({
@@ -29,26 +27,21 @@ function computeNotifications(ctx: ContractContext | null) {
 
   const step = ctx.status?.currentStep;
 
-  // Drive Test: if current step is DRIVE_TEST and NOT completed (undefined counts as false)
-  if (step === EStepPath.DRIVE_TEST) {
-    const completed = ctx.forms?.driveTest?.completed === true;
-    if (!completed) {
-      notes.push({ id: "dt", text: "Driver is waiting for drive test" });
-    }
+  if (
+    step === EStepPath.DRIVE_TEST &&
+    ctx.forms?.driveTest?.completed !== true
+  ) {
+    notes.push({ id: "dt", text: "Driver is waiting for drive test" });
   }
-
-  // Carrier's Edge: if current step is CARRIERS_EDGE_TRAINING and email NOT sent (undefined counts as false)
-  if (step === EStepPath.CARRIERS_EDGE_TRAINING) {
-    const emailSent = ctx.forms?.carriersEdgeTraining?.emailSent === true;
-    if (!emailSent) {
-      notes.push({
-        id: "ce",
-        text: "Driver is waiting for Carrier’s Edge test credentials",
-      });
-    }
+  if (
+    step === EStepPath.CARRIERS_EDGE_TRAINING &&
+    ctx.forms?.carriersEdgeTraining?.emailSent !== true
+  ) {
+    notes.push({
+      id: "ce",
+      text: "Driver is waiting for Carrier’s Edge test credentials",
+    });
   }
-
-  // Drug Test: only when AWAITING_REVIEW (we don't notify just for 'no docs')
   if (
     step === EStepPath.DRUG_TEST &&
     ctx.forms?.drugTest?.status === EDrugTestStatus.AWAITING_REVIEW
@@ -65,31 +58,27 @@ function computeNotifications(ctx: ContractContext | null) {
 export default function NotificationsMenu({
   onClose,
   context,
+  id,
 }: {
   onClose: () => void;
   context: ContractContext | null;
+  id?: string;
 }) {
   const items = useMemo(() => computeNotifications(context), [context]);
-  const menuRef = useRef<HTMLDivElement | null>(null);
-
-  // Close on click outside
-  useEffect(() => {
-    function onDocClick(e: MouseEvent) {
-      if (!menuRef.current) return;
-      if (!menuRef.current.contains(e.target as Node)) onClose();
-    }
-    document.addEventListener("mousedown", onDocClick);
-    return () => document.removeEventListener("mousedown", onDocClick);
-  }, [onClose]);
 
   return (
     <div
-      ref={menuRef}
+      id={id}
       role="menu"
+      aria-label="Safety notifications"
       className="absolute right-0 z-40 mt-2 w-[22rem] rounded-xl border p-2 shadow-lg"
       style={{
         background: "var(--color-surface)",
         borderColor: "var(--color-outline)",
+      }}
+      tabIndex={-1}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") onClose();
       }}
     >
       <div
@@ -122,6 +111,7 @@ export default function NotificationsMenu({
               key={n.id}
               className="rounded-lg px-2 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/5"
               style={{ color: "var(--color-on-surface)" }}
+              role="menuitem"
             >
               {n.text}
             </li>
@@ -146,5 +136,4 @@ export default function NotificationsMenu({
   );
 }
 
-// Export for reuse (ContractSummaryBar badge)
 export { computeNotifications };

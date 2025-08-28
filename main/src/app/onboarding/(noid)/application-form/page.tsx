@@ -80,7 +80,7 @@ export default function ApplicationFormPage1() {
         <AddressSection />
 
         {/* Pass the factory directly. No trackerId here (POST flow). */}
-        <ContinueButton<ApplicationFormPage1Schema> config={page1ConfigFactory} />
+        <ContinueButton<ApplicationFormPage1Schema> config={page1ConfigFactory} trackerId={undefined} />
       </form>
     </FormProvider>
   );

@@ -19,8 +19,10 @@ export async function submitFormStep({
   trackerContext?: IOnboardingTrackerContext;
   nextUrl?: string | null;
 }> {
-  const id = tracker?.id || urlTrackerId;
-  const isPatch = !!id;
+  // For new users (no urlTrackerId), always use POST regardless of tracker state
+  // For existing users (with urlTrackerId), use the tracker id or urlTrackerId
+  const id = urlTrackerId || tracker?.id;
+  const isPatch = !!urlTrackerId; // Only PATCH if we have a URL tracker ID (existing user)
 
   const url = !isPatch
     ? "/api/v1/onboarding/application-form"

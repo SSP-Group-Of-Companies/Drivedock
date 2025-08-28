@@ -19,7 +19,11 @@ import { handleBackNavigation } from "@/lib/utils/onboardingUtils";
 import { useOnboardingTrackerContext } from "@/app/providers/OnboardingTrackerContextProvider";
 import { useActiveOnboardingStep } from "@/hooks/useActiveOnboardingStep";
 
-export default function OnboardingLayoutClientShell({ children }: { children: React.ReactNode }) {
+export default function OnboardingLayoutClientShell({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const { t } = useTranslation("common");
   const router = useRouter();
   const mounted = useMounted();
@@ -68,7 +72,7 @@ export default function OnboardingLayoutClientShell({ children }: { children: Re
               {/* Desktop */}
               <div className="hidden md:flex items-center justify-between w-full">
                 <div className="flex items-center h-full">
-                  <CompanyLogoHeader logoOnly />
+                  <CompanyLogoHeader logoOnly onboardingContext={ctx} />
                 </div>
 
                 <div className="flex-1 flex justify-center items-center">
@@ -83,7 +87,9 @@ export default function OnboardingLayoutClientShell({ children }: { children: Re
                     aria-label={t("navbar.back", "Go Back")}
                   >
                     <ArrowLeft size={18} />
-                    <span className="hidden sm:inline">{t("navbar.back", "Back")}</span>
+                    <span className="hidden sm:inline">
+                      {t("navbar.back", "Back")}
+                    </span>
                   </button>
                 </div>
               </div>
@@ -91,7 +97,7 @@ export default function OnboardingLayoutClientShell({ children }: { children: Re
               {/* Mobile */}
               <div className="md:hidden w-full">
                 <div className="flex items-center justify-between mb-2">
-                  <CompanyLogoHeader logoOnly />
+                  <CompanyLogoHeader logoOnly onboardingContext={ctx} />
                   <div className="flex items-center gap-2">
                     <LanguageDropdown />
                     <button
@@ -100,7 +106,9 @@ export default function OnboardingLayoutClientShell({ children }: { children: Re
                       aria-label={t("navbar.back", "Go Back")}
                     >
                       <ArrowLeft size={14} />
-                      <span className="hidden sm:inline">{t("navbar.back", "Back")}</span>
+                      <span className="hidden sm:inline">
+                        {t("navbar.back", "Back")}
+                      </span>
                     </button>
                   </div>
                 </div>
@@ -115,8 +123,8 @@ export default function OnboardingLayoutClientShell({ children }: { children: Re
       </AnimatePresence>
 
       {/* Main body */}
-      <main className="relative min-h-[calc(100vh-120px)] bg-gradient-to-b from-slate-50 via-sky-100 to-sky-200 px-4 py-6 sm:px-8">
-        <div className="max-w-3xl mx-auto bg-white p-6 rounded-2xl shadow-lg space-y-6 relative">
+      <main className="relative min-h-[calc(100vh-120px)] bg-gradient-to-b from-slate-50 via-sky-100 to-sky-200 px-4 py-6 sm:px-8 flex items-center justify-center">
+        <div className="max-w-3xl mx-auto bg-white p-6 rounded-2xl shadow-lg space-y-6 relative w-full">
           {/* Info icon */}
           <button
             onClick={() => setShowModal(true)}
@@ -129,27 +137,83 @@ export default function OnboardingLayoutClientShell({ children }: { children: Re
           {/* Info modal */}
           <AnimatePresence>
             {showModal && (
-              <Dialog open={showModal} onClose={() => setShowModal(false)} className="relative z-50">
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="fixed inset-0 bg-black/30" aria-hidden="true" />
+              <Dialog
+                open={showModal}
+                onClose={() => setShowModal(false)}
+                className="relative z-50"
+              >
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="fixed inset-0 bg-black/30"
+                  aria-hidden="true"
+                />
                 <div className="fixed inset-0 flex items-center justify-center p-4">
-                  <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} transition={{ duration: 0.2 }}>
-                    <DialogPanel className="max-w-md w-full bg-white rounded-xl p-6 shadow-xl space-y-4">
-                      <DialogTitle className="text-lg font-bold text-gray-900">{t("wizard.modalTitle")}</DialogTitle>
-                      <ul className="list-disc pl-5 text-sm text-gray-700 space-y-1">
-                        {[1, 2, 3, 4, 5, 6].map((step) => (
-                          <li key={step}>
-                            <strong>{t(`wizard.step${step}.label`)}</strong>: {t(`wizard.step${step}.desc`)}
-                          </li>
-                        ))}
-                        {ctx?.needsFlatbedTraining && (
-                          <li>
-                            <strong>{t("wizard.step7.label", "Flatbed Training")}</strong>: {t("wizard.step7.desc", "Upload proof of training or complete the required sessions.")}
-                          </li>
-                        )}
-                      </ul>
+                  <motion.div
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: 20, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <DialogPanel className="max-w-md w-full bg-white rounded-xl p-6 shadow-xl space-y-6">
+                      {/* Title */}
+                      <DialogTitle className="text-lg text-center font-bold text-gray-900">
+                        {t("infoPopUp.modalTitle")}
+                      </DialogTitle>
+
+                      {/* Steps Section */}
+                      <section className="space-y-3">
+                        <h3 className="text-sm font-semibold text-gray-900">
+                          {t("infoPopUp.stepsTitle")}
+                        </h3>
+                        <div className="space-y-2">
+                          {[1, 2, 3, 4, 5, 6].map((step) => (
+                            <div key={step} className="text-sm text-gray-700">
+                              <p>
+                                <span className="font-semibold">
+                                  {t(`infoPopUp.steps.step${step}.label`)}
+                                </span>
+                                : {t(`infoPopUp.steps.step${step}.desc`)}
+                              </p>
+                            </div>
+                          ))}
+
+                          {/* Step 7 (optional Yard Training) */}
+                          {ctx?.needsFlatbedTraining && (
+                            <div className="text-sm text-gray-700">
+                              <p>
+                                <span className="font-semibold">
+                                  {t("infoPopUp.steps.step7.label")}
+                                </span>
+                                : {t("infoPopUp.steps.step7.desc")}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </section>
+
+                      {/* Saving Section */}
+                      <section className="space-y-3">
+                        <h3 className="text-sm text-center font-semibold text-gray-900">
+                          {t("infoPopUp.savingTitle")}
+                        </h3>
+                        <ul className="list-disc pl-5 text-sm text-gray-700 space-y-1">
+                          <li>{t("infoPopUp.saving.autoSignOut")}</li>
+                          <li>{t("infoPopUp.saving.progressSaves")}</li>
+                          <li>{t("infoPopUp.saving.resumeLater")}</li>
+                          <li>{t("infoPopUp.saving.privacyNote")}</li>
+                        </ul>
+                      </section>
+
+                      {/* Footer */}
                       <div className="text-right">
-                        <button onClick={() => setShowModal(false)} className="px-4 py-1.5 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700">
-                          {t("wizard.close")}
+                        <button
+                          onClick={() => setShowModal(false)}
+                          className="px-4 py-1.5 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
+                        >
+                          {t("infoPopUp.close")}
                         </button>
                       </div>
                     </DialogPanel>
@@ -160,11 +224,13 @@ export default function OnboardingLayoutClientShell({ children }: { children: Re
           </AnimatePresence>
 
           {/* Header + wizard */}
-          <CompanyLogoHeader logoOnly />
+          <CompanyLogoHeader logoOnly onboardingContext={ctx} />
           <FormWizardNav />
 
           <div className="text-center">
-            <h1 className="text-xl font-bold text-gray-800">{t(`form.step${titleStep}.title`)}</h1>
+            <h1 className="text-xl font-bold text-gray-800">
+              {t(`form.step${titleStep}.title`)}
+            </h1>
             <p className="text-sm text-gray-600">{t("form.subtitle")}</p>
           </div>
 
