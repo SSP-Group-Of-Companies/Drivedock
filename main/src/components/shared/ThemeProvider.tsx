@@ -10,11 +10,23 @@ export default function ThemeProvider({
 }) {
   const { resolvedTheme } = useThemeStore();
 
-  // Theme is now handled entirely by the store
-  // This component just ensures the store is initialized
   useEffect(() => {
-    // Force a re-render when theme changes to ensure all components update
-    // The actual DOM manipulation is handled by the store
+    const root = document.documentElement;
+    
+    // Remove existing theme classes
+    root.classList.remove("light", "dark");
+    
+    // Add current theme class
+    root.classList.add(resolvedTheme);
+    
+    // Update meta theme-color for mobile browsers
+    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (metaThemeColor) {
+      metaThemeColor.setAttribute(
+        "content",
+        resolvedTheme === "dark" ? "#000000" : "#ffffff"
+      );
+    }
   }, [resolvedTheme]);
 
   return <>{children}</>;

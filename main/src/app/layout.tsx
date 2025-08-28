@@ -30,33 +30,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="icon" href="/assets/logos/blackFavicon.png" type="image/png" />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  // Only apply theme if no theme class is already present
-                  var root = document.documentElement;
-                  if (!root.classList.contains('light') && !root.classList.contains('dark')) {
-                    var theme = localStorage.getItem('drivedock_theme');
-                    if (theme) {
-                      var parsed = JSON.parse(theme);
-                      var resolvedTheme = parsed.state?.resolvedTheme || 'light';
-                      root.classList.add(resolvedTheme);
-                    } else {
-                      root.classList.add('light');
-                    }
-                  }
-                } catch (e) {
-                  // Fallback to light theme if anything goes wrong
-                  if (!document.documentElement.classList.contains('light') && !document.documentElement.classList.contains('dark')) {
-                    document.documentElement.classList.add('light');
-                  }
-                }
-              })();
-            `,
-          }}
-        />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased relative min-h-screen overflow-x-hidden bg-white text-gray-900`} suppressHydrationWarning>
         {/* Make user available to the entire app */}

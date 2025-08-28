@@ -20,24 +20,6 @@ const getInitialResolvedTheme = (theme: Theme): "light" | "dark" => {
   return theme;
 };
 
-// Theme application function - single source of truth
-const applyThemeToDOM = (theme: "light" | "dark") => {
-  if (typeof document === "undefined") return;
-  
-  const root = document.documentElement;
-  root.classList.remove("light", "dark");
-  root.classList.add(theme);
-  
-  // Update meta theme-color for mobile browsers
-  const metaThemeColor = document.querySelector('meta[name="theme-color"]');
-  if (metaThemeColor) {
-    metaThemeColor.setAttribute(
-      "content",
-      theme === "dark" ? "#000000" : "#ffffff"
-    );
-  }
-};
-
 export const useThemeStore = create<ThemeStore>()(
   persist(
     (set) => ({
@@ -46,11 +28,9 @@ export const useThemeStore = create<ThemeStore>()(
       setTheme: (theme: Theme) => {
         const resolvedTheme = getInitialResolvedTheme(theme);
         set({ theme, resolvedTheme });
-        applyThemeToDOM(resolvedTheme);
       },
       setResolvedTheme: (resolvedTheme: "light" | "dark") => {
         set({ resolvedTheme });
-        applyThemeToDOM(resolvedTheme);
       },
     }),
     {
@@ -64,8 +44,6 @@ export const useThemeStore = create<ThemeStore>()(
           // Recalculate resolved theme when rehydrating
           const resolvedTheme = getInitialResolvedTheme(state.theme);
           state.resolvedTheme = resolvedTheme;
-          // Apply theme immediately after rehydration
-          applyThemeToDOM(resolvedTheme);
         }
       },
     }
