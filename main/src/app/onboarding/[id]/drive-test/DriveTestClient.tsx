@@ -17,8 +17,6 @@ export type DriveTestClientProps = {
   onboardingContext: IOnboardingTrackerContext;
 };
 
-
-
 export default function DriveTestClient({
   driveTest,
   onboardingContext,
@@ -130,7 +128,7 @@ export default function DriveTestClient({
             </div>
 
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <p className="text-sm text-yellow-800 text-sm">
+              <p className="text-sm text-yellow-800">
                 {t("form.step4.instructions.note")}
               </p>
             </div>
