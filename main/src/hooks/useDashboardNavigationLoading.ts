@@ -81,7 +81,7 @@ export function useDashboardNavigationLoading() {
     const originalPush = router.push;
     const originalReplace = router.replace;
 
-    router.push = function (href: AnyHref, options?: any) {
+    router.push = function (href: any, options?: any) {
       const destination = hrefToPathname(href);
       if (destination !== pathname) {
         begin();
@@ -89,7 +89,7 @@ export function useDashboardNavigationLoading() {
       return originalPush.call(this, href, options);
     };
 
-    router.replace = function (href: AnyHref, options?: any) {
+    router.replace = function (href: any, options?: any) {
       const destination = hrefToPathname(href);
       if (destination !== pathname) {
         begin();
