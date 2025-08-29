@@ -36,7 +36,7 @@ export default async function OnRoadAssessmentPage({ params }: { params: Promise
   const { id: trackerId } = await params;
 
   const base = await resolveInternalBaseUrl();
-  const url = `${base}/api/v1/admin/onboarding/${trackerId}/drive-test/on-road-assessment`;
+  const url = `${base}/api/v1/admin/onboarding/${trackerId}/appraisal/drive-test/on-road-assessment`;
 
   const { data, error } = await fetchServerPageData<OnRoadResult>(url);
   if (error) {

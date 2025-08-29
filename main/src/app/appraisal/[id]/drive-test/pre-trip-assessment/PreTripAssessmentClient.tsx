@@ -90,7 +90,7 @@ export default function PreTripClient({ driverName, driverLicense, defaultValues
   const submitPayload = async (payload: PreTripWrapperInput) => {
     try {
       setIsSubmitting(true);
-      const res = await fetch(`/api/v1/admin/onboarding/${trackerId}/drive-test/pre-trip-assessment`, {
+      const res = await fetch(`/api/v1/admin/onboarding/${trackerId}/appraisal/drive-test/pre-trip-assessment`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ driveTest: payload }),

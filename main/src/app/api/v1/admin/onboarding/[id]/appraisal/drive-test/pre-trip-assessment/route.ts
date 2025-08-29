@@ -5,7 +5,7 @@ import { errorResponse, successResponse } from "@/lib/utils/apiResponse";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import DriveTest from "@/mongoose/models/DriveTest";
 import { EStepPath } from "@/types/onboardingTracker.types";
-import { buildTrackerContext, onboardingExpired, hasReachedStep, advanceProgress, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
+import { buildTrackerContext, onboardingExpired, hasReachedStep, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
 import { isValidObjectId } from "mongoose";
 import { deleteS3Objects, finalizePhoto } from "@/lib/utils/s3Upload";
 import { ES3Folder } from "@/types/aws.types";
@@ -95,7 +95,6 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
  *     - return success (terminated = true)
  * - If "pass" or "conditional_pass":
  *     - save preTrip
- *     - advance progress to DRIVE_TEST
  *     - refresh resume window
  */
 export const POST = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
@@ -215,7 +214,6 @@ export const POST = async (req: NextRequest, { params }: { params: Promise<{ id:
     }
 
     // PASS or CONDITIONAL_PASS
-    onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.DRIVE_TEST);
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();
     await onboardingDoc.save();
 

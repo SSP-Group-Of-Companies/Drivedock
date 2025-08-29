@@ -81,7 +81,7 @@ export default function OnRoadClient({ onboardingContext, driverName, driverLice
   const submitPayload = async (payload: OnRoadWrapperInput) => {
     try {
       setIsSubmitting(true);
-      const res = await fetch(`/api/v1/admin/onboarding/${trackerId}/drive-test/on-road-assessment`, {
+      const res = await fetch(`/api/v1/admin/onboarding/${trackerId}/appraisal/drive-test/on-road-assessment`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ driveTest: payload }),

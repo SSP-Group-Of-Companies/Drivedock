@@ -35,7 +35,7 @@ export default async function PreTripAssessmentPage({ params }: { params: Promis
 
   // Build same-origin absolute URL (dev + Vercel preview safe)
   const base = await resolveInternalBaseUrl();
-  const url = `${base}/api/v1/admin/onboarding/${trackerId}/drive-test/pre-trip-assessment`;
+  const url = `${base}/api/v1/admin/onboarding/${trackerId}/appraisal/drive-test/pre-trip-assessment`;
 
   // Unified fetch pattern (handles cookies/redirects/JSON + unwraps { data })
   const { data, error } = await fetchServerPageData<PreTripResult>(url);
