@@ -4,14 +4,14 @@ import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
 import { IApplicationFormPage2 } from "@/types/applicationForm.types";
 import { EStepPath } from "@/types/onboardingTracker.types";
-import { buildTrackerContext, hasReachedStep, advanceProgress, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
+import { buildTrackerContext, advanceProgress, nextResumeExpiry, hasCompletedStep } from "@/lib/utils/onboardingUtils";
 import { isValidObjectId } from "mongoose";
 import { NextRequest } from "next/server";
 import { validateEmploymentHistory } from "@/lib/utils/validationUtils";
 import { guard } from "@/lib/auth/authUtils";
 
 /**
- * PATCH /employment-history
+ * PATCH /admin/onboarding/[id]/application-form/employment-history
  * - Validates & saves empoloyment history
  * - Requires that the user can access empoloyment history (i.e., has progressed to it)
  * - Advances progress to empoloyment history (furthest) and refreshes resume expiry
@@ -32,17 +32,13 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
     const onboardingDoc = await OnboardingTracker.findById(id);
     if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
+    if (!hasCompletedStep(onboardingDoc, EStepPath.APPLICATION_PAGE_2)) return errorResponse(401, "driver hasn't completed this step yet");
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) return errorResponse(404, "ApplicationForm not linked");
 
     const appFormDoc = await ApplicationForm.findById(appFormId);
     if (!appFormDoc) return errorResponse(404, "ApplicationForm not found");
-
-    // GATE: must be allowed to access empoloyment history
-    if (!hasReachedStep(onboardingDoc, EStepPath.APPLICATION_PAGE_2)) {
-      return errorResponse(403, "driver hasn't reached this step yet");
-    }
 
     // ---------------------------
     // Phase 1: write page2 only
@@ -63,7 +59,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
     return successResponse(200, "employment history updated", {
       onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_2, true),
-      page2: appFormDoc.page2,
+      employmentHistory: appFormDoc.page2,
     });
   } catch (error) {
     return errorResponse(error);
@@ -94,14 +90,12 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
     if (!appFormDoc) return errorResponse(404, "ApplicationForm not found");
 
     // GATE: must be allowed to view empoloyment history
-    if (!hasReachedStep(onboardingDoc, EStepPath.APPLICATION_PAGE_2)) {
-      return errorResponse(403, "driver hasn't reached this step yet");
-    }
+    if (!hasCompletedStep(onboardingDoc, EStepPath.APPLICATION_PAGE_2)) return errorResponse(401, "driver hasn't completed this step yet");
 
     return successResponse(200, "empoloyment history data retrieved", {
       // For page rendering/resume, build context from lastVisited
       onboardingContext: buildTrackerContext(onboardingDoc, null, true),
-      page2: appFormDoc.page2,
+      employmentHistory: appFormDoc.page2,
     });
   } catch (error) {
     return errorResponse(error);

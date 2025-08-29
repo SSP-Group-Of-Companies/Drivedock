@@ -171,6 +171,42 @@ export function hasReachedStep(doc: IOnboardingTrackerDoc, step: EStepPath): boo
   return currentIdx >= targetIdx;
 }
 
+/**
+ * ----------------------------------------------------------------------
+ * hasCompletedStep (DOC-AWARE)
+ * ----------------------------------------------------------------------
+ * Returns true if the given step has been completed.
+ *
+ * Logic:
+ * - If the tracker has reached the step immediately after `step`,
+ *   then `step` is considered completed.
+ * - If `step` is the final step in the flow, fall back to the
+ *   tracker’s `status.completed` flag.
+ * - If `step` is not part of this tracker’s flow (e.g. flatbed not required),
+ *   it is treated as not completed.
+ *
+ * Usage:
+ *   hasCompletedStep(tracker, EStepPath.APPLICATION_PAGE_2)
+ */
+export function hasCompletedStep(doc: IOnboardingTrackerDoc, step: EStepPath): boolean {
+  const opts = getFlowOptsFromTracker(doc as IOnboardingTrackerDoc & { needsFlatbedTraining?: boolean });
+  const flow = getOnboardingStepFlow(opts);
+
+  const stepIdx = flow.indexOf(step);
+  if (stepIdx === -1) {
+    // Step not applicable for this tracker → not completed
+    return false;
+  }
+
+  const next = flow[stepIdx + 1];
+  if (!next) {
+    // Final step: rely on tracker’s completed flag
+    return Boolean(doc.status.completed);
+  }
+
+  return hasReachedStep(doc, next);
+}
+
 /* ----------------------------------------------------------------------
  * Tracker Context (DOC-AWARE) — UPDATED
  * --------------------------------------------------------------------*/

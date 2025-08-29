@@ -5,7 +5,7 @@ import connectDB from "@/lib/utils/connectDB";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import { isValidSIN, isValidPhoneNumber, isValidEmail, isValidDOB } from "@/lib/utils/validationUtils";
 import { hasRecentAddressCoverage } from "@/lib/utils/hasMinimumAddressDuration";
-import { advanceProgress, buildTrackerContext, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
+import { advanceProgress, buildTrackerContext, hasCompletedStep, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
 import { deleteS3Objects, finalizePhoto } from "@/lib/utils/s3Upload";
 import { ES3Folder } from "@/types/aws.types";
 import { S3_SUBMISSIONS_FOLDER, S3_TEMP_FOLDER } from "@/constants/aws";
@@ -29,6 +29,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
     if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
+    if (!hasCompletedStep(onboardingDoc, EStepPath.APPLICATION_PAGE_1)) return errorResponse(401, "driver hasn't completed this step yet");
 
     const oldSin = decryptString(onboardingDoc.sinEncrypted);
 
@@ -73,6 +74,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const sinHash = hashString(newSin);
     const sinEncrypted = encryptString(newSin);
     const trackerId = onboardingDoc.id;
+
+    // check if there's already an application with the same sin
+    if (sinChanged) {
+      const existingOnboarding = await OnboardingTracker.findOne({ sinHash: sinHash });
+      if (existingOnboarding) return errorResponse(400, "application with this sin already exists");
+    }
 
     // ----------------------------------------------------------------
     // Phase 1 — Write *only page1* subtree, validate *only page1*
@@ -210,9 +217,8 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
 
     // Fetch onboarding tracker
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
-    if (!onboardingDoc || onboardingDoc.terminated) {
-      return errorResponse(404, "Onboarding document not found");
-    }
+    if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
+    if (!hasCompletedStep(onboardingDoc, EStepPath.APPLICATION_PAGE_1)) return errorResponse(401, "driver hasn't completed this step yet");
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) {

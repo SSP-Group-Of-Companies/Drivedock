@@ -70,6 +70,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const sinEncrypted = encryptString(newSin);
     const trackerId = onboardingDoc.id;
 
+    // check if there's already an application with the same sin
+    if (sinChanged) {
+      const existingOnboarding = await OnboardingTracker.findOne({ sinHash: sinHash });
+      if (existingOnboarding) return errorResponse(400, "application with this sin already exists");
+    }
+
     // ----------------------------------------------------------------
     // Phase 1 — Write *only page1* subtree, validate *only page1*
     // ----------------------------------------------------------------
