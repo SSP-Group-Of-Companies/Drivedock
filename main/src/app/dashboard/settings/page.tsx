@@ -1,10 +1,10 @@
 "use client";
 
-import { useThemeStore } from "@/store/useThemeStore";
+import { useCookieThemeStore } from "@/store/useCookieThemeStore";
 import { Moon, Sun, Monitor, Settings as SettingsIcon } from "lucide-react";
 
 export default function SettingsPage() {
-  const { theme, setTheme } = useThemeStore();
+  const { theme, setTheme } = useCookieThemeStore();
 
   return (
     <div className="w-full max-w-4xl mx-auto p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6 lg:space-y-8">

@@ -18,6 +18,9 @@ type Props = Readonly<{
 
   /** Optional: if provided, a "Delete" button appears and calls this with (index, item) */
   onDelete?: (index: number, item: GalleryItem) => void;
+  
+  /** Optional: error message to display in the dialog */
+  errorMessage?: string | null;
 }>;
 
 /**
@@ -34,6 +37,7 @@ export default function ImageGalleryDialog({
   title = "Documents",
   onClose,
   onDelete,
+  errorMessage,
 }: Props) {
   const [idx, setIdx] = useState(initialIndex);
   const labelId = useId();
@@ -159,6 +163,21 @@ export default function ImageGalleryDialog({
             </button>
           </div>
         </div>
+
+        {/* Error message */}
+        {errorMessage && (
+          <div
+            className="mx-3 mt-2 rounded-lg border px-3 py-2 text-sm"
+            style={{
+              color: "var(--color-error)",
+              borderColor: "var(--color-error)",
+              backgroundColor: "var(--color-error-container)",
+            }}
+            role="alert"
+          >
+            {errorMessage}
+          </div>
+        )}
 
         {/* Hero image */}
         <div className="relative flex-1 bg-black/5">

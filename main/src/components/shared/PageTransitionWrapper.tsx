@@ -45,6 +45,13 @@ export default function PageTransitionWrapper({
     return <div>{children}</div>;
   }
 
+  // Don't apply page transitions for dashboard routes to prevent conflicts with dashboard loading
+  const isDashboardRoute = pathname?.startsWith('/dashboard');
+  
+  if (isDashboardRoute) {
+    return <div>{children}</div>;
+  }
+
   return (
     <motion.div
       key={pathname}

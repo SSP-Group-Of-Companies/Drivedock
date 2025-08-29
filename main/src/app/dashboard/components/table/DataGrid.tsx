@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 import type { DashboardOnboardingItem } from "@/types/adminDashboard.types";
 import type { CategoryTab } from "@/hooks/dashboard/useAdminOnboardingQueryState";
 import { getOnboardingStepFlow } from "@/lib/utils/onboardingUtils";
@@ -14,6 +15,7 @@ import UploadCarriersEdgeCertificateDialog from "@/app/dashboard/components/dial
 
 import { useOnboardingMutations } from "@/hooks/dashboard/useOnboardingMutations";
 import { useCarriersEdgeMutations } from "@/hooks/dashboard/useCarriersEdgeMutations";
+import { useDashboardLoading } from "@/store/useDashboardLoading";
 
 import CompanyBadge from "./atoms/CompanyBadge";
 import CountryFlag from "./atoms/CountryFlag";
@@ -112,6 +114,8 @@ function buildPaginationItems(current: number, total: number): PageItem[] {
 type Props = Readonly<{
   isLoading: boolean;
   isFetching: boolean;
+  hasData: boolean;
+  isDefinitelyEmpty: boolean;
   items: DashboardOnboardingItem[];
   page: number;
   totalPages: number;
@@ -124,6 +128,8 @@ type Props = Readonly<{
 export default function DataGrid({
   isLoading,
   isFetching,
+  hasData: _hasData, // Unused but required for type safety
+  isDefinitelyEmpty,
   items,
   page,
   totalPages,
@@ -166,6 +172,14 @@ export default function DataGrid({
   /* ---------- Carrier's Edge ---------- */
   const { uploadCertificate } = useCarriersEdgeMutations();
   const router = useRouter();
+
+  /* ---------- Navigation with Loading ---------- */
+  const { show } = useDashboardLoading();
+
+  const navigateToContract = (trackerId: string) => {
+    show("Loading application...");
+    router.push(`/dashboard/contract/${trackerId}/safety-processing`);
+  };
 
   const navigateToCarriersEdge = (trackerId: string) => {
     router.push(
@@ -281,10 +295,10 @@ export default function DataGrid({
         }}
       >
         <div className="text-sm font-medium" role="status" aria-live="polite">
-          {isFetching
-            ? "Refreshing…"
-            : isLoading
+          {isLoading
             ? "Loading…"
+            : isFetching
+            ? "Refreshing…"
             : `${items.length} result(s)`}
         </div>
         <div className="flex items-center justify-center gap-1.5 sm:justify-end">
@@ -355,8 +369,13 @@ export default function DataGrid({
       </div>
 
       {/* Table (fills remaining space) */}
-      <div className="relative -mx-2 flex-1 min-h-0 overflow-x-auto overflow-y-auto overscroll-auto no-scrollbar sm:mx-0">
-        <table className="w-full border-separate border-spacing-0 text-sm table-fixed sm:table-auto">
+      <div className="relative -mx-2 flex-1 min-h-[400px] overflow-x-auto overflow-y-auto overscroll-auto no-scrollbar sm:mx-0">
+        <motion.table 
+          className="w-full border-separate border-spacing-0 text-sm table-fixed sm:table-auto"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+        >
           <colgroup>
             <col className="w-[46%] sm:w-auto" />
             <col className="w-[34%] sm:w-auto" />
@@ -400,44 +419,73 @@ export default function DataGrid({
           </thead>
 
           <tbody>
-            {isLoading && items.length === 0 && (
-              <tr>
-                <td
-                  colSpan={4}
-                  className="px-3 py-10 text-center"
-                  style={{ color: "var(--color-on-surface-variant)" }}
+            <AnimatePresence mode="wait">
+              {/* Show loading spinner during initial load */}
+              {isLoading && (
+                <motion.tr
+                  key="loading"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
                 >
-                  <div className="flex flex-col items-center gap-2">
-                    <div
-                      className="h-8 w-8 animate-spin rounded-full border-2 border-transparent"
-                      style={{ borderTopColor: "var(--color-primary)" }}
-                    />
-                    <span>Loading records…</span>
-                  </div>
-                </td>
-              </tr>
-            )}
+                  <td
+                    colSpan={4}
+                    className="px-3 py-16 text-center"
+                    style={{ color: "var(--color-on-surface-variant)" }}
+                  >
+                    <div className="flex flex-col items-center gap-3">
+                      <div
+                        className="h-10 w-10 animate-spin rounded-full border-3 border-transparent"
+                        style={{ 
+                          borderTopColor: "var(--color-primary)",
+                          borderWidth: "3px"
+                        }}
+                      />
+                      <span className="text-sm font-medium">Loading records…</span>
+                    </div>
+                  </td>
+                </motion.tr>
+              )}
 
-            {!isLoading && items.length === 0 && (
-              <tr>
-                <td
-                  colSpan={4}
-                  className="px-3 py-10 text-center"
-                  style={{ color: "var(--color-on-surface-variant)" }}
+              {/* Show "No records found" only when we're definitely empty */}
+              {isDefinitelyEmpty && (
+                <motion.tr
+                  key="empty"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
                 >
-                  No records found for this filter.
-                </td>
-              </tr>
-            )}
+                  <td
+                    colSpan={4}
+                    className="px-3 py-10 text-center"
+                    style={{ color: "var(--color-on-surface-variant)" }}
+                  >
+                    No records found for this filter.
+                  </td>
+                </motion.tr>
+              )}
 
-            {items.map((it) => {
+              {/* Show data rows with smooth animations */}
+              {!isLoading && items.length > 0 && (
+                <>
+                  {items.map((it, index) => {
               const pct = progressPercent(it);
               const step = stepLabel(it.status?.currentStep);
               const inProgress = !it.status?.completed;
 
               return (
-                <tr
+                <motion.tr
                   key={it._id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ 
+                    duration: 0.3,
+                    delay: index * 0.05, // Stagger animation
+                    ease: "easeOut"
+                  }}
                   className="align-middle transition-colors hover:bg-opacity-50"
                   style={{ backgroundColor: "var(--color-surface)" }}
                 >
@@ -635,7 +683,7 @@ export default function DataGrid({
                           <div className="inline-flex flex-wrap justify-end gap-1 sm:flex-nowrap sm:gap-1.5 lg:gap-2">
                             <ActionBtn
                               icon={Eye}
-                              href={`/dashboard/contract/${it._id}`}
+                              onClick={() => navigateToContract(it._id)}
                             >
                               View application
                             </ActionBtn>
@@ -785,11 +833,14 @@ export default function DataGrid({
                       </div>
                     )}
                   </td>
-                </tr>
+                </motion.tr>
               );
             })}
+                </>
+              )}
+            </AnimatePresence>
           </tbody>
-        </table>
+        </motion.table>
       </div>
 
       {/* Dialogs */}

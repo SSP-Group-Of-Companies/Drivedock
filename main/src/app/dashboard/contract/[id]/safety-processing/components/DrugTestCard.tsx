@@ -35,6 +35,7 @@ export default function DrugTestCard({
 }: Props) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [galleryError, setGalleryError] = useState<string | null>(null);
   const [fileKey, setFileKey] = useState(0);
   const [showHighlight, setShowHighlight] = useState(highlight);
 
@@ -70,9 +71,11 @@ export default function DrugTestCard({
     return baseStatus;
   }, [drugTest.status, baseStatus]);
 
-  // Can choose Approve/Reject only when there's something to review
+  // Can choose Approve/Reject only when there's something to review AND not already approved
   const canDecide =
-    !busyOrLocked && derivedStatus !== EDrugTestStatus.NOT_UPLOADED;
+    !busyOrLocked && 
+    derivedStatus !== EDrugTestStatus.NOT_UPLOADED && 
+    drugTest.status !== EDrugTestStatus.APPROVED;
 
   // Gallery
   const [galleryOpen, setGalleryOpen] = useState(false);
@@ -193,7 +196,7 @@ export default function DrugTestCard({
       case EDrugTestStatus.AWAITING_REVIEW:
         return "Documents uploaded — awaiting admin verification.";
       case EDrugTestStatus.APPROVED:
-        return "Verified — drug test approved.";
+        return "Verified — drug test approved. Status cannot be changed once approved.";
       case EDrugTestStatus.REJECTED:
         return "Rejected — request a new upload if applicable.";
       default:
@@ -295,10 +298,10 @@ export default function DrugTestCard({
                   disabled={!canDecide}
                   onClick={handleApprove}
                   title={
-                    canDecide
-                      ? drugTest.status === EDrugTestStatus.APPROVED
-                        ? "Unmark approval"
-                        : "Approve"
+                    drugTest.status === EDrugTestStatus.APPROVED
+                      ? "Cannot change status once approved"
+                      : canDecide
+                      ? "Approve"
                       : "Upload a document first"
                   }
                 >
@@ -326,7 +329,9 @@ export default function DrugTestCard({
                   disabled={!canDecide}
                   onClick={handleReject}
                   title={
-                    canDecide
+                    drugTest.status === EDrugTestStatus.APPROVED
+                      ? "Cannot change status once approved"
+                      : canDecide
                       ? drugTest.status === EDrugTestStatus.REJECTED
                         ? "Undo rejection"
                         : "Reject (clears documents)"
@@ -396,7 +401,10 @@ export default function DrugTestCard({
               className="mt-3 text-xs"
               style={{ color: "var(--color-on-surface-variant)" }}
             >
-              At least one document is required to approve.
+              {drugTest.status === EDrugTestStatus.APPROVED 
+                ? "Documents can be deleted, but at least one document must remain when approved."
+                : "At least one document is required to approve."
+              }
             </div>
           </div>
         </div>
@@ -435,7 +443,17 @@ export default function DrugTestCard({
           initialIndex={galleryIndex}
           title="Drug Test Documents"
           onClose={() => setGalleryOpen(false)}
-          onDelete={(index, _item) => handleDeleteFromGallery(index)}
+          onDelete={(index, _item) => {
+            // Allow deletion even when approved, but prevent if only 1 document remains
+            if (drugTest.status === EDrugTestStatus.APPROVED && galleryItems.length <= 1) {
+              // Show error message in gallery
+              setGalleryError("At least one document must exist when approved.");
+              return;
+            }
+            handleDeleteFromGallery(index);
+            setGalleryError(null); // Clear any previous error
+          }}
+          errorMessage={galleryError}
         />
       </section>
     </div>

@@ -16,6 +16,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import CategoriesTabs from "@/app/dashboard/components/categories/CategoriesTabs";
 import DataOperationBar from "@/app/dashboard/components/operations/DataOperationBar";
 import DataGrid from "@/app/dashboard/components/table/DataGrid";
+import DashboardContentWrapper from "@/components/dashboard/DashboardContentWrapper";
 
 import {
   COMPANY_OPTIONS,
@@ -24,8 +25,17 @@ import {
 
 export default function HomeClient() {
   // Data (React Query)
-  const { data, isLoading, isFetching, isError, error, refetch, uiQuery } =
-    useOnboardingList();
+  const { 
+    data, 
+    isLoading, 
+    isFetching, 
+    hasData, 
+    isDefinitelyEmpty, 
+    isError, 
+    error, 
+    refetch, 
+    uiQuery 
+  } = useOnboardingList();
 
   // URL-driven state + setters
   const {
@@ -100,7 +110,7 @@ export default function HomeClient() {
   }
 
   return (
-    <div className="max-w-[1400px] space-y-3 sm:space-y-4 flex h-full min-h-0 flex-col ">
+    <DashboardContentWrapper>
       {/* Categories with counts (All / Drive Test / Carrier's Edge / Drug Test) */}
       <CategoriesTabs
         currentTab={uiQuery.currentTab}
@@ -129,12 +139,14 @@ export default function HomeClient() {
       <DataGrid
         isLoading={isLoading}
         isFetching={isFetching}
+        hasData={hasData ?? false}
+        isDefinitelyEmpty={isDefinitelyEmpty ?? false}
         items={data?.items ?? []}
         page={data?.page ?? 1}
         totalPages={data?.totalPages ?? 1}
         currentTab={uiQuery.currentTab}
         onPageChange={(p) => setPagination(p)}
       />
-    </div>
+    </DashboardContentWrapper>
   );
 }

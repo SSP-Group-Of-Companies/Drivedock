@@ -444,7 +444,12 @@
       "description": "Please upload clear photos of your drug test documents. You can add up to {{count}} photos. Once uploaded, documents will be verified before you can continue.",
       "verified": "Documents verified.",
       "pending": "Documents uploaded. Pending verification. Uploads are disabled.",
-      "labelDocuments": "Drug Test Documents"
+      "labelDocuments": "Drug Test Documents",
+      "success": {
+        "title": "Congratulations! 🎉",
+        "message": "You have successfully completed your Drug Test! Your documents have been verified and approved. You can now proceed to the next step of your onboarding process.",
+        "continueButton": "Next"
+      }
     },
     "errors": {
       "minimum5Years": "You must provide at least 5 years of address history.",

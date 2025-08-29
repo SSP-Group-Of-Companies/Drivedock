@@ -10,51 +10,14 @@ import { useTranslation } from "react-i18next";
 import useMounted from "@/hooks/useMounted";
 import type { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
 import type { IDriveTest } from "@/types/driveTest.types";
+import { Confetti } from "@/components/shared";
 
 export type DriveTestClientProps = {
   driveTest: Partial<IDriveTest>;
   onboardingContext: IOnboardingTrackerContext;
 };
 
-// Simple confetti component using framer-motion
-function Confetti() {
-  const confettiPieces = Array.from({ length: 50 }, (_, i) => i);
-  const colors = [
-    "#ff6b6b",
-    "#4ecdc4",
-    "#45b7d1",
-    "#96ceb4",
-    "#feca57",
-    "#ff9ff3",
-  ];
 
-  return (
-    <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-      {confettiPieces.map((i) => (
-        <motion.div
-          key={i}
-          className="absolute w-2 h-2 rounded-full"
-          style={{
-            backgroundColor: colors[i % colors.length],
-            left: `${Math.random() * 100}%`,
-            top: "-10px",
-          }}
-          initial={{ y: -10, x: 0, rotate: 0 }}
-          animate={{
-            y: window.innerHeight + 10,
-            x: Math.random() * 200 - 100,
-            rotate: 360,
-          }}
-          transition={{
-            duration: 3 + Math.random() * 2,
-            ease: "easeOut",
-            delay: Math.random() * 0.5,
-          }}
-        />
-      ))}
-    </div>
-  );
-}
 
 export default function DriveTestClient({
   driveTest,

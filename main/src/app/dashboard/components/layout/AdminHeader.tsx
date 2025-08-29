@@ -13,6 +13,7 @@ import Link from "next/link";
 import Image from "next/image";
 import AppLauncher from "./AppLauncher";
 import ProfileDropdown from "@/components/shared/ProfileDropdown";
+import ThemeToggle from "@/components/shared/ThemeToggle";
 
 interface AdminHeaderProps {
   onToggleSidebar?: () => void;
@@ -31,7 +32,7 @@ export default function AdminHeader({
         borderBottom: "1px solid var(--color-header-border)",
       }}
     >
-      <div className="mx-auto flex h-12 sm:h-14 max-w-screen-2xl items-center justify-between px-3 sm:px-4">
+             <div className="mx-auto flex h-12 sm:h-14 max-w-none sm:max-w-none md:max-w-none lg:max-w-7xl xl:max-w-8xl 2xl:max-w-[1500px] items-center justify-between px-3 sm:px-4 xl:ml-64">
         {/* Left: sidebar toggle (visible below lg) */}
         <div className="flex items-center">
           <button
@@ -81,8 +82,9 @@ export default function AdminHeader({
           </span>
         </Link>
 
-        {/* Right: app launcher + profile */}
+        {/* Right: theme toggle + app launcher + profile */}
         <div className="flex items-center justify-end gap-1 sm:gap-2">
+          <ThemeToggle />
           <AppLauncher />
           <ProfileDropdown />
         </div>

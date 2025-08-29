@@ -4,6 +4,7 @@ import { useMemo, useState, useId, useEffect } from "react";
 import type { IPhoto } from "@/types/shared.types";
 import { uploadToS3Presigned } from "@/lib/utils/s3Upload";
 import { ES3Folder } from "@/types/aws.types";
+import { useAuth } from "@/app/providers/authProvider";
 import ImageGalleryDialog, {
   type GalleryItem,
 } from "@/app/dashboard/components/dialogs/ImageGalleryDialog";
@@ -33,8 +34,10 @@ export default function CarriersEdgeCard({
   onChange,
   highlight = false,
 }: Props) {
+  const user = useAuth();
   const [busy, setBusy] = useState(false); // uploading only
   const [err, setErr] = useState<string | null>(null);
+  const [galleryError, setGalleryError] = useState<string | null>(null);
   const [fileKey, setFileKey] = useState(0); // reset <input type="file" />
   const [showHighlight, setShowHighlight] = useState(highlight);
 
@@ -83,10 +86,10 @@ export default function CarriersEdgeCard({
 
   function handleEmailSentToggle(checked: boolean) {
     if (emailSent || !checked) return; // one-way
-    const admin = window.localStorage.getItem("admin_name") || "Admin";
+    const adminName = user?.name || "Admin";
     onChange({
       emailSent: true,
-      emailSentBy: admin,
+      emailSentBy: adminName,
       emailSentAt: new Date().toISOString(),
     });
   }
@@ -322,7 +325,9 @@ export default function CarriersEdgeCard({
           <div className="text-xs opacity-70">
             {emailSent
               ? certificatesCount >= 1
-                ? "Ready to submit changes."
+                ? carriersEdge.completed 
+                  ? "Completed. Certificates can be deleted, but at least one certificate must remain when completed."
+                  : "Ready to submit changes."
                 : "Upload at least 1 certificate."
               : "Send credentials to continue."}
           </div>
@@ -349,6 +354,13 @@ export default function CarriersEdgeCard({
           title="Carrier’s Edge Certificates"
           onClose={() => setGalleryOpen(false)}
           onDelete={(_i, item) => {
+            // Allow deletion even when completed, but prevent if only 1 certificate remains
+            if (carriersEdge.completed && galleryItems.length <= 1) {
+              // Show error message in gallery
+              setGalleryError("At least one certificate must exist when completed.");
+              return;
+            }
+            
             const idx = certificates.findIndex(
               (p) => String(p?.url) === item.url
             );
@@ -359,7 +371,9 @@ export default function CarriersEdgeCard({
             } else {
               onChange({ certificates: next });
             }
+            setGalleryError(null); // Clear any previous error
           }}
+          errorMessage={galleryError}
         />
       </section>
     </div>

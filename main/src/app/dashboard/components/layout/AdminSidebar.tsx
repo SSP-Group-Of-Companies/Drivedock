@@ -41,7 +41,7 @@ function NavItem({ item, active }: { item: SidebarItem; active: boolean }) {
       href={item.href}
       aria-current={active ? "page" : undefined}
       className={cx(
-        "group flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-0",
+        "group flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-0 min-w-0",
         active ? "font-semibold" : "hover:scale-[1.02]"
       )}
       style={styles}
@@ -159,13 +159,13 @@ export default function AdminSidebar({
   return (
     <aside
       className={cx(
-        "hidden md:block",
-        // sticky under header; offset matches header h-12 (48px) / h-14 (56px)
-        "sticky top-12 sm:top-14",
+        "hidden xl:block",
+        // fixed positioning under header; offset matches header h-12 (48px) / h-14 (56px)
+        "fixed top-12 sm:top-14 left-0",
         // width + no right padding (flush with content)
-        "shrink-0 w-56 lg:w-64 pl-3 pr-0 py-4",
+        "w-56 lg:w-64 pl-3 pr-0 py-4",
         // make it visually span the viewport under the header
-        "min-h-[calc(100dvh-48px)] sm:min-h-[calc(100dvh-56px)]",
+        "h-[calc(100dvh-48px)] sm:h-[calc(100dvh-56px)]",
         "transition-colors duration-200"
       )}
       style={{
@@ -175,7 +175,7 @@ export default function AdminSidebar({
           "var(--color-shadow) 0 1px 3px 0, var(--color-shadow) 0 1px 2px -1px",
       }}
     >
-      <div className="min-h-0">
+      <div className="h-full overflow-y-auto overflow-x-hidden w-full">
         <SidebarNav
           variant={variant}
           activePath={activePath}
