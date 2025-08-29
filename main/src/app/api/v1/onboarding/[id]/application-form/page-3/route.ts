@@ -73,6 +73,7 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
       return errorResponse(404, "Onboarding document not found");
     }
 
+    if (onboardingDoc.status.completed === true) return errorResponse(401, "onboarding process already completed");
     if (onboardingExpired(onboardingDoc)) return errorResponse(400, "Onboarding session expired");
 
     const appFormId = onboardingDoc.forms?.driverApplication;
