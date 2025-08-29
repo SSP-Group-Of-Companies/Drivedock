@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Trash2, Pencil, Check, X } from "lucide-react";
+import { useAuth } from "@/app/providers/authProvider";
 
 type Props = {
   /** Entire notes field coming from server (newline-separated lines) */
@@ -66,6 +67,7 @@ function serializeNotes(items: NoteItem[]): string {
 /* -------------------------------- Component ------------------------------- */
 
 export default function NotesCard({ notes, onSave }: Props) {
+  const user = useAuth();
   const [items, setItems] = useState<NoteItem[]>(() => parseNotes(notes));
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
@@ -95,10 +97,7 @@ export default function NotesCard({ notes, onSave }: Props) {
   const addNote = () => {
     const text = draft.trim();
     if (!text) return;
-    const author =
-      (typeof window !== "undefined" &&
-        (window.localStorage.getItem("admin_name") || "").trim()) ||
-      "Admin";
+    const author = user?.name || "Admin";
     const item: NoteItem = {
       id: crypto.randomUUID?.() ?? String(Date.now()),
       text,

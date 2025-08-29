@@ -10,7 +10,7 @@ import { parseJsonBody } from "@/lib/utils/reqParser";
 import { deleteS3Objects, finalizePhoto } from "@/lib/utils/s3Upload";
 import { S3_SUBMISSIONS_FOLDER, S3_TEMP_FOLDER } from "@/constants/aws";
 import { ES3Folder } from "@/types/aws.types";
-import { advanceProgress, buildTrackerContext, hasReachedStep, nextResumeExpiry, onboardingExpired } from "@/lib/utils/onboardingUtils";
+import { buildTrackerContext, hasReachedStep, nextResumeExpiry, onboardingExpired } from "@/lib/utils/onboardingUtils";
 import { EStepPath } from "@/types/onboardingTracker.types";
 import { EDrugTestStatus } from "@/types/drugTest.types";
 
@@ -90,8 +90,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     });
     await drugTestDoc.save(); // normal validation
 
-    // Advance to Drug Test step & refresh resume expiry
-    onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.DRUG_TEST);
+    // Refresh resume expiry (but don't advance step - that happens when admin approves)
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();
     await onboardingDoc.save();
 

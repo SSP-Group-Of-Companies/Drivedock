@@ -1,18 +1,18 @@
 /**
- * Global Loading Screen Component — DriveDock (SSP Portal)
+ * Dashboard Loading Screen Component — DriveDock (SSP Portal)
  *
  * Description:
- * Full-screen loading overlay with animated SSP star logo and subtle particles.
+ * Dashboard-specific loading overlay with animated SSP star logo and subtle particles.
  * Provides visual feedback during async operations like form submissions,
  * navigation, and API calls. Uses Framer Motion for smooth animations.
- * Used exclusively for the onboarding/driver side of the application.
+ * Fully theme-aware with light/dark mode support.
  *
  * Features:
  * - Animated star with breathing effect and radial color reveal
  * - Subtle particle animations for visual interest
  * - Backdrop blur for focus
  * - Responsive design with professional animations
- * - Fixed colors optimized for onboarding experience
+ * - Full theme-aware colors (light/dark mode)
  *
  * Author: Faruq Adebayo Atanda
  * Company: SSP Group of Companies
@@ -23,16 +23,10 @@
 
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
-import { useGlobalLoading } from "@/store/useGlobalLoading";
+import { useDashboardLoading } from "@/store/useDashboardLoading";
 
-export default function GlobalLoader() {
-  const { visible, message } = useGlobalLoading();
-
-  // Fixed colors for onboarding/driver side
-  const backgroundColor = 'rgba(255, 255, 255, 0.7)';
-  const textColor = '#6b7280'; // gray-500
-  const primaryColor = '#0071bc'; // SSP blue
-  const secondaryColor = '#e30613'; // SSP red
+export default function DashboardLoader() {
+  const { visible, message } = useDashboardLoading();
 
   return (
     <AnimatePresence>
@@ -44,8 +38,8 @@ export default function GlobalLoader() {
           transition={{ duration: 0.2 }}
           className="fixed inset-0 z-[70] flex items-center justify-center backdrop-blur-sm transition-colors duration-200"
           style={{
-            backgroundColor: backgroundColor,
-            opacity: 1
+            backgroundColor: 'var(--color-background)',
+            opacity: 0.7
           }}
         >
           <div className="flex flex-col items-center gap-3">
@@ -55,7 +49,7 @@ export default function GlobalLoader() {
               <motion.div
                 className="absolute inset-0 rounded-full blur-xl"
                 style={{
-                  background: `linear-gradient(to right, ${primaryColor}, ${secondaryColor})`,
+                  background: `linear-gradient(to right, var(--color-primary), var(--color-secondary))`,
                   opacity: 0.2
                 }}
                 animate={{
@@ -108,7 +102,7 @@ export default function GlobalLoader() {
                   key={i}
                   className="absolute rounded-full"
                   style={{
-                    backgroundColor: secondaryColor,
+                    backgroundColor: 'var(--color-secondary)',
                     opacity: 0.4,
                     width: 3 + (i % 2) * 2,
                     height: 3 + (i % 2) * 2,
@@ -135,7 +129,7 @@ export default function GlobalLoader() {
             {message && (
               <p 
                 className="text-sm animate-pulse"
-                style={{ color: textColor }}
+                style={{ color: 'var(--color-on-surface-variant)' }}
               >
                 {message}
               </p>
