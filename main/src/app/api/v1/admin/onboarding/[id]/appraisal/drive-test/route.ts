@@ -6,7 +6,7 @@ import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import DriveTest from "@/mongoose/models/DriveTest";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
 import { EStepPath } from "@/types/onboardingTracker.types";
-import { buildTrackerContext, onboardingExpired, hasReachedStep } from "@/lib/utils/onboardingUtils";
+import { buildTrackerContext, hasReachedStep } from "@/lib/utils/onboardingUtils";
 import { isValidObjectId } from "mongoose";
 
 /**
@@ -25,7 +25,6 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
 
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
     if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
-    if (onboardingExpired(onboardingDoc)) return errorResponse(400, "Onboarding session expired");
 
     // GATE: must be allowed to view drive test step
     if (!hasReachedStep(onboardingDoc, EStepPath.DRIVE_TEST)) {

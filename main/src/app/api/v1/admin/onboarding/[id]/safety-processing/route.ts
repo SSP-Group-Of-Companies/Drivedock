@@ -210,6 +210,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
     if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
     if (onboardingDoc.terminated) return errorResponse(400, "Onboarding document terminated");
+    if (onboardingDoc.status.completed === true) return errorResponse(401, "onboarding process already completed");
 
     const body = await parseJsonBody<{
       notes?: string;

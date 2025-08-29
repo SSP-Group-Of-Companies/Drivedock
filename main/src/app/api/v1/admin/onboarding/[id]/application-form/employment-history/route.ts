@@ -4,7 +4,7 @@ import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
 import { IApplicationFormPage2 } from "@/types/applicationForm.types";
 import { EStepPath } from "@/types/onboardingTracker.types";
-import { buildTrackerContext, onboardingExpired, hasReachedStep, advanceProgress, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
+import { buildTrackerContext, hasReachedStep, advanceProgress, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
 import { isValidObjectId } from "mongoose";
 import { NextRequest } from "next/server";
 import { validateEmploymentHistory } from "@/lib/utils/validationUtils";
@@ -32,7 +32,6 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
     const onboardingDoc = await OnboardingTracker.findById(id);
     if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
-    if (onboardingExpired(onboardingDoc)) return errorResponse(400, "Onboarding session expired");
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) return errorResponse(404, "ApplicationForm not linked");
@@ -87,7 +86,6 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
 
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
     if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
-    if (onboardingExpired(onboardingDoc)) return errorResponse(400, "Onboarding session expired");
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) return errorResponse(404, "ApplicationForm not linked");

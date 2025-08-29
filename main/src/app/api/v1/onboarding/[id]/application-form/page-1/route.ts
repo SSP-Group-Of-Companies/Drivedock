@@ -26,6 +26,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
     if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
+    if (onboardingDoc.status.completed === true) return errorResponse(401, "onboarding process already completed");
+    if (onboardingExpired(onboardingDoc)) return errorResponse(400, "Onboarding session expired");
 
     const oldSin = decryptString(onboardingDoc.sinEncrypted);
 

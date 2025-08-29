@@ -9,7 +9,7 @@ import { parseJsonBody } from "@/lib/utils/reqParser";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import FlatbedTraining from "@/mongoose/models/FlatbedTraining";
 
-import { buildTrackerContext, onboardingExpired, hasReachedStep, advanceProgress, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
+import { buildTrackerContext, hasReachedStep, advanceProgress, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
 import { canHaveFlatbedTraining } from "@/constants/companies";
 
 import { EStepPath } from "@/types/onboardingTracker.types";
@@ -35,7 +35,6 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
 
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
     if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
-    if (onboardingExpired(onboardingDoc)) return errorResponse(400, "Onboarding session expired");
 
     if (!hasReachedStep(onboardingDoc, EStepPath.FLATBED_TRAINING)) {
       return errorResponse(403, "driver hasn't reached this step yet");
@@ -89,7 +88,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
     if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
-    if (onboardingExpired(onboardingDoc)) return errorResponse(400, "Onboarding session expired");
+    if (onboardingDoc.status.completed === true) return errorResponse(401, "onboarding process already completed");
 
     if (!hasReachedStep(onboardingDoc, EStepPath.FLATBED_TRAINING)) {
       return errorResponse(403, "driver hasn't reached this step yet");

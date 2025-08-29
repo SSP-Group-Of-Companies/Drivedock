@@ -24,6 +24,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       return errorResponse(404, "Onboarding document not found");
     }
 
+    if (onboardingDoc.status.completed === true) return errorResponse(401, "onboarding process already completed");
     if (onboardingExpired(onboardingDoc)) return errorResponse(400, "Onboarding session expired");
 
     const preQualId = onboardingDoc.forms?.preQualification;

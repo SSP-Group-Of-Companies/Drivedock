@@ -5,7 +5,7 @@ import { errorResponse, successResponse } from "@/lib/utils/apiResponse";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import DriveTest from "@/mongoose/models/DriveTest";
 import { EStepPath } from "@/types/onboardingTracker.types";
-import { buildTrackerContext, onboardingExpired, hasReachedStep, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
+import { buildTrackerContext, hasReachedStep, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
 import { isValidObjectId } from "mongoose";
 import { deleteS3Objects, finalizePhoto } from "@/lib/utils/s3Upload";
 import { ES3Folder } from "@/types/aws.types";
@@ -28,7 +28,6 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
 
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
     if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
-    if (onboardingExpired(onboardingDoc)) return errorResponse(400, "Onboarding session expired");
 
     if (!hasReachedStep(onboardingDoc, EStepPath.DRIVE_TEST)) {
       return errorResponse(403, "driver hasn't reached this step yet");
@@ -106,7 +105,7 @@ export const POST = async (req: NextRequest, { params }: { params: Promise<{ id:
 
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
     if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
-    if (onboardingExpired(onboardingDoc)) return errorResponse(400, "Onboarding session expired");
+    if (onboardingDoc.status.completed === true) return errorResponse(401, "onboarding process already completed");
 
     if (!hasReachedStep(onboardingDoc, EStepPath.DRIVE_TEST)) {
       return errorResponse(403, "driver hasn't reached this step yet");

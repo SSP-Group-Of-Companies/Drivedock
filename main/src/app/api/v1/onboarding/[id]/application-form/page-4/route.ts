@@ -23,6 +23,8 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
     const onboardingDoc = await OnboardingTracker.findById(id);
     if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
+    if (onboardingDoc.status.completed === true) return errorResponse(401, "onboarding process already completed");
+    if (onboardingExpired(onboardingDoc)) return errorResponse(400, "Onboarding session expired");
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) return errorResponse(404, "ApplicationForm not linked");
