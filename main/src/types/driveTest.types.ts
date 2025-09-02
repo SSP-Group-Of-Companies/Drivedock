@@ -38,14 +38,12 @@ export interface IAssessmentItem<K extends string = string> {
   key: K; // stable key for the row
   label: string; // UI text
   checked: boolean; // checkbox
-  comment?: string; // optional free-text
 }
 
 export interface IAssessmentSection<K extends string = string> {
   key: string; // section stable key
   title: string; // UI title
   items: Array<IAssessmentItem<K>>;
-  sectionNotes?: string;
 }
 
 /* ============================================================
@@ -53,13 +51,7 @@ export interface IAssessmentSection<K extends string = string> {
  * ========================================================== */
 
 /* ----- Section: Under Hood Inspection ----- */
-export type PreTripUnderHoodKey =
-  | "checked_fluids"
-  | "belts_hoses"
-  | "engine_fan"
-  | "checked_frame"
-  | "suspension"
-  | "checked_brakes";
+export type PreTripUnderHoodKey = "checked_fluids" | "belts_hoses" | "engine_fan" | "checked_frame" | "suspension" | "checked_brakes";
 
 /* ----- Section: Out‑Side Inspection ----- */
 export type PreTripOutsideKey =
@@ -104,15 +96,7 @@ export type PreTripAirSystemKey =
   | "inspects_drains_air_tanks";
 
 /* ----- Section: In‑Cab Inspection ----- */
-export type PreTripInCabKey =
-  | "inspects_drains_air_tanks"
-  | "glass_mirrors"
-  | "doors_windows"
-  | "gauges_switches"
-  | "heater_defroster"
-  | "windshield_washer"
-  | "emergency_equipment"
-  | "truck_document_binder";
+export type PreTripInCabKey = "glass_mirrors" | "doors_windows" | "gauges_switches" | "heater_defroster" | "windshield_washer" | "emergency_equipment" | "truck_document_binder";
 
 /* ----- Section: Backing Up ----- */
 export type PreTripBackingKey =
@@ -154,12 +138,7 @@ export interface IPreTripAssessment {
  * ========================================================== */
 
 /* ----- Section: Placing Vehicle In‑Motion ----- */
-export type OnRoadInMotionKey =
-  | "selects_correct_gear_for_starting"
-  | "prevents_roll_back_when_starting"
-  | "up_shifts_correctly"
-  | "uses_clutch_properly"
-  | "uses_proper_shifting_techniques";
+export type OnRoadInMotionKey = "selects_correct_gear_for_starting" | "prevents_roll_back_when_starting" | "up_shifts_correctly" | "uses_clutch_properly" | "uses_proper_shifting_techniques";
 
 /* ----- Section: Highway Driving ----- */
 export type OnRoadHighwayKey =
@@ -206,10 +185,7 @@ export type OnRoadDefensiveKey =
   | "familiar_with_all_equipment_used_for_securement";
 
 /* ----- Section: GPS ----- */
-export type OnRoadGpsKey =
-  | "good_traffic_awareness_and_analysis_gps"
-  | "understands_correct_uses_gps"
-  | "constantly_alert_and_attentive_gps";
+export type OnRoadGpsKey = "good_traffic_awareness_and_analysis_gps" | "understands_correct_uses_gps" | "constantly_alert_and_attentive_gps";
 
 /* ----- Section: Operating In Traffic ----- */
 export type OnRoadTrafficKey =
@@ -270,11 +246,7 @@ export interface IDriveTestDoc extends Document, IDriveTest {}
  * (Use these factories when building initial form state.)
  * ========================================================== */
 
-export const makeSection = <K extends string>(
-  key: string,
-  title: string,
-  labels: Array<{ key: K; label: string }>
-): IAssessmentSection<K> => ({
+export const makeSection = <K extends string>(key: string, title: string, labels: Array<{ key: K; label: string }>): IAssessmentSection<K> => ({
   key,
   title,
   items: labels.map(({ key, label }) => ({ key, label, checked: false })),
@@ -368,7 +340,6 @@ export const PreTripLabels = {
   ] as Array<{ key: PreTripAirSystemKey; label: string }>,
 
   inCab: [
-    { key: "inspects_drains_air_tanks", label: "Inspects / Drains Air Tanks" },
     { key: "glass_mirrors", label: "Glass / Mirrors" },
     { key: "doors_windows", label: "Doors / Windows" },
     { key: "gauges_switches", label: "Gauges / Switches" },
@@ -637,52 +608,20 @@ export const OnRoadLabels = {
 
 /* Helper to quickly build typed sections for initial state */
 export const makePreTripSections = (): IPreTripAssessment["sections"] => ({
-  underHood: makeSection(
-    "under_hood",
-    "Under Hood Inspection",
-    PreTripLabels.underHood
-  ),
-  outside: makeSection(
-    "outside_inspection",
-    "Out‑Side Inspection",
-    PreTripLabels.outside
-  ),
+  underHood: makeSection("under_hood", "Under Hood Inspection", PreTripLabels.underHood),
+  outside: makeSection("outside_inspection", "Out‑Side Inspection", PreTripLabels.outside),
   uncoupling: makeSection("uncoupling", "Uncoupling", PreTripLabels.uncoupling),
   coupling: makeSection("coupling", "Coupling", PreTripLabels.coupling),
-  airSystem: makeSection(
-    "air_system",
-    "Air – System Inspection",
-    PreTripLabels.airSystem
-  ),
+  airSystem: makeSection("air_system", "Air – System Inspection", PreTripLabels.airSystem),
   inCab: makeSection("in_cab", "In‑Cab Inspection", PreTripLabels.inCab),
   backingUp: makeSection("backing_up", "Backing Up", PreTripLabels.backingUp),
 });
 
 export const makeOnRoadSections = (): IOnRoadAssessment["sections"] => ({
-  placingVehicleInMotion: makeSection(
-    "placing_vehicle_in_motion",
-    "Placing Vehicle In‑Motion",
-    OnRoadLabels.inMotion
-  ),
-  highwayDriving: makeSection(
-    "highway_driving",
-    "Highway Driving",
-    OnRoadLabels.highway
-  ),
-  rightLeftTurns: makeSection(
-    "right_left_turns",
-    "Right / Left Turns",
-    OnRoadLabels.turns
-  ),
-  defensiveDriving: makeSection(
-    "defensive_driving",
-    "Defensive Driving",
-    OnRoadLabels.defensive
-  ),
+  placingVehicleInMotion: makeSection("placing_vehicle_in_motion", "Placing Vehicle In‑Motion", OnRoadLabels.inMotion),
+  highwayDriving: makeSection("highway_driving", "Highway Driving", OnRoadLabels.highway),
+  rightLeftTurns: makeSection("right_left_turns", "Right / Left Turns", OnRoadLabels.turns),
+  defensiveDriving: makeSection("defensive_driving", "Defensive Driving", OnRoadLabels.defensive),
   gps: makeSection("gps", "GPS", OnRoadLabels.gps),
-  operatingInTraffic: makeSection(
-    "operating_in_traffic",
-    "Operating In Traffic",
-    OnRoadLabels.traffic
-  ),
+  operatingInTraffic: makeSection("operating_in_traffic", "Operating In Traffic", OnRoadLabels.traffic),
 });

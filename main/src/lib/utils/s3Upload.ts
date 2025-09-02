@@ -1,6 +1,6 @@
 // lib/utils/s3Upload.ts
 import { AWS_ACCESS_KEY_ID, AWS_BUCKET_NAME, AWS_REGION, AWS_SECRET_ACCESS_KEY } from "@/config/env";
-import { S3Client, PutObjectCommand, DeleteObjectCommand, CopyObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand, CopyObjectCommand, HeadObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { v4 as uuidv4 } from "uuid";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { DEFAULT_PRESIGN_EXPIRY_SECONDS, S3_SUBMISSIONS_FOLDER, S3_TEMP_FOLDER } from "@/constants/aws";
@@ -193,4 +193,47 @@ export async function uploadToS3Presigned({ file, folder, trackerId = "unknown" 
     url: data.publicUrl,
     putUrl: data.url,
   };
+}
+
+/** Fetch a public/presigned URL into raw bytes */
+async function fetchBytesFromUrl(url: string): Promise<Uint8Array> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to fetch image: ${res.status} ${res.statusText}`);
+  const buf = await res.arrayBuffer();
+  return new Uint8Array(buf);
+}
+
+/** Get S3 object (by key) as raw bytes using AWS SDK v3 */
+async function getS3ObjectBytes(key: string): Promise<Uint8Array> {
+  const out = await s3.send(new GetObjectCommand({ Bucket: AWS_BUCKET_NAME, Key: key }));
+  const body: any = out.Body;
+
+  if (body?.transformToByteArray) {
+    // Node 18+ / modern SDK runtime
+    return await body.transformToByteArray();
+  }
+
+  // Fallback: stream to Buffer
+  const chunks: Buffer[] = [];
+  await new Promise<void>((resolve, reject) => {
+    body.on("data", (d: Buffer) => chunks.push(d));
+    body.on("end", () => resolve());
+    body.on("error", reject);
+  });
+  return new Uint8Array(Buffer.concat(chunks));
+}
+
+/**
+ * Load image bytes from an IPhoto.
+ * Prefers s3Key (private buckets) and falls back to url (public/presigned).
+ */
+export async function loadImageBytesFromPhoto(photo?: IPhoto): Promise<Uint8Array> {
+  if (!photo) throw new Error("Photo is undefined");
+  if (photo.s3Key) {
+    return getS3ObjectBytes(photo.s3Key);
+  }
+  if (photo.url) {
+    return fetchBytesFromUrl(photo.url);
+  }
+  throw new Error("Photo is missing both s3Key and url");
 }
