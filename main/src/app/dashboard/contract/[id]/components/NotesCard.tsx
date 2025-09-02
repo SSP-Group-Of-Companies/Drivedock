@@ -9,6 +9,10 @@ type Props = {
   notes: string;
   /** Persist full notes back as newline-separated lines */
   onSave: (notes: string) => Promise<any> | any;
+  /** Optional: if true, shows save/discard buttons instead of auto-save */
+  isModal?: boolean;
+  /** Optional: callback when dirty state changes (for modal) */
+  onDirtyChange?: (isDirty: boolean) => void;
 };
 
 type NoteItem = {
@@ -66,7 +70,7 @@ function serializeNotes(items: NoteItem[]): string {
 
 /* -------------------------------- Component ------------------------------- */
 
-export default function NotesCard({ notes, onSave }: Props) {
+export default function NotesCard({ notes, onSave, isModal = false, onDirtyChange }: Props) {
   const user = useAuth();
   const [items, setItems] = useState<NoteItem[]>(() => parseNotes(notes));
   const [draft, setDraft] = useState("");
@@ -80,9 +84,19 @@ export default function NotesCard({ notes, onSave }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [notes]);
 
+  // Notify parent of dirty state changes (for modal)
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
+
   const saveDebounced = (nextItems: NoteItem[]) => {
     if (debRef.current) window.clearTimeout(debRef.current);
     setDirty(true);
+    
+    // For modal mode, don't auto-save
+    if (isModal) return;
+    
+    // For inline mode (safety processing), auto-save with debounce
     debRef.current = window.setTimeout(async () => {
       setBusy(true);
       try {
@@ -92,6 +106,27 @@ export default function NotesCard({ notes, onSave }: Props) {
         setBusy(false);
       }
     }, 500);
+  };
+
+  const saveNow = async () => {
+    if (!dirty) return;
+    setBusy(true);
+    try {
+      await onSave(serializeNotes(items));
+      setDirty(false);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const discardChanges = () => {
+    setItems(parseNotes(notes));
+    setDraft("");
+    setDirty(false);
+    if (debRef.current) {
+      window.clearTimeout(debRef.current);
+      debRef.current = null;
+    }
   };
 
   const addNote = () => {
@@ -156,6 +191,33 @@ export default function NotesCard({ notes, onSave }: Props) {
           {busy ? "Saving…" : " "}
         </span>
       </header>
+
+      {/* Modal controls */}
+      {isModal && dirty && (
+        <div className="mb-3 flex gap-2 flex-shrink-0">
+          <button
+            type="button"
+            onClick={discardChanges}
+            className="rounded-lg px-3 py-1 text-sm font-medium border"
+            style={{
+              borderColor: "var(--color-outline)",
+              color: "var(--color-on-surface-variant)",
+            }}
+            disabled={busy}
+          >
+            Discard
+          </button>
+          <button
+            type="button"
+            onClick={saveNow}
+            className="rounded-lg px-3 py-1 text-sm font-medium"
+            style={{ background: "var(--color-primary)", color: "white" }}
+            disabled={busy}
+          >
+            {busy ? "Saving..." : "Save"}
+          </button>
+        </div>
+      )}
 
       {/* Add new note */}
       <div className="mb-3 flex gap-2 flex-shrink-0">

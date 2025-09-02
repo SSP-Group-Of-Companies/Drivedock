@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useDashboardLoading } from "@/store/useDashboardLoading";
 import ContractSummaryBar from "./components/ContractSummaryBar";
 import DashboardContentWrapper from "@/components/dashboard/DashboardContentWrapper";
+import { EditModeProvider } from "./components/EditModeContext";
 
 type Props = {
   trackerId: string;
@@ -47,9 +48,11 @@ export default function ContractLayoutClient({ trackerId, children }: Props) {
   }
 
   return (
-    <DashboardContentWrapper>
-      <ContractSummaryBar trackerId={trackerId} />
-      {children}
-    </DashboardContentWrapper>
+    <EditModeProvider>
+      <DashboardContentWrapper>
+        <ContractSummaryBar trackerId={trackerId} />
+        {children}
+      </DashboardContentWrapper>
+    </EditModeProvider>
   );
 }

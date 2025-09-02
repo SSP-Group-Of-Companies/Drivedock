@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useContract } from "@/hooks/dashboard/contract/useContract";
 import {
   resolveCompanyMeta,
@@ -10,11 +11,13 @@ import {
 import { getOnboardingStepFlow } from "@/lib/utils/onboardingUtils";
 import type { EStepPath } from "@/types/onboardingTracker.types";
 import { ECountryCode } from "@/types/shared.types";
-import { ChevronDown, Bell, Building2 } from "lucide-react";
+import { ChevronDown, Bell, Building2, StickyNote } from "lucide-react";
 import Image from "next/image";
 
 import NotificationsMenu, { computeNotifications } from "./NotificationsMenu";
 import CompanyChangeConfirm from "./CompanyChangeConfirm";
+import NotesModal from "./NotesModal";
+import { useEditMode } from "./EditModeContext";
 
 type Props = { trackerId: string };
 
@@ -37,6 +40,7 @@ function stepLabel(step?: EStepPath) {
 }
 
 export default function ContractSummaryBar({ trackerId }: Props) {
+  const pathname = usePathname();
   const { data, isLoading, isError, error, changeCompany } =
     useContract(trackerId);
 
@@ -49,6 +53,21 @@ export default function ContractSummaryBar({ trackerId }: Props) {
   const [whichOpen, setWhichOpen] = useState<"company" | "notif" | null>(null);
   const isCompanyOpen = whichOpen === "company";
   const isNotifOpen = whichOpen === "notif";
+  
+  // Notes modal state
+  const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
+  
+  // Edit mode context
+  const { isEditMode, setIsEditMode } = useEditMode();
+  
+  // Check if we're on the safety processing page (don't show notes icon there)
+  const isSafetyProcessingPage = pathname?.includes('/safety-processing');
+  
+  // Check if we're on the prequalification page (toggle should be disabled)
+  const isPrequalificationPage = pathname?.includes('/prequalification');
+  
+  // Check if edit mode toggle should be functional (not prequalification, not safety processing)
+  const canToggleEditMode = !isPrequalificationPage && !isSafetyProcessingPage;
 
   const companyMenuRef = useRef<HTMLDivElement | null>(null);
   const notifMenuRef = useRef<HTMLDivElement | null>(null);
@@ -260,7 +279,7 @@ export default function ContractSummaryBar({ trackerId }: Props) {
           </div>
         </div>
 
-        {/* Right chunk: company + notifications */}
+        {/* Right chunk: company + notifications + notes */}
         <div className="flex items-center gap-2">
           {/* Company */}
           <div className="relative" ref={companyMenuRef}>
@@ -391,6 +410,51 @@ export default function ContractSummaryBar({ trackerId }: Props) {
               />
             )}
           </div>
+
+          {/* Notes - only show if not on safety processing page */}
+          {!isSafetyProcessingPage && (
+            <button
+              type="button"
+              onClick={() => setIsNotesModalOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg border px-2 py-1.5 text-sm"
+              style={{
+                background: "var(--color-surface)",
+                borderColor: "var(--color-outline)",
+              }}
+              aria-label="Open contract notes"
+            >
+              <StickyNote className="h-4 w-4" />
+            </button>
+          )}
+
+          {/* Edit Mode Toggle - hidden on safety processing page, functional state varies on other pages */}
+          {!isSafetyProcessingPage && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium" style={{ color: "var(--color-on-surface-variant)" }}>
+                Edit Mode
+              </span>
+              <button
+                type="button"
+                onClick={() => canToggleEditMode && setIsEditMode(!isEditMode)}
+                disabled={!canToggleEditMode}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  canToggleEditMode ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
+                }`}
+                style={{
+                  background: canToggleEditMode && isEditMode 
+                    ? "var(--color-primary)" 
+                    : "var(--color-outline-variant)",
+                }}
+                aria-label={canToggleEditMode ? `Edit mode is ${isEditMode ? 'on' : 'off'}` : 'Edit mode disabled'}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    isEditMode ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -602,6 +666,52 @@ export default function ContractSummaryBar({ trackerId }: Props) {
             />
           )}
         </div>
+
+        {/* Notes - only show if not on safety processing page */}
+        {!isSafetyProcessingPage && (
+          <button
+            type="button"
+            onClick={() => setIsNotesModalOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg border px-2 py-1.5 text-sm"
+            style={{
+              background: "var(--color-surface)",
+              borderColor: "var(--color-outline)",
+            }}
+            aria-label="Open contract notes"
+          >
+            <StickyNote className="h-4 w-4" />
+            <span>Notes</span>
+          </button>
+        )}
+
+        {/* Edit Mode Toggle - hidden on safety processing page, functional state varies on other pages */}
+        {!isSafetyProcessingPage && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium" style={{ color: "var(--color-on-surface-variant)" }}>
+              Edit Mode
+            </span>
+            <button
+              type="button"
+              onClick={() => canToggleEditMode && setIsEditMode(!isEditMode)}
+              disabled={!canToggleEditMode}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                canToggleEditMode ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
+              }`}
+              style={{
+                background: canToggleEditMode && isEditMode 
+                  ? "var(--color-primary)" 
+                  : "var(--color-outline-variant)",
+              }}
+              aria-label={canToggleEditMode ? `Edit mode is ${isEditMode ? 'on' : 'off'}` : 'Edit mode disabled'}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  isEditMode ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -631,6 +741,13 @@ export default function ContractSummaryBar({ trackerId }: Props) {
           setConfirmTarget(null);
         }}
         isBusy={changeCompany.isPending}
+      />
+
+      {/* Notes Modal */}
+      <NotesModal
+        trackerId={trackerId}
+        isOpen={isNotesModalOpen}
+        onClose={() => setIsNotesModalOpen(false)}
       />
     </div>
   );

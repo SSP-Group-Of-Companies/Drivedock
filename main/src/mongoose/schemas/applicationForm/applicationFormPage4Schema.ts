@@ -5,17 +5,29 @@ import { photoSchema } from "../sharedSchemas";
 // Small helper for array length validation
 const maxArrayLen = (max: number) => (arr: unknown[]) => Array.isArray(arr) ? arr.length <= max : true;
 
-// Criminal Record Entry Schema
+// Criminal Record Entry Schema with custom validation
 const criminalRecordEntrySchema = new Schema<ICriminalRecordEntry>({
-  offense: { type: String, required: [true, "Offense is required."] },
-  dateOfSentence: {
-    type: Date,
-    required: [true, "Date of sentence is required."],
-  },
-  courtLocation: {
-    type: String,
-    required: [true, "Court location is required."],
-  },
+  offense: { type: String, default: "" },
+  dateOfSentence: { type: Date },
+  courtLocation: { type: String, default: "" },
+});
+
+// Add custom validation for "all-or-nothing" per row
+criminalRecordEntrySchema.pre('validate', function() {
+  const hasAnyData = !!(this.offense?.trim()) || !!this.dateOfSentence || !!(this.courtLocation?.trim());
+  
+  if (hasAnyData) {
+    // If any field has data, all fields become required
+    if (!this.offense?.trim()) {
+      this.invalidate('offense', 'Offense is required when any field in this row has data.');
+    }
+    if (!this.dateOfSentence) {
+      this.invalidate('dateOfSentence', 'Date of sentence is required when any field in this row has data.');
+    }
+    if (!this.courtLocation?.trim()) {
+      this.invalidate('courtLocation', 'Court location is required when any field in this row has data.');
+    }
+  }
 });
 
 // FAST Card schema
@@ -44,7 +56,6 @@ export const applicationFormPage4Schema = new Schema<IApplicationFormPage4>(
     // Criminal Records
     criminalRecords: {
       type: [criminalRecordEntrySchema],
-      required: [true, "Criminal record section is required."],
       default: [],
     },
 
