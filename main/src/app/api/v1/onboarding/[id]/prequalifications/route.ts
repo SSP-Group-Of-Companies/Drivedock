@@ -96,7 +96,7 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
     }
 
     return successResponse(200, "PreQualifications data retrieved", {
-      onboardingContext: buildTrackerContext(onboardingDoc),
+      onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.PRE_QUALIFICATIONS),
       preQualifications: preQualDoc?.toObject() ?? {},
     });
   } catch (error) {

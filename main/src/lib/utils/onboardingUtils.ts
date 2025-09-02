@@ -14,10 +14,10 @@ import { EStepPath, IOnboardingStatus, IOnboardingTrackerDoc, IOnboardingTracker
 /** Explicit flow options (must always be provided by non-doc callers). */
 export type FlowOpts = { needsFlatbedTraining: boolean };
 
-/** Helper: derive flow options from the onboarding document (robust). */
-export function getFlowOptsFromTracker(tracker: IOnboardingTrackerDoc & { needsFlatbedTraining?: boolean }): FlowOpts {
-  const needsFlatbedTraining = Boolean(tracker.needsFlatbedTraining);
-  return { needsFlatbedTraining };
+/** Unified helper: derive flow options from any source that may carry the flag. */
+type MaybeFlatbed = { needsFlatbedTraining?: boolean };
+export function getFlowOpts(src: MaybeFlatbed): FlowOpts {
+  return { needsFlatbedTraining: Boolean(src.needsFlatbedTraining) };
 }
 
 /**
@@ -94,37 +94,60 @@ export function getNeighborSteps(step: EStepPath, opts: FlowOpts): { prevStep: E
   };
 }
 
-/* ----------------------------------------------------------------------
- * Progress Advancement (DOC-AWARE)
- * --------------------------------------------------------------------*/
-
 /**
- * Advance progress after completing a step (doc-aware).
+ * Advance progress after completing a step (doc-aware, flow-robust).
  *
- * Accepts the full onboarding document to:
- * - Read the authoritative current step from `doc.status.currentStep`.
- * - Derive flow options from `doc.needsFlatbedTraining` (no external opts).
- *
- * Rules:
- * - If already *ahead* of this step, do nothing.
- * - Otherwise, move currentStep to the step after the one just completed.
- * - If completing the final step, mark as fully completed.
+ * If the doc's currentStep no longer exists in the new flow (e.g., flatbed
+ * removed after flipping needsFlatbedTraining → false), we map it to the
+ * nearest *previous* surviving step in the new flow (e.g., FLATBED_TRAINING → DRUG_TEST).
+ * Then we apply the usual advancement rules.
  */
 export function advanceProgress(doc: IOnboardingTrackerDoc, completedNow: EStepPath): IOnboardingStatus {
-  const opts = getFlowOptsFromTracker(doc);
+  const opts = getFlowOpts(doc);
   const flow = getOnboardingStepFlow(opts);
+  const maximalFlow = getOnboardingStepFlow({ needsFlatbedTraining: true });
 
-  const prevIdx = flow.indexOf(doc.status.currentStep);
   const doneIdx = flow.indexOf(completedNow);
 
+  // Map currentStep to the closest surviving step in the *new* flow
+  // (at or before its position in the maximal flow).
+  const mapCurrentAcrossFlows = (currentStep: EStepPath): { idx: number; step: EStepPath | null } => {
+    // Fast path: still present
+    const directIdx = flow.indexOf(currentStep);
+    if (directIdx !== -1) return { idx: directIdx, step: currentStep };
+
+    // Find its position in the maximal flow
+    const curMaxIdx = maximalFlow.indexOf(currentStep);
+    if (curMaxIdx === -1) {
+      // If we can't even place it, treat as "before start" (or completed).
+      if (doc.status.completed) {
+        const last = flow[flow.length - 1] ?? null;
+        return { idx: last ? flow.length - 1 : -1, step: last };
+      }
+      return { idx: -1, step: null };
+    }
+
+    // Walk backward to nearest surviving step
+    for (let i = curMaxIdx; i >= 0; i--) {
+      const candidate = maximalFlow[i];
+      const idxInNew = flow.indexOf(candidate);
+      if (idxInNew !== -1) return { idx: idxInNew, step: candidate };
+    }
+
+    return { idx: -1, step: null };
+  };
+
+  const { idx: prevIdx, step: mappedCurrentStep } = mapCurrentAcrossFlows(doc.status.currentStep);
+
+  // If already ahead of the completed step, keep the (mapped) current step.
   if (prevIdx > doneIdx) {
-    // Already ahead → no change
     return {
-      currentStep: doc.status.currentStep,
+      currentStep: mappedCurrentStep ?? doc.status.currentStep, // <-- key change
       completed: doc.status.completed,
     };
   }
 
+  // Otherwise move forward normally
   const next = getNextStep(completedNow, opts);
   return {
     currentStep: next ?? completedNow,
@@ -146,7 +169,7 @@ export function advanceProgress(doc: IOnboardingTrackerDoc, completedNow: EStepP
  * - If still not found but doc is `completed: true`, treat as reached.
  */
 export function hasReachedStep(doc: IOnboardingTrackerDoc, step: EStepPath): boolean {
-  const opts = getFlowOptsFromTracker(doc as IOnboardingTrackerDoc & { needsFlatbedTraining?: boolean });
+  const opts = getFlowOpts(doc);
   const flow = getOnboardingStepFlow(opts);
 
   const targetIdx = flow.indexOf(step);
@@ -189,7 +212,7 @@ export function hasReachedStep(doc: IOnboardingTrackerDoc, step: EStepPath): boo
  *   hasCompletedStep(tracker, EStepPath.APPLICATION_PAGE_2)
  */
 export function hasCompletedStep(doc: IOnboardingTrackerDoc, step: EStepPath): boolean {
-  const opts = getFlowOptsFromTracker(doc as IOnboardingTrackerDoc & { needsFlatbedTraining?: boolean });
+  const opts = getFlowOpts(doc);
   const flow = getOnboardingStepFlow(opts);
 
   const stepIdx = flow.indexOf(step);
@@ -208,7 +231,7 @@ export function hasCompletedStep(doc: IOnboardingTrackerDoc, step: EStepPath): b
 }
 
 /* ----------------------------------------------------------------------
- * Tracker Context (DOC-AWARE) — UPDATED
+ * Tracker Context (DOC-AWARE)
  * --------------------------------------------------------------------*/
 
 /**
@@ -219,7 +242,7 @@ export function hasCompletedStep(doc: IOnboardingTrackerDoc, step: EStepPath): b
  */
 export function buildTrackerContext(tracker: IOnboardingTrackerDoc, defaultStep?: EStepPath | null, includeAdminData = false): IOnboardingTrackerContext {
   const step = defaultStep || tracker.status.currentStep;
-  const opts = getFlowOptsFromTracker(tracker);
+  const opts = getFlowOpts(tracker);
   const { prevStep, nextStep } = getNeighborSteps(step, opts);
 
   const context: IOnboardingTrackerContext = {
@@ -242,18 +265,37 @@ export function buildTrackerContext(tracker: IOnboardingTrackerDoc, defaultStep?
 }
 
 /**
- * Build the canonical onboarding path for the tracker's current step.
+ * Build the canonical onboarding path for the tracker's current (or provided) step.
  *
  * Example:
  *   tracker.status.currentStep = EStepPath.APPLICATION_PAGE_2
  *   → "/onboarding/64f3a8.../application-form/page-2"
- *
- * @param tracker Full onboarding tracker document (must include `id` and `status.currentStep`).
- * @returns Absolute onboarding URL string.
  */
 export function buildOnboardingStepPath(tracker: IOnboardingTrackerDoc | IOnboardingTrackerContext, defaultStep?: EStepPath): string {
   const step = defaultStep || tracker.status.currentStep;
   return `/onboarding/${tracker.id}/${step}`;
+}
+
+/**
+ * Build the onboarding path for the NEXT step relative to `tracker.status.currentStep`
+ * (or `fromStep` if provided). If there is no next step, return the current step path.
+ */
+export function buildOnboardingNextStepPath(tracker: IOnboardingTrackerDoc | IOnboardingTrackerContext, fromStep?: EStepPath): string {
+  const step = fromStep || tracker.status.currentStep;
+  const opts = getFlowOpts(tracker);
+  const next = getNextStep(step, opts) ?? step;
+  return buildOnboardingStepPath(tracker, next);
+}
+
+/**
+ * Build the onboarding path for the PREVIOUS step relative to `tracker.status.currentStep`
+ * (or `fromStep` if provided). If there is no previous step, return the current step path.
+ */
+export function buildOnboardingPrevStepPath(tracker: IOnboardingTrackerDoc | IOnboardingTrackerContext, fromStep?: EStepPath): string {
+  const step = fromStep || tracker.status.currentStep;
+  const opts = getFlowOpts(tracker);
+  const prev = getPrevStep(step, opts) ?? step;
+  return buildOnboardingStepPath(tracker, prev);
 }
 
 /* ----------------------------------------------------------------------
@@ -273,7 +315,7 @@ export function onboardingExpired(tracker?: IOnboardingTrackerDoc | null): boole
 /** Build the full flow of routes (including start pages). */
 export function buildFullFlow(trackerId: string | undefined, opts: FlowOpts): string[] {
   const flow = getOnboardingStepFlow(opts);
-  const onboardingAbs = trackerId ? flow.map((seg) => `/onboarding/${trackerId}/${seg}`) : flow.map((seg) => `/onboarding/${seg}`);
+  const onboardingAbs = flow.map((seg) => (trackerId ? `/onboarding/${trackerId}/${seg}` : `/onboarding/${seg}`));
   return [...START_FLOW, ...onboardingAbs];
 }
 

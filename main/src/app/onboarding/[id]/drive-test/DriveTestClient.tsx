@@ -97,7 +97,7 @@ export default function DriveTestClient({ driveTest, onboardingContext }: DriveT
             </div>
 
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <p className="text-sm text-yellow-800 text-sm">{t("form.step4.instructions.note")}</p>
+              <p className="text-yellow-800 text-sm">{t("form.step4.instructions.note")}</p>
             </div>
           </div>
         </div>

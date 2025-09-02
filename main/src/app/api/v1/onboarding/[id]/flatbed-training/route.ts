@@ -43,7 +43,7 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
     const flatbedTraining = flatbedId && isValidObjectId(flatbedId) ? await FlatbedTraining.findById(flatbedId).lean() : null;
 
     return successResponse(200, "flatbed training retrieved", {
-      onboardingContext: buildTrackerContext(onboardingDoc, null, true),
+      onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.FLATBED_TRAINING),
       flatbedTraining, // already plain object from .lean()
     });
   } catch (error) {

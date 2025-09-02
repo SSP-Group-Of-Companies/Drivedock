@@ -1,3 +1,4 @@
+// app/api/v1/onboarding/[id]/application-form/page-1/route.ts
 import { NextRequest } from "next/server";
 import { decryptString, encryptString, hashString } from "@/lib/utils/cryptoUtils";
 import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
@@ -6,9 +7,9 @@ import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import { isValidSIN, isValidPhoneNumber, isValidEmail, isValidDOB } from "@/lib/utils/validationUtils";
 import { hasRecentAddressCoverage } from "@/lib/utils/hasMinimumAddressDuration";
 import { advanceProgress, buildTrackerContext, nextResumeExpiry, onboardingExpired } from "@/lib/utils/onboardingUtils";
-import { deleteS3Objects, finalizePhoto } from "@/lib/utils/s3Upload";
+import { deleteS3Objects, finalizePhoto, buildFinalDest } from "@/lib/utils/s3Upload";
 import { ES3Folder } from "@/types/aws.types";
-import { S3_SUBMISSIONS_FOLDER, S3_TEMP_FOLDER } from "@/constants/aws";
+import { S3_TEMP_FOLDER } from "@/constants/aws";
 import { IApplicationFormPage1, ILicenseEntry } from "@/types/applicationForm.types";
 import { EStepPath } from "@/types/onboardingTracker.types";
 import { isValidObjectId } from "mongoose";
@@ -79,10 +80,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     // ----------------------------------------------------------------
     // Phase 1 — Write *only page1* subtree, validate *only page1*
     // ----------------------------------------------------------------
-    const tempLicenses: ILicenseEntry[] = page1.licenses.map((lic) => ({
-      ...lic,
-    }));
+    const tempLicenses: ILicenseEntry[] = page1.licenses.map((lic) => ({ ...lic }));
     const tempSinPhoto = page1.sinPhoto;
+
+    // keep previous keys for diff-based deletion later
+    const prevSinPhotoKey = appFormDoc.page1?.sinPhoto?.s3Key;
+    const prevLicenseKeys = collectLicenseKeys(appFormDoc.page1?.licenses);
 
     const page1ToSave: Omit<IApplicationFormPage1, "sin"> = {
       ...page1,
@@ -92,73 +95,34 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     };
 
     appFormDoc.set("page1", page1ToSave as any);
-    // ✅ validate only page1
     await appFormDoc.validate(["page1"]);
-    // Save without triggering full-document validation
     await appFormDoc.save({ validateBeforeSave: false });
 
     // ----------------------------------------------------------------
-    // Phase 2 — Finalize S3 files for page1 only
+    // Phase 2 — Finalize S3 files for page1 (no temp checks; finalizePhoto no-ops if already final)
     // ----------------------------------------------------------------
-    const tempPrefix = `${S3_TEMP_FOLDER}/`;
-    const previousSinPhoto = appFormDoc.page1?.sinPhoto;
-    const previousLicensePhotos = appFormDoc.page1?.licenses || [];
+    const destSin = buildFinalDest(trackerId, ES3Folder.SIN_PHOTOS);
+    const destLic = buildFinalDest(trackerId, ES3Folder.LICENSES);
 
-    const s3KeysToDelete: string[] = [];
-
-    // Collect old keys to delete (only if *replaced* by a new temp key)
-    if (previousSinPhoto?.s3Key && tempSinPhoto?.s3Key?.startsWith(tempPrefix) && previousSinPhoto.s3Key !== tempSinPhoto.s3Key) {
-      s3KeysToDelete.push(previousSinPhoto.s3Key);
+    // finalize sin photo
+    if (page1.sinPhoto) {
+      page1.sinPhoto = await finalizePhoto(page1.sinPhoto, destSin);
     }
 
-    for (let i = 0; i < tempLicenses.length; i++) {
-      const tempLic = tempLicenses[i];
-      const prevLic = previousLicensePhotos[i];
-
-      if (prevLic) {
-        if (prevLic.licenseFrontPhoto?.s3Key && tempLic.licenseFrontPhoto?.s3Key?.startsWith(tempPrefix) && prevLic.licenseFrontPhoto.s3Key !== tempLic.licenseFrontPhoto.s3Key) {
-          s3KeysToDelete.push(prevLic.licenseFrontPhoto.s3Key);
-        }
-
-        if (prevLic.licenseBackPhoto?.s3Key && tempLic.licenseBackPhoto?.s3Key?.startsWith(tempPrefix) && prevLic.licenseBackPhoto.s3Key !== tempLic.licenseBackPhoto.s3Key) {
-          s3KeysToDelete.push(prevLic.licenseBackPhoto.s3Key);
-        }
+    // finalize license photos
+    for (const lic of tempLicenses) {
+      if (lic.licenseFrontPhoto) {
+        lic.licenseFrontPhoto = await finalizePhoto(lic.licenseFrontPhoto, destLic);
+      }
+      if (lic.licenseBackPhoto) {
+        lic.licenseBackPhoto = await finalizePhoto(lic.licenseBackPhoto, destLic);
       }
     }
 
-    // Finalize page1 photos only
-    const finalizeTasks: (() => Promise<void>)[] = [];
-
-    if (tempSinPhoto?.s3Key?.startsWith(tempPrefix)) {
-      finalizeTasks.push(async () => {
-        const finalized = await finalizePhoto(tempSinPhoto, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.SIN_PHOTOS}/${trackerId}`);
-        page1.sinPhoto = finalized;
-      });
+    // Ensure first license still has both sides after finalize
+    if (!tempLicenses[0].licenseFrontPhoto || !tempLicenses[0].licenseBackPhoto) {
+      return errorResponse(400, "First license must include both front and back photos");
     }
-
-    for (let i = 0; i < tempLicenses.length; i++) {
-      const lic = tempLicenses[i];
-
-      if (lic.licenseFrontPhoto?.s3Key?.startsWith(tempPrefix)) {
-        finalizeTasks.push(async () => {
-          lic.licenseFrontPhoto = await finalizePhoto(lic.licenseFrontPhoto!, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.LICENSES}/${trackerId}`);
-        });
-      }
-
-      if (lic.licenseBackPhoto?.s3Key?.startsWith(tempPrefix)) {
-        finalizeTasks.push(async () => {
-          lic.licenseBackPhoto = await finalizePhoto(lic.licenseBackPhoto!, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.LICENSES}/${trackerId}`);
-        });
-      }
-
-      if (i === 0 && (!lic.licenseFrontPhoto || !lic.licenseBackPhoto)) {
-        throw new Error("First license must include both front and back photos");
-      }
-    }
-
-    const finalizeResults = await Promise.allSettled(finalizeTasks.map((task) => task()));
-    const failed = finalizeResults.find((r) => r.status === "rejected");
-    if (failed) return errorResponse(500, "Failed to finalize uploaded photos");
 
     // ----------------------------------------------------------------
     // Phase 3 — Persist finalized page1 only (re-validate page1 only)
@@ -169,17 +133,29 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     await appFormDoc.validate(["page1"]);
     await appFormDoc.save({ validateBeforeSave: false });
 
-    // Best-effort delete of old temp keys
-    if (s3KeysToDelete.length > 0) {
+    // ----------------------------------------------------------------
+    // Phase 4 — Delete finalized keys that were removed by the update
+    // (diff between previous finalized keys and new finalized keys)
+    // ----------------------------------------------------------------
+    const newSinKey = page1.sinPhoto?.s3Key;
+    const newLicenseKeys = collectLicenseKeys(tempLicenses);
+
+    const prevKeys = new Set<string>([...(prevSinPhotoKey ? [prevSinPhotoKey] : []), ...prevLicenseKeys]);
+
+    const newKeys = new Set<string>([...(newSinKey ? [newSinKey] : []), ...newLicenseKeys]);
+
+    const removedFinalKeys = [...prevKeys].filter((k) => !newKeys.has(k) && !k.startsWith(`${S3_TEMP_FOLDER}/`));
+
+    if (removedFinalKeys.length) {
       try {
-        await deleteS3Objects(s3KeysToDelete);
+        await deleteS3Objects(removedFinalKeys);
       } catch (err) {
-        console.error("Failed to delete old S3 keys:", err);
+        console.error("Failed to delete removed finalized S3 keys:", err);
       }
     }
 
     // ----------------------------------------------------------------
-    // Phase 4 — Tracker updates (no cross-page validation)
+    // Phase 5 — Tracker updates (no cross-page validation)
     // ----------------------------------------------------------------
     if (sinChanged) {
       onboardingDoc.sinHash = sinHash;
@@ -233,10 +209,21 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
     }
 
     return successResponse(200, "Page 1 data retrieved", {
-      onboardingContext: buildTrackerContext(onboardingDoc),
+      onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_1),
       page1: appFormDoc.page1,
     });
   } catch (error) {
     return errorResponse(error);
   }
 };
+
+/* ------------------------------ helpers ------------------------------ */
+function collectLicenseKeys(licenses?: ILicenseEntry[]): string[] {
+  if (!Array.isArray(licenses)) return [];
+  const keys: string[] = [];
+  for (const lic of licenses) {
+    if (lic.licenseFrontPhoto?.s3Key) keys.push(lic.licenseFrontPhoto.s3Key);
+    if (lic.licenseBackPhoto?.s3Key) keys.push(lic.licenseBackPhoto.s3Key);
+  }
+  return keys;
+}
