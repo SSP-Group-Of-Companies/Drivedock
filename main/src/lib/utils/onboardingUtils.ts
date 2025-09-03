@@ -101,6 +101,10 @@ export function getNeighborSteps(step: EStepPath, opts: FlowOpts): { prevStep: E
  * removed after flipping needsFlatbedTraining → false), we map it to the
  * nearest *previous* surviving step in the new flow (e.g., FLATBED_TRAINING → DRUG_TEST).
  * Then we apply the usual advancement rules.
+ *
+ * completionDate rules:
+ *  - If the resulting status is completed, set completionDate to the existing one (if any) or now.
+ *  - If the resulting status is not completed, omit completionDate (clears old value).
  */
 export function advanceProgress(doc: IOnboardingTrackerDoc, completedNow: EStepPath): IOnboardingStatus {
   const opts = getFlowOpts(doc);
@@ -129,7 +133,7 @@ export function advanceProgress(doc: IOnboardingTrackerDoc, completedNow: EStepP
 
     // Walk backward to nearest surviving step
     for (let i = curMaxIdx; i >= 0; i--) {
-      const candidate = maximalFlow[i];
+      const candidate = maximalFlow[i] as EStepPath;
       const idxInNew = flow.indexOf(candidate);
       if (idxInNew !== -1) return { idx: idxInNew, step: candidate };
     }
@@ -141,17 +145,24 @@ export function advanceProgress(doc: IOnboardingTrackerDoc, completedNow: EStepP
 
   // If already ahead of the completed step, keep the (mapped) current step.
   if (prevIdx > doneIdx) {
+    const isCompleted = doc.status.completed;
     return {
-      currentStep: mappedCurrentStep ?? doc.status.currentStep, // <-- key change
-      completed: doc.status.completed,
+      currentStep: (mappedCurrentStep ?? doc.status.currentStep) as EStepPath,
+      completed: isCompleted,
+      // Preserve existing completionDate if still completed; otherwise omit (clears).
+      ...(isCompleted && { completionDate: doc.status.completionDate ?? new Date() }),
     };
   }
 
   // Otherwise move forward normally
   const next = getNextStep(completedNow, opts);
+  const isNowCompleted = next == null;
+
   return {
-    currentStep: next ?? completedNow,
-    completed: next == null,
+    currentStep: (next ?? completedNow) as EStepPath,
+    completed: isNowCompleted,
+    // If we just became (or remain) completed, set/preserve completionDate
+    ...(isNowCompleted && { completionDate: doc.status.completionDate ?? new Date() }),
   };
 }
 

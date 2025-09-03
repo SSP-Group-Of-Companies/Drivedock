@@ -18,7 +18,17 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
       return errorResponse(400, "A valid terminationType is required to terminate.");
     }
 
-    const doc = await OnboardingTracker.findByIdAndUpdate(id, { $set: { terminated: true, terminationType } }, { new: true, runValidators: true });
+    const doc = await OnboardingTracker.findByIdAndUpdate(
+      id,
+      {
+        $set: {
+          terminated: true,
+          terminationType,
+          terminationDate: new Date(),
+        },
+      },
+      { new: true, runValidators: true }
+    );
 
     if (!doc) return errorResponse(404, "Onboarding tracker not found");
 
@@ -26,6 +36,7 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
       _id: String(doc._id),
       terminated: !!doc.terminated,
       terminationType: doc.terminationType ?? null,
+      terminationDate: doc.terminationDate ? new Date(doc.terminationDate).toISOString() : null,
     });
   } catch (e: any) {
     return errorResponse(500, "Failed to terminate onboarding tracker", {

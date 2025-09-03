@@ -36,6 +36,7 @@ export enum EStepPath {
 export interface IOnboardingStatus {
   currentStep: EStepPath;
   completed: boolean;
+  completionDate?: Date;
 }
 
 /**
@@ -76,6 +77,7 @@ export interface IOnboardingTracker {
   // termination
   terminated: boolean;
   terminationType?: ETerminationType;
+  terminationDate?: Date;
 
   notes?: string;
 

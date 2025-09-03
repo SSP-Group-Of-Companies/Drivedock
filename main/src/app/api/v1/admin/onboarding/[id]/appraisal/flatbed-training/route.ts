@@ -9,12 +9,7 @@ import { parseJsonBody } from "@/lib/utils/reqParser";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import FlatbedTraining from "@/mongoose/models/FlatbedTraining";
 
-import {
-  buildTrackerContext,
-  hasReachedStep,
-  advanceProgress,
-  nextResumeExpiry,
-} from "@/lib/utils/onboardingUtils";
+import { buildTrackerContext, hasReachedStep, advanceProgress, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
 import { canHaveFlatbedTraining } from "@/constants/companies";
 
 import { EStepPath } from "@/types/onboardingTracker.types";
@@ -30,31 +25,23 @@ import { guard } from "@/lib/auth/authUtils";
  *   - Session not expired
  *   - Driver has reached FLATBED_TRAINING
  */
-export const GET = async (
-  _: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) => {
+export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
     await connectDB();
     await guard();
 
     const { id: onboardingId } = await params;
-    if (!isValidObjectId(onboardingId))
-      return errorResponse(400, "Not a valid onboarding tracker ID");
+    if (!isValidObjectId(onboardingId)) return errorResponse(400, "Not a valid onboarding tracker ID");
 
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
-    if (!onboardingDoc || onboardingDoc.terminated)
-      return errorResponse(404, "Onboarding document not found");
+    if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
 
     if (!hasReachedStep(onboardingDoc, EStepPath.FLATBED_TRAINING)) {
       return errorResponse(403, "driver hasn't reached this step yet");
     }
 
     const flatbedId = onboardingDoc.forms?.flatbedTraining;
-    const flatbedTraining =
-      flatbedId && isValidObjectId(flatbedId)
-        ? await FlatbedTraining.findById(flatbedId).lean()
-        : null;
+    const flatbedTraining = flatbedId && isValidObjectId(flatbedId) ? await FlatbedTraining.findById(flatbedId).lean() : null;
 
     return successResponse(200, "flatbed training retrieved", {
       onboardingContext: buildTrackerContext(onboardingDoc, null, true),
@@ -91,39 +78,27 @@ export const GET = async (
  *   - Advance progress to EStepPath.FLATBED_TRAINING and refresh resume expiry
  *   - Return { onboardingContext, flatbedTraining }
  */
-export const PATCH = async (
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) => {
+export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
     await connectDB();
     await guard();
 
     const { id: onboardingId } = await params;
-    if (!isValidObjectId(onboardingId))
-      return errorResponse(400, "Invalid onboarding ID");
+    if (!isValidObjectId(onboardingId)) return errorResponse(400, "Invalid onboarding ID");
 
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
-    if (!onboardingDoc || onboardingDoc.terminated)
-      return errorResponse(404, "Onboarding document not found");
-    if (onboardingDoc.status.completed === true)
-      return errorResponse(401, "onboarding process already completed");
+    if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
+    if (onboardingDoc.status.completed === true) return errorResponse(401, "onboarding process already completed");
 
     if (!hasReachedStep(onboardingDoc, EStepPath.FLATBED_TRAINING)) {
       return errorResponse(403, "driver hasn't reached this step yet");
     }
 
     // Applicability check (both conditions)
-    const applicable = canHaveFlatbedTraining(
-      onboardingDoc.companyId as string,
-      onboardingDoc.applicationType as any
-    );
+    const applicable = canHaveFlatbedTraining(onboardingDoc.companyId as string, onboardingDoc.applicationType as any);
 
     if (!applicable || onboardingDoc.needsFlatbedTraining !== true) {
-      return errorResponse(
-        400,
-        "Flatbed training is not applicable for this applicant/company"
-      );
+      return errorResponse(400, "Flatbed training is not applicable for this applicant/company");
     }
 
     // Body
@@ -131,8 +106,7 @@ export const PATCH = async (
       flatbedTraining?: Partial<IFlatbedTraining>;
     }>(req);
     const payload = body?.flatbedTraining;
-    if (!payload)
-      return errorResponse(400, "Missing 'flatbedTraining' in request body");
+    if (!payload) return errorResponse(400, "Missing 'flatbedTraining' in request body");
 
     if (typeof payload.completed !== "boolean") {
       return errorResponse(400, "flatbedTraining.completed is required");
@@ -154,10 +128,7 @@ export const PATCH = async (
     }
 
     if (payload.completed !== true) {
-      return errorResponse(
-        400,
-        "cannot unset or mark flatbed training as incomplete"
-      );
+      return errorResponse(400, "cannot unset or mark flatbed training as incomplete");
     }
 
     // Persist completion
@@ -169,19 +140,12 @@ export const PATCH = async (
     onboardingDoc.forms.flatbedTraining = flatbedDoc._id;
 
     // Advance progress and extend resume window
-    onboardingDoc.status = advanceProgress(
-      onboardingDoc,
-      EStepPath.FLATBED_TRAINING
-    );
+    onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.FLATBED_TRAINING);
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();
     await onboardingDoc.save();
 
     return successResponse(200, "flatbed training marked completed", {
-      onboardingContext: buildTrackerContext(
-        onboardingDoc,
-        EStepPath.FLATBED_TRAINING,
-        true
-      ),
+      onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.FLATBED_TRAINING, true),
       flatbedTraining: flatbedDoc.toObject(),
     });
   } catch (error) {

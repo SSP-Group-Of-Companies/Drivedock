@@ -21,16 +21,18 @@ import { loadImageBytesFromPhoto } from "@/lib/utils/s3Upload";
 
 import { EOnRoadFillableFormFields as F } from "@/lib/pdf/drive-test/mappers/on-road.types";
 import type { IDriveTest } from "@/types/driveTest.types";
+import { guard } from "@/lib/auth/authUtils";
 
 export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
     await connectDB();
+    await guard();
 
     const { id: onboardingId } = await params;
     if (!isValidObjectId(onboardingId)) return errorResponse(400, "Not a valid onboarding tracker ID");
 
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
-    if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
+    if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
 
     if (!hasCompletedStep(onboardingDoc, EStepPath.DRIVE_TEST)) {
       return errorResponse(403, "driver hasn't reached this step yet");

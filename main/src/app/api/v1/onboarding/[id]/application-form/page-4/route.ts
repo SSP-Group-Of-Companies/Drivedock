@@ -38,7 +38,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
     const body = await parseJsonBody<IApplicationFormPage4>(req);
 
-    // --- Photo limits (enforced at route level)
+    // --- Photo limits (route-level)
     const PHOTO_LIMITS: Record<keyof IApplicationFormPage4, number | undefined> = {
       hstPhotos: 2,
       incorporatePhotos: 10,
@@ -110,49 +110,68 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       throw new AppError(400, "All business section fields and files must be provided if any are.");
     }
 
+    // ======== NEW: authoritative final-state checks (replace semantics) ========
+    const dedupeByS3Key = (arr?: IPhoto[]) => {
+      if (!Array.isArray(arr)) return [] as IPhoto[];
+      const seen = new Set<string>();
+      const out: IPhoto[] = [];
+      for (const p of arr) {
+        const k = p?.s3Key?.trim();
+        if (k && !seen.has(k)) {
+          seen.add(k);
+          out.push(p);
+        }
+      }
+      return out;
+    };
+
+    /** If PATCH provides an array, use it (after dedupe). Otherwise, use previous (after dedupe). */
+    const finalDistinctArray = (now?: IPhoto[], old?: IPhoto[]) => {
+      if (Array.isArray(now)) return dedupeByS3Key(now);
+      return dedupeByS3Key(old);
+    };
+    const finalDistinctCount = (now?: IPhoto[], old?: IPhoto[]) => finalDistinctArray(now, old).length;
+
+    // Country-specific validations using FINAL state
     if (isCanadian) {
-      const requiredFields: (keyof IApplicationFormPage4)[] = ["healthCardPhotos", "passportPhotos", "usVisaPhotos", "prPermitCitizenshipPhotos"];
-      for (const field of requiredFields) {
-        const nowVal = body[field];
-        const oldVal = prev?.[field];
-        const hasNow = Array.isArray(nowVal) && nowVal.length > 0;
-        const hasOld = Array.isArray(oldVal) && oldVal.length > 0;
-        if (!hasNow && !hasOld) {
+      // Presence requirement as before
+      const mustHave: (keyof IApplicationFormPage4)[] = ["healthCardPhotos", "passportPhotos", "usVisaPhotos", "prPermitCitizenshipPhotos"];
+      for (const field of mustHave) {
+        if (finalDistinctCount(body[field] as IPhoto[] | undefined, prev?.[field] as IPhoto[] | undefined) === 0) {
           throw new AppError(400, `${field} required for Canadian applicants.`);
         }
+      }
+      // Exactly two for passport & health card (FINAL arrays)
+      if (finalDistinctCount(body.passportPhotos, prev?.passportPhotos) !== 2) {
+        throw new AppError(400, "Passport bio and back photos required");
+      }
+      if (finalDistinctCount(body.healthCardPhotos, prev?.healthCardPhotos) !== 2) {
+        throw new AppError(400, "Health card front and back photos required");
       }
     }
 
     if (isUS) {
-      const medNow = body.medicalCertificationPhotos?.length ?? 0;
-      const medOld = prev?.medicalCertificationPhotos?.length ?? 0;
-      if (medNow === 0 && medOld === 0) {
+      const medFinal = finalDistinctCount(body.medicalCertificationPhotos, prev?.medicalCertificationPhotos);
+      if (medFinal === 0) {
         throw new AppError(400, "Medical certificate required for US drivers");
       }
 
-      const passport = (body.passportPhotos?.length ?? 0) + (prev?.passportPhotos?.length ?? 0);
-      const pr = (body.prPermitCitizenshipPhotos?.length ?? 0) + (prev?.prPermitCitizenshipPhotos?.length ?? 0);
+      const passportFinal = finalDistinctCount(body.passportPhotos, prev?.passportPhotos);
+      const prFinal = finalDistinctCount(body.prPermitCitizenshipPhotos, prev?.prPermitCitizenshipPhotos);
 
-      if (passport === 0 && pr === 0) {
+      if (passportFinal === 0 && prFinal === 0) {
         throw new AppError(400, "US drivers must provide passport or PR/citizenship photo");
       }
-    }
-
-    if (isCanadian && body.fastCard) {
-      const { fastCardNumber, fastCardExpiry, fastCardFrontPhoto, fastCardBackPhoto } = body.fastCard;
-
-      const oldFront = prev?.fastCard?.fastCardFrontPhoto;
-      const oldBack = prev?.fastCard?.fastCardBackPhoto;
-
-      if (!fastCardNumber?.trim() || !fastCardExpiry) {
-        throw new AppError(400, "Fast card must have number and expiry if provided");
+      if (passportFinal > 0 && passportFinal !== 2) {
+        throw new AppError(400, "Passport bio and back photos required");
       }
-      const hasFront = fastCardFrontPhoto?.s3Key || oldFront?.s3Key;
-      const hasBack = fastCardBackPhoto?.s3Key || oldBack?.s3Key;
-      if (!hasFront || !hasBack) {
-        throw new AppError(400, "Fast card must include both front and back photo if provided");
+
+      const healthCardFinal = finalDistinctCount(body.healthCardPhotos, prev?.healthCardPhotos);
+      if (healthCardFinal > 0 && healthCardFinal !== 2) {
+        throw new AppError(400, "Health card front and back photos required");
       }
     }
+    // ======== END NEW ========
 
     // ---------------------------
     // Phase 1: write page4 only
@@ -163,7 +182,6 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
     // ---------------------------
     // Section-clear detection (Business + Fast Card)
-    // Place AFTER Phase 1 and BEFORE Phase 2
     // ---------------------------
     const emptyStr = (v?: string | null) => !v || v.trim() === "";
     const arrLen = (a?: IPhoto[]) => (Array.isArray(a) ? a.length : 0);
@@ -218,28 +236,19 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     }
 
     // ---------------------------
-    // Phase 2: finalize S3 files (helpers; no temp guards necessary)
+    // Phase 2: finalize S3 files
     // ---------------------------
     const page4Final: IApplicationFormPage4 = JSON.parse(JSON.stringify(appFormDoc.page4)) as IApplicationFormPage4;
 
-    // finalize arrays
     page4Final.hstPhotos = (await finalizeVector(page4Final.hstPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.HST_PHOTOS))) as IPhoto[];
-
     page4Final.incorporatePhotos = (await finalizeVector(page4Final.incorporatePhotos, buildFinalDest(onboardingDoc.id, ES3Folder.INCORPORATION_PHOTOS))) as IPhoto[];
-
     page4Final.bankingInfoPhotos = (await finalizeVector(page4Final.bankingInfoPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.BANKING_INFO_PHOTOS))) as IPhoto[];
-
     page4Final.healthCardPhotos = (await finalizeVector(page4Final.healthCardPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.HEALTH_CARD_PHOTOS))) as IPhoto[];
-
     page4Final.medicalCertificationPhotos = (await finalizeVector(page4Final.medicalCertificationPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.MEDICAL_CERT_PHOTOS))) as IPhoto[];
-
     page4Final.passportPhotos = (await finalizeVector(page4Final.passportPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.PASSPORT_PHOTOS))) as IPhoto[];
-
     page4Final.usVisaPhotos = (await finalizeVector(page4Final.usVisaPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.US_VISA_PHOTOS))) as IPhoto[];
-
     page4Final.prPermitCitizenshipPhotos = (await finalizeVector(page4Final.prPermitCitizenshipPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.PR_CITIZENSHIP_PHOTOS))) as IPhoto[];
 
-    // finalize fast card singles
     if (page4Final.fastCard?.fastCardFrontPhoto) {
       page4Final.fastCard.fastCardFrontPhoto = await finalizePhoto(page4Final.fastCard.fastCardFrontPhoto, buildFinalDest(onboardingDoc.id, ES3Folder.FAST_CARD_PHOTOS));
     }
@@ -248,7 +257,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     }
 
     // ---------------------------
-    // Deletions: remove finalized keys that were dropped by user
+    // Deletions: remove finalized keys that were dropped by the user
     // ---------------------------
     function collectAllKeys(p?: IApplicationFormPage4): string[] {
       if (!p) return [];
@@ -272,14 +281,9 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       return keys;
     }
 
-    // Keys before this PATCH (saved state), and keys that will exist after finalize
     const prevKeys = new Set(collectAllKeys(prev));
     const newKeys = new Set(collectAllKeys(page4Final));
-
-    // Avoid double-delete: exclude keys already deleted in section-clear
     const alreadyDeleted = new Set(keysToHardDelete);
-
-    // Delete finalized objects that were removed by the user (present before, absent now)
     const removedFinalKeys = [...prevKeys].filter((k) => !newKeys.has(k) && !k.startsWith(`${S3_TEMP_FOLDER}/`) && !alreadyDeleted.has(k));
 
     if (removedFinalKeys.length) {
