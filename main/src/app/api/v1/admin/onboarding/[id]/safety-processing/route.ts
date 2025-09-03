@@ -54,7 +54,6 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
       });
 
     if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
-    if (onboardingDoc.terminated) return errorResponse(400, "Onboarding document terminated");
 
     // Populated form snapshots
     const drugTest = readMongooseRefField(onboardingDoc.forms?.drugTest) ?? {};

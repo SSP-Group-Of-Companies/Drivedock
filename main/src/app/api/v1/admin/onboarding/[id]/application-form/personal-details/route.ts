@@ -217,7 +217,7 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
 
     // Fetch onboarding tracker
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
-    if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
+    if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
     if (!hasCompletedStep(onboardingDoc, EStepPath.APPLICATION_PAGE_1)) return errorResponse(401, "driver hasn't completed this step yet");
 
     const appFormId = onboardingDoc.forms?.driverApplication;

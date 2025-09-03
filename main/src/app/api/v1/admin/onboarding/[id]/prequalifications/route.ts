@@ -17,7 +17,7 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
 
     // Step 1: Find onboarding tracker
     const onboardingDoc = await OnboardingTracker.findById(id);
-    if (!onboardingDoc || onboardingDoc.terminated) {
+    if (!onboardingDoc) {
       return errorResponse(404, "Onboarding document not found");
     }
 
