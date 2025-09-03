@@ -14,6 +14,7 @@
 
 import "server-only";
 import AdminFlatbedTrainingClient from "./AdminFlatbedTrainingClient";
+import StepNotReachedMessage from "../../components/StepNotReachedMessage";
 
 import type { IFlatbedTraining } from "@/types/flatbedTraining.types";
 import type { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
@@ -34,6 +35,17 @@ export default async function FlatbedTrainingPage({ params }: { params: Promise<
   const { data, error } = await fetchServerPageData<FlatbedResult>(url);
 
   if (error) {
+    // If it's a 403 error, it means the driver hasn't reached the flatbed training step yet
+    if (error.includes("403") || error.includes("hasn't reached this step")) {
+      return (
+        <StepNotReachedMessage 
+          stepName="Flatbed Training"
+          stepDescription="This page requires the driver to reach the flatbed training step in their onboarding process. Flatbed training is typically available after completing the drive test and is only required for certain application types."
+        />
+      );
+    }
+    
+    // For other errors, show the error message
     return (
       <div className="rounded-xl border p-4 text-red-700 dark:text-red-200" style={{ background: "var(--color-card)", borderColor: "var(--color-outline)" }}>
         {error}

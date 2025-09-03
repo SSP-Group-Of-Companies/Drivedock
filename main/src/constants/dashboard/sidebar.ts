@@ -1,7 +1,21 @@
 /**
  * Sidebar configuration (no JSX, just data).
  */
-import { Home, FileX, ClipboardList, IdCard, Briefcase, ShieldAlert, FileBadge, FileText, Slash, BadgeCheck, Printer, Car, Settings } from "lucide-react";
+import {
+  Home,
+  FileX,
+  ClipboardList,
+  IdCard,
+  Briefcase,
+  ShieldAlert,
+  FileBadge,
+  FileText,
+  Slash,
+  BadgeCheck,
+  Printer,
+  Car,
+  Settings,
+} from "lucide-react";
 import type { ElementType } from "react";
 
 export type SidebarItem = { href: string; label: string; icon: ElementType };
@@ -15,7 +29,11 @@ export const HOME_SETTINGS_ITEM: SidebarItem = {
 };
 
 /** Home/Terminated (non-contract) */
-export const HOME_SIDEBAR_ITEMS: SidebarItem[] = [{ href: "/dashboard/home", label: "Home", icon: Home }, { href: "/dashboard/terminated", label: "Terminated", icon: FileX }, HOME_SETTINGS_ITEM];
+export const HOME_SIDEBAR_ITEMS: SidebarItem[] = [
+  { href: "/dashboard/home", label: "Home", icon: Home },
+  { href: "/dashboard/terminated", label: "Terminated", icon: FileX },
+  HOME_SETTINGS_ITEM,
+];
 
 /** Contract sections for a given trackerId */
 export function contractSidebarSections(trackerId: string): SidebarSection[] {
@@ -67,7 +85,11 @@ export function contractSidebarSections(trackerId: string): SidebarSection[] {
     {
       title: "Appraisal",
       items: [
-        { href: `${base}/appraisal/drive-test`, label: "Drive Test", icon: Car },
+        {
+          href: `${base}/appraisal/drive-test`,
+          label: "Drive Test",
+          icon: Car,
+        },
         {
           href: `${base}/appraisal/flatbed-training`,
           label: "Flatbed Training",

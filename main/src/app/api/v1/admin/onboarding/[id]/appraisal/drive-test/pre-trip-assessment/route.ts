@@ -40,8 +40,6 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
       driveTestDoc = await DriveTest.findById(driveTestId);
     }
 
-    if (!driveTestDoc) return errorResponse(404, "drive test document not found");
-
     // Pull driverName and driverLicense from ApplicationForm.page1
     const appFormId = onboardingDoc.forms?.driverApplication;
     let driverName: string | undefined;

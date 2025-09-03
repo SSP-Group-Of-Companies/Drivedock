@@ -16,7 +16,11 @@ function isCompleted(block: any): boolean {
   return v === "pass" || v === "fail" || v === "conditional_pass";
 }
 
-export default function DriveTestCard({ trackerId, driveTest, canEdit }: Props) {
+export default function DriveTestCard({
+  trackerId,
+  driveTest,
+  canEdit,
+}: Props) {
   const titleId = useId();
   const descId = useId();
   const pre = driveTest?.preTrip;
@@ -25,11 +29,14 @@ export default function DriveTestCard({ trackerId, driveTest, canEdit }: Props) 
   const roadDone = isCompleted(onRoad);
 
   const preDate = pre?.assessedAt ? formatInputDate(pre.assessedAt) : "N/A";
-  const roadDate = onRoad?.assessedAt ? formatInputDate(onRoad.assessedAt) : "N/A";
+  const roadDate = onRoad?.assessedAt
+    ? formatInputDate(onRoad.assessedAt)
+    : "N/A";
 
   const locked = !canEdit;
 
-  const tileBase = "block w-full text-center rounded-xl px-4 py-4 sm:py-5 text-sm font-medium shadow-sm";
+  const tileBase =
+    "block w-full text-center rounded-xl px-4 py-4 sm:py-5 text-sm font-medium shadow-sm";
   const tileStyle: React.CSSProperties = {
     background: "var(--color-primary-container)",
     color: "var(--color-primary-on-container)",
@@ -48,26 +55,27 @@ export default function DriveTestCard({ trackerId, driveTest, canEdit }: Props) 
       aria-describedby={locked ? descId : undefined}
     >
       {locked && (
-        <p id={descId} className="sr-only">
-          Locked until step is reached.
-        </p>
-      )}
-
-      {/* Overlay when locked — centered text */}
-      {locked && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-black/10 backdrop-blur-[1px]" aria-hidden>
+        <>
+          <p id={descId} className="sr-only">
+            Locked until step is reached.
+          </p>
           <div
-            className="rounded-lg px-3 py-1.5 text-xs font-medium"
-            style={{
-              background: "var(--color-surface)",
-              color: "var(--color-on-surface)",
-              border: "1px solid var(--color-outline)",
-              boxShadow: "var(--elevation-1)",
-            }}
+            className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 shadow-lg pointer-events-none"
+            aria-hidden
           >
-            Locked until step is reached
+            <div
+              className="rounded-lg px-3 py-1.5 text-xs font-medium backdrop-blur-sm"
+              style={{
+                background: "var(--color-surface)",
+                color: "var(--color-on-surface)",
+                border: "1px solid var(--color-outline)",
+                boxShadow: "var(--elevation-2)",
+              }}
+            >
+              Locked until step is reached
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       <header className="mb-3 flex items-center justify-between">
@@ -88,24 +96,48 @@ export default function DriveTestCard({ trackerId, driveTest, canEdit }: Props) 
       </header>
 
       {/* Two-column layout: left = tiles, right = summary */}
-      <div className={`grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 ${locked ? "pointer-events-none" : ""}`}>
+      <div
+        className={`grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2 ${
+          locked ? "pointer-events-none" : ""
+        }`}
+      >
         {/* Left: big action tiles */}
         <div className="grid grid-rows-2 gap-3 sm:gap-4">
           {locked ? (
             <>
-              <span role="link" aria-disabled="true" className={spanTileClass} style={tileStyle}>
+              <span
+                role="link"
+                aria-disabled="true"
+                className={spanTileClass}
+                style={tileStyle}
+              >
                 Pre-Trip Assessment
               </span>
-              <span role="link" aria-disabled="true" className={spanTileClass} style={tileStyle}>
+              <span
+                role="link"
+                aria-disabled="true"
+                className={spanTileClass}
+                style={tileStyle}
+              >
                 On-Road Evaluation
               </span>
             </>
           ) : (
             <>
-              <Link className={tileBase} style={tileStyle} href={`/appraisal/${trackerId}/drive-test/pre-trip-assessment`} target="_blank">
+              <Link
+                className={tileBase}
+                style={tileStyle}
+                href={`/appraisal/${trackerId}/drive-test/pre-trip-assessment`}
+                target="_blank"
+              >
                 Pre-Trip Assessment
               </Link>
-              <Link className={tileBase} style={tileStyle} href={`/appraisal/${trackerId}/drive-test/on-road-assessment`} target="_blank">
+              <Link
+                className={tileBase}
+                style={tileStyle}
+                href={`/appraisal/${trackerId}/drive-test/on-road-assessment`}
+                target="_blank"
+              >
                 On-Road Evaluation
               </Link>
             </>
@@ -113,8 +145,14 @@ export default function DriveTestCard({ trackerId, driveTest, canEdit }: Props) 
         </div>
 
         {/* Right: details with separators like your screenshot */}
-        <div className="grid grid-rows-2 rounded-xl border" style={{ borderColor: "var(--color-outline-variant)" }}>
-          <div className="grid grid-cols-2 gap-1 rounded-t-xl p-3" style={{ borderBottom: "1px solid var(--color-outline-variant)" }}>
+        <div
+          className="grid grid-rows-2 rounded-xl border"
+          style={{ borderColor: "var(--color-outline-variant)" }}
+        >
+          <div
+            className="grid grid-cols-2 gap-1 rounded-t-xl p-3"
+            style={{ borderBottom: "1px solid var(--color-outline-variant)" }}
+          >
             <div className="text-sm">
               <div className="text-xs opacity-70">Completed Pre-Trip</div>
               <div>{preDone ? "Yes" : "No"}</div>

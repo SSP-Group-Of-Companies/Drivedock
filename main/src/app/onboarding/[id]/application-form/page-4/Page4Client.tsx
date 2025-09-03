@@ -33,11 +33,13 @@ function formatDate(d?: string | Date | null) {
 function mapDefaults(page4: IApplicationFormPage4 | null): ApplicationFormPage4Input {
   return {
     criminalRecords:
-      page4?.criminalRecords?.map((r) => ({
-        offense: r.offense || "",
-        dateOfSentence: formatDate(r.dateOfSentence),
-        courtLocation: r.courtLocation || "",
-      })) ?? [],
+      page4?.criminalRecords && page4.criminalRecords.length > 0
+        ? page4.criminalRecords.map((r) => ({
+            offense: r.offense || "",
+            dateOfSentence: formatDate(r.dateOfSentence),
+            courtLocation: r.courtLocation || "",
+          }))
+        : [{ offense: "", dateOfSentence: "", courtLocation: "" }], // Default empty row
 
     employeeNumber: page4?.employeeNumber ?? "",
     hstNumber: page4?.hstNumber ?? "",

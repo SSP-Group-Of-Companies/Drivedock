@@ -13,9 +13,9 @@ export const photoSchema = z.object({
 
 // --- Atomic entries ---
 export const criminalRecordEntrySchema = z.object({
-  offense: z.string().min(1, "Offense is required."),
-  dateOfSentence: dateYMD,
-  courtLocation: z.string().min(1, "Court location is required."),
+  offense: z.string().optional().transform((v) => v?.trim() ?? ""),
+  dateOfSentence: z.string().optional().transform((v) => v?.trim() ?? ""),
+  courtLocation: z.string().optional().transform((v) => v?.trim() ?? ""),
 });
 
 export const fastCardSchema = z.object({
@@ -194,6 +194,39 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
       }
     })
 
+    // Criminal Records: all-or-nothing validation per row
+    .superRefine((data: Out, ctx) => {
+      data.criminalRecords.forEach((record, index) => {
+        // Check if any field in this row has data
+        const hasAnyData = !!record.offense?.trim() || !!record.dateOfSentence?.trim() || !!record.courtLocation?.trim();
+        
+        if (hasAnyData) {
+          // If any field has data, all fields become required
+          if (!record.offense?.trim()) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["criminalRecords", index, "offense"],
+              message: "Offense is required when any field in this row has data.",
+            });
+          }
+          if (!record.dateOfSentence?.trim()) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["criminalRecords", index, "dateOfSentence"],
+              message: "Date of sentence is required when any field in this row has data.",
+            });
+          }
+          if (!record.courtLocation?.trim()) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["criminalRecords", index, "courtLocation"],
+              message: "Court location is required when any field in this row has data.",
+            });
+          }
+        }
+      });
+    })
+
     .superRefine((data: Out, ctx) => {
       // Force a selection for all Yes/No questions
       (["deniedLicenseOrPermit", "suspendedOrRevoked", "testedPositiveOrRefused", "completedDOTRequirements", "hasAccidentalInsurance"] as const).forEach((key) => {
@@ -217,6 +250,7 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
     })
 
     .transform((val) => {
+      // Fast card cleanup (existing logic)
       const fc = val.fastCard;
       if (fc) {
         const anyProvided = !!fc.fastCardNumber?.trim() || !!fc.fastCardExpiry || !!fc.fastCardFrontPhoto || !!fc.fastCardBackPhoto;

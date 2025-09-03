@@ -10,7 +10,7 @@ import { useDashboardLoading } from "@/store/useDashboardLoading";
 import CarriersEdgeCard from "./components/CarriersEdgeCard";
 import DrugTestCard from "./components/DrugTestCard";
 import DriveTestCard from "./components/DriveTestCard";
-import NotesCard from "./components/NotesCard";
+import NotesCard from "../components/NotesCard";
 import UpdateSubmitBar from "./components/UpdateSubmitBar";
 import DashboardFormWizard from "../components/DashboardFormWizard";
 import { computeSafetyGates } from "@/lib/dashboard/utils/stepGating";

@@ -102,7 +102,9 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     }
 
     // Body
-    const body = await parseJsonBody<{ flatbedTraining?: Partial<IFlatbedTraining> }>(req);
+    const body = await parseJsonBody<{
+      flatbedTraining?: Partial<IFlatbedTraining>;
+    }>(req);
     const payload = body?.flatbedTraining;
     if (!payload) return errorResponse(400, "Missing 'flatbedTraining' in request body");
 
