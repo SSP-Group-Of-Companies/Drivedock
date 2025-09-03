@@ -370,7 +370,7 @@ export default function DataGrid({
 
       {/* Table (fills remaining space) */}
       <div className="relative -mx-2 flex-1 min-h-[400px] overflow-x-auto overflow-y-auto overscroll-auto no-scrollbar sm:mx-0">
-        <motion.table 
+        <motion.table
           className="w-full border-separate border-spacing-0 text-sm table-fixed sm:table-auto"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -437,12 +437,14 @@ export default function DataGrid({
                     <div className="flex flex-col items-center gap-3">
                       <div
                         className="h-10 w-10 animate-spin rounded-full border-3 border-transparent"
-                        style={{ 
+                        style={{
                           borderTopColor: "var(--color-primary)",
-                          borderWidth: "3px"
+                          borderWidth: "3px",
                         }}
                       />
-                      <span className="text-sm font-medium">Loading records…</span>
+                      <span className="text-sm font-medium">
+                        Loading records…
+                      </span>
                     </div>
                   </td>
                 </motion.tr>
@@ -471,371 +473,401 @@ export default function DataGrid({
               {!isLoading && items.length > 0 && (
                 <>
                   {items.map((it, index) => {
-              const pct = progressPercent(it);
-              const step = stepLabel(it.status?.currentStep);
-              const inProgress = !it.status?.completed;
+                    const pct = progressPercent(it);
+                    const step = stepLabel(it.status?.currentStep);
+                    const inProgress = !it.status?.completed;
 
-              return (
-                <motion.tr
-                  key={it._id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ 
-                    duration: 0.3,
-                    delay: index * 0.05, // Stagger animation
-                    ease: "easeOut"
-                  }}
-                  className="align-middle transition-colors hover:bg-opacity-50"
-                  style={{ backgroundColor: "var(--color-surface)" }}
-                >
-                  {/* Driver */}
-                  <td
-                    className="px-2 py-4 sm:px-3 align-middle"
-                    style={{ borderBottom: "1px solid var(--color-outline)" }}
-                  >
-                    <div className="flex items-start gap-2 sm:gap-3">
-                      <div className="flex-shrink-0 sm:hidden">
-                        <CompanyBadge
-                          companyId={it.companyId}
-                          hideLabelOnMobile
-                          size="xl"
-                        />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div
-                          className="truncate text-sm font-medium sm:text-base"
-                          style={{ color: "var(--color-on-surface)" }}
-                        >
-                          {it.itemSummary?.driverName ?? "—"}
-                        </div>
-                        <div
-                          className="mt-1 truncate text-xs"
-                          style={{ color: "var(--color-on-surface-variant)" }}
-                          title={it.itemSummary?.driverEmail || undefined}
-                        >
-                          {it.itemSummary?.driverEmail ?? "—"}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* Status / Progress */}
-                  <td
-                    className="px-2 py-4 sm:px-3 align-middle"
-                    style={{ borderBottom: "1px solid var(--color-outline)" }}
-                  >
-                    {/* Mobile + Tablet */}
-                    <div className="xl:hidden min-w-0">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="h-3 w-3 rounded-full flex-shrink-0"
+                    return (
+                      <motion.tr
+                        key={it._id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{
+                          duration: 0.3,
+                          delay: index * 0.05, // Stagger animation
+                          ease: "easeOut",
+                        }}
+                        className="align-middle transition-colors hover:bg-opacity-50"
+                        style={{ backgroundColor: "var(--color-surface)" }}
+                      >
+                        {/* Driver */}
+                        <td
+                          className="px-2 py-4 sm:px-3 align-middle"
                           style={{
-                            backgroundColor: inProgress
-                              ? "var(--color-warning)"
-                              : "var(--color-success)",
+                            borderBottom: "1px solid var(--color-outline)",
                           }}
-                          aria-hidden
-                        />
-                        <span
-                          className="min-w-0 flex-1 truncate text-xs font-medium"
-                          style={{ color: "var(--color-on-surface)" }}
-                          title={step}
                         >
-                          {step}
-                        </span>
-                        <div className="relative w-10 h-10 flex-shrink-0">
-                          {/* Circular progress with dots */}
-                          <svg
-                            width="40"
-                            height="40"
-                            viewBox="0 0 40 40"
-                            className="transform -rotate-90"
-                          >
-                            {(() => {
-                              const stepFlow = getOnboardingStepFlow({
-                                needsFlatbedTraining: it.needsFlatbedTraining,
-                              });
-                              const currentIndex = stepFlow.indexOf(
-                                it.status?.currentStep
-                              );
-                              const totalSteps = stepFlow.length;
-                              const angleStep = (2 * Math.PI) / totalSteps;
-                              
-                              return stepFlow.map((_, index) => {
-                                const angle = index * angleStep;
-                                const x = 20 + 15 * Math.cos(angle);
-                                const y = 20 + 15 * Math.sin(angle);
-                                const isCompleted = index <= currentIndex;
-                                
+                          <div className="flex items-start gap-2 sm:gap-3">
+                            <div className="flex-shrink-0 sm:hidden">
+                              <CompanyBadge
+                                companyId={it.companyId}
+                                hideLabelOnMobile
+                                size="xl"
+                              />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div
+                                className="truncate text-sm font-medium sm:text-base"
+                                style={{ color: "var(--color-on-surface)" }}
+                              >
+                                {it.itemSummary?.driverName ?? "—"}
+                              </div>
+                              <div
+                                className="mt-1 truncate text-xs"
+                                style={{
+                                  color: "var(--color-on-surface-variant)",
+                                }}
+                                title={it.itemSummary?.driverEmail || undefined}
+                              >
+                                {it.itemSummary?.driverEmail ?? "—"}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Status / Progress */}
+                        <td
+                          className="px-2 py-4 sm:px-3 align-middle"
+                          style={{
+                            borderBottom: "1px solid var(--color-outline)",
+                          }}
+                        >
+                          {/* Mobile + Tablet */}
+                          <div className="xl:hidden min-w-0">
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="h-3 w-3 rounded-full flex-shrink-0"
+                                style={{
+                                  backgroundColor: inProgress
+                                    ? "var(--color-warning)"
+                                    : "var(--color-success)",
+                                }}
+                                aria-hidden
+                              />
+                              <span
+                                className="min-w-0 flex-1 truncate text-xs font-medium"
+                                style={{ color: "var(--color-on-surface)" }}
+                                title={step}
+                              >
+                                {step}
+                              </span>
+                              <div className="relative w-10 h-10 flex-shrink-0">
+                                {/* Circular progress with dots */}
+                                <svg
+                                  width="40"
+                                  height="40"
+                                  viewBox="0 0 40 40"
+                                  className="transform -rotate-90"
+                                >
+                                  {(() => {
+                                    const stepFlow = getOnboardingStepFlow({
+                                      needsFlatbedTraining:
+                                        it.needsFlatbedTraining,
+                                    });
+                                    const currentIndex = stepFlow.indexOf(
+                                      it.status?.currentStep
+                                    );
+                                    const totalSteps = stepFlow.length;
+                                    const angleStep =
+                                      (2 * Math.PI) / totalSteps;
+
+                                    return stepFlow.map((_, index) => {
+                                      const angle = index * angleStep;
+                                      const x = 20 + 15 * Math.cos(angle);
+                                      const y = 20 + 15 * Math.sin(angle);
+                                      const isCompleted = index <= currentIndex;
+
+                                      return (
+                                        <circle
+                                          key={index}
+                                          cx={x}
+                                          cy={y}
+                                          r="2"
+                                          className={`transition-colors duration-200 ${
+                                            isCompleted
+                                              ? "fill-blue-500"
+                                              : "fill-gray-300 dark:fill-gray-600"
+                                          }`}
+                                          aria-hidden="true"
+                                        />
+                                      );
+                                    });
+                                  })()}
+                                </svg>
+
+                                {/* Percentage in center */}
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <span
+                                    className="text-xs font-medium"
+                                    style={{ color: "var(--color-primary)" }}
+                                  >
+                                    {pct}%
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <span className="sr-only">
+                              Step{" "}
+                              {(() => {
+                                const stepFlow = getOnboardingStepFlow({
+                                  needsFlatbedTraining: it.needsFlatbedTraining,
+                                });
                                 return (
-                                  <circle
-                                    key={index}
-                                    cx={x}
-                                    cy={y}
-                                    r="2"
-                                    className={`transition-colors duration-200 ${
-                                      isCompleted
-                                        ? "fill-blue-500"
-                                        : "fill-gray-300 dark:fill-gray-600"
-                                    }`}
-                                    aria-hidden="true"
-                                  />
+                                  stepFlow.indexOf(it.status?.currentStep) + 1
                                 );
-                              });
-                            })()}
-                          </svg>
-                          
-                          {/* Percentage in center */}
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <span
-                              className="text-xs font-medium"
-                              style={{ color: "var(--color-primary)" }}
-                            >
-                              {pct}%
+                              })()}{" "}
+                              of{" "}
+                              {(() => {
+                                const stepFlow = getOnboardingStepFlow({
+                                  needsFlatbedTraining: it.needsFlatbedTraining,
+                                });
+                                return stepFlow.length;
+                              })()}
                             </span>
                           </div>
-                        </div>
-                      </div>
-                      <span className="sr-only">
-                        Step{" "}
-                        {(() => {
-                          const stepFlow = getOnboardingStepFlow({
-                            needsFlatbedTraining: it.needsFlatbedTraining,
-                          });
-                          return stepFlow.indexOf(it.status?.currentStep) + 1;
-                        })()}{" "}
-                        of{" "}
-                        {(() => {
-                          const stepFlow = getOnboardingStepFlow({
-                            needsFlatbedTraining: it.needsFlatbedTraining,
-                          });
-                          return stepFlow.length;
-                        })()}
-                      </span>
-                    </div>
 
-                    {/* Desktop */}
-                    <div className="hidden xl:block">
-                      <div className="w-full sm:max-w-xs">
-                        <div className="mb-2 flex items-center gap-3 w-full">
-                          <span
-                            className="inline-block rounded-full px-2.5 py-1 text-xs font-medium"
-                            style={{
-                              backgroundColor: inProgress
-                                ? "var(--color-warning-container)"
-                                : "var(--color-success-container)",
-                              color: inProgress
-                                ? "var(--color-warning-on-container)"
-                                : "var(--color-success-on-container)",
-                            }}
-                          >
-                            {inProgress ? "In Progress" : "Completed"}
-                          </span>
-                          <span
-                            className="text-xs"
-                            style={{ color: "var(--color-on-surface-variant)" }}
-                          >
-                            {step}
-                          </span>
-                          <div className="ml-auto flex items-center">
-                            <CountryFlag
-                              companyId={it.companyId}
-                              size="md"
-                              className="opacity-60"
-                            />
+                          {/* Desktop */}
+                          <div className="hidden xl:block">
+                            <div className="w-full sm:max-w-xs">
+                              <div className="mb-2 flex items-center gap-3 w-full">
+                                <span
+                                  className="inline-block rounded-full px-2.5 py-1 text-xs font-medium"
+                                  style={{
+                                    backgroundColor: inProgress
+                                      ? "var(--color-warning-container)"
+                                      : "var(--color-success-container)",
+                                    color: inProgress
+                                      ? "var(--color-warning-on-container)"
+                                      : "var(--color-success-on-container)",
+                                  }}
+                                >
+                                  {inProgress ? "In Progress" : "Completed"}
+                                </span>
+                                <span
+                                  className="text-xs"
+                                  style={{
+                                    color: "var(--color-on-surface-variant)",
+                                  }}
+                                >
+                                  {step}
+                                </span>
+                                <div className="ml-auto flex items-center">
+                                  <CountryFlag
+                                    companyId={it.companyId}
+                                    size="md"
+                                    className="opacity-60"
+                                  />
+                                </div>
+                              </div>
+                              <div
+                                className="h-2 w-full overflow-hidden rounded-full"
+                                style={{
+                                  backgroundColor:
+                                    "var(--color-outline-variant)",
+                                }}
+                              >
+                                <div
+                                  className="h-full rounded-full transition-[width] duration-300"
+                                  style={{
+                                    width: `${pct}%`,
+                                    backgroundColor: "var(--color-primary)",
+                                  }}
+                                />
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                        <div
-                          className="h-2 w-full overflow-hidden rounded-full"
+                        </td>
+
+                        {/* Company (desktop only) */}
+                        <td
+                          className="hidden px-3 py-4 sm:table-cell align-middle"
                           style={{
-                            backgroundColor: "var(--color-outline-variant)",
+                            borderBottom: "1px solid var(--color-outline)",
                           }}
                         >
-                          <div
-                            className="h-full rounded-full transition-[width] duration-300"
-                            style={{
-                              width: `${pct}%`,
-                              backgroundColor: "var(--color-primary)",
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </td>
+                          <CompanyBadge companyId={it.companyId} size="xl" />
+                        </td>
 
-                  {/* Company (desktop only) */}
-                  <td
-                    className="hidden px-3 py-4 sm:table-cell align-middle"
-                    style={{ borderBottom: "1px solid var(--color-outline)" }}
-                  >
-                    <CompanyBadge companyId={it.companyId} size="xl" />
-                  </td>
+                        {/* Actions */}
+                        <td
+                          className="px-2 py-4 text-right sm:px-3 align-middle"
+                          style={{
+                            borderBottom: "1px solid var(--color-outline)",
+                          }}
+                        >
+                          {mode === "active" ? (
+                            <>
+                              {currentTab === "all" && (
+                                <div className="inline-flex flex-wrap justify-end gap-1 sm:flex-nowrap sm:gap-1.5 lg:gap-2">
+                                  <ActionBtn
+                                    icon={Eye}
+                                    onClick={() => navigateToContract(it._id)}
+                                  >
+                                    View application
+                                  </ActionBtn>
+                                  <ActionBtn
+                                    icon={Trash2}
+                                    disabled={
+                                      !!it.terminated || isRowBusy(it._id)
+                                    }
+                                    onClick={() =>
+                                      open(
+                                        "terminate",
+                                        it._id,
+                                        it.itemSummary?.driverName ?? undefined
+                                      )
+                                    }
+                                  >
+                                    Terminate
+                                  </ActionBtn>
+                                </div>
+                              )}
 
-                  {/* Actions */}
-                  <td
-                    className="px-2 py-4 text-right sm:px-3 align-middle"
-                    style={{ borderBottom: "1px solid var(--color-outline)" }}
-                  >
-                    {mode === "active" ? (
-                      <>
-                        {currentTab === "all" && (
-                          <div className="inline-flex flex-wrap justify-end gap-1 sm:flex-nowrap sm:gap-1.5 lg:gap-2">
-                            <ActionBtn
-                              icon={Eye}
-                              onClick={() => navigateToContract(it._id)}
-                            >
-                              View application
-                            </ActionBtn>
-                            <ActionBtn
-                              icon={Trash2}
-                              disabled={!!it.terminated || isRowBusy(it._id)}
-                              onClick={() =>
-                                open(
-                                  "terminate",
-                                  it._id,
-                                  it.itemSummary?.driverName ?? undefined
-                                )
-                              }
-                            >
-                              Terminate
-                            </ActionBtn>
-                          </div>
-                        )}
+                              {currentTab === "drive-test" && (
+                                <div className="inline-flex flex-wrap justify-end gap-1 sm:flex-nowrap sm:gap-1.5 lg:gap-2">
+                                  <ActionBtn
+                                    icon={FlaskConical}
+                                    href={`/dashboard/contract/${it._id}/appraisal/drive-test`}
+                                  >
+                                    Drive Test
+                                  </ActionBtn>
+                                </div>
+                              )}
 
-                        {currentTab === "drive-test" && (
-                          <div className="inline-flex flex-wrap justify-end gap-1 sm:flex-nowrap sm:gap-1.5 lg:gap-2">
-                            <ActionBtn
-                              icon={FlaskConical}
-                              href={`/dashboard/contract/${it._id}/drive-test/appraisal`}
-                            >
-                              Drive Test
-                            </ActionBtn>
-                          </div>
-                        )}
+                              {currentTab === "carriers-edge-training" && (
+                                <div className="inline-flex flex-wrap justify-end gap-1 sm:flex-nowrap sm:gap-1.5 lg:gap-2">
+                                  {it.itemSummary?.carrierEdgeTraining
+                                    ?.emailSent ? (
+                                    <ActionBtn
+                                      icon={UploadCloud}
+                                      disabled={isCEUploadBusy(it._id)}
+                                      onClick={() =>
+                                        openCeUpload(
+                                          it._id,
+                                          it.itemSummary?.driverName ??
+                                            undefined
+                                        )
+                                      }
+                                    >
+                                      Upload certificate
+                                    </ActionBtn>
+                                  ) : (
+                                    <ActionBtn
+                                      icon={Send}
+                                      onClick={() =>
+                                        navigateToCarriersEdge(it._id)
+                                      }
+                                    >
+                                      Assign test
+                                    </ActionBtn>
+                                  )}
+                                </div>
+                              )}
 
-                        {currentTab === "carriers-edge-training" && (
-                          <div className="inline-flex flex-wrap justify-end gap-1 sm:flex-nowrap sm:gap-1.5 lg:gap-2">
-                            {it.itemSummary?.carrierEdgeTraining?.emailSent ? (
+                              {/* Actions → currentTab === "drug-test" */}
+                              {currentTab === "drug-test" && (
+                                <div className="inline-flex flex-wrap justify-end gap-1 sm:flex-nowrap sm:gap-1.5 lg:gap-2">
+                                  {(() => {
+                                    const s = it.itemSummary?.drugTest?.status;
+
+                                    if (s === EDrugTestStatus.AWAITING_REVIEW) {
+                                      // Navigate to Safety Processing (highlight Drug Test card)
+                                      return (
+                                        <ActionBtn
+                                          icon={CheckCircle2}
+                                          onClick={() =>
+                                            navigateToDrugTest(it._id)
+                                          }
+                                        >
+                                          Verify result
+                                        </ActionBtn>
+                                      );
+                                    }
+
+                                    if (
+                                      s === EDrugTestStatus.NOT_UPLOADED ||
+                                      !s
+                                    ) {
+                                      return (
+                                        <span
+                                          className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium"
+                                          style={{
+                                            backgroundColor:
+                                              "var(--color-outline-variant)",
+                                            color:
+                                              "var(--color-on-surface-variant)",
+                                          }}
+                                        >
+                                          Pending upload
+                                        </span>
+                                      );
+                                    }
+
+                                    if (s === EDrugTestStatus.APPROVED) {
+                                      return (
+                                        <span
+                                          className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium"
+                                          style={{
+                                            backgroundColor:
+                                              "var(--color-success-container)",
+                                            color:
+                                              "var(--color-success-on-container)",
+                                          }}
+                                        >
+                                          Verified
+                                        </span>
+                                      );
+                                    }
+
+                                    if (s === EDrugTestStatus.REJECTED) {
+                                      return (
+                                        <span
+                                          className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium"
+                                          style={{
+                                            backgroundColor:
+                                              "var(--color-error-container)",
+                                            color:
+                                              "var(--color-error-on-container)",
+                                          }}
+                                        >
+                                          Rejected
+                                        </span>
+                                      );
+                                    }
+
+                                    return null;
+                                  })()}
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <div className="inline-flex flex-wrap justify-end gap-1 sm:flex-nowrap sm:gap-1.5 lg:gap-2">
                               <ActionBtn
-                                icon={UploadCloud}
-                                disabled={isCEUploadBusy(it._id)}
+                                icon={Eye}
+                                href={`/dashboard/contract/${it._id}`}
+                              >
+                                View application
+                              </ActionBtn>
+                              <ActionBtn
+                                icon={RotateCcw}
+                                disabled={isRowBusy(it._id)}
                                 onClick={() =>
-                                  openCeUpload(
+                                  open(
+                                    "restore",
                                     it._id,
                                     it.itemSummary?.driverName ?? undefined
                                   )
                                 }
                               >
-                                Upload certificate
+                                Restore
                               </ActionBtn>
-                            ) : (
-                              <ActionBtn
-                                icon={Send}
-                                onClick={() => navigateToCarriersEdge(it._id)}
-                              >
-                                Assign test
-                              </ActionBtn>
-                            )}
-                          </div>
-                        )}
-
-                        {/* Actions → currentTab === "drug-test" */}
-                        {currentTab === "drug-test" && (
-                          <div className="inline-flex flex-wrap justify-end gap-1 sm:flex-nowrap sm:gap-1.5 lg:gap-2">
-                            {(() => {
-                              const s = it.itemSummary?.drugTest?.status;
-
-                              if (s === EDrugTestStatus.AWAITING_REVIEW) {
-                                // Navigate to Safety Processing (highlight Drug Test card)
-                                return (
-                                  <ActionBtn
-                                    icon={CheckCircle2}
-                                    onClick={() => navigateToDrugTest(it._id)}
-                                  >
-                                    Verify result
-                                  </ActionBtn>
-                                );
-                              }
-
-                              if (s === EDrugTestStatus.NOT_UPLOADED || !s) {
-                                return (
-                                  <span
-                                    className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium"
-                                    style={{
-                                      backgroundColor:
-                                        "var(--color-outline-variant)",
-                                      color: "var(--color-on-surface-variant)",
-                                    }}
-                                  >
-                                    Pending upload
-                                  </span>
-                                );
-                              }
-
-                              if (s === EDrugTestStatus.APPROVED) {
-                                return (
-                                  <span
-                                    className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium"
-                                    style={{
-                                      backgroundColor:
-                                        "var(--color-success-container)",
-                                      color:
-                                        "var(--color-success-on-container)",
-                                    }}
-                                  >
-                                    Verified
-                                  </span>
-                                );
-                              }
-
-                              if (s === EDrugTestStatus.REJECTED) {
-                                return (
-                                  <span
-                                    className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium"
-                                    style={{
-                                      backgroundColor:
-                                        "var(--color-error-container)",
-                                      color: "var(--color-error-on-container)",
-                                    }}
-                                  >
-                                    Rejected
-                                  </span>
-                                );
-                              }
-
-                              return null;
-                            })()}
-                          </div>
-                        )}
-                      </>
-                    ) : (
-                      <div className="inline-flex flex-wrap justify-end gap-1 sm:flex-nowrap sm:gap-1.5 lg:gap-2">
-                        <ActionBtn
-                          icon={Eye}
-                          href={`/dashboard/contract/${it._id}`}
-                        >
-                          View application
-                        </ActionBtn>
-                        <ActionBtn
-                          icon={RotateCcw}
-                          disabled={isRowBusy(it._id)}
-                          onClick={() =>
-                            open(
-                              "restore",
-                              it._id,
-                              it.itemSummary?.driverName ?? undefined
-                            )
-                          }
-                        >
-                          Restore
-                        </ActionBtn>
-                      </div>
-                    )}
-                  </td>
-                </motion.tr>
-              );
-            })}
+                            </div>
+                          )}
+                        </td>
+                      </motion.tr>
+                    );
+                  })}
                 </>
               )}
             </AnimatePresence>

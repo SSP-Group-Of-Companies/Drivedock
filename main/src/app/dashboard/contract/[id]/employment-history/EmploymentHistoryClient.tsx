@@ -10,6 +10,8 @@ import { useEditMode } from "../components/EditModeContext";
 import { type EmploymentHistoryResponse } from "@/app/api/v1/admin/onboarding/[id]/application-form/employment-history/types";
 import { validateEmployments } from "@/app/api/v1/admin/onboarding/[id]/application-form/employment-history/employmentValidation";
 import { EmploymentForm } from "./components";
+import StepNotCompletedMessage from "../components/StepNotCompletedMessage";
+
 
 // Helper function for API calls
 async function fetchEmploymentHistory(
@@ -19,7 +21,12 @@ async function fetchEmploymentHistory(
     `/api/v1/admin/onboarding/${trackerId}/application-form/employment-history`
   );
   if (!response.ok) {
-    throw new Error("Failed to fetch employment history");
+    // Check if it's a 401 error and include the error message
+    if (response.status === 401) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`401: ${errorData.message || 'Driver hasn\'t completed this step yet'}`);
+    }
+    throw new Error(`HTTP error! status: ${response.status}`);
   }
   return response.json();
 }
@@ -40,6 +47,11 @@ async function patchEmploymentHistory(
   );
 
   if (!response.ok) {
+    // Check if it's a 401 error and include the error message
+    if (response.status === 401) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`401: ${errorData.message || 'Driver hasn\'t completed this step yet'}`);
+    }
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.message || response.statusText);
   }
@@ -109,6 +121,8 @@ export default function EmploymentHistoryClient({
     }
   }, [contractData, isContractLoading, hideLoader]);
 
+
+
   const handleSave = async () => {
     if (!hasUnsavedChanges) return;
 
@@ -159,6 +173,16 @@ export default function EmploymentHistoryClient({
     }
   };
 
+  // Check for 401 error (step not completed) - MUST be before loading check
+  if (error && error.message.includes("401")) {
+    return (
+      <StepNotCompletedMessage 
+        stepName="Application Form Page 2"
+        stepDescription="This page requires the driver to complete the employment history section including work experience and gap explanations."
+      />
+    );
+  }
+
   // Don't render anything while dashboard loader is visible or before transition is complete
   if (isDashboardLoaderVisible || !shouldRender) {
     return null;
@@ -197,6 +221,8 @@ export default function EmploymentHistoryClient({
       </div>
     );
   }
+
+
 
   const ctx = contractData;
 

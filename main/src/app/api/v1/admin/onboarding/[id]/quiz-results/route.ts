@@ -52,6 +52,7 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
     return successResponse(200, "quiz results retrieved", {
       onboardingContext: buildTrackerContext(onboardingDoc, null, true),
       quizResults: appFormDoc.page5, // { answers, score }
+      lastUpdated: appFormDoc.page5.updatedAt, // When the quiz was actually completed
     });
   } catch (error) {
     return errorResponse(error);

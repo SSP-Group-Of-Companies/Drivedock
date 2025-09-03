@@ -73,8 +73,8 @@ export default function DrugTestCard({
 
   // Can choose Approve/Reject only when there's something to review AND not already approved
   const canDecide =
-    !busyOrLocked && 
-    derivedStatus !== EDrugTestStatus.NOT_UPLOADED && 
+    !busyOrLocked &&
+    derivedStatus !== EDrugTestStatus.NOT_UPLOADED &&
     drugTest.status !== EDrugTestStatus.APPROVED;
 
   // Gallery
@@ -229,19 +229,19 @@ export default function DrugTestCard({
             <p id={descId} className="sr-only">
               Locked until step is reached.
             </p>
-                         <div
-               className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 shadow-lg pointer-events-none"
-               aria-hidden
-             >
-                             <div
-                 className="rounded-lg px-3 py-1.5 text-xs font-medium backdrop-blur-sm"
-                 style={{
-                   background: "var(--color-surface)",
-                   color: "var(--color-on-surface)",
-                   border: "1px solid var(--color-outline)",
-                   boxShadow: "var(--elevation-2)",
-                 }}
-               >
+            <div
+              className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 shadow-lg pointer-events-none"
+              aria-hidden
+            >
+              <div
+                className="rounded-lg px-3 py-1.5 text-xs font-medium backdrop-blur-sm"
+                style={{
+                  background: "var(--color-surface)",
+                  color: "var(--color-on-surface)",
+                  border: "1px solid var(--color-outline)",
+                  boxShadow: "var(--elevation-2)",
+                }}
+              >
                 Locked until step is reached
               </div>
             </div>
@@ -401,10 +401,9 @@ export default function DrugTestCard({
               className="mt-3 text-xs"
               style={{ color: "var(--color-on-surface-variant)" }}
             >
-              {drugTest.status === EDrugTestStatus.APPROVED 
+              {drugTest.status === EDrugTestStatus.APPROVED
                 ? "Documents can be deleted, but at least one document must remain when approved."
-                : "At least one document is required to approve."
-              }
+                : "At least one document is required to approve."}
             </div>
           </div>
         </div>
@@ -445,9 +444,14 @@ export default function DrugTestCard({
           onClose={() => setGalleryOpen(false)}
           onDelete={(index, _item) => {
             // Allow deletion even when approved, but prevent if only 1 document remains
-            if (drugTest.status === EDrugTestStatus.APPROVED && galleryItems.length <= 1) {
+            if (
+              drugTest.status === EDrugTestStatus.APPROVED &&
+              galleryItems.length <= 1
+            ) {
               // Show error message in gallery
-              setGalleryError("At least one document must exist when approved.");
+              setGalleryError(
+                "At least one document must exist when approved."
+              );
               return;
             }
             handleDeleteFromGallery(index);

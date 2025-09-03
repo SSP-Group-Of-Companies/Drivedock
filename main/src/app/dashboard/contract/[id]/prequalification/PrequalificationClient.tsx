@@ -8,12 +8,19 @@ import { useDashboardPageLoading } from "@/hooks/useDashboardPageLoading";
 import { useDashboardLoading } from "@/store/useDashboardLoading";
 import DashboardFormWizard from "../components/DashboardFormWizard";
 import { OptionalsSection, MandatorySection, CategoriesSection } from "./components";
+import StepNotCompletedMessage from "../components/StepNotCompletedMessage";
+
 
 // Helper function for API calls
 async function fetchPrequalifications(trackerId: string): Promise<PrequalificationsResponse> {
   const response = await fetch(`/api/v1/admin/onboarding/${trackerId}/prequalifications`);
   if (!response.ok) {
-    throw new Error('Failed to fetch prequalifications');
+    // Check if it's a 401 error and include the error message
+    if (response.status === 401) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`401: ${errorData.message || 'Driver hasn\'t completed this step yet'}`);
+    }
+    throw new Error(`HTTP error! status: ${response.status}`);
   }
   return response.json();
 }
@@ -60,6 +67,18 @@ export default function PrequalificationClient({ trackerId }: { trackerId: strin
     }
   }, [contractData, isContractLoading, hideLoader]);
 
+
+
+  // Check for 401 error (step not completed) - MUST be before loading check
+  if (prequalError && prequalError.message.includes("401")) {
+    return (
+      <StepNotCompletedMessage 
+        stepName="Prequalifications"
+        stepDescription="This page requires the driver to complete the prequalification questions including optionals, mandatory, and category selections."
+      />
+    );
+  }
+
   // Don't render anything while dashboard loader is visible or before transition is complete
   if (isDashboardLoaderVisible || !shouldRender) {
     return null;
@@ -91,38 +110,14 @@ export default function PrequalificationClient({ trackerId }: { trackerId: strin
     );
   }
 
-  // Check if we have the required data structure
-  if (!prequalData?.data?.preQualifications) {
+  // Check if driver has completed the required step (Prequalifications)
+  if (!prequalData?.data?.preQualifications || 
+      Object.keys(prequalData.data.preQualifications).length === 0) {
     return (
-      <div
-        className="rounded-xl border p-8 text-center"
-        style={{
-          borderColor: "var(--color-outline)",
-          background: "var(--color-card)",
-        }}
-      >
-        <div className="flex flex-col items-center gap-2">
-          {prequalError ? (
-            <>
-              <span className="text-sm font-medium" style={{ color: "var(--color-error)" }}>
-                Error loading prequalification data
-              </span>
-              <span className="text-xs" style={{ color: "var(--color-on-surface-variant)" }}>
-                {prequalError.message || 'An error occurred while fetching data'}
-              </span>
-            </>
-          ) : (
-            <>
-              <span className="text-sm font-medium" style={{ color: "var(--color-on-surface-variant)" }}>
-                No prequalification data found
-              </span>
-              <span className="text-xs" style={{ color: "var(--color-on-surface-variant)" }}>
-                This driver may not have completed the prequalification step yet.
-              </span>
-            </>
-          )}
-        </div>
-      </div>
+      <StepNotCompletedMessage 
+        stepName="Prequalifications"
+        stepDescription="This page requires the driver to complete the prequalification questions including optionals, mandatory, and category selections."
+      />
     );
   }
 

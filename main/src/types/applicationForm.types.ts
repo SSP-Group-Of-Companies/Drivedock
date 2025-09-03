@@ -251,6 +251,8 @@ export interface ICompetencyAnswer {
 export interface IApplicationFormPage5 {
   answers: ICompetencyAnswer[];
   score: number;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 /* =========================

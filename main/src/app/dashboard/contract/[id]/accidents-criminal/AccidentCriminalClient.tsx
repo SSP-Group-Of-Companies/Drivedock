@@ -13,6 +13,8 @@ import {
   ITrafficConvictionEntry,
   ICriminalRecordEntry,
 } from "@/types/applicationForm.types";
+import StepNotCompletedMessage from "../components/StepNotCompletedMessage";
+
 
 export default function AccidentCriminalClient() {
   const { id: trackerId } = useParams<{ id: string }>();
@@ -35,6 +37,11 @@ export default function AccidentCriminalClient() {
         `/api/v1/admin/onboarding/${trackerId}/application-form/accident-criminal`
       );
       if (!response.ok) {
+        // Check if it's a 401 error and include the error message
+        if (response.status === 401) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(`401: ${errorData.message || 'Driver hasn\'t completed this step yet'}`);
+        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const result: AccidentCriminalResponse = await response.json();
@@ -73,6 +80,11 @@ export default function AccidentCriminalClient() {
       );
 
       if (!response.ok) {
+        // Check if it's a 401 error and include the error message
+        if (response.status === 401) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(`401: ${errorData.message || 'Driver hasn\'t completed this step yet'}`);
+        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
@@ -112,7 +124,20 @@ export default function AccidentCriminalClient() {
     );
   }
 
+
+
   if (error) {
+    // Check if it's a 401 error (step not completed)
+    if (error.includes("401")) {
+      return (
+        <StepNotCompletedMessage 
+          stepName="Application Form Page 4"
+          stepDescription="This page requires the driver to complete the criminal records section and other required information from the application form."
+        />
+      );
+    }
+    
+    // For other errors, show the error message
     return (
       <div className="flex items-center justify-center min-h-64">
         <div className="text-red-600">Error: {error}</div>
@@ -127,6 +152,8 @@ export default function AccidentCriminalClient() {
       </div>
     );
   }
+
+
 
   return (
     <AccidentCriminalContent

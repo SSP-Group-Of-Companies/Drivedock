@@ -66,8 +66,11 @@ export default function ContractSummaryBar({ trackerId }: Props) {
   // Check if we're on the prequalification page (toggle should be disabled)
   const isPrequalificationPage = pathname?.includes('/prequalification');
   
-  // Check if edit mode toggle should be functional (not prequalification, not safety processing)
-  const canToggleEditMode = !isPrequalificationPage && !isSafetyProcessingPage;
+  // Check if we're on the quiz-result page (toggle should be disabled)
+  const isQuizResultPage = pathname?.includes('/quiz-result');
+  
+  // Check if edit mode toggle should be functional (not prequalification, not quiz-result, not safety processing)
+  const canToggleEditMode = !isPrequalificationPage && !isQuizResultPage && !isSafetyProcessingPage;
 
   const companyMenuRef = useRef<HTMLDivElement | null>(null);
   const notifMenuRef = useRef<HTMLDivElement | null>(null);
