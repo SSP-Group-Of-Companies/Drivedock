@@ -13,9 +13,18 @@ export const photoSchema = z.object({
 
 // --- Atomic entries ---
 export const criminalRecordEntrySchema = z.object({
-  offense: z.string().optional().transform((v) => v?.trim() ?? ""),
-  dateOfSentence: z.string().optional().transform((v) => v?.trim() ?? ""),
-  courtLocation: z.string().optional().transform((v) => v?.trim() ?? ""),
+  offense: z
+    .string()
+    .optional()
+    .transform((v) => v?.trim() ?? ""),
+  dateOfSentence: z
+    .string()
+    .optional()
+    .transform((v) => v?.trim() ?? ""),
+  courtLocation: z
+    .string()
+    .optional()
+    .transform((v) => v?.trim() ?? ""),
 });
 
 export const fastCardSchema = z.object({
@@ -130,21 +139,48 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
     // Country-specific docs (unchanged logic, still use leaf paths and the eligibility section anchor)
     .superRefine((data: Out, ctx) => {
       if (isCanadian) {
-        if (data.healthCardPhotos.length === 0) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["healthCardPhotos"], message: "Health card photo required for Canadian applicants." });
-        if (data.passportPhotos.length === 0) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["passportPhotos"], message: "Passport photo required for Canadian applicants." });
+        if (data.healthCardPhotos.length !== 2)
+          ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["healthCardPhotos"], message: "Health card front and back photos required for Canadian applicants." });
+        if (data.passportPhotos.length !== 2) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["passportPhotos"], message: "Passport bio and back photos required for Canadian applicants." });
         if (data.usVisaPhotos.length === 0) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["usVisaPhotos"], message: "US visa photo required for Canadian applicants." });
         if (data.prPermitCitizenshipPhotos.length === 0)
           ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["prPermitCitizenshipPhotos"], message: "PR/Citizenship photo required for Canadian applicants." });
       }
 
       if (isUS) {
-        if (data.medicalCertificationPhotos.length === 0) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["medicalCertificationPhotos"], message: "Medical certificate required for US drivers" });
+        if (data.medicalCertificationPhotos.length === 0) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["medicalCertificationPhotos"],
+            message: "Medical certificate required for US drivers",
+          });
+        }
 
-        if (data.passportPhotos.length === 0 && data.prPermitCitizenshipPhotos.length === 0) {
+        // Passport & PR/Citizenship rules
+        const hasPassport = data.passportPhotos.length > 0;
+        const hasPR = data.prPermitCitizenshipPhotos.length > 0;
+
+        if (!hasPassport && !hasPR) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ["eligibilityDocs.root"], // section banner anchor
             message: "US drivers must provide passport or PR/citizenship photo",
+          });
+        }
+
+        if (hasPassport && data.passportPhotos.length !== 2) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["passportPhotos"],
+            message: "Passport requires two photos (bio and back) for US applicants.",
+          });
+        }
+
+        if (hasPR && data.prPermitCitizenshipPhotos.length < 1) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["prPermitCitizenshipPhotos"],
+            message: "At least one PR/Citizenship photo is required for US applicants.",
           });
         }
       }
@@ -199,7 +235,7 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
       data.criminalRecords.forEach((record, index) => {
         // Check if any field in this row has data
         const hasAnyData = !!record.offense?.trim() || !!record.dateOfSentence?.trim() || !!record.courtLocation?.trim();
-        
+
         if (hasAnyData) {
           // If any field has data, all fields become required
           if (!record.offense?.trim()) {

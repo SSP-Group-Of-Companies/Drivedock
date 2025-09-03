@@ -96,15 +96,33 @@ export default function BusinessSection() {
       <div className="grid grid-cols-12 gap-6">
         {/* Wrap each photo group with a data-field so scroll finds the trigger */}
         <div className="col-span-12 lg:col-span-6" data-field="incorporatePhotos">
-          <OnboardingPhotoGroup name="incorporatePhotos" label={t("form.step2.page4.fields.incorporatePhotos", "Incorporate Photos")} folder={ES3Folder.INCORPORATION_PHOTOS} maxPhotos={10} />
+          <OnboardingPhotoGroup
+            name="incorporatePhotos"
+            label={t("form.step2.page4.fields.incorporatePhotos", "Incorporation Photos")}
+            description="Upload clear photos of your business incorporation documents (e.g., Articles of Incorporation, Certificate of Incorporation)."
+            folder={ES3Folder.INCORPORATION_PHOTOS}
+            maxPhotos={10}
+          />
         </div>
 
         <div className="col-span-12 lg:col-span-6" data-field="hstPhotos">
-          <OnboardingPhotoGroup name="hstPhotos" label={t("form.step2.page4.fields.hstPhotos", "HST Business Number Photos")} folder={ES3Folder.HST_PHOTOS} maxPhotos={2} />
+          <OnboardingPhotoGroup
+            name="hstPhotos"
+            label={t("form.step2.page4.fields.hstPhotos", "HST Business Number Photos")}
+            description="Upload a photo of your HST/GST business number registration document (e.g., CRA registration letter)."
+            folder={ES3Folder.HST_PHOTOS}
+            maxPhotos={2}
+          />
         </div>
 
         <div className="col-span-12" data-field="bankingInfoPhotos">
-          <OnboardingPhotoGroup name="bankingInfoPhotos" label={t("form.step2.page4.fields.bankingInfoPhotos", "Banking Info Photos")} folder={ES3Folder.BANKING_INFO_PHOTOS} maxPhotos={2} />
+          <OnboardingPhotoGroup
+            name="bankingInfoPhotos"
+            label={t("form.step2.page4.fields.bankingInfoPhotos", "Banking Info Photos")}
+            description="Upload a photo of a void cheque or direct deposit form from your bank (must clearly show account number and institution details)."
+            folder={ES3Folder.BANKING_INFO_PHOTOS}
+            maxPhotos={2}
+          />
         </div>
       </div>
 

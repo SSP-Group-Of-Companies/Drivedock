@@ -65,6 +65,9 @@ type PatchBody = {
   fastCard?: IApplicationFormPage4["fastCard"];
 };
 
+// Typed tuples for safe indexing of PatchBody + Page4
+const CA_MUST_HAVE_KEYS = ["healthCardPhotos", "passportPhotos", "usVisaPhotos", "prPermitCitizenshipPhotos"] as const;
+
 /* -------------------------------- PATCH -------------------------------- */
 export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
@@ -188,7 +191,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
         criminalRecords: prevP4.criminalRecords,
       };
 
-      // enforce photo caps
+      // enforce photo caps (against the working draft)
       ensureMaxPhotos("hstPhotos", nextP4.hstPhotos, PHOTO_LIMITS.hstPhotos);
       ensureMaxPhotos("incorporatePhotos", nextP4.incorporatePhotos, PHOTO_LIMITS.incorporatePhotos);
       ensureMaxPhotos("bankingInfoPhotos", nextP4.bankingInfoPhotos, PHOTO_LIMITS.bankingInfoPhotos);
@@ -198,26 +201,64 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       ensureMaxPhotos("usVisaPhotos", nextP4.usVisaPhotos, PHOTO_LIMITS.usVisaPhotos);
       ensureMaxPhotos("prPermitCitizenshipPhotos", nextP4.prPermitCitizenshipPhotos, PHOTO_LIMITS.prPermitCitizenshipPhotos);
 
-      // country rules
+      // ===== NEW: authoritative final-state validators (replace semantics) =====
+      const dedupeByS3Key = (arr?: IPhoto[]) => {
+        if (!Array.isArray(arr)) return [] as IPhoto[];
+        const seen = new Set<string>();
+        const out: IPhoto[] = [];
+        for (const p of arr) {
+          const k = p?.s3Key?.trim();
+          if (k && !seen.has(k)) {
+            seen.add(k);
+            out.push(p);
+          }
+        }
+        return out;
+      };
+
+      /** If PATCH provides an array, that becomes final (after dedupe). Otherwise previous (after dedupe). */
+      const finalDistinctArray = (now?: IPhoto[], old?: IPhoto[]) => {
+        if (Array.isArray(now)) return dedupeByS3Key(now);
+        return dedupeByS3Key(old);
+      };
+      const finalDistinctCount = (now?: IPhoto[], old?: IPhoto[]) => finalDistinctArray(now, old).length;
+
+      // Country rules based on FINAL arrays
       if (isCanadian) {
-        const required: (keyof IApplicationFormPage4)[] = ["healthCardPhotos", "passportPhotos", "usVisaPhotos", "prPermitCitizenshipPhotos"];
-        for (const field of required) {
-          const now = nextP4[field];
-          const hasNow = Array.isArray(now) ? now.length > 0 : false;
-          if (!hasNow) throw new AppError(400, `${field} required for Canadian applicants.`);
+        // CA must-have presence on these (typed keys avoid TS index error)
+        for (const field of CA_MUST_HAVE_KEYS) {
+          if (finalDistinctCount(body[field], prevP4[field]) === 0) {
+            throw new AppError(400, `${field} required for Canadian applicants.`);
+          }
+        }
+        // Exactly two for passport & health card
+        if (finalDistinctCount(body.passportPhotos, prevP4.passportPhotos) !== 2) {
+          throw new AppError(400, "Passport bio and back photos required");
+        }
+        if (finalDistinctCount(body.healthCardPhotos, prevP4.healthCardPhotos) !== 2) {
+          throw new AppError(400, "Health card front and back photos required");
         }
       }
 
       if (isUS) {
-        const medCount = Array.isArray(nextP4.medicalCertificationPhotos) ? nextP4.medicalCertificationPhotos.length : 0;
-        if (medCount === 0) throw new AppError(400, "Medical certificate required for US drivers");
+        const medFinal = finalDistinctCount(body.medicalCertificationPhotos, prevP4.medicalCertificationPhotos);
+        if (medFinal === 0) throw new AppError(400, "Medical certificate required for US drivers");
 
-        const passportCount = Array.isArray(nextP4.passportPhotos) ? nextP4.passportPhotos.length : 0;
-        const prCount = Array.isArray(nextP4.prPermitCitizenshipPhotos) ? nextP4.prPermitCitizenshipPhotos.length : 0;
-        if (passportCount === 0 && prCount === 0) {
+        const passportFinal = finalDistinctCount(body.passportPhotos, prevP4.passportPhotos);
+        const prFinal = finalDistinctCount(body.prPermitCitizenshipPhotos, prevP4.prPermitCitizenshipPhotos);
+        if (passportFinal === 0 && prFinal === 0) {
           throw new AppError(400, "US drivers must provide passport or PR/citizenship photo");
         }
+        if (passportFinal > 0 && passportFinal !== 2) {
+          throw new AppError(400, "Passport bio and back photos required");
+        }
+
+        const healthCardFinal = finalDistinctCount(body.healthCardPhotos, prevP4.healthCardPhotos);
+        if (healthCardFinal > 0 && healthCardFinal !== 2) {
+          throw new AppError(400, "Health card front and back photos required");
+        }
       }
+      // ===== END NEW =====
 
       // fast card rule (CA)
       if (isCanadian && nextP4.fastCard) {
@@ -329,19 +370,12 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       p4Final = JSON.parse(JSON.stringify(appFormDoc.page4)) as IApplicationFormPage4;
 
       p4Final.hstPhotos = (await finalizeVector(p4Final.hstPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.HST_PHOTOS))) as IPhoto[];
-
       p4Final.incorporatePhotos = (await finalizeVector(p4Final.incorporatePhotos, buildFinalDest(onboardingDoc.id, ES3Folder.INCORPORATION_PHOTOS))) as IPhoto[];
-
       p4Final.bankingInfoPhotos = (await finalizeVector(p4Final.bankingInfoPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.BANKING_INFO_PHOTOS))) as IPhoto[];
-
       p4Final.healthCardPhotos = (await finalizeVector(p4Final.healthCardPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.HEALTH_CARD_PHOTOS))) as IPhoto[];
-
       p4Final.medicalCertificationPhotos = (await finalizeVector(p4Final.medicalCertificationPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.MEDICAL_CERT_PHOTOS))) as IPhoto[];
-
       p4Final.passportPhotos = (await finalizeVector(p4Final.passportPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.PASSPORT_PHOTOS))) as IPhoto[];
-
       p4Final.usVisaPhotos = (await finalizeVector(p4Final.usVisaPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.US_VISA_PHOTOS))) as IPhoto[];
-
       p4Final.prPermitCitizenshipPhotos = (await finalizeVector(p4Final.prPermitCitizenshipPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.PR_CITIZENSHIP_PHOTOS))) as IPhoto[];
 
       if (p4Final.fastCard?.fastCardFrontPhoto) {

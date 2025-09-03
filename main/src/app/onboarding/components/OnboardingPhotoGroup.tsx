@@ -5,7 +5,7 @@ import { useFormContext, useWatch } from "react-hook-form";
 import { Dialog, DialogPanel } from "@headlessui/react";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
-import { Camera, Upload, X } from "lucide-react";
+import { Camera, Info, Upload, X } from "lucide-react";
 import { useParams } from "next/navigation";
 
 import { uploadToS3Presigned } from "@/lib/utils/s3Upload";
@@ -21,9 +21,10 @@ type Props = {
   folder: ES3Folder;
   maxPhotos: number;
   className?: string;
+  description?: string;
 };
 
-export default function OnboardingPhotoGroup({ name, label, folder, maxPhotos, className }: Props) {
+export default function OnboardingPhotoGroup({ name, label, folder, maxPhotos, className, description }: Props) {
   const {
     control,
     formState: { errors },
@@ -38,9 +39,8 @@ export default function OnboardingPhotoGroup({ name, label, folder, maxPhotos, c
   return (
     <div className={className} data-field={name}>
       <PreviewCard label={label} photos={photos} onOpen={() => setOpen(true)} maxPhotos={maxPhotos} hasError={!!errorMessage} errorMessage={errorMessage} />
-
       <Lightbox title={label} count={photos.length} open={open} onClose={() => setOpen(false)}>
-        <Manager name={name} folder={folder} maxPhotos={maxPhotos} />
+        <Manager name={name} folder={folder} maxPhotos={maxPhotos} description={description} />
       </Lightbox>
     </div>
   );
@@ -146,7 +146,7 @@ function Lightbox({ title, count, open, onClose, children }: { title: string; co
   );
 }
 
-function Manager({ name, folder, maxPhotos }: { name: PhotoFieldName; folder: ES3Folder; maxPhotos: number }) {
+function Manager({ name, folder, maxPhotos, description }: { name: PhotoFieldName; folder: ES3Folder; maxPhotos: number; description?: string }) {
   const { id } = useParams<{ id: string }>();
   const {
     control,
@@ -211,6 +211,15 @@ function Manager({ name, folder, maxPhotos }: { name: PhotoFieldName; folder: ES
 
   return (
     <div className="space-y-4">
+      {/* Subtle info bar (matches the rest of the UI better) */}
+      {description && (
+        <div className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600">
+          <div className="flex items-start gap-2">
+            <Info className="h-4 w-4 text-gray-400 mt-0.5 shrink-0" />
+            <p className="leading-5">{description}</p>
+          </div>
+        </div>
+      )}
       {/* Compact dashed upload button (always compact) */}
       <div className="flex items-center gap-3">
         <label
@@ -226,12 +235,10 @@ function Manager({ name, folder, maxPhotos }: { name: PhotoFieldName; folder: ES
           {photos.length}/{maxPhotos} uploaded
         </span>
       </div>
-
       {/* Status messages */}
       {status === "uploading" && <p className="text-yellow-600 text-xs">Uploading...</p>}
       {status === "error" && <p className="text-red-500 text-xs">{message}</p>}
       {status === "idle" && message && <p className="text-green-600 text-xs">{message}</p>}
-
       {/* Gallery or dashed empty area */}
       {photos.length > 0 ? (
         <div className="grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(150px,1fr))]">
@@ -258,7 +265,6 @@ function Manager({ name, folder, maxPhotos }: { name: PhotoFieldName; folder: ES
           <span className="text-xs">No photos yet</span>
         </div>
       )}
-
       {/* Field-level error inside modal */}
       {err && typeof err.message === "string" && <p className="text-red-500 text-xs">{err.message}</p>}
     </div>
