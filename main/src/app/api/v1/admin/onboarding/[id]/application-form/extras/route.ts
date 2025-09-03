@@ -10,11 +10,10 @@ import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
 
 import { buildTrackerContext, advanceProgress, nextResumeExpiry, onboardingExpired, hasCompletedStep } from "@/lib/utils/onboardingUtils";
-
 import { parseJsonBody } from "@/lib/utils/reqParser";
 import { EStepPath } from "@/types/onboardingTracker.types";
 
-import type { IApplicationFormDoc, IEducation, ICanadianHoursOfService, ICriminalRecordEntry } from "@/types/applicationForm.types";
+import type { IApplicationFormDoc, IEducation, ICanadianHoursOfService } from "@/types/applicationForm.types";
 
 /**
  * ===============================================================
@@ -25,8 +24,7 @@ import type { IApplicationFormDoc, IEducation, ICanadianHoursOfService, ICrimina
  * Scope:
  *  - Page 3 subset:
  *      education, canadianHoursOfService
- *  - Page 4 subset (Additional Info):
- *      criminalRecords,
+ *  - Page 4 subset (Additional Info, excluding criminalRecords):
  *      deniedLicenseOrPermit, suspendedOrRevoked, suspensionNotes,
  *      testedPositiveOrRefused, completedDOTRequirements, hasAccidentalInsurance
  *
@@ -41,8 +39,7 @@ type PatchBody = {
   education?: IEducation;
   canadianHoursOfService?: ICanadianHoursOfService;
 
-  // Page 4 additional info
-  criminalRecords?: ICriminalRecordEntry[];
+  // Page 4 additional info (no criminalRecords here)
   deniedLicenseOrPermit?: boolean;
   suspendedOrRevoked?: boolean;
   suspensionNotes?: string;
@@ -94,7 +91,6 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     const touchingP3 = "education" in body || "canadianHoursOfService" in body;
 
     const touchingP4Info =
-      "criminalRecords" in body ||
       "deniedLicenseOrPermit" in body ||
       "suspendedOrRevoked" in body ||
       "suspensionNotes" in body ||
@@ -129,8 +125,6 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     if (touchingP4Info) {
       const prevP4 = appFormDoc.page4;
       const nextP4 = { ...prevP4 };
-
-      if ("criminalRecords" in body) nextP4.criminalRecords = body.criminalRecords ?? prevP4.criminalRecords;
 
       if ("deniedLicenseOrPermit" in body) nextP4.deniedLicenseOrPermit = !!body.deniedLicenseOrPermit;
       if ("suspendedOrRevoked" in body) nextP4.suspendedOrRevoked = !!body.suspendedOrRevoked;
@@ -178,7 +172,6 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       education: appFormDoc.page3.education,
       canadianHoursOfService: appFormDoc.page3.canadianHoursOfService,
       // Page 4 additional info subset
-      criminalRecords: appFormDoc.page4.criminalRecords,
       deniedLicenseOrPermit: appFormDoc.page4.deniedLicenseOrPermit,
       suspendedOrRevoked: appFormDoc.page4.suspendedOrRevoked,
       suspensionNotes: appFormDoc.page4.suspensionNotes,
@@ -225,7 +218,6 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
       education: appFormDoc.page3.education,
       canadianHoursOfService: appFormDoc.page3.canadianHoursOfService,
       // Page 4 additional info subset
-      criminalRecords: appFormDoc.page4.criminalRecords,
       deniedLicenseOrPermit: appFormDoc.page4.deniedLicenseOrPermit,
       suspendedOrRevoked: appFormDoc.page4.suspendedOrRevoked,
       suspensionNotes: appFormDoc.page4.suspensionNotes,

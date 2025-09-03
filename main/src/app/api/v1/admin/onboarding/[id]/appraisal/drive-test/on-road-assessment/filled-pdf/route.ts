@@ -1,4 +1,4 @@
-// app/api/v1/admin/onboarding/[id]/appraisal/drive-test/pre-trip-assessment/filled-pdf/route.ts
+// app/api/v1/admin/onboarding/[id]/appraisal/drive-test/on-road-assessment/filled-pdf/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import path from "path";
 import { readFile } from "fs/promises";
@@ -11,14 +11,15 @@ import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import DriveTest from "@/mongoose/models/DriveTest";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
 import PoliciesConsents from "@/mongoose/models/PoliciesConsents";
+import PreQualifications from "@/mongoose/models/Prequalifications";
 import { EStepPath } from "@/types/onboardingTracker.types";
 import { hasCompletedStep } from "@/lib/utils/onboardingUtils";
 
-import { buildPreTripFillablePayload, applyPreTripPayloadToForm } from "@/lib/pdf/drive-test/mappers/pre-trip.mapper";
+import { buildOnRoadFillablePayload, applyOnRoadPayloadToForm } from "@/lib/pdf/drive-test/mappers/on-road.mapper";
 import { drawPdfImage } from "@/lib/pdf/utils/drawPdfImage";
 import { loadImageBytesFromPhoto } from "@/lib/utils/s3Upload";
 
-import { EPreTripFillableFormFields as F } from "@/lib/pdf/drive-test/mappers/pre-trip.types";
+import { EOnRoadFillableFormFields as F } from "@/lib/pdf/drive-test/mappers/on-road.types";
 import type { IDriveTest } from "@/types/driveTest.types";
 
 export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
@@ -35,38 +36,35 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
       return errorResponse(403, "driver hasn't reached this step yet");
     }
 
-    // Load Drive Test
+    // ----- Load Drive Test -> On-Road
     const driveTestId = onboardingDoc.forms?.driveTest;
     let driveTestDoc: IDriveTest | null = null;
     if (driveTestId && isValidObjectId(driveTestId)) {
       driveTestDoc = await DriveTest.findById(driveTestId).lean();
     }
-    if (!driveTestDoc?.preTrip) return errorResponse(404, "pre-trip assessment not found");
-    if (!driveTestDoc.preTrip.overallAssessment) {
-      return errorResponse(400, "pre trip assessment not completed yet");
-    }
+    if (!driveTestDoc?.onRoad) return errorResponse(404, "on-road assessment not found");
 
-    // Load Driver details from ApplicationForm (page1)
+    // ----- Driver name & license from ApplicationForm
     const appFormId = onboardingDoc.forms?.driverApplication;
     let driverName: string | undefined;
     let driverLicense: string | undefined;
-
     if (appFormId && isValidObjectId(appFormId)) {
       const appForm = await ApplicationForm.findById(appFormId).select("page1.firstName page1.lastName page1.licenses").lean();
-
       if (appForm?.page1) {
         const first = (appForm.page1 as any).firstName?.toString().trim() || "";
         const last = (appForm.page1 as any).lastName?.toString().trim() || "";
         driverName = [first, last].filter(Boolean).join(" ") || undefined;
-
         const licenses = (appForm.page1 as any).licenses as Array<{ licenseNumber?: string }> | undefined;
         driverLicense = licenses && licenses.length > 0 ? licenses[0]?.licenseNumber : undefined;
       }
     }
-
     if (!driverName || !driverLicense) return errorResponse(400, "driver information missing");
 
-    // Load Policies & Consents for DRIVER signature
+    // ----- PreQualifications for Type / Role row
+    const preQualId = onboardingDoc.forms?.preQualification;
+    const preQual = preQualId && isValidObjectId(preQualId) ? await PreQualifications.findById(preQualId).lean() : null;
+
+    // ----- Policies & Consents for DRIVER signature
     let driverSignatureBytes: Uint8Array | undefined;
     const policiesId = onboardingDoc.forms?.policiesConsents;
     if (policiesId && isValidObjectId(policiesId)) {
@@ -75,44 +73,50 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
         try {
           driverSignatureBytes = await loadImageBytesFromPhoto(policiesDoc.signature);
         } catch (e) {
-          console.warn("Failed to load driver signature from Policies & Consents:", e);
+          console.warn("Failed to load driver signature:", e);
         }
       }
     }
 
-    // Load the fillable template
-    const pdfPath = path.join(process.cwd(), "src/lib/pdf/drive-test/templates/pre-trip-assessment-fillable.pdf");
-
+    // ----- Load fillable template
+    const pdfPath = path.join(process.cwd(), "src/lib/pdf/drive-test/templates/on-road-assessment-fillable.pdf");
     const pdfBytes = await readFile(pdfPath);
     const pdfDoc = await PDFDocument.load(pdfBytes);
     const form = pdfDoc.getForm();
-    const page = pdfDoc.getPages()[0]; // single-page template
+    const page = pdfDoc.getPages()[0]; // single page
 
-    // Build+apply payload from mapper (real data)
-    const assessedAt = driveTestDoc.preTrip.assessedAt;
-    const payload = buildPreTripFillablePayload({
-      preTrip: driveTestDoc.preTrip,
+    // ----- Build + apply payload (actual values)
+    const assessedAt = driveTestDoc.onRoad.assessedAt;
+    const payload = buildOnRoadFillablePayload({
+      onRoad: driveTestDoc.onRoad,
       driverName,
       driverLicense,
-      examinerName: driveTestDoc.preTrip.supervisorName,
-      powerUnitType: driveTestDoc.powerUnitType,
-      trailerType: driveTestDoc.trailerType,
+      // type/role flags from PreQualifications (mapper will guard undefined)
+      preQual: {
+        driverType: preQual?.driverType,
+        teamStatus: preQual?.teamStatus,
+        preferLocalDriving: preQual?.preferLocalDriving,
+        haulPreference: preQual?.haulPreference,
+      },
+      // dates
+      headerDate: assessedAt,
       examinerDate: assessedAt,
       driverDate: assessedAt,
     });
 
-    applyPreTripPayloadToForm(form, payload);
+    applyOnRoadPayloadToForm(form, payload);
 
-    // Draw EXAMINER signature from preTrip.supervisorSignature
+    // ----- Signatures
+    // Examiner: onRoad.supervisorSignature
     try {
-      if (driveTestDoc.preTrip.supervisorSignature) {
-        const examinerSigBytes = await loadImageBytesFromPhoto(driveTestDoc.preTrip.supervisorSignature);
+      if (driveTestDoc.onRoad.supervisorSignature) {
+        const examinerSig = await loadImageBytesFromPhoto(driveTestDoc.onRoad.supervisorSignature);
         await drawPdfImage({
           pdfDoc,
           form,
           page,
           fieldName: F.EXAMINER_SIGNATURE,
-          imageBytes: examinerSigBytes,
+          imageBytes: examinerSig,
           width: 75,
           height: 25,
           yOffset: 0,
@@ -122,7 +126,7 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
       console.warn("Examiner signature draw failed:", e);
     }
 
-    // Draw DRIVER signature from Policies & Consents
+    // Driver: Policies & Consents signature
     try {
       if (driverSignatureBytes) {
         await drawPdfImage({
@@ -131,8 +135,8 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
           page,
           fieldName: F.DRIVER_SIGNATURE,
           imageBytes: driverSignatureBytes,
-          width: 90,
-          height: 30,
+          width: 75,
+          height: 25,
           yOffset: 0,
         });
       }
@@ -140,7 +144,7 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
       console.warn("Driver signature draw failed:", e);
     }
 
-    // Flatten & return
+    // ----- Flatten & return
     form.flatten();
 
     const out = await pdfDoc.save(); // Uint8Array
@@ -150,7 +154,7 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": 'inline; filename="pretrip-filled.pdf"',
+        "Content-Disposition": 'inline; filename="onroad-filled.pdf"',
       },
     });
   } catch (error) {

@@ -1,4 +1,4 @@
-// src/lib/pdf/preTripMapper.ts
+// src/lib/pdf/drive-test/mappers/pre-trip.mapper.ts
 import type { PDFForm } from "pdf-lib";
 import { IPreTripAssessment, EDriveTestOverall, EExpectedStandard } from "@/types/driveTest.types";
 import { EPreTripFillableFormFields as F, type PreTripFillablePayload } from "./pre-trip.types";
@@ -19,12 +19,13 @@ type MapSectionArgs<K extends string> = {
   items: Array<{ key: K; checked: boolean }>;
 };
 
-/** Build key/value pairs for a section (checkboxes only). */
+/** Build key/value pairs for a section (checkboxes only). Dotless for Sejda. */
 function mapSection<K extends string>({ base, items }: MapSectionArgs<K>): PreTripFillablePayload {
   const out: PreTripFillablePayload = {};
   for (const it of items) {
-    const checkKey = `${base}.${it.key}.checked` as keyof typeof F;
-    out[checkKey as F] = Boolean(it.checked);
+    // Build "pretrip.under_hood.<item>.checked" then strip all dots -> "pretripunder_hood<item>checked"
+    const flatName = `${base}.${it.key}.checked`.replaceAll(".", "") as unknown as F;
+    out[flatName] = Boolean(it.checked);
   }
   return out;
 }
@@ -73,11 +74,10 @@ export type BuildPreTripPayloadArgs = {
 };
 
 /**
- * Build a payload for the Pre-Trip template:
+ * Build a payload for the Pre-Trip template (dotless field names):
  * - Header: driver_name / driver_license / examiner_name
- * - Sections: only `.checked` fields
- * - Footer: expected standards (4 checkboxes), overall (3 checkboxes),
- *   comments (single big field), optional equipment, dates
+ * - Sections: only `.checked` fields (auto-flattened)
+ * - Footer: expected standards (4), overall (3), comments, optional equipment, dates
  */
 export function buildPreTripFillablePayload({
   preTrip,
@@ -123,7 +123,7 @@ export function buildPreTripFillablePayload({
   payload[F.EXAMINER_DATE] = fmt(examinerDate) || assessedStr;
   payload[F.DRIVER_DATE] = fmt(driverDate) || assessedStr;
 
-  // Sections
+  // Sections (build dot notation then strip dots to match Sejda)
   const { sections } = preTrip;
   Object.assign(
     payload,
