@@ -194,7 +194,9 @@ export default function CanadianHoursSection({ data, isEditMode, staged, onStage
               gridTemplateColumns: "repeat(14, minmax(0, 1fr))"
             }}>
               {Array.from({ length: 14 }, (_, i) => (
-                <div key={i} className="text-center">Day {i + 1}</div>
+                <div key={i} className="text-center">
+                  <span className="hidden sm:inline">Day </span>{i + 1}
+                </div>
               ))}
             </div>
 
