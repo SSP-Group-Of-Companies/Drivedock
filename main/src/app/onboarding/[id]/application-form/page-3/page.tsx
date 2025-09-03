@@ -81,9 +81,9 @@ export default async function Page3ServerWrapper({ params }: { params: Promise<{
 
     canadianHoursOfService: {
       dayOneDate: formatInputDate(pageData?.canadianHoursOfService?.dayOneDate),
-      dailyHours: normalizeArray(pageData?.canadianHoursOfService?.dailyHours, 14, () => ({ day: 1, hours: 0 })).map((item, i) => ({
+      dailyHours: normalizeArray(pageData?.canadianHoursOfService?.dailyHours, 14, () => ({ day: 0, hours: 0 })).map((item, i) => ({
         ...item,
-        day: (item?.day || i + 1) as number, // ensure numeric day 1..14
+        day: (item?.day && item.day > 0) ? item.day : i + 1, // ensure numeric day 1..14, fix duplicate day: 1
         hours: item?.hours || 0,
       })),
       totalHours: pageData?.canadianHoursOfService?.totalHours ?? 0,

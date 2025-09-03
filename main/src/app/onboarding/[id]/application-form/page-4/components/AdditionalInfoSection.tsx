@@ -10,10 +10,18 @@ type BoolFieldName = "deniedLicenseOrPermit" | "suspendedOrRevoked" | "testedPos
 
 // Reusable Yes/No using your segmented <QuestionGroup />
 function YesNoQuestion({ name, labelKey }: { name: BoolFieldName; labelKey: string }) {
+  const formContext = useFormContext<ApplicationFormPage4Input>();
+  
+  // Defensive check to prevent destructuring errors
+  if (!formContext) {
+    console.error("YesNoQuestion: useFormContext returned null - component not wrapped in FormProvider");
+    return <div>Form context error</div>;
+  }
+  
   const {
     control,
     formState: { errors },
-  } = useFormContext<ApplicationFormPage4Input>();
+  } = formContext;
   const { t } = useTranslation("common");
 
   return (
@@ -50,11 +58,19 @@ function YesNoQuestion({ name, labelKey }: { name: BoolFieldName; labelKey: stri
 export default function AdditionalInfoSection() {
   const mounted = useMounted();
   const { t } = useTranslation("common");
+  const formContext = useFormContext<ApplicationFormPage4Input>();
+  
+  // Defensive check to prevent destructuring errors
+  if (!formContext) {
+    console.error("AdditionalInfoSection: useFormContext returned null - component not wrapped in FormProvider");
+    return <div>Form context error</div>;
+  }
+  
   const {
     control,
     register,
     formState: { errors },
-  } = useFormContext<ApplicationFormPage4Input>();
+  } = formContext;
 
   const suspended = useWatch({ control, name: "suspendedOrRevoked" });
 
