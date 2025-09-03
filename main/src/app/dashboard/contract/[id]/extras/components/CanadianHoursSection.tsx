@@ -17,7 +17,7 @@ export default function CanadianHoursSection({ data, isEditMode, staged, onStage
   
   // Fix corrupted dailyHours data where all entries might have day: 1
   // This happens when onboarding normalizeArray creates duplicate day numbers
-  const correctedDailyHours = rawFormData.dailyHours.map((dh, index) => ({
+  const correctedDailyHours = rawFormData.dailyHours.map((dh: ICanadianDailyHours, index: number) => ({
     ...dh,
     day: dh.day === 1 && index > 0 ? index + 1 : dh.day // Fix duplicate day: 1 entries
   }));
@@ -32,8 +32,8 @@ export default function CanadianHoursSection({ data, isEditMode, staged, onStage
   };
 
   const updateDailyHours = (dayNumber: number, hours: number) => {
-    const existingDayIndex = formData.dailyHours.findIndex(dh => dh.day === dayNumber);
-    let updatedDailyHours = [...formData.dailyHours];
+    const existingDayIndex = formData.dailyHours.findIndex((dh: ICanadianDailyHours) => dh.day === dayNumber);
+    const updatedDailyHours = [...formData.dailyHours];
     
     if (existingDayIndex >= 0) {
       // Update existing day

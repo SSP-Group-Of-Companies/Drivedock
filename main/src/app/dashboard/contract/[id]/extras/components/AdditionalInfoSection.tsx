@@ -111,10 +111,7 @@ export default function AdditionalInfoSection({
                         type="radio"
                         name={`${question.key}`}
                         value="true"
-                        checked={
-                          staged?.[question.key] === true || 
-                          data[question.key] === true
-                        }
+                        checked={formData[question.key] === true}
                         onChange={() => handleBooleanChange(question.key, true)}
                         className="w-4 h-4"
                       />
@@ -125,10 +122,7 @@ export default function AdditionalInfoSection({
                         type="radio"
                         name={`${question.key}`}
                         value="false"
-                        checked={
-                          staged?.[question.key] === false || 
-                          data[question.key] === false
-                        }
+                        checked={formData[question.key] === false}
                         onChange={() => handleBooleanChange(question.key, false)}
                         className="w-4 h-4"
                       />
@@ -141,23 +135,23 @@ export default function AdditionalInfoSection({
                       className="flex items-center justify-center w-6 h-6 rounded border-2"
                       style={{
                         borderColor:
-                          (staged?.[question.key] === true || data[question.key] === true)
+                          formData[question.key] === true
                             ? "var(--color-success)"
-                            : (staged?.[question.key] === false || data[question.key] === false)
+                            : formData[question.key] === false
                             ? "var(--color-error)"
                             : "var(--color-outline-variant)",
                         background:
-                          (staged?.[question.key] === true || data[question.key] === true)
+                          formData[question.key] === true
                             ? "var(--color-success)"
-                            : (staged?.[question.key] === false || data[question.key] === false)
+                            : formData[question.key] === false
                             ? "var(--color-error)"
                             : "var(--color-surface-variant)",
                       }}
                     >
-                      {(staged?.[question.key] === true || data[question.key] === true) && (
+                      {formData[question.key] === true && (
                         <Check className="w-4 h-4 text-white" />
                       )}
-                      {(staged?.[question.key] === false || data[question.key] === false) && (
+                      {formData[question.key] === false && (
                         <span className="w-2 h-2 bg-white rounded-full" />
                       )}
                     </div>
@@ -165,9 +159,9 @@ export default function AdditionalInfoSection({
                       className="text-sm font-medium min-w-[40px]"
                       style={{ color: "var(--color-on-surface)" }}
                     >
-                      {(staged?.[question.key] === true || data[question.key] === true)
+                      {formData[question.key] === true
                         ? "Yes"
-                        : (staged?.[question.key] === false || data[question.key] === false)
+                        : formData[question.key] === false
                         ? "No"
                         : "Not specified"}
                     </span>
@@ -178,7 +172,7 @@ export default function AdditionalInfoSection({
 
             {/* Suspension Notes - Show directly after suspendedOrRevoked question */}
             {question.key === "suspendedOrRevoked" &&
-              (staged?.suspendedOrRevoked === true || data.suspendedOrRevoked === true) && (
+              formData.suspendedOrRevoked === true && (
                 <div
                   className="mt-3 ml-4 p-4 rounded-xl border transition-all duration-200 hover:shadow-sm"
                   style={{
@@ -197,7 +191,7 @@ export default function AdditionalInfoSection({
 
                   {isEditMode ? (
                     <textarea
-                      value={staged?.suspensionNotes ?? data.suspensionNotes ?? ""}
+                      value={formData.suspensionNotes ?? ""}
                       onChange={(e) =>
                         handleTextChange("suspensionNotes", e.target.value)
                       }
@@ -215,7 +209,7 @@ export default function AdditionalInfoSection({
                       className="py-2 px-3 min-h-[60px]"
                       style={{ color: "var(--color-on-surface)" }}
                     >
-                      {staged?.suspensionNotes ?? data.suspensionNotes ?? "No notes provided"}
+                      {formData.suspensionNotes ?? "No notes provided"}
                     </div>
                   )}
                 </div>

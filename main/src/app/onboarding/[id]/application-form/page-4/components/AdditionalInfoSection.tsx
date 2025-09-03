@@ -10,19 +10,20 @@ type BoolFieldName = "deniedLicenseOrPermit" | "suspendedOrRevoked" | "testedPos
 
 // Reusable Yes/No using your segmented <QuestionGroup />
 function YesNoQuestion({ name, labelKey }: { name: BoolFieldName; labelKey: string }) {
+  const { t } = useTranslation("common");
   const formContext = useFormContext<ApplicationFormPage4Input>();
   
-  // Defensive check to prevent destructuring errors
+  // Always destructure (hooks must be called unconditionally)
+  const {
+    control,
+    formState: { errors },
+  } = formContext || { control: null, formState: { errors: {} } };
+  
+  // Defensive check after all hooks are called
   if (!formContext) {
     console.error("YesNoQuestion: useFormContext returned null - component not wrapped in FormProvider");
     return <div>Form context error</div>;
   }
-  
-  const {
-    control,
-    formState: { errors },
-  } = formContext;
-  const { t } = useTranslation("common");
 
   return (
     <div className="space-y-1" data-field={name}>
@@ -60,21 +61,22 @@ export default function AdditionalInfoSection() {
   const { t } = useTranslation("common");
   const formContext = useFormContext<ApplicationFormPage4Input>();
   
-  // Defensive check to prevent destructuring errors
-  if (!formContext) {
-    console.error("AdditionalInfoSection: useFormContext returned null - component not wrapped in FormProvider");
-    return <div>Form context error</div>;
-  }
-  
+  // Always destructure (hooks must be called unconditionally)
   const {
     control,
     register,
     formState: { errors },
-  } = formContext;
+  } = formContext || { control: null, register: () => {}, formState: { errors: {} } };
 
-  const suspended = useWatch({ control, name: "suspendedOrRevoked" });
+  const suspended = useWatch({ control: control || undefined, name: "suspendedOrRevoked" });
 
+  // Defensive checks after all hooks are called
   if (!mounted) return null;
+  
+  if (!formContext) {
+    console.error("AdditionalInfoSection: useFormContext returned null - component not wrapped in FormProvider");
+    return <div>Form context error</div>;
+  }
 
   return (
     <section className="space-y-6 border border-gray-200 p-6 rounded-lg bg-white shadow-sm">
