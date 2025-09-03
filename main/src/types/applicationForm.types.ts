@@ -130,6 +130,21 @@ export interface IEmploymentEntry {
 
 export interface IApplicationFormPage2 {
   employments: IEmploymentEntry[];
+
+  // New fields
+  workedWithCompanyBefore: boolean; // required
+  reasonForLeavingCompany?: string; // optional (if workedWithCompanyBefore = true)
+
+  previousWorkDetails?: {
+    from: string | Date;
+    to: string | Date;
+    rateOfPay: string;
+    position: string;
+  };
+
+  currentlyEmployed: boolean; // required
+  referredBy?: string; // optional
+  expectedRateOfPay: string; // required
 }
 
 /* =========================
