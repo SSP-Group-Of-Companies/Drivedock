@@ -101,7 +101,7 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
 
     return successResponse(200, "Page 2 data retrieved", {
       // For page rendering/resume, build context from lastVisited
-      onboardingContext: buildTrackerContext(onboardingDoc),
+      onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_2),
       page2: appFormDoc.page2,
     });
   } catch (error) {

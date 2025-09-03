@@ -39,6 +39,14 @@ export interface IOnboardingStatus {
 }
 
 /**
+ * Enum for termination type
+ */
+export enum ETerminationType {
+  RESIGNED = "resigned",
+  TERMINATED = "terminated",
+}
+
+/**
  * Main document representing the entire onboarding session for a driver.
  */
 export interface IOnboardingTracker {
@@ -65,7 +73,9 @@ export interface IOnboardingTracker {
 
   needsFlatbedTraining: boolean;
 
+  // termination
   terminated: boolean;
+  terminationType?: ETerminationType;
 
   notes?: string;
 
@@ -83,10 +93,7 @@ export interface IOnboardingTrackerDoc extends IOnboardingTracker, Document {
  * - `id` is provided by Mongoose docs (stringified _id), so it remains explicit here.
  * - `notes` is exposed optionally to keep the public surface minimal by default.
  */
-type TrackerContextBase = Pick<
-  IOnboardingTracker,
-  "companyId" | "applicationType" | "needsFlatbedTraining" | "status"
->;
+type TrackerContextBase = Pick<IOnboardingTracker, "companyId" | "applicationType" | "needsFlatbedTraining" | "status">;
 
 export interface IOnboardingTrackerContext extends TrackerContextBase {
   id: string;

@@ -4,12 +4,12 @@ import connectDB from "@/lib/utils/connectDB";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import { IApplicationFormPage4 } from "@/types/applicationForm.types";
 import { advanceProgress, buildTrackerContext, hasReachedStep, nextResumeExpiry, onboardingExpired } from "@/lib/utils/onboardingUtils";
-import { deleteS3Objects, finalizePhoto } from "@/lib/utils/s3Upload";
+import { deleteS3Objects, finalizePhoto, finalizeVector, buildFinalDest } from "@/lib/utils/s3Upload";
 import { COMPANIES } from "@/constants/companies";
 import { EStepPath } from "@/types/onboardingTracker.types";
 import { ECountryCode, IPhoto } from "@/types/shared.types";
 import { isValidObjectId } from "mongoose";
-import { S3_SUBMISSIONS_FOLDER, S3_TEMP_FOLDER } from "@/constants/aws";
+import { S3_TEMP_FOLDER } from "@/constants/aws";
 import { parseJsonBody } from "@/lib/utils/reqParser";
 import { ES3Folder } from "@/types/aws.types";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
@@ -218,42 +218,33 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     }
 
     // ---------------------------
-    // Phase 2: finalize S3 files
+    // Phase 2: finalize S3 files (helpers; no temp guards necessary)
     // ---------------------------
-    const tempPrefix = `${S3_TEMP_FOLDER}/`;
     const page4Final: IApplicationFormPage4 = JSON.parse(JSON.stringify(appFormDoc.page4)) as IApplicationFormPage4;
 
-    // helper to finalize a vector of photos
-    async function finalizeVector(vec: IPhoto[] | undefined, dest: string) {
-      if (!Array.isArray(vec)) return vec as any;
-      const out: IPhoto[] = [];
-      for (const p of vec) {
-        if (p?.s3Key?.startsWith(tempPrefix)) {
-          // finalizePhoto moves + deletes temp internally
-          out.push(await finalizePhoto(p, dest));
-        } else {
-          out.push(p);
-        }
-      }
-      return out;
-    }
-
     // finalize arrays
-    page4Final.hstPhotos = (await finalizeVector(page4Final.hstPhotos, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.HST_PHOTOS}/${onboardingDoc.id}`)) as IPhoto[];
-    page4Final.incorporatePhotos = (await finalizeVector(page4Final.incorporatePhotos, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.INCORPORATION_PHOTOS}/${onboardingDoc.id}`)) as IPhoto[];
-    page4Final.bankingInfoPhotos = (await finalizeVector(page4Final.bankingInfoPhotos, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.BANKING_INFO_PHOTOS}/${onboardingDoc.id}`)) as IPhoto[];
-    page4Final.healthCardPhotos = (await finalizeVector(page4Final.healthCardPhotos, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.HEALTH_CARD_PHOTOS}/${onboardingDoc.id}`)) as IPhoto[];
-    page4Final.medicalCertificationPhotos = (await finalizeVector(page4Final.medicalCertificationPhotos, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.MEDICAL_CERT_PHOTOS}/${onboardingDoc.id}`)) as IPhoto[];
-    page4Final.passportPhotos = (await finalizeVector(page4Final.passportPhotos, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.PASSPORT_PHOTOS}/${onboardingDoc.id}`)) as IPhoto[];
-    page4Final.usVisaPhotos = (await finalizeVector(page4Final.usVisaPhotos, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.US_VISA_PHOTOS}/${onboardingDoc.id}`)) as IPhoto[];
-    page4Final.prPermitCitizenshipPhotos = (await finalizeVector(page4Final.prPermitCitizenshipPhotos, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.PR_CITIZENSHIP_PHOTOS}/${onboardingDoc.id}`)) as IPhoto[];
+    page4Final.hstPhotos = (await finalizeVector(page4Final.hstPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.HST_PHOTOS))) as IPhoto[];
+
+    page4Final.incorporatePhotos = (await finalizeVector(page4Final.incorporatePhotos, buildFinalDest(onboardingDoc.id, ES3Folder.INCORPORATION_PHOTOS))) as IPhoto[];
+
+    page4Final.bankingInfoPhotos = (await finalizeVector(page4Final.bankingInfoPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.BANKING_INFO_PHOTOS))) as IPhoto[];
+
+    page4Final.healthCardPhotos = (await finalizeVector(page4Final.healthCardPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.HEALTH_CARD_PHOTOS))) as IPhoto[];
+
+    page4Final.medicalCertificationPhotos = (await finalizeVector(page4Final.medicalCertificationPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.MEDICAL_CERT_PHOTOS))) as IPhoto[];
+
+    page4Final.passportPhotos = (await finalizeVector(page4Final.passportPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.PASSPORT_PHOTOS))) as IPhoto[];
+
+    page4Final.usVisaPhotos = (await finalizeVector(page4Final.usVisaPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.US_VISA_PHOTOS))) as IPhoto[];
+
+    page4Final.prPermitCitizenshipPhotos = (await finalizeVector(page4Final.prPermitCitizenshipPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.PR_CITIZENSHIP_PHOTOS))) as IPhoto[];
 
     // finalize fast card singles
-    if (page4Final.fastCard?.fastCardFrontPhoto?.s3Key?.startsWith(tempPrefix)) {
-      page4Final.fastCard.fastCardFrontPhoto = await finalizePhoto(page4Final.fastCard.fastCardFrontPhoto, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.FAST_CARD_PHOTOS}/${onboardingDoc.id}`);
+    if (page4Final.fastCard?.fastCardFrontPhoto) {
+      page4Final.fastCard.fastCardFrontPhoto = await finalizePhoto(page4Final.fastCard.fastCardFrontPhoto, buildFinalDest(onboardingDoc.id, ES3Folder.FAST_CARD_PHOTOS));
     }
-    if (page4Final.fastCard?.fastCardBackPhoto?.s3Key?.startsWith(tempPrefix)) {
-      page4Final.fastCard.fastCardBackPhoto = await finalizePhoto(page4Final.fastCard.fastCardBackPhoto, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.FAST_CARD_PHOTOS}/${onboardingDoc.id}`);
+    if (page4Final.fastCard?.fastCardBackPhoto) {
+      page4Final.fastCard.fastCardBackPhoto = await finalizePhoto(page4Final.fastCard.fastCardBackPhoto, buildFinalDest(onboardingDoc.id, ES3Folder.FAST_CARD_PHOTOS));
     }
 
     // ---------------------------
@@ -354,7 +345,7 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
     }
 
     return successResponse(200, "Page 4 data retrieved", {
-      onboardingContext: buildTrackerContext(onboardingDoc),
+      onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_4),
       page4: appFormDoc.page4,
     });
   } catch (error) {

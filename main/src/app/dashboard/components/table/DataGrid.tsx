@@ -19,15 +19,7 @@ import { useDashboardLoading } from "@/store/useDashboardLoading";
 
 import CompanyBadge from "./atoms/CompanyBadge";
 import CountryFlag from "./atoms/CountryFlag";
-import {
-  Eye,
-  Trash2,
-  UploadCloud,
-  Send,
-  FlaskConical,
-  CheckCircle2,
-  RotateCcw,
-} from "lucide-react";
+import { Eye, Trash2, UploadCloud, Send, FlaskConical, CheckCircle2, RotateCcw } from "lucide-react";
 
 /* ---------------- helpers ---------------- */
 
@@ -145,22 +137,16 @@ export default function DataGrid({
     mode: "terminate" | "restore";
   }>(null);
 
-  const open = (action: "terminate" | "restore", id: string, name?: string) =>
-    setPending({ id, name, mode: action });
+  const open = (action: "terminate" | "restore", id: string, name?: string) => setPending({ id, name, mode: action });
   const close = () => setPending(null);
 
   const busyRowId = useMemo(() => pending?.id ?? null, [pending]);
-  const isRowBusy = (rowId: string) =>
-    (pending?.mode === "terminate" &&
-      terminate.isPending &&
-      busyRowId === rowId) ||
-    (pending?.mode === "restore" && restore.isPending && busyRowId === rowId);
+  const isRowBusy = (rowId: string) => (pending?.mode === "terminate" && terminate.isPending && busyRowId === rowId) || (pending?.mode === "restore" && restore.isPending && busyRowId === rowId);
 
   const confirm = async () => {
     if (!pending) return;
     try {
-      if (pending.mode === "terminate")
-        await terminate.mutateAsync({ id: pending.id });
+      if (pending.mode === "terminate") await terminate.mutateAsync({ id: pending.id });
       else await restore.mutateAsync({ id: pending.id });
       close();
     } catch (err) {
@@ -182,16 +168,12 @@ export default function DataGrid({
   };
 
   const navigateToCarriersEdge = (trackerId: string) => {
-    router.push(
-      `/dashboard/contract/${trackerId}/safety-processing?highlight=carriers-edge`
-    );
+    router.push(`/dashboard/contract/${trackerId}/safety-processing?highlight=carriers-edge`);
   };
 
   /* ---------- Drug test navigation ---------- */
   const navigateToDrugTest = (trackerId: string) => {
-    router.push(
-      `/dashboard/contract/${trackerId}/safety-processing?highlight=drug-test`
-    );
+    router.push(`/dashboard/contract/${trackerId}/safety-processing?highlight=drug-test`);
   };
 
   const [ceUpload, setCeUpload] = useState<null | {
@@ -204,10 +186,7 @@ export default function DataGrid({
     setCeUpload({ id, name });
   };
   const closeCeUpload = () => setCeUpload(null);
-  const confirmCeUpload = async (payload: {
-    certificateId: string;
-    completedAt?: string;
-  }) => {
+  const confirmCeUpload = async (payload: { certificateId: string; completedAt?: string }) => {
     if (!ceUpload) return;
     try {
       await uploadCertificate.mutateAsync({
@@ -219,8 +198,7 @@ export default function DataGrid({
       setCeUploadErr((e as Error).message || "Failed to upload CE certificate");
     }
   };
-  const isCEUploadBusy = (rowId: string) =>
-    uploadCertificate.isPending && ceUpload?.id === rowId;
+  const isCEUploadBusy = (rowId: string) => uploadCertificate.isPending && ceUpload?.id === rowId;
 
   /* ---------- Reusable action button ---------- */
   const ActionBtn = ({
@@ -238,8 +216,7 @@ export default function DataGrid({
     onClick?: () => void;
     "data-testid"?: string;
   }) => {
-    const base =
-      "inline-flex items-center gap-1.5 sm:gap-2 rounded-lg px-2 py-1.5 sm:px-2.5 text-sm transition-colors disabled:opacity-50";
+    const base = "inline-flex items-center gap-1.5 sm:gap-2 rounded-lg px-2 py-1.5 sm:px-2.5 text-sm transition-colors disabled:opacity-50";
     const styleBtn: React.CSSProperties = {
       backgroundColor: "var(--color-card)",
       color: "var(--color-on-surface)",
@@ -253,24 +230,11 @@ export default function DataGrid({
       </>
     );
     return href ? (
-      <Link
-        href={href}
-        className={`${base} whitespace-nowrap`}
-        style={styleBtn}
-        aria-label={label}
-        data-testid={testId}
-      >
+      <Link href={href} className={`${base} whitespace-nowrap`} style={styleBtn} aria-label={label} data-testid={testId}>
         {content}
       </Link>
     ) : (
-      <button
-        onClick={onClick}
-        disabled={disabled}
-        className={`${base} whitespace-nowrap`}
-        style={styleBtn}
-        aria-label={label}
-        data-testid={testId}
-      >
+      <button onClick={onClick} disabled={disabled} className={`${base} whitespace-nowrap`} style={styleBtn} aria-label={label} data-testid={testId}>
         {content}
       </button>
     );
@@ -295,11 +259,7 @@ export default function DataGrid({
         }}
       >
         <div className="text-sm font-medium" role="status" aria-live="polite">
-          {isLoading
-            ? "Loading…"
-            : isFetching
-            ? "Refreshing…"
-            : `${items.length} result(s)`}
+          {isLoading ? "Loading…" : isFetching ? "Refreshing…" : `${items.length} result(s)`}
         </div>
         <div className="flex items-center justify-center gap-1.5 sm:justify-end">
           {/* Prev */}
@@ -320,11 +280,7 @@ export default function DataGrid({
           {/* Page numbers with ellipsis */}
           {buildPaginationItems(page, totalPages).map((item, idx) =>
             item === "dots" ? (
-              <span
-                key={`dots-${idx}`}
-                className="px-1 text-sm select-none"
-                style={{ color: "var(--color-on-surface-variant)" }}
-              >
+              <span key={`dots-${idx}`} className="px-1 text-sm select-none" style={{ color: "var(--color-on-surface-variant)" }}>
                 …
               </span>
             ) : (
@@ -333,9 +289,7 @@ export default function DataGrid({
                 onClick={() => onPageChange(item)}
                 aria-current={item === page ? "page" : undefined}
                 className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] active:scale-95 ${
-                  item === page
-                    ? "text-white"
-                    : "hover:bg-[var(--color-primary-container)]"
+                  item === page ? "text-white" : "hover:bg-[var(--color-primary-container)]"
                 }`}
                 style={
                   item === page
@@ -371,6 +325,7 @@ export default function DataGrid({
       {/* Table (fills remaining space) */}
       <div className="relative -mx-2 flex-1 min-h-[400px] overflow-x-auto overflow-y-auto overscroll-auto no-scrollbar sm:mx-0">
         <motion.table
+        <motion.table
           className="w-full border-separate border-spacing-0 text-sm table-fixed sm:table-auto"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -391,28 +346,16 @@ export default function DataGrid({
             }}
           >
             <tr>
-              <th
-                className="px-2 py-3 text-left font-medium sm:px-3 "
-                style={{ borderBottom: "1px solid var(--color-outline)" }}
-              >
+              <th className="px-2 py-3 text-left font-medium sm:px-3 " style={{ borderBottom: "1px solid var(--color-outline)" }}>
                 Driver
               </th>
-              <th
-                className="px-2 py-3 text-left font-medium sm:px-3"
-                style={{ borderBottom: "1px solid var(--color-outline)" }}
-              >
+              <th className="px-2 py-3 text-left font-medium sm:px-3" style={{ borderBottom: "1px solid var(--color-outline)" }}>
                 Status / Progress
               </th>
-              <th
-                className="hidden px-3 py-3 text-left font-medium sm:table-cell"
-                style={{ borderBottom: "1px solid var(--color-outline)" }}
-              >
+              <th className="hidden px-3 py-3 text-left font-medium sm:table-cell" style={{ borderBottom: "1px solid var(--color-outline)" }}>
                 Company
               </th>
-              <th
-                className="px-2 py-3 text-center font-medium sm:px-3"
-                style={{ borderBottom: "1px solid var(--color-outline)" }}
-              >
+              <th className="px-2 py-3 text-center font-medium sm:px-3" style={{ borderBottom: "1px solid var(--color-outline)" }}>
                 <span className="hidden sm:inline">Actions</span>
               </th>
             </tr>
@@ -422,23 +365,15 @@ export default function DataGrid({
             <AnimatePresence mode="wait">
               {/* Show loading spinner during initial load */}
               {isLoading && (
-                <motion.tr
-                  key="loading"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <td
-                    colSpan={4}
-                    className="px-3 py-16 text-center"
-                    style={{ color: "var(--color-on-surface-variant)" }}
-                  >
+                <motion.tr key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+                  <td colSpan={4} className="px-3 py-16 text-center" style={{ color: "var(--color-on-surface-variant)" }}>
                     <div className="flex flex-col items-center gap-3">
                       <div
                         className="h-10 w-10 animate-spin rounded-full border-3 border-transparent"
                         style={{
+                        style={{
                           borderTopColor: "var(--color-primary)",
+                          borderWidth: "3px",
                           borderWidth: "3px",
                         }}
                       />
@@ -452,18 +387,8 @@ export default function DataGrid({
 
               {/* Show "No records found" only when we're definitely empty */}
               {isDefinitelyEmpty && (
-                <motion.tr
-                  key="empty"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <td
-                    colSpan={4}
-                    className="px-3 py-10 text-center"
-                    style={{ color: "var(--color-on-surface-variant)" }}
-                  >
+                <motion.tr key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+                  <td colSpan={4} className="px-3 py-10 text-center" style={{ color: "var(--color-on-surface-variant)" }}>
                     No records found for this filter.
                   </td>
                 </motion.tr>
@@ -473,6 +398,9 @@ export default function DataGrid({
               {!isLoading && items.length > 0 && (
                 <>
                   {items.map((it, index) => {
+                    const pct = progressPercent(it);
+                    const step = stepLabel(it.status?.currentStep);
+                    const inProgress = !it.status?.completed;
                     const pct = progressPercent(it);
                     const step = stepLabel(it.status?.currentStep);
                     const inProgress = !it.status?.completed;
@@ -770,6 +698,11 @@ export default function DataGrid({
                                 <div className="inline-flex flex-wrap justify-end gap-1 sm:flex-nowrap sm:gap-1.5 lg:gap-2">
                                   {(() => {
                                     const s = it.itemSummary?.drugTest?.status;
+                              {/* Actions → currentTab === "drug-test" */}
+                              {currentTab === "drug-test" && (
+                                <div className="inline-flex flex-wrap justify-end gap-1 sm:flex-nowrap sm:gap-1.5 lg:gap-2">
+                                  {(() => {
+                                    const s = it.itemSummary?.drugTest?.status;
 
                                     if (s === EDrugTestStatus.AWAITING_REVIEW) {
                                       // Navigate to Safety Processing (highlight Drug Test card)
@@ -882,11 +815,7 @@ export default function DataGrid({
         driverName={pending?.name}
         onCancel={close}
         onConfirm={confirm}
-        isBusy={
-          pending?.mode === "terminate"
-            ? terminate.isPending
-            : restore.isPending
-        }
+        isBusy={pending?.mode === "terminate" ? terminate.isPending : restore.isPending}
       />
 
       <UploadCarriersEdgeCertificateDialog

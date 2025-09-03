@@ -2,7 +2,7 @@
 
 import { CanadianCompanyId, getCompanyById } from "@/constants/companies";
 import { IPoliciesConsents } from "@/types/policiesConsents.types";
-import { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
+import { EStepPath, IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
 import { ES3Folder } from "@/types/aws.types";
 import { UploadResult } from "@/lib/utils/s3Upload";
 import { useRef, useState } from "react";
@@ -19,6 +19,7 @@ import useMounted from "@/hooks/useMounted";
 
 // NEW: encapsulated signature component
 import SignatureBox, { type SignatureBoxHandle } from "@/components/react-canvas/SignatureBox";
+import { buildOnboardingNextStepPath } from "@/lib/utils/onboardingUtils";
 
 export type PoliciesConsentsClientProps = {
   policiesConsents: Partial<IPoliciesConsents>;
@@ -52,7 +53,7 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
     // If neither signature nor email choice changed, jump forward.
     const sigDirty = sigRef.current?.isDirty() ?? false;
     if (!sigDirty && sendPoliciesByEmail === initialSendByEmail) {
-      router.push(`/onboarding/${id}/drive-test`);
+      router.push(buildOnboardingNextStepPath(onboardingContext, EStepPath.POLICIES_CONSENTS));
       return;
     }
 
@@ -81,7 +82,7 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
         throw new Error(data?.message || "Failed to save signature.");
       }
 
-      router.push(`/onboarding/${id}/drive-test`);
+      router.push(buildOnboardingNextStepPath(onboardingContext, EStepPath.POLICIES_CONSENTS));
     } catch (error: any) {
       console.error("Submit failed", error);
       // The SignatureBox already surfaces its own errors for signature;

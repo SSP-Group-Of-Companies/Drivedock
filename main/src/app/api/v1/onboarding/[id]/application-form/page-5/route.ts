@@ -129,7 +129,7 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
     }
 
     return successResponse(200, "Page 5 data retrieved", {
-      onboardingContext: buildTrackerContext(onboardingDoc),
+      onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_5),
       page5: appFormDoc.page5 ?? {},
     });
   } catch (error) {

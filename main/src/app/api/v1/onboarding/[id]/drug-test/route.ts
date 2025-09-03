@@ -124,7 +124,7 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
     const drugTestDoc = drugTestId ? await DrugTest.findById(drugTestId) : null;
 
     return successResponse(200, "Drug test data retrieved", {
-      onboardingContext: buildTrackerContext(onboardingDoc),
+      onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.DRUG_TEST),
       drugTest: drugTestDoc?.toObject() ?? {}, // return doc directly (or null if not created yet)
     });
   } catch (error) {

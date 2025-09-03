@@ -104,7 +104,7 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
     }
 
     return successResponse(200, "Policies & Consents data retrieved", {
-      onboardingContext: buildTrackerContext(onboardingDoc),
+      onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.POLICIES_CONSENTS),
       policiesConsents: policiesDoc ?? {},
     });
   } catch (error) {

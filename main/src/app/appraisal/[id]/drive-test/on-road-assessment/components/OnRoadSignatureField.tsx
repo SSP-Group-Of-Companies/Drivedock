@@ -63,9 +63,11 @@ function OnRoadSignatureField({ sigRef, trackerId, s3Folder, isLocked, initialSi
           onError={(msg) => console.warn("Signature error:", msg)}
         />
       </div>
-      <p className="text-xs text-gray-500 text-center">
-        Draw your signature or upload an image, then click <strong>Finish Test</strong>.
-      </p>
+      {!isLocked && (
+        <p className="text-xs text-gray-500 text-center">
+          Draw your signature or upload an image, then click <strong>Finish Test</strong>.
+        </p>
+      )}
     </div>
   );
 }
