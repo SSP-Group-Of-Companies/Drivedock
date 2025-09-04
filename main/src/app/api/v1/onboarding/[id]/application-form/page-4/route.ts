@@ -14,6 +14,105 @@ import { parseJsonBody } from "@/lib/utils/reqParser";
 import { ES3Folder } from "@/types/aws.types";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
 
+/** ======== helpers ======== */
+const hasKey = <T extends object>(o: T, k: keyof any) => Object.prototype.hasOwnProperty.call(o, k);
+
+const isNonEmptyString = (v?: string | null) => !!v && v.trim().length > 0;
+
+const dedupeByS3Key = (arr?: IPhoto[]) => {
+  if (!Array.isArray(arr)) return [] as IPhoto[];
+  const seen = new Set<string>();
+  const out: IPhoto[] = [];
+  for (const p of arr) {
+    const k = p?.s3Key?.trim();
+    if (k && !seen.has(k)) {
+      seen.add(k);
+      out.push(p);
+    }
+  }
+  return out;
+};
+const len = (arr?: IPhoto[]) => (Array.isArray(arr) ? dedupeByS3Key(arr).length : 0);
+
+/** validate array count ONLY if key exists in body (strict “body defines truth”) */
+function expectCountExact(body: any, key: keyof IApplicationFormPage4, exact: number, label: string) {
+  if (!hasKey(body, key)) throw new AppError(400, `${label} is required.`);
+  const n = len(body[key as keyof IApplicationFormPage4] as IPhoto[]);
+  if (n !== exact) throw new AppError(400, `${label} must have exactly ${exact} photo${exact === 1 ? "" : "s"}. You sent ${n}.`);
+}
+function expectCountRange(body: any, key: keyof IApplicationFormPage4, min: number, max: number, label: string) {
+  if (!hasKey(body, key)) throw new AppError(400, `${label} is required.`);
+  const n = len(body[key as keyof IApplicationFormPage4] as IPhoto[]);
+  if (n < min || n > max) throw new AppError(400, `${label} must have between ${min} and ${max} photos. You sent ${n}.`);
+}
+
+/** forbid sending non-empty photos for certain fields; empty array is tolerated (but better to omit) */
+function forbidNonEmpty(body: any, key: keyof IApplicationFormPage4, label: string) {
+  if (!hasKey(body, key)) return;
+  const n = len(body[key as keyof IApplicationFormPage4] as IPhoto[]);
+  if (n > 0) throw new AppError(400, `${label} is not accepted for this applicant.`);
+}
+
+/** business section presence detectors (in body) */
+function businessKeysPresentInBody(b: Partial<IApplicationFormPage4>) {
+  const keys: (keyof IApplicationFormPage4)[] = ["employeeNumber", "businessNumber", "hstNumber", "incorporatePhotos", "bankingInfoPhotos", "hstPhotos"];
+  return keys.some((k) => hasKey(b, k));
+}
+
+function isBusinessClearIntent(b: Partial<IApplicationFormPage4>) {
+  const emptyStrings =
+    (!hasKey(b, "employeeNumber") || !isNonEmptyString(b.employeeNumber)) &&
+    (!hasKey(b, "businessNumber") || !isNonEmptyString(b.businessNumber)) &&
+    (!hasKey(b, "hstNumber") || !isNonEmptyString(b.hstNumber));
+
+  const emptyPhotos =
+    (!hasKey(b, "incorporatePhotos") || len(b.incorporatePhotos) === 0) && (!hasKey(b, "bankingInfoPhotos") || len(b.bankingInfoPhotos) === 0) && (!hasKey(b, "hstPhotos") || len(b.hstPhotos) === 0);
+
+  // Clear intent only if ALL keys are present AND all are empty
+  const allKeysPresent =
+    hasKey(b, "employeeNumber") && hasKey(b, "businessNumber") && hasKey(b, "hstNumber") && hasKey(b, "incorporatePhotos") && hasKey(b, "bankingInfoPhotos") && hasKey(b, "hstPhotos");
+
+  return allKeysPresent && emptyStrings && emptyPhotos;
+}
+
+function validateBusinessAllOrNothing(b: Partial<IApplicationFormPage4>) {
+  if (!businessKeysPresentInBody(b)) return { mode: "skip" as const };
+
+  if (isBusinessClearIntent(b)) return { mode: "clear" as const };
+
+  // Otherwise, require all keys present and valid
+  const missing: string[] = [];
+  const requireKey = (k: keyof IApplicationFormPage4, label: string) => {
+    if (!hasKey(b, k)) missing.push(label);
+  };
+  requireKey("employeeNumber", "employeeNumber");
+  requireKey("businessNumber", "businessNumber");
+  requireKey("hstNumber", "hstNumber");
+  requireKey("incorporatePhotos", "incorporatePhotos");
+  requireKey("bankingInfoPhotos", "bankingInfoPhotos");
+  requireKey("hstPhotos", "hstPhotos");
+
+  if (missing.length) {
+    throw new AppError(400, `Business section is partial. Missing: ${missing.join(", ")}. Provide all fields or explicitly clear all.`);
+  }
+
+  // strings non-empty
+  if (!isNonEmptyString(b.employeeNumber)) throw new AppError(400, "employeeNumber is required in Business section.");
+  if (!isNonEmptyString(b.businessNumber)) throw new AppError(400, "businessNumber is required in Business section.");
+  if (!isNonEmptyString(b.hstNumber)) throw new AppError(400, "hstNumber is required in Business section.");
+
+  // photos within limits
+  const inc = len(b.incorporatePhotos);
+  const bank = len(b.bankingInfoPhotos);
+  const hst = len(b.hstPhotos);
+
+  if (inc < 1 || inc > 10) throw new AppError(400, `incorporatePhotos must have 1–10 photos. You sent ${inc}.`);
+  if (bank < 1 || bank > 2) throw new AppError(400, `bankingInfoPhotos must have 1–2 photos. You sent ${bank}.`);
+  if (hst < 1 || hst > 2) throw new AppError(400, `hstPhotos must have 1–2 photos. You sent ${hst}.`);
+
+  return { mode: "validate" as const };
+}
+
 export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
     await connectDB();
@@ -38,178 +137,72 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
     const body = await parseJsonBody<IApplicationFormPage4>(req);
 
-    // --- Photo limits (route-level)
-    const PHOTO_LIMITS: Record<keyof IApplicationFormPage4, number | undefined> = {
-      hstPhotos: 2,
-      incorporatePhotos: 10,
-      bankingInfoPhotos: 2,
-      healthCardPhotos: 2,
-      medicalCertificationPhotos: 2,
-      passportPhotos: 2,
-      usVisaPhotos: 2,
-      prPermitCitizenshipPhotos: 2,
-
-      // non-array fields (no limits)
-      criminalRecords: undefined,
-      employeeNumber: undefined,
-      hstNumber: undefined,
-      businessNumber: undefined,
-      fastCard: undefined,
-      deniedLicenseOrPermit: undefined,
-      suspendedOrRevoked: undefined,
-      suspensionNotes: undefined,
-      testedPositiveOrRefused: undefined,
-      completedDOTRequirements: undefined,
-      hasAccidentalInsurance: undefined,
-    };
-
-    function ensureMaxPhotos<K extends keyof IApplicationFormPage4>(key: K, arr: IApplicationFormPage4[K], max?: number) {
-      if (typeof max !== "number") return;
-      const count = Array.isArray(arr) ? arr.length : 0;
-      if (count > max) {
-        throw new AppError(400, `${String(key)} cannot exceed ${max} photo${max === 1 ? "" : "s"}. You sent ${count}.`);
-      }
-    }
-
-    ensureMaxPhotos("hstPhotos", body.hstPhotos, PHOTO_LIMITS.hstPhotos);
-    ensureMaxPhotos("incorporatePhotos", body.incorporatePhotos, PHOTO_LIMITS.incorporatePhotos);
-    ensureMaxPhotos("bankingInfoPhotos", body.bankingInfoPhotos, PHOTO_LIMITS.bankingInfoPhotos);
-    ensureMaxPhotos("healthCardPhotos", body.healthCardPhotos, PHOTO_LIMITS.healthCardPhotos);
-    ensureMaxPhotos("medicalCertificationPhotos", body.medicalCertificationPhotos, PHOTO_LIMITS.medicalCertificationPhotos);
-    ensureMaxPhotos("passportPhotos", body.passportPhotos, PHOTO_LIMITS.passportPhotos);
-    ensureMaxPhotos("usVisaPhotos", body.usVisaPhotos, PHOTO_LIMITS.usVisaPhotos);
-    ensureMaxPhotos("prPermitCitizenshipPhotos", body.prPermitCitizenshipPhotos, PHOTO_LIMITS.prPermitCitizenshipPhotos);
-
-    // --- Country context
+    // Determine country
     const company = COMPANIES.find((c) => c.id === onboardingDoc.companyId);
     if (!company) throw new AppError(400, "Invalid company assigned to applicant");
     const isCanadian = company.countryCode === ECountryCode.CA;
     const isUS = company.countryCode === ECountryCode.US;
 
-    // --- Server-side business rules (page-4 only)
-    const employeeProvided = !!body.employeeNumber?.trim();
-    const businessProvided = !!body.businessNumber?.trim();
-    const hstProvided = !!body.hstNumber?.trim();
-    const incorporateProvided = (body.incorporatePhotos ?? []).length > 0;
-    const bankingProvided = (body.bankingInfoPhotos ?? []).length > 0;
-    const hstPhotosProvided = (body.hstPhotos ?? []).length > 0;
+    // =========================
+    // 1) Required-for-all logic
+    // =========================
+    expectCountExact(body, "passportPhotos", 2, "Passport photos");
+    expectCountRange(body, "prPermitCitizenshipPhotos", 1, 2, "PR/Permit/Citizenship photos");
 
-    const anyBusinessProvided = employeeProvided || businessProvided || hstProvided || incorporateProvided || bankingProvided || hstPhotosProvided;
-
-    const prev = appFormDoc.page4; // previous saved state
-
-    const allBusinessProvided =
-      employeeProvided &&
-      businessProvided &&
-      hstProvided &&
-      (incorporateProvided || (prev?.incorporatePhotos?.length ?? 0) > 0) &&
-      (bankingProvided || (prev?.bankingInfoPhotos?.length ?? 0) > 0) &&
-      (hstPhotosProvided || (prev?.hstPhotos?.length ?? 0) > 0);
-
-    if (anyBusinessProvided && !allBusinessProvided) {
-      throw new AppError(400, "All business section fields and files must be provided if any are.");
-    }
-
-    // ======== NEW: authoritative final-state checks (replace semantics) ========
-    const dedupeByS3Key = (arr?: IPhoto[]) => {
-      if (!Array.isArray(arr)) return [] as IPhoto[];
-      const seen = new Set<string>();
-      const out: IPhoto[] = [];
-      for (const p of arr) {
-        const k = p?.s3Key?.trim();
-        if (k && !seen.has(k)) {
-          seen.add(k);
-          out.push(p);
-        }
-      }
-      return out;
-    };
-
-    /** If PATCH provides an array, use it (after dedupe). Otherwise, use previous (after dedupe). */
-    const finalDistinctArray = (now?: IPhoto[], old?: IPhoto[]) => {
-      if (Array.isArray(now)) return dedupeByS3Key(now);
-      return dedupeByS3Key(old);
-    };
-    const finalDistinctCount = (now?: IPhoto[], old?: IPhoto[]) => finalDistinctArray(now, old).length;
-
-    // Country-specific validations using FINAL state
+    // =========================
+    // 2) Country-specific logic
+    // =========================
     if (isCanadian) {
-      // Presence requirement as before
-      const mustHave: (keyof IApplicationFormPage4)[] = ["healthCardPhotos", "passportPhotos", "usVisaPhotos", "prPermitCitizenshipPhotos"];
-      for (const field of mustHave) {
-        if (finalDistinctCount(body[field] as IPhoto[] | undefined, prev?.[field] as IPhoto[] | undefined) === 0) {
-          throw new AppError(400, `${field} required for Canadian applicants.`);
-        }
-      }
-      // Exactly two for passport & health card (FINAL arrays)
-      if (finalDistinctCount(body.passportPhotos, prev?.passportPhotos) !== 2) {
-        throw new AppError(400, "Passport bio and back photos required");
-      }
-      if (finalDistinctCount(body.healthCardPhotos, prev?.healthCardPhotos) !== 2) {
-        throw new AppError(400, "Health card front and back photos required");
-      }
+      expectCountExact(body, "healthCardPhotos", 2, "Health card photos");
+      expectCountRange(body, "usVisaPhotos", 1, 2, "US visa photos");
+
+      // Forbidden for CA
+      forbidNonEmpty(body, "medicalCertificationPhotos", "Medical certification photos");
+    } else if (isUS) {
+      expectCountRange(body, "medicalCertificationPhotos", 1, 2, "Medical certification photos");
+
+      // Forbidden for US
+      forbidNonEmpty(body, "healthCardPhotos", "Health card photos");
+      forbidNonEmpty(body, "usVisaPhotos", "US visa photos");
+    } else {
+      // In case new regions ever appear, be explicit
+      throw new AppError(400, "Unsupported applicant country for Page 4 rules.");
     }
 
-    if (isUS) {
-      const medFinal = finalDistinctCount(body.medicalCertificationPhotos, prev?.medicalCertificationPhotos);
-      if (medFinal === 0) {
-        throw new AppError(400, "Medical certificate required for US drivers");
-      }
+    // =========================
+    // 3) Business section (all-or-nothing on BODY)
+    // =========================
+    const prev = appFormDoc.page4; // keep previous to handle deletion on explicit clear
+    const bizDecision = validateBusinessAllOrNothing(body);
 
-      const passportFinal = finalDistinctCount(body.passportPhotos, prev?.passportPhotos);
-      const prFinal = finalDistinctCount(body.prPermitCitizenshipPhotos, prev?.prPermitCitizenshipPhotos);
+    // =========================
+    // 4) FAST Card section
+    // =========================
+    // Fast card remains optional. If key present in body but all fields are empty/undefined → treat as clearing.
+    const bodyHasFastCard =
+      hasKey(body, "fastCard") &&
+      body.fastCard &&
+      (isNonEmptyString(body.fastCard.fastCardNumber) || !!body.fastCard.fastCardExpiry || !!body.fastCard.fastCardFrontPhoto || !!body.fastCard.fastCardBackPhoto);
 
-      if (passportFinal === 0 && prFinal === 0) {
-        throw new AppError(400, "US drivers must provide passport or PR/citizenship photo");
-      }
-      if (passportFinal > 0 && passportFinal !== 2) {
-        throw new AppError(400, "Passport bio and back photos required");
-      }
-
-      const healthCardFinal = finalDistinctCount(body.healthCardPhotos, prev?.healthCardPhotos);
-      if (healthCardFinal > 0 && healthCardFinal !== 2) {
-        throw new AppError(400, "Health card front and back photos required");
-      }
-    }
-    // ======== END NEW ========
-
-    // ---------------------------
-    // Phase 1: write page4 only
-    // ---------------------------
+    // =========================
+    // Phase 1: write page4 only (raw body, no S3 finalize yet)
+    // =========================
     appFormDoc.set("page4", body as IApplicationFormPage4);
     await appFormDoc.validate(["page4"]);
     await appFormDoc.save({ validateBeforeSave: false });
 
-    // ---------------------------
-    // Section-clear detection (Business + Fast Card)
-    // ---------------------------
-    const emptyStr = (v?: string | null) => !v || v.trim() === "";
-    const arrLen = (a?: IPhoto[]) => (Array.isArray(a) ? a.length : 0);
-
-    const businessNowEmpty =
-      emptyStr(body.employeeNumber) &&
-      emptyStr(body.businessNumber) &&
-      emptyStr(body.hstNumber) &&
-      arrLen(body.incorporatePhotos) === 0 &&
-      arrLen(body.bankingInfoPhotos) === 0 &&
-      arrLen(body.hstPhotos) === 0;
-
-    const prevBusinessHadAny =
-      !emptyStr(prev?.employeeNumber) ||
-      !emptyStr(prev?.businessNumber) ||
-      !emptyStr(prev?.hstNumber) ||
-      arrLen(prev?.incorporatePhotos) > 0 ||
-      arrLen(prev?.bankingInfoPhotos) > 0 ||
-      arrLen(prev?.hstPhotos) > 0;
-
+    // =========================
+    // Section clear detection & hard delete (Business + Fast Card)
+    // =========================
     const keysToHardDelete: string[] = [];
     const finalizedOnly = (ks: (string | undefined)[]) => ks.filter((k): k is string => !!k && !k.startsWith(`${S3_TEMP_FOLDER}/`));
+    const collect = (arr?: IPhoto[]) => (Array.isArray(arr) ? arr.map((p) => p.s3Key).filter(Boolean) : []);
 
-    if (businessNowEmpty && prevBusinessHadAny) {
-      const collect = (arr?: IPhoto[]) => (Array.isArray(arr) ? arr.map((p) => p.s3Key).filter(Boolean) : []);
-
-      keysToHardDelete.push(...finalizedOnly(collect(prev?.incorporatePhotos)), ...finalizedOnly(collect(prev?.bankingInfoPhotos)), ...finalizedOnly(collect(prev?.hstPhotos)));
-
+    if (bizDecision.mode === "clear") {
+      if (prev) {
+        keysToHardDelete.push(...finalizedOnly(collect(prev.incorporatePhotos)), ...finalizedOnly(collect(prev.bankingInfoPhotos)), ...finalizedOnly(collect(prev.hstPhotos)));
+      }
+      // overwrite to empty in DB (already set above by body), ensure saved
       appFormDoc.set("page4.employeeNumber", "");
       appFormDoc.set("page4.businessNumber", "");
       appFormDoc.set("page4.hstNumber", "");
@@ -218,8 +211,6 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       appFormDoc.set("page4.hstPhotos", []);
       await appFormDoc.save({ validateBeforeSave: false });
     }
-
-    const bodyHasFastCard = !!body.fastCard && (!emptyStr(body.fastCard.fastCardNumber) || !!body.fastCard.fastCardExpiry || !!body.fastCard.fastCardFrontPhoto || !!body.fastCard.fastCardBackPhoto);
 
     if (!bodyHasFastCard && prev?.fastCard) {
       keysToHardDelete.push(...finalizedOnly([prev.fastCard.fastCardFrontPhoto?.s3Key, prev.fastCard.fastCardBackPhoto?.s3Key]));
@@ -235,9 +226,9 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       }
     }
 
-    // ---------------------------
+    // =========================
     // Phase 2: finalize S3 files
-    // ---------------------------
+    // =========================
     const page4Final: IApplicationFormPage4 = JSON.parse(JSON.stringify(appFormDoc.page4)) as IApplicationFormPage4;
 
     page4Final.hstPhotos = (await finalizeVector(page4Final.hstPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.HST_PHOTOS))) as IPhoto[];
@@ -256,9 +247,9 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       page4Final.fastCard.fastCardBackPhoto = await finalizePhoto(page4Final.fastCard.fastCardBackPhoto, buildFinalDest(onboardingDoc.id, ES3Folder.FAST_CARD_PHOTOS));
     }
 
-    // ---------------------------
+    // =========================
     // Deletions: remove finalized keys that were dropped by the user
-    // ---------------------------
+    // =========================
     function collectAllKeys(p?: IApplicationFormPage4): string[] {
       if (!p) return [];
       const keys: string[] = [];
@@ -294,9 +285,9 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       }
     }
 
-    // ---------------------------
+    // =========================
     // Phase 3: persist finalized page4 only
-    // ---------------------------
+    // =========================
     appFormDoc.set("page4", page4Final);
     await appFormDoc.validate(["page4"]);
     await appFormDoc.save({ validateBeforeSave: false });

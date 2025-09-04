@@ -1,6 +1,7 @@
 "use client";
 
-import { CanadianCompanyId, getCompanyById } from "@/constants/companies";
+import { getCompanyById, ECompanyId } from "@/constants/companies";
+import { getPoliciesPdfsForCompany } from "@/constants/policiesConsentForms";
 import { IPoliciesConsents } from "@/types/policiesConsents.types";
 import { EStepPath, IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
 import { ES3Folder } from "@/types/aws.types";
@@ -13,11 +14,9 @@ import PoliciesPdfGrid from "./components/PoliciesPdfGrid";
 import PoliciesConsentCheckbox from "./components/PoliciesConsentCheckbox";
 import PoliciesSubmitSection from "./components/PoliciesSubmitSection";
 import PoliciesPdfViewerModal from "./components/PoliciesPdfViewerModal";
-import { CANADIAN_HIRING_PDFS, CANADIAN_PDFS, US_PDFS } from "@/constants/policiesConsentsPdfs";
-import { ECountryCode } from "@/types/shared.types";
 import useMounted from "@/hooks/useMounted";
 
-// NEW: encapsulated signature component
+// Self-contained signature component
 import SignatureBox, { type SignatureBoxHandle } from "@/components/react-canvas/SignatureBox";
 import { buildOnboardingNextStepPath } from "@/lib/utils/onboardingUtils";
 
@@ -31,26 +30,22 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
   const router = useRouter();
   const { t } = useTranslation("common");
 
-  const company = getCompanyById(onboardingContext.companyId);
-  const isCanadianApplicant = company?.countryCode === ECountryCode.CA;
-  const pdfList = isCanadianApplicant ? CANADIAN_PDFS : US_PDFS;
-  const hiringPdf = isCanadianApplicant ? CANADIAN_HIRING_PDFS[company.id as CanadianCompanyId] : null;
-
+  const company = getCompanyById(onboardingContext.companyId as ECompanyId);
   const id = onboardingContext.id;
 
   const [modalUrl, setModalUrl] = useState<string | null>(null);
   const [sendPoliciesByEmail, setSendPoliciesByEmail] = useState<boolean>(policiesConsents.sendPoliciesByEmail || false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Keep initial values for "no changes? just navigate forward"
+  // initial values
   const initialSignature = policiesConsents.signature as UploadResult | undefined;
   const initialSendByEmail = policiesConsents.sendPoliciesByEmail || false;
 
-  // Ref for imperative API
+  // Signature ref
   const sigRef = useRef<SignatureBoxHandle>(null);
 
   const handleSubmit = async () => {
-    // If neither signature nor email choice changed, jump forward.
+    // If neither signature nor email choice changed, jump forward
     const sigDirty = sigRef.current?.isDirty() ?? false;
     if (!sigDirty && sendPoliciesByEmail === initialSendByEmail) {
       router.push(buildOnboardingNextStepPath(onboardingContext, EStepPath.POLICIES_CONSENTS));
@@ -59,11 +54,10 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
 
     setSubmitting(true);
     try {
-      // Ensure we have an uploaded signature if the user drew one.
       const finalSig = await sigRef.current?.ensureUploaded();
 
       if (!finalSig?.s3Key || !finalSig?.url) {
-        // The component already shows an error message if needed.
+        // SignatureBox shows its own error; nothing to do here
         setSubmitting(false);
         return;
       }
@@ -85,19 +79,20 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
       router.push(buildOnboardingNextStepPath(onboardingContext, EStepPath.POLICIES_CONSENTS));
     } catch (error: any) {
       console.error("Submit failed", error);
-      // The SignatureBox already surfaces its own errors for signature;
-      // we only need to surface request errors here:
       alert(error?.message || "Submission failed.");
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (!mounted) return null;
+  if (!mounted || !company) return null;
+
+  // 1 helper → the exact ordered list for this company (policy → region → hiring)
+  const pdfs = getPoliciesPdfsForCompany("ssp-us" as ECompanyId);
 
   return (
     <div className="space-y-6">
-      <PoliciesPdfGrid pdfs={[hiringPdf!, ...pdfList].filter(Boolean)} onOpenModal={setModalUrl} />
+      <PoliciesPdfGrid pdfs={pdfs} onOpenModal={setModalUrl} />
 
       <div className="rounded-xl bg-gray-50/60 ring-1 ring-gray-100 p-4">
         <p className="text-sm text-gray-700 text-center">
@@ -108,7 +103,6 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
         </p>
       </div>
 
-      {/* NEW: Self-contained signature box (draw + upload + clear + temp cleanup) */}
       <SignatureBox
         ref={sigRef}
         trackerId={id}

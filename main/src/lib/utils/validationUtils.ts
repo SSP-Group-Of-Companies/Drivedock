@@ -26,10 +26,7 @@ import type { IEmploymentEntry } from "@/types/applicationForm.types";
  * Validate postal/ZIP code against the selected company's country.
  * Returns null if valid; otherwise an error string.
  */
-export function validatePostalCodeByCompany(
-  postalCode: string,
-  companyId: string
-): string | null {
+export function validatePostalCodeByCompany(postalCode: string, companyId: string): string | null {
   const company = COMPANIES.find((c) => c.id === companyId);
   if (!company) return "Invalid companyId provided.";
 
@@ -97,9 +94,7 @@ export function validateImageFile(
 /**
  * Basic format validators used across pages.
  */
-export function isValidSIN(
-  sinInput: string | number | undefined
-): sinInput is string {
+export function isValidSIN(sinInput: string | number | undefined): sinInput is string {
   if (!sinInput) return false;
   const sin = String(sinInput).trim();
   return /^\d{9}$/.test(sin);
@@ -152,9 +147,7 @@ export function isValidDOB(dobInput: string | Date): boolean {
  *
  * Message strings align with applicationFormPage2.schema.ts mappings.
  */
-export function validateEmploymentHistory(
-  employments: IEmploymentEntry[]
-): string | null {
+export function validateEmploymentHistory(employments: IEmploymentEntry[]): string | null {
   if (!Array.isArray(employments) || employments.length === 0) {
     return "At least one employment entry is required.";
   }
@@ -164,9 +157,7 @@ export function validateEmploymentHistory(
   }
 
   // Sort by from date DESC (most recent first)
-  const sorted = [...employments].sort(
-    (a, b) => new Date(b.from).getTime() - new Date(a.from).getTime()
-  );
+  const sorted = [...employments].sort((a, b) => new Date(b.from).getTime() - new Date(a.from).getTime());
 
   let totalDays = 0;
 
@@ -198,10 +189,7 @@ export function validateEmploymentHistory(
 
       // Gap check (≥ 30d requires explanation on the later job)
       const gapDays = differenceInDays(from, nextTo);
-      if (
-        gapDays >= 30 &&
-        (!curr.gapExplanationBefore || curr.gapExplanationBefore.trim() === "")
-      ) {
+      if (gapDays >= 30 && (!curr.gapExplanationBefore || curr.gapExplanationBefore.trim() === "")) {
         return `Missing gap explanation before employment at ${curr.supervisorName}`;
       }
     }
@@ -212,7 +200,7 @@ export function validateEmploymentHistory(
   const DAYS_10Y = 3650;
 
   if (totalDays >= DAYS_2Y && totalDays <= DAYS_2Y_PLUS_30) {
-    return null; // ✅ exactly 2y or up to +30d buffer
+    return null; // exactly 2y or up to +30d buffer
   }
 
   if (totalDays > DAYS_2Y_PLUS_30 && totalDays < DAYS_10Y) {
@@ -225,7 +213,7 @@ export function validateEmploymentHistory(
   }
 
   if (totalDays >= DAYS_10Y) {
-    return null; // ✅ 10+ years
+    return null; // 10+ years
   }
 
   return "Employment history validation failed.";

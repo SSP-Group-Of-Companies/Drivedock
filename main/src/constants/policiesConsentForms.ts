@@ -1,47 +1,24 @@
-const ROOT_POLICIES_PATH = "/docs/policies-consent-forms";
+import { ECompanyId } from "./companies";
+import { COMPANY_POLICY_PDFS, CANADIAN_COMMON_FORMS, US_COMMON_FORMS, CANADIAN_HIRING_PDFS, US_HIRING_PDF, getPoliciesPdfsForCompany } from "./policiesConsentsPdfs";
 
-export const policiesConsentFormsUS = [
-  {
-    fileName: "Company Driver Policy",
-    path: `${ROOT_POLICIES_PATH}/us/company-driver-policy-1.pdf`,
-  },
-  {
-    fileName: "Personal Consent Form (CFROI - US Drivers)",
-    path: `${ROOT_POLICIES_PATH}/us/personal-consent-form-cfroi-us-drivers-1.pdf`,
-  },
-  {
-    fileName: "PSP Authorization Form (US Drivers)",
-    path: `${ROOT_POLICIES_PATH}/us/psp-authorization-form-us-drivers-1.pdf`,
-  },
-  {
-    fileName: "Road Test Certificate (US Drivers)",
-    path: `${ROOT_POLICIES_PATH}/us/road-test-certificate-us-drivers-1.pdf`,
-  },
-];
+/**
+ * Keep these exports for any places already importing them,
+ * but standardize shape to { label, path } for consistency.
+ */
 
-export const policiesConsentFormsCA = [
-  {
-    fileName: "Company Driver Policy",
-    path: `${ROOT_POLICIES_PATH}/ca/company-driver-policy.pdf`,
-  },
-  {
-    fileName: "ISB Consent Form",
-    path: `${ROOT_POLICIES_PATH}/ca/isb-consent-form-1.pdf`,
-  },
-  {
-    fileName: "Personal Consent Form (CFROI)",
-    path: `${ROOT_POLICIES_PATH}/ca/personal-consent-form-cfroi-1.pdf`,
-  },
-  {
-    fileName: "PSP Authorization Form",
-    path: `${ROOT_POLICIES_PATH}/ca/psp-authorization-form-1.pdf`,
-  },
-  {
-    fileName: "Road Test Certificate",
-    path: `${ROOT_POLICIES_PATH}/ca/road-test-certificate-1.pdf`,
-  },
-  {
-    fileName: "SSP Hiring Application Form",
-    path: `${ROOT_POLICIES_PATH}/ca/ssp-hiring-application-form.pdf`,
-  },
-];
+// Region-level bundles (policy not included here on purpose)
+export const policiesConsentFormsUS: { label: string; path: string }[] = [...US_COMMON_FORMS, US_HIRING_PDF];
+export const policiesConsentFormsCA: { label: string; path: string }[] = [...CANADIAN_COMMON_FORMS];
+
+// Per-company single lookups
+export const companyPolicyByCompany: Record<ECompanyId, { label: string; path: string }> = COMPANY_POLICY_PDFS;
+export const hiringAppByCompany: Partial<Record<ECompanyId, { label: string; path: string }>> = {
+  ...CANADIAN_HIRING_PDFS,
+  [ECompanyId.SSP_US]: US_HIRING_PDF,
+};
+
+/**
+ * Preferred helper to build the complete, ordered list for the UI.
+ * (Company Policy → Region Common → Company Hiring)
+ */
+export { getPoliciesPdfsForCompany };
