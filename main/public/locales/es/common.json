@@ -670,7 +670,18 @@
     "error": "No se encontró una solicitud para ese SIN.",
     "cancel": "Cancelar",
     "continue": "Continuar",
-    "loading": "Cargando..."
+    "loading": "Cargando...",
+    "loadingCta": "Reanudando...",
+    **
+    "validation": {
+      "enterSin": "Ingresa tu SIN",
+      "sinLength": "El SIN debe tener exactamente 9 dígitos"
+    },
+    "errors": {
+      "invalidResponse": "Respuesta no válida del servidor",
+      "generic": "No se pudo reanudar la solicitud. Inténtalo de nuevo.",
+      "resumeInfoMissing": "Falta información de reanudación"
+    }
   },
 
   "infoPopUp": {

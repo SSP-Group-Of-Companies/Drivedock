@@ -51,12 +51,12 @@ export default function ResumeModal({ isOpen, onClose }: ResumeModalProps) {
     // Basic client-side validations
     if (!cleanedSin) {
       setStatus("error");
-      setErrorMessage("Please enter your SIN");
+      setErrorMessage(t("resume.validation.enterSin"));
       return;
     }
     if (cleanedSin.length !== 9) {
       setStatus("error");
-      setErrorMessage("SIN must be exactly 9 digits");
+      setErrorMessage(t("resume.validation.sinLength"));
       return;
     }
 
@@ -82,24 +82,26 @@ export default function ResumeModal({ isOpen, onClose }: ResumeModalProps) {
       } catch {
         // If response isn't JSON, force an error path
         if (!res.ok) {
-          throw new Error("Invalid response from server");
+          throw new Error(t("resume.errors.invalidResponse"));
         }
       }
 
       if (!res.ok) {
-        const serverMsg = data?.message || data?.error || "Could not resume application. Please try again.";
+        const serverMsg =
+          data?.message || data?.error || t("resume.errors.generic");
         throw new Error(serverMsg);
       }
 
       const trackerContext = data?.data?.onboardingContext;
       const isCompleted = data?.data?.isCompleted;
-      const currentStep: EStepPath | undefined = trackerContext?.status?.currentStep;
+      const currentStep: EStepPath | undefined =
+        trackerContext?.status?.currentStep;
 
       if (trackerContext) {
         setStatus("success");
         startTransition(() => {
           setTracker(trackerContext);
-          
+
           // If onboarding is completed, redirect to completed page
           if (isCompleted) {
             router.replace(`/onboarding/${trackerContext.id}/completed`);
@@ -107,18 +109,20 @@ export default function ResumeModal({ isOpen, onClose }: ResumeModalProps) {
             // Otherwise, redirect to current step
             router.replace(buildOnboardingStepPath(trackerContext));
           } else {
-            throw new Error("Resume info missing");
+            throw new Error(t("resume.errors.resumeInfoMissing"));
           }
         });
       } else {
-        throw new Error("Resume info missing");
+        throw new Error(t("resume.errors.resumeInfoMissing"));
       }
     } catch (err: unknown) {
       // Ignore abort errors
       if ((err as any)?.name === "AbortError") return;
 
       setStatus("error");
-      setErrorMessage(err instanceof Error ? err.message : "Could not resume application. Please try again.");
+      setErrorMessage(
+        err instanceof Error ? err.message : t("resume.errors.generic")
+      );
     }
   };
 
@@ -129,7 +133,15 @@ export default function ResumeModal({ isOpen, onClose }: ResumeModalProps) {
     <Transition show={isOpen} as={Fragment}>
       <Dialog as="div" className="relative z-50" onClose={onClose}>
         {/* Backdrop overlay */}
-        <Transition.Child as={Fragment} enter="ease-out duration-200" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-150" leaveFrom="opacity-100" leaveTo="opacity-0">
+        <Transition.Child
+          as={Fragment}
+          enter="ease-out duration-200"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="ease-in duration-150"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+        >
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
         </Transition.Child>
 
@@ -146,8 +158,12 @@ export default function ResumeModal({ isOpen, onClose }: ResumeModalProps) {
           >
             <Dialog.Panel className="w-full max-w-md transform rounded-xl bg-white p-6 shadow-xl transition-all">
               {/* Title & description */}
-              <Dialog.Title className="text-lg font-semibold text-gray-900 mb-2">{t("resume.title")}</Dialog.Title>
-              <Dialog.Description className="text-sm text-gray-600 mb-4">{t("resume.description")}</Dialog.Description>
+              <Dialog.Title className="text-lg font-semibold text-gray-900 mb-2">
+                {t("resume.title")}
+              </Dialog.Title>
+              <Dialog.Description className="text-sm text-gray-600 mb-4">
+                {t("resume.description")}
+              </Dialog.Description>
 
               {/* SIN input field */}
               <input

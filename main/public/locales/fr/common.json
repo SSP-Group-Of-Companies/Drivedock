@@ -671,7 +671,17 @@
     "error": "Aucune candidature trouvée pour ce NAS.",
     "cancel": "Annuler",
     "continue": "Continuer",
-    "loading": "Chargement..."
+    "loading": "Chargement...",
+    "loadingCta": "Reprise en cours...",
+    "validation": {
+      "enterSin": "Veuillez saisir votre NAS",
+      "sinLength": "Le NAS doit comporter exactement 9 chiffres"
+    },
+    "errors": {
+      "invalidResponse": "Réponse invalide du serveur",
+      "generic": "Impossible de reprendre la candidature. Veuillez réessayer.",
+      "resumeInfoMissing": "Informations de reprise manquantes"
+    }
   },
 
   "infoPopUp": {

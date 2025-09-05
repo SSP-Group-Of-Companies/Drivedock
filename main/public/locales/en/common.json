@@ -681,7 +681,17 @@
     "error": "No application found for that SIN.",
     "cancel": "Cancel",
     "continue": "Continue",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "loadingCta": "Resuming...",
+    "validation": {
+      "enterSin": "Please enter your SIN",
+      "sinLength": "SIN must be exactly 9 digits"
+    },
+    "errors": {
+      "invalidResponse": "Invalid response from server",
+      "generic": "Could not resume application. Please try again.",
+      "resumeInfoMissing": "Resume info missing"
+    }
   },
 
   "infoPopUp": {
