@@ -1,11 +1,10 @@
 // src/lib/assets/safetyAdmins/safetyAdminsignature-s.ts
 
 export enum ESafetyAdminId {
-  AVERY_COLLINS = "avery-collins",
-  JORDAN_LEE = "jordan-lee",
-  PRIYA_PATEL = "priya-patel",
-  MIGUEL_ALVAREZ = "miguel-alvarez",
-  CHEN_WU = "chen-wu",
+  AMAN_JOSUN = "aman_josun",
+  BALKARAN_DHILLON = "balkaran_dhillon",
+  GURINDER_MANN = "gurinder_mann",
+  KIRAN_SANDHU = "kiran_sandhu",
 }
 
 export interface SafetyAdmin {
@@ -16,29 +15,24 @@ export interface SafetyAdmin {
 
 export const SAFETY_ADMINS: SafetyAdmin[] = [
   {
-    id: ESafetyAdminId.AVERY_COLLINS,
-    name: "Avery Collins",
-    signature: "lib/assets/safetyAdmins/signatures/signature-avery-collins.png",
+    id: ESafetyAdminId.AMAN_JOSUN,
+    name: "Aman Josun",
+    signature: "lib/assets/safetyAdmins/signatures/signature-aman-josun.png",
   },
   {
-    id: ESafetyAdminId.JORDAN_LEE,
-    name: "Jordan Lee",
-    signature: "lib/assets/safetyAdmins/signatures/signature-jordan-lee.png",
+    id: ESafetyAdminId.BALKARAN_DHILLON,
+    name: "Balkaran Dhillon",
+    signature: "lib/assets/safetyAdmins/signatures/signature-balkaran-dhillon.png",
   },
   {
-    id: ESafetyAdminId.PRIYA_PATEL,
-    name: "Priya Patel",
-    signature: "lib/assets/safetyAdmins/signatures/signature-priya-patel.png",
+    id: ESafetyAdminId.GURINDER_MANN,
+    name: "Gurinder Mann",
+    signature: "lib/assets/safetyAdmins/signatures/signature-gurinder-mann.png",
   },
   {
-    id: ESafetyAdminId.MIGUEL_ALVAREZ,
-    name: "Miguel Alvarez",
-    signature: "lib/assets/safetyAdmins/signatures/signature-miguel-alvarez.png",
-  },
-  {
-    id: ESafetyAdminId.CHEN_WU,
-    name: "Chen Wu",
-    signature: "lib/assets/safetyAdmins/signatures/signature-chen-wu.png",
+    id: ESafetyAdminId.KIRAN_SANDHU,
+    name: "kiran Sandhu",
+    signature: "lib/assets/safetyAdmins/signatures/signature-kiran-sandhu.png",
   },
 ];
 
