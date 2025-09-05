@@ -122,9 +122,11 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
     // Base context
     const onboardingContext = buildTrackerContext(onboardingDoc, null, true);
 
-    // Enrich with itemSummary
+    // Enrich with itemSummary and termination data
     const enrichedContext = {
       ...onboardingContext,
+      terminated: onboardingDoc.terminated,
+      terminationType: onboardingDoc.terminationType,
       itemSummary: {
         ...(onboardingContext as any).itemSummary,
         ...(driverName || driverEmail ? { driverName, driverEmail } : undefined),

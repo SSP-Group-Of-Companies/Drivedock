@@ -18,6 +18,7 @@ export type DashboardOnboardingItem = Pick<
   | "createdAt"
   | "updatedAt"
   | "terminated"
+  | "terminationType"
   | "resumeExpiresAt"
   | "forms"
   | "needsFlatbedTraining"

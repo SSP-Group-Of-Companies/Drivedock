@@ -1,12 +1,12 @@
 "use server";
 
 /**
- * DriveDock Onboarding — Drug Test
+ * DriveDock Onboarding — Completed
  * Server Wrapper
  *
  * Responsibilities
- * - Fetch saved Drug Test data + onboardingContext by tracker ID
- * - Pass payload to the client component
+ * - Fetch onboarding context to verify completion status
+ * - Pass data to the client component
  *
  * Implementation Notes
  * - Uses fetchServerPageData (server-only) for consistent error handling and cookie forwarding (Vercel preview safe)
@@ -14,35 +14,27 @@
  */
 
 import "server-only";
-import DrugTestClient, { DrugTestClientProps } from "./DrugTestClient";
+import CompletedOnboardingClient, { CompletedOnboardingClientProps } from "./CompletedOnboardingClient";
 import { resolveInternalBaseUrl } from "@/lib/utils/urlHelper.server";
 import { fetchServerPageData } from "@/lib/utils/fetchServerPageData";
-import { checkCompletionAndReturnRedirect } from "@/lib/utils/completionCheck";
-import { redirect } from "next/navigation";
 
-export default async function OnboardingDrugTestPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function CompletedOnboardingPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: trackerId } = await params;
-
-  // Check if onboarding is completed and redirect if needed
-  const redirectPath = await checkCompletionAndReturnRedirect(trackerId);
-  if (redirectPath) {
-    redirect(redirectPath);
-  }
 
   // Build same-origin absolute URL (dev + Vercel preview safe)
   const base = await resolveInternalBaseUrl();
-  const url = `${base}/api/v1/onboarding/${trackerId}/drug-test`;
+  const url = `${base}/api/v1/onboarding/${trackerId}/completion-status`;
 
   // Unified fetch pattern (handles cookies/redirects/JSON + unwraps { data })
-  const { data, error } = await fetchServerPageData<DrugTestClientProps>(url);
+  const { data, error } = await fetchServerPageData<CompletedOnboardingClientProps>(url);
 
   if (error) {
     return <div className="p-6 text-center text-red-600 font-semibold">{error}</div>;
   }
 
-  if (!data?.drugTest || !data?.onboardingContext) {
+  if (!data?.onboardingContext) {
     return <div className="p-6 text-center text-red-600 font-semibold">Failed to load data. Please try again later.</div>;
   }
 
-  return <DrugTestClient drugTest={data.drugTest} onboardingContext={data.onboardingContext} />;
+  return <CompletedOnboardingClient onboardingContext={data.onboardingContext} />;
 }

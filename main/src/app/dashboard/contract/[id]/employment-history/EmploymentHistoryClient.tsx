@@ -11,6 +11,7 @@ import { type EmploymentHistoryResponse } from "@/app/api/v1/admin/onboarding/[i
 import { validateEmployments } from "@/app/api/v1/admin/onboarding/[id]/application-form/employment-history/employmentValidation";
 import { EmploymentForm } from "./components";
 import StepNotCompletedMessage from "../components/StepNotCompletedMessage";
+import AdminEmploymentQuestionsSection from "./components/AdminEmploymentQuestionsSection";
 
 
 // Helper function for API calls
@@ -146,6 +147,25 @@ export default function EmploymentHistoryClient({
           staged.employments ||
           employmentData?.data.employmentHistory.employments ||
           [],
+        // Include employment questions data
+        workedWithCompanyBefore: staged.workedWithCompanyBefore !== undefined 
+          ? staged.workedWithCompanyBefore 
+          : employmentData?.data.employmentHistory.workedWithCompanyBefore,
+        reasonForLeavingCompany: staged.reasonForLeavingCompany !== undefined 
+          ? staged.reasonForLeavingCompany 
+          : employmentData?.data.employmentHistory.reasonForLeavingCompany,
+        previousWorkDetails: staged.previousWorkDetails !== undefined 
+          ? staged.previousWorkDetails 
+          : employmentData?.data.employmentHistory.previousWorkDetails,
+        currentlyEmployed: staged.currentlyEmployed !== undefined 
+          ? staged.currentlyEmployed 
+          : employmentData?.data.employmentHistory.currentlyEmployed,
+        referredBy: staged.referredBy !== undefined 
+          ? staged.referredBy 
+          : employmentData?.data.employmentHistory.referredBy,
+        expectedRateOfPay: staged.expectedRateOfPay !== undefined 
+          ? staged.expectedRateOfPay 
+          : employmentData?.data.employmentHistory.expectedRateOfPay,
       };
 
 
@@ -336,15 +356,25 @@ export default function EmploymentHistoryClient({
             <p className="font-medium">Error loading employment history:</p>
             <p className="text-sm">{error.message}</p>
           </div>
-        ) : employmentData?.data?.employmentHistory?.employments ? (
-          <EmploymentForm
-            data={{
-              employments: employmentData.data.employmentHistory.employments,
-            }}
-            isEditMode={isEditMode}
-            staged={staged}
-            onStage={setStaged}
-          />
+                ) : employmentData?.data?.employmentHistory?.employments ? (
+          <>
+            <AdminEmploymentQuestionsSection
+              data={employmentData.data.employmentHistory}
+              isEditMode={isEditMode}
+              staged={staged}
+              onStage={setStaged}
+            />
+            <div className="mt-8">
+              <EmploymentForm
+                data={{
+                  employments: employmentData.data.employmentHistory.employments,
+                }}
+                isEditMode={isEditMode}
+                staged={staged}
+                onStage={setStaged}
+              />
+            </div>
+          </>
         ) : (
           <div className="text-center py-8">
             <span

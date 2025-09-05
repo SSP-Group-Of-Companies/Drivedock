@@ -1,11 +1,11 @@
 "use server";
 
 /**
- * DriveDock Onboarding — Drug Test
+ * DriveDock Onboarding — Flatbed Training
  * Server Wrapper
  *
  * Responsibilities
- * - Fetch saved Drug Test data + onboardingContext by tracker ID
+ * - Fetch saved Flatbed Training data + onboardingContext by tracker ID
  * - Pass payload to the client component
  *
  * Implementation Notes
@@ -14,13 +14,13 @@
  */
 
 import "server-only";
-import DrugTestClient, { DrugTestClientProps } from "./DrugTestClient";
+import FlatbedTrainingClient, { FlatbedTrainingClientProps } from "./FlatbedTrainingClient";
 import { resolveInternalBaseUrl } from "@/lib/utils/urlHelper.server";
 import { fetchServerPageData } from "@/lib/utils/fetchServerPageData";
 import { checkCompletionAndReturnRedirect } from "@/lib/utils/completionCheck";
 import { redirect } from "next/navigation";
 
-export default async function OnboardingDrugTestPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function OnboardingFlatbedTrainingPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: trackerId } = await params;
 
   // Check if onboarding is completed and redirect if needed
@@ -31,18 +31,18 @@ export default async function OnboardingDrugTestPage({ params }: { params: Promi
 
   // Build same-origin absolute URL (dev + Vercel preview safe)
   const base = await resolveInternalBaseUrl();
-  const url = `${base}/api/v1/onboarding/${trackerId}/drug-test`;
+  const url = `${base}/api/v1/onboarding/${trackerId}/flatbed-training`;
 
   // Unified fetch pattern (handles cookies/redirects/JSON + unwraps { data })
-  const { data, error } = await fetchServerPageData<DrugTestClientProps>(url);
+  const { data, error } = await fetchServerPageData<FlatbedTrainingClientProps>(url);
 
   if (error) {
     return <div className="p-6 text-center text-red-600 font-semibold">{error}</div>;
   }
 
-  if (!data?.drugTest || !data?.onboardingContext) {
+  if (!data?.flatbedTraining || !data?.onboardingContext) {
     return <div className="p-6 text-center text-red-600 font-semibold">Failed to load data. Please try again later.</div>;
   }
 
-  return <DrugTestClient drugTest={data.drugTest} onboardingContext={data.onboardingContext} />;
+  return <FlatbedTrainingClient flatbedTraining={data.flatbedTraining} onboardingContext={data.onboardingContext} />;
 }

@@ -33,6 +33,9 @@ export default function OnboardingLayoutClientShell({
   const [showModal, setShowModal] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
+  // Check if we're on the completed page
+  const isCompletedPage = pathname.includes('/completed');
+
   // Back navigation: use ctx (id + needsFlatbedTraining) and the current pathname
   const handleBackClick = useCallback(() => {
     const trackerId = ctx?.id || "";
@@ -76,7 +79,7 @@ export default function OnboardingLayoutClientShell({
                 </div>
 
                 <div className="flex-1 flex justify-center items-center">
-                  <FormWizardNav />
+                  <FormWizardNav isCompletedPage={isCompletedPage} />
                 </div>
 
                 <div className="flex items-center gap-2 ml-auto h-full">
@@ -114,7 +117,7 @@ export default function OnboardingLayoutClientShell({
                 </div>
 
                 <div className="flex justify-center">
-                  <FormWizardNav />
+                  <FormWizardNav isCompletedPage={isCompletedPage} />
                 </div>
               </div>
             </div>
@@ -125,14 +128,16 @@ export default function OnboardingLayoutClientShell({
       {/* Main body */}
       <main className="relative min-h-[calc(100vh-120px)] bg-gradient-to-b from-slate-50 via-sky-100 to-sky-200 px-4 py-6 sm:px-8 flex items-center justify-center">
         <div className="max-w-3xl mx-auto bg-white p-6 rounded-2xl shadow-lg space-y-6 relative w-full">
-          {/* Info icon */}
-          <button
-            onClick={() => setShowModal(true)}
-            title={t("wizard.infoTitle")}
-            className="absolute top-4 right-4 z-20 ml-2 flex-shrink-0 sm:ml-4 bg-white/80 rounded-full p-1 shadow hover:bg-white"
-          >
-            <AlertCircle className="text-gray-400 hover:text-gray-600 w-5 h-5" />
-          </button>
+          {/* Info icon - hidden on completed page */}
+          {!isCompletedPage && (
+            <button
+              onClick={() => setShowModal(true)}
+              title={t("wizard.infoTitle")}
+              className="absolute top-4 right-4 z-20 ml-2 flex-shrink-0 sm:ml-4 bg-white/80 rounded-full p-1 shadow hover:bg-white"
+            >
+              <AlertCircle className="text-gray-400 hover:text-gray-600 w-5 h-5" />
+            </button>
+          )}
 
           {/* Info modal */}
           <AnimatePresence>
@@ -225,14 +230,17 @@ export default function OnboardingLayoutClientShell({
 
           {/* Header + wizard */}
           <CompanyLogoHeader logoOnly onboardingContext={ctx} />
-          <FormWizardNav />
+          <FormWizardNav isCompletedPage={isCompletedPage} />
 
-          <div className="text-center">
-            <h1 className="text-xl font-bold text-gray-800">
-              {t(`form.step${titleStep}.title`)}
-            </h1>
-            <p className="text-sm text-gray-600">{t("form.subtitle")}</p>
-          </div>
+          {/* Title and subtitle - hidden on completed page */}
+          {!isCompletedPage && (
+            <div className="text-center">
+              <h1 className="text-xl font-bold text-gray-800">
+                {t(`form.step${titleStep}.title`)}
+              </h1>
+              <p className="text-sm text-gray-600">{t("form.subtitle")}</p>
+            </div>
+          )}
 
           {/* Page content */}
           {children}

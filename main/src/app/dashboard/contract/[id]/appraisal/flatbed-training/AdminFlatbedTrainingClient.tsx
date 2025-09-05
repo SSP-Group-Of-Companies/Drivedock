@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 
 import type { IFlatbedTraining } from "@/types/flatbedTraining.types";
 import type { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
+import { useEditMode } from "../../components/EditModeContext";
 
 type Props = {
   trackerId: string;
@@ -16,6 +17,7 @@ type Props = {
 export default function AdminFlatbedTrainingClient({ trackerId: trackerIdFromProps, onboardingContext, flatbedTraining }: Props) {
   const { id: trackerId } = useParams<{ id: string }>();
   const idToUse = trackerId ?? trackerIdFromProps;
+  const { isEditMode } = useEditMode();
 
   const applicable = Boolean(onboardingContext?.needsFlatbedTraining);
   const alreadyCompleted = Boolean(flatbedTraining?.completed);
@@ -43,7 +45,7 @@ export default function AdminFlatbedTrainingClient({ trackerId: trackerIdFromPro
   }, [completed]);
 
   function toggleSwitch() {
-    if (completed || busy) return;
+    if (completed || busy || !isEditMode) return;
     setErr(null);
     setInfo(null);
     setSwitchOn((v) => !v);
@@ -130,24 +132,37 @@ export default function AdminFlatbedTrainingClient({ trackerId: trackerIdFromPro
               <div className="space-y-0.5">
                 <div className="text-sm font-medium">Completed</div>
                 <div className="text-xs" style={{ color: "var(--color-on-surface-variant)" }}>
-                  {completed ? "Already completed — further changes are disabled." : "Turn on to confirm readiness, then click Complete."}
+                  {completed 
+                    ? "Already completed — further changes are disabled." 
+                    : !isEditMode 
+                    ? "Enable edit mode to toggle completion status."
+                    : "Turn on to confirm readiness, then click Complete."
+                  }
                 </div>
               </div>
 
-              {/* Switch (accessible); locked when already completed */}
+              {/* Switch (accessible); locked when already completed or edit mode is off */}
               <button
                 type="button"
                 role="switch"
                 aria-checked={switchOn}
-                aria-disabled={completed || busy}
+                aria-disabled={completed || busy || !isEditMode}
                 onClick={toggleSwitch}
-                disabled={completed || busy}
+                disabled={completed || busy || !isEditMode}
                 className="relative inline-flex h-7 w-12 items-center rounded-full transition-colors"
                 style={{
                   background: switchOn ? "var(--color-primary)" : "var(--color-outline-variant)",
-                  opacity: completed ? 0.7 : 1,
+                  opacity: completed || !isEditMode ? 0.7 : 1,
                 }}
-                title={completed ? "Flatbed training already completed" : switchOn ? "Turn off" : "Turn on"}
+                title={
+                  completed 
+                    ? "Flatbed training already completed" 
+                    : !isEditMode 
+                    ? "Edit mode must be enabled to toggle"
+                    : switchOn 
+                    ? "Turn off" 
+                    : "Turn on"
+                }
               >
                 <span
                   className="inline-block h-5 w-5 transform rounded-full bg-white transition-transform"
@@ -159,8 +174,8 @@ export default function AdminFlatbedTrainingClient({ trackerId: trackerIdFromPro
               </button>
             </div>
 
-            {/* Action button appears only when applicable, not completed, and switch ON */}
-            {!completed && switchOn && (
+            {/* Action button appears only when applicable, not completed, switch ON, and edit mode is ON */}
+            {!completed && switchOn && isEditMode && (
               <div className="mt-3">
                 <button
                   type="button"

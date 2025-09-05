@@ -47,8 +47,8 @@ export function useOnboardingMutations() {
   }
 
   const terminate = useMutation({
-    mutationFn: async (payload: { id: string; signal?: AbortSignal }) =>
-      terminateTracker(payload.id, payload.signal),
+    mutationFn: async (payload: { id: string; terminationType: "resigned" | "terminated"; signal?: AbortSignal }) =>
+      terminateTracker(payload.id, payload.terminationType, payload.signal),
 
     onMutate: async ({ id }) => {
       // Avoid clobbering optimistic state with any in-flight refetches

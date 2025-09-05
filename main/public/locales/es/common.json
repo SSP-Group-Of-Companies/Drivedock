@@ -451,6 +451,25 @@
         "continueButton": "Siguiente"
       }
     },
+
+    "step7": {
+      "title": "Entrenamiento de Plataforma",
+      "instructions": {
+        "header": "Has llegado a la etapa de Entrenamiento de Plataforma del proceso de solicitud.",
+        "contactSafety": "Habla con el departamento de Seguridad para comenzar tu entrenamiento de plataforma.",
+        "passMessage": "Si apruebas: pasarás al siguiente paso de tu proceso de incorporación.",
+        "failMessage": "Si no apruebas: se decidirá si proporcionarte capacitación adicional o dar por terminada tu solicitud.",
+        "note": "Nota: Este entrenamiento es requerido para conductores que necesitan experiencia en conducción de plataforma. El departamento de Seguridad se pondrá en contacto contigo para programar tu sesión de entrenamiento."
+      },
+      "success": {
+        "title": "¡Felicidades! 🎉",
+        "message": "¡Has completado con éxito tu Entrenamiento de Plataforma! Tus habilidades de conducción de plataforma han sido evaluadas y aprobadas. Ahora puedes continuar con el siguiente paso de tu incorporación.",
+        "continueButton": "Siguiente"
+      },
+      "buttons": {
+        "completeTraining": "Siguiente"
+      }
+    },
     "errors": {
       "minimum5Years": "Debes proporcionar al menos 5 años de historial de direcciones.",
       "addressDurationError": "El historial de direcciones debe abarcar los últimos 5 años. Agrega una dirección anterior si viviste en más de un lugar."
@@ -503,8 +522,8 @@
         "desc": "Si es necesario, recibirás instrucciones y un lugar de referencia."
       },
       "step7": {
-        "label": "7. Entrenamiento en patio (potencial)",
-        "desc": "Orientación en sitio y repaso del equipo."
+        "label": "7. Entrenamiento de Plataforma (Si es Requerido)",
+        "desc": "Entrenamiento en sitio de plataforma y evaluación para conductores que necesitan esta habilidad especializada."
       }
     },
     "saving": {
@@ -537,5 +556,19 @@
     "managePhotos": "Administrar fotos",
     "maxReached": "Se alcanzó el máximo de {{count}} fotos",
     "moreCount": "+{{count}}"
+  },
+
+  "completion": {
+    "title": "¡Solicitud Completada Exitosamente! 🎉",
+    "message": "¡Felicidades! ¡Has completado exitosamente tu solicitud de incorporación como conductor! Tu solicitud ha sido enviada y ahora está bajo revisión por nuestro equipo. Nos pondremos en contacto contigo pronto con los próximos pasos.",
+    "nextSteps": {
+      "title": "¿Qué Sigue Después?",
+      "message": "Nuestro equipo revisará tu solicitud y se pondrá en contacto contigo en 2-3 días hábiles para discutir los próximos pasos en tu proceso de contratación. Por favor mantén tu teléfono y correo electrónico disponibles para que nuestro equipo pueda contactarte."
+    },
+    "buttons": {
+      "goHome": "Volver al Inicio",
+      "resume": "Ver Solicitud"
+    },
+    "resumeInfo": "Puedes usar tu SIN/SSN para reanudar y ver tu solicitud completada en cualquier momento desde la página de inicio."
   }
 }
