@@ -171,11 +171,24 @@ export default function CarriersEdgeCard({
         {/* Header */}
         <header className="mb-3 flex items-center justify-between">
           <h2 id={headingId} className="text-base font-semibold">
-            Carrier’s Edge
+            Carrier&apos;s Edge
           </h2>
-          <span className="text-xs opacity-70">
-            Certificates: {certificatesCount}
-          </span>
+          <div className="flex items-center gap-2">
+            {carriersEdge.completed && (
+              <span
+                className="rounded-full px-2 py-0.5 text-xs"
+                style={{
+                  background: "var(--color-success-container)",
+                  color: "var(--color-success-on-container)",
+                }}
+              >
+                Carrier&apos;s Edge Complete
+              </span>
+            )}
+            <span className="text-xs opacity-70">
+              Certificates: {certificatesCount}
+            </span>
+          </div>
         </header>
 
         {/* Body */}

@@ -252,7 +252,20 @@ export default function DrugTestCard({
           <h2 id={titleId} className="text-base font-semibold">
             Drug Test
           </h2>
-          <span className="text-xs opacity-70">Documents: {count}</span>
+          <div className="flex items-center gap-2">
+            {drugTest.status === EDrugTestStatus.APPROVED && (
+              <span
+                className="rounded-full px-2 py-0.5 text-xs"
+                style={{
+                  background: "var(--color-success-container)",
+                  color: "var(--color-success-on-container)",
+                }}
+              >
+                Drug Test Complete
+              </span>
+            )}
+            <span className="text-xs opacity-70">Documents: {count}</span>
+          </div>
         </header>
 
         <div

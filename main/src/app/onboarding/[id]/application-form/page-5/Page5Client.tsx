@@ -6,7 +6,7 @@ import { ApplicationFormPage5Schema, applicationFormPage5Schema } from "@/lib/zo
 import CompetencyQuestionList from "./components/CompetencyQuestionList";
 import useMounted from "@/hooks/useMounted";
 import { IApplicationFormPage5 } from "@/types/applicationForm.types";
-import { competencyQuestions } from "@/constants/competencyTestQuestions";
+import { getCompetencyQuestions } from "@/constants/competencyTestQuestions";
 import { useState } from "react";
 import CompetencyStepButton from "./components/CompetencyStepButton";
 import { useTranslation } from "react-i18next";
@@ -24,6 +24,8 @@ export default function Page5Client({ data, trackerId }: Page5ClientProps) {
   const [checkboxChecked, setCheckboxChecked] = useState(false);
   const [highlightError, setHighlightError] = useState(false);
 
+  const competencyQuestions = getCompetencyQuestions(t);
+  
   const defaultValues: ApplicationFormPage5Schema = data.answers?.length
     ? {
         answers: data.answers.map((a) => ({

@@ -49,8 +49,6 @@ export default function LicenseInformationSection({
     }
   };
 
-
-
   const formatInputDate = (date: string | Date) => {
     if (!date) return "";
     if (typeof date === "string") {
@@ -66,15 +64,14 @@ export default function LicenseInformationSection({
   };
 
   return (
-    <div className="rounded-xl border p-6 shadow-sm" style={{
-      background: "var(--color-surface)",
-      borderColor: "var(--color-outline)",
-    }}>
+    <div
+      className="rounded-xl border p-6 shadow-sm"
+      style={{
+        background: "var(--color-surface)",
+        borderColor: "var(--color-outline)",
+      }}
+    >
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-semibold" style={{ color: "var(--color-on-surface)" }}>
-          License Information
-        </h2>
-        
         {/* Add License Button - Right Aligned */}
         {isEditMode && (
           <button
@@ -96,10 +93,14 @@ export default function LicenseInformationSection({
         {/* Left Column - License Details */}
         <div className="space-y-4">
           {licenses.map((license, index) => (
-            <div key={index} className="space-y-3 p-4 rounded-lg border relative" style={{
-              background: "var(--color-surface-variant)",
-              borderColor: "var(--color-outline)",
-            }}>
+            <div
+              key={index}
+              className="space-y-3 p-4 rounded-lg border relative"
+              style={{
+                background: "var(--color-surface-variant)",
+                borderColor: "var(--color-outline)",
+              }}
+            >
               {/* Remove Button - Only show for additional licenses (not the first license at index 0) */}
               {isEditMode && licenses.length > 1 && index > 0 && (
                 <button
@@ -115,14 +116,20 @@ export default function LicenseInformationSection({
                   Remove
                 </button>
               )}
-              
-              <h3 className="font-medium" style={{ color: "var(--color-on-surface)" }}>
+
+              <h3
+                className="font-medium"
+                style={{ color: "var(--color-on-surface)" }}
+              >
                 License {index + 1} {index === 0 && "(Primary - AZ)"}
               </h3>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: "var(--color-on-surface-variant)" }}>
+                  <label
+                    className="block text-sm font-medium mb-1"
+                    style={{ color: "var(--color-on-surface-variant)" }}
+                  >
                     License Number
                   </label>
                   <input
@@ -130,13 +137,18 @@ export default function LicenseInformationSection({
                     value={license.licenseNumber || ""}
                     onChange={(e) => {
                       const newLicenses = [...licenses];
-                      newLicenses[index] = { ...license, licenseNumber: e.target.value };
+                      newLicenses[index] = {
+                        ...license,
+                        licenseNumber: e.target.value,
+                      };
                       onStage({ licenses: newLicenses });
                     }}
                     disabled={!isEditMode}
                     className="w-full px-3 py-2 border rounded-lg text-sm transition-colors"
                     style={{
-                      background: isEditMode ? "var(--color-surface)" : "var(--color-surface-variant)",
+                      background: isEditMode
+                        ? "var(--color-surface)"
+                        : "var(--color-surface-variant)",
                       borderColor: "var(--color-outline)",
                       color: "var(--color-on-surface)",
                     }}
@@ -144,7 +156,10 @@ export default function LicenseInformationSection({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: "var(--color-on-surface-variant)" }}>
+                  <label
+                    className="block text-sm font-medium mb-1"
+                    style={{ color: "var(--color-on-surface-variant)" }}
+                  >
                     Province/State
                   </label>
                   <input
@@ -152,13 +167,18 @@ export default function LicenseInformationSection({
                     value={license.licenseStateOrProvince || ""}
                     onChange={(e) => {
                       const newLicenses = [...licenses];
-                      newLicenses[index] = { ...license, licenseStateOrProvince: e.target.value };
+                      newLicenses[index] = {
+                        ...license,
+                        licenseStateOrProvince: e.target.value,
+                      };
                       onStage({ licenses: newLicenses });
                     }}
                     disabled={!isEditMode}
                     className="w-full px-3 py-2 border rounded-lg text-sm transition-colors"
                     style={{
-                      background: isEditMode ? "var(--color-surface)" : "var(--color-surface-variant)",
+                      background: isEditMode
+                        ? "var(--color-surface)"
+                        : "var(--color-surface-variant)",
                       borderColor: "var(--color-outline)",
                       color: "var(--color-on-surface)",
                     }}
@@ -166,7 +186,10 @@ export default function LicenseInformationSection({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: "var(--color-on-surface-variant)" }}>
+                  <label
+                    className="block text-sm font-medium mb-1"
+                    style={{ color: "var(--color-on-surface-variant)" }}
+                  >
                     License Type
                   </label>
                   <input
@@ -174,13 +197,18 @@ export default function LicenseInformationSection({
                     value={license.licenseType || ""}
                     onChange={(e) => {
                       const newLicenses = [...licenses];
-                      newLicenses[index] = { ...license, licenseType: e.target.value as ELicenseType };
+                      newLicenses[index] = {
+                        ...license,
+                        licenseType: e.target.value as ELicenseType,
+                      };
                       onStage({ licenses: newLicenses });
                     }}
                     disabled={!isEditMode}
                     className="w-full px-3 py-2 border rounded-lg text-sm transition-colors"
                     style={{
-                      background: isEditMode ? "var(--color-surface)" : "var(--color-surface-variant)",
+                      background: isEditMode
+                        ? "var(--color-surface)"
+                        : "var(--color-surface-variant)",
                       borderColor: "var(--color-outline)",
                       color: "var(--color-on-surface)",
                     }}
@@ -188,7 +216,10 @@ export default function LicenseInformationSection({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-1" style={{ color: "var(--color-on-surface-variant)" }}>
+                  <label
+                    className="block text-sm font-medium mb-1"
+                    style={{ color: "var(--color-on-surface-variant)" }}
+                  >
                     Expiry Date
                   </label>
                   <div className="relative">
@@ -197,29 +228,43 @@ export default function LicenseInformationSection({
                       value={formatInputDate(license.licenseExpiry)}
                       onChange={(e) => {
                         const newLicenses = [...licenses];
-                        newLicenses[index] = { ...license, licenseExpiry: e.target.value };
+                        newLicenses[index] = {
+                          ...license,
+                          licenseExpiry: e.target.value,
+                        };
                         onStage({ licenses: newLicenses });
                       }}
                       disabled={!isEditMode}
                       className="w-full px-3 py-2 pr-10 border rounded-lg text-sm transition-colors"
                       style={{
-                        background: isEditMode ? "var(--color-surface)" : "var(--color-surface-variant)",
+                        background: isEditMode
+                          ? "var(--color-surface)"
+                          : "var(--color-surface-variant)",
                         borderColor: "var(--color-outline)",
                         color: "var(--color-on-surface)",
                       }}
                     />
-                    <Calendar className="absolute right-3 top-2.5 h-4 w-4" style={{ color: "var(--color-on-surface-variant)" }} />
+                    <Calendar
+                      className="absolute right-3 top-2.5 h-4 w-4"
+                      style={{ color: "var(--color-on-surface-variant)" }}
+                    />
                   </div>
                 </div>
               </div>
 
               {/* Photo information - only primary license has photos */}
               {index === 0 ? (
-                <div className="text-xs" style={{ color: "var(--color-on-surface-variant)" }}>
+                <div
+                  className="text-xs"
+                  style={{ color: "var(--color-on-surface-variant)" }}
+                >
                   Front and back photos are managed in the Image Gallery below
                 </div>
               ) : (
-                <div className="text-xs" style={{ color: "var(--color-on-surface-variant)" }}>
+                <div
+                  className="text-xs"
+                  style={{ color: "var(--color-on-surface-variant)" }}
+                >
                   Additional licenses do not require photos
                 </div>
               )}
@@ -227,90 +272,125 @@ export default function LicenseInformationSection({
           ))}
         </div>
 
-                  {/* Right Column - Business Information */}
-          <div className="space-y-4">
-            {/* Fast Card Information - Only for Canadians */}
-            {countryCode === ECountryCode.CA && (
-              <div className="p-4 rounded-lg border" style={{
+        {/* Right Column - Business Information */}
+        <div className="space-y-4">
+          {/* Fast Card Information - Only for Canadians */}
+          {countryCode === ECountryCode.CA && (
+            <div
+              className="p-4 rounded-lg border"
+              style={{
                 background: "var(--color-surface-variant)",
                 borderColor: "var(--color-outline)",
-              }}>
-                <h3 className="font-medium mb-3 flex items-center gap-2" style={{ color: "var(--color-on-surface)" }}>
-                  <CreditCard className="h-4 w-4" />
-                  Fast Card Information
-                </h3>
-                
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-sm font-medium mb-1" style={{ color: "var(--color-on-surface-variant)" }}>
-                      Fast Card Number
-                    </label>
-                    <input
-                      type="text"
-                      value={fastCard?.fastCardNumber || ""}
-                      onChange={(e) => {
-                        onStage({ fastCard: {
+              }}
+            >
+              <h3
+                className="font-medium mb-3 flex items-center gap-2"
+                style={{ color: "var(--color-on-surface)" }}
+              >
+                <CreditCard className="h-4 w-4" />
+                Fast Card Information
+              </h3>
+
+              <div className="space-y-3">
+                <div>
+                  <label
+                    className="block text-sm font-medium mb-1"
+                    style={{ color: "var(--color-on-surface-variant)" }}
+                  >
+                    Fast Card Number
+                  </label>
+                  <input
+                    type="text"
+                    value={fastCard?.fastCardNumber || ""}
+                    onChange={(e) => {
+                      onStage({
+                        fastCard: {
                           ...fastCard,
                           fastCardNumber: e.target.value,
-                        }});
+                        },
+                      });
+                    }}
+                    disabled={!isEditMode}
+                    placeholder="############"
+                    className="w-full px-3 py-2 border rounded-lg text-sm transition-colors"
+                    style={{
+                      background: isEditMode
+                        ? "var(--color-surface)"
+                        : "var(--color-surface-variant)",
+                      borderColor: "var(--color-outline)",
+                      color: "var(--color-on-surface)",
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label
+                    className="block text-sm font-medium mb-1"
+                    style={{ color: "var(--color-on-surface-variant)" }}
+                  >
+                    Expiry Date
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="date"
+                      value={formatInputDate(fastCard?.fastCardExpiry || "")}
+                      onChange={(e) => {
+                        onStage({
+                          fastCard: {
+                            ...fastCard,
+                            fastCardExpiry: e.target.value,
+                          },
+                        });
                       }}
                       disabled={!isEditMode}
-                      placeholder="############"
-                      className="w-full px-3 py-2 border rounded-lg text-sm transition-colors"
+                      className="w-full px-3 py-2 pr-10 border rounded-lg text-sm transition-colors"
                       style={{
-                        background: isEditMode ? "var(--color-surface)" : "var(--color-surface-variant)",
+                        background: isEditMode
+                          ? "var(--color-surface)"
+                          : "var(--color-surface-variant)",
                         borderColor: "var(--color-outline)",
                         color: "var(--color-on-surface)",
                       }}
                     />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-1" style={{ color: "var(--color-on-surface-variant)" }}>
-                      Expiry Date
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="date"
-                        value={formatInputDate(fastCard?.fastCardExpiry || "")}
-                        onChange={(e) => {
-                          onStage({ fastCard: {
-                            ...fastCard,
-                            fastCardExpiry: e.target.value,
-                          }});
-                        }}
-                        disabled={!isEditMode}
-                        className="w-full px-3 py-2 pr-10 border rounded-lg text-sm transition-colors"
-                        style={{
-                          background: isEditMode ? "var(--color-surface)" : "var(--color-surface-variant)",
-                          borderColor: "var(--color-outline)",
-                          color: "var(--color-on-surface)",
-                        }}
-                      />
-                      <Calendar className="absolute right-3 top-2.5 h-4 w-4" style={{ color: "var(--color-on-surface-variant)" }} />
-                    </div>
-                  </div>
-
-                  <div className="text-xs" style={{ color: "var(--color-on-surface-variant)" }}>
-                    Front and back photos are managed in the Image Gallery below
+                    <Calendar
+                      className="absolute right-3 top-2.5 h-4 w-4"
+                      style={{ color: "var(--color-on-surface-variant)" }}
+                    />
                   </div>
                 </div>
+
+                <div
+                  className="text-xs"
+                  style={{ color: "var(--color-on-surface-variant)" }}
+                >
+                  Front and back photos are managed in the Image Gallery below
+                </div>
               </div>
-            )}
+            </div>
+          )}
 
           {/* Business Information */}
-          <div className="p-4 rounded-lg border" style={{
-            background: "var(--color-surface-variant)",
-            borderColor: "var(--color-outline)",
-          }}>
-            <h3 className="font-medium mb-3 flex items-center gap-2" style={{ color: "var(--color-on-surface)" }}>
+          <div
+            className="p-4 rounded-lg border"
+            style={{
+              background: "var(--color-surface-variant)",
+              borderColor: "var(--color-outline)",
+            }}
+          >
+            <h3
+              className="font-medium mb-3 flex items-center gap-2"
+              style={{ color: "var(--color-on-surface)" }}
+            >
               <Building2 className="h-4 w-4" />
               Business Information
             </h3>
-            
+
             <div className="space-y-3">
               <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: "var(--color-on-surface-variant)" }}>
+                <label
+                  className="block text-sm font-medium mb-1"
+                  style={{ color: "var(--color-on-surface-variant)" }}
+                >
                   Employee Number
                 </label>
                 <input
@@ -320,7 +400,9 @@ export default function LicenseInformationSection({
                   disabled={!isEditMode}
                   className="w-full px-3 py-2 border rounded-lg text-sm transition-colors"
                   style={{
-                    background: isEditMode ? "var(--color-surface)" : "var(--color-surface-variant)",
+                    background: isEditMode
+                      ? "var(--color-surface)"
+                      : "var(--color-surface-variant)",
                     borderColor: "var(--color-outline)",
                     color: "var(--color-on-surface)",
                   }}
@@ -328,7 +410,10 @@ export default function LicenseInformationSection({
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: "var(--color-on-surface-variant)" }}>
+                <label
+                  className="block text-sm font-medium mb-1"
+                  style={{ color: "var(--color-on-surface-variant)" }}
+                >
                   HST Number
                 </label>
                 <input
@@ -338,7 +423,9 @@ export default function LicenseInformationSection({
                   disabled={!isEditMode}
                   className="w-full px-3 py-2 border rounded-lg text-sm transition-colors"
                   style={{
-                    background: isEditMode ? "var(--color-surface)" : "var(--color-surface-variant)",
+                    background: isEditMode
+                      ? "var(--color-surface)"
+                      : "var(--color-surface-variant)",
                     borderColor: "var(--color-outline)",
                     color: "var(--color-on-surface)",
                   }}
@@ -346,7 +433,10 @@ export default function LicenseInformationSection({
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1" style={{ color: "var(--color-on-surface-variant)" }}>
+                <label
+                  className="block text-sm font-medium mb-1"
+                  style={{ color: "var(--color-on-surface-variant)" }}
+                >
                   Business Number
                 </label>
                 <input
@@ -356,14 +446,19 @@ export default function LicenseInformationSection({
                   disabled={!isEditMode}
                   className="w-full px-3 py-2 border rounded-lg text-sm transition-colors"
                   style={{
-                    background: isEditMode ? "var(--color-surface)" : "var(--color-surface-variant)",
+                    background: isEditMode
+                      ? "var(--color-surface)"
+                      : "var(--color-surface-variant)",
                     borderColor: "var(--color-outline)",
                     color: "var(--color-on-surface)",
                   }}
                 />
               </div>
 
-              <div className="text-xs" style={{ color: "var(--color-on-surface-variant)" }}>
+              <div
+                className="text-xs"
+                style={{ color: "var(--color-on-surface-variant)" }}
+              >
                 Business documents are managed in the Image Gallery below
               </div>
             </div>

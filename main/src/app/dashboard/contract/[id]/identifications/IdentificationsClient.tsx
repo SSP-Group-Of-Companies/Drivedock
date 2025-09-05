@@ -13,10 +13,13 @@ import { COMPANIES } from "@/constants/companies";
 import { ECountryCode } from "@/types/shared.types";
 import StepNotCompletedMessage from "../components/StepNotCompletedMessage";
 
-
 // Helper functions for API calls
-async function fetchIdentifications(trackerId: string): Promise<IdentificationsResponse> {
-  const response = await fetch(`/api/v1/admin/onboarding/${trackerId}/application-form/identifications`);
+async function fetchIdentifications(
+  trackerId: string
+): Promise<IdentificationsResponse> {
+  const response = await fetch(
+    `/api/v1/admin/onboarding/${trackerId}/application-form/identifications`
+  );
   if (!response.ok) {
     // Check if it's a 401 error and include the error message
     if (response.status === 401) {
@@ -97,7 +100,11 @@ export default function IdentificationsClient({
         const data = await fetchIdentifications(trackerId);
         setIdentificationsData(data);
       } catch (err) {
-        setError(err instanceof Error ? err : new Error('Failed to load identifications'));
+        setError(
+          err instanceof Error
+            ? err
+            : new Error("Failed to load identifications")
+        );
       } finally {
         setIsIdentificationsLoading(false);
       }
@@ -135,7 +142,12 @@ export default function IdentificationsClient({
   }
 
   // Show loading state for contract data while layout is visible
-  if (isContractLoading || !contractData || isIdentificationsLoading || !identificationsData) {
+  if (
+    isContractLoading ||
+    !contractData ||
+    isIdentificationsLoading ||
+    !identificationsData
+  ) {
     return (
       <div
         className="rounded-xl border p-8 text-center"
@@ -147,12 +159,15 @@ export default function IdentificationsClient({
         <div className="flex flex-col items-center gap-2">
           <div
             className="h-6 w-6 animate-spin rounded-full border-2 border-transparent"
-            style={{ 
+            style={{
               borderTopColor: "var(--color-primary)",
-              borderWidth: "2px"
+              borderWidth: "2px",
             }}
           />
-          <span className="text-xs font-medium" style={{ color: "var(--color-on-surface-variant)" }}>
+          <span
+            className="text-xs font-medium"
+            style={{ color: "var(--color-on-surface-variant)" }}
+          >
             Loading Identifications...
           </span>
         </div>
@@ -171,10 +186,16 @@ export default function IdentificationsClient({
         }}
       >
         <div className="flex flex-col items-center gap-2">
-          <span className="text-sm font-medium" style={{ color: "var(--color-on-surface-variant)" }}>
+          <span
+            className="text-sm font-medium"
+            style={{ color: "var(--color-on-surface-variant)" }}
+          >
             No identifications data found
           </span>
-          <span className="text-xs" style={{ color: "var(--color-on-surface-variant)" }}>
+          <span
+            className="text-xs"
+            style={{ color: "var(--color-on-surface-variant)" }}
+          >
             This driver may not have completed the identifications step yet.
           </span>
         </div>
@@ -191,17 +212,17 @@ export default function IdentificationsClient({
     try {
       setIsSaving(true);
       setSaveMessage("");
-      
+
       // Prepare the data in the format the API expects
       const baseData = { ...identificationsData?.data };
       // Remove onboardingContext as it's not part of the PATCH
       delete (baseData as any).onboardingContext;
-      
+
       // Get country to determine which fields to include
-      const company = COMPANIES.find(c => c.id === contractData.companyId);
+      const company = COMPANIES.find((c) => c.id === contractData.companyId);
       const isCanadian = company?.countryCode === ECountryCode.CA;
       const isUS = company?.countryCode === ECountryCode.US;
-      
+
       // Filter data based on country requirements
       const filteredData: any = {
         licenses: baseData.licenses,
@@ -215,31 +236,34 @@ export default function IdentificationsClient({
         prPermitCitizenshipPhotos: baseData.prPermitCitizenshipPhotos,
         fastCard: baseData.fastCard,
       };
-      
+
       // Add country-specific fields
       if (isCanadian) {
         filteredData.healthCardPhotos = baseData.healthCardPhotos;
         filteredData.usVisaPhotos = baseData.usVisaPhotos;
         // Don't include medicalCertificationPhotos for Canadians
       } else if (isUS) {
-        filteredData.medicalCertificationPhotos = baseData.medicalCertificationPhotos;
+        filteredData.medicalCertificationPhotos =
+          baseData.medicalCertificationPhotos;
         // Don't include healthCardPhotos or usVisaPhotos for US
       }
-      
+
       const dataToSend = {
         ...filteredData,
         ...staged, // Merge staged changes with filtered data
       };
-      
+
       const result = await patchIdentifications(trackerId, dataToSend);
       setIdentificationsData(result);
       clearStaged();
       setSaveMessage("Identifications updated successfully!");
-      
+
       // Clear success message after 3 seconds
       setTimeout(() => setSaveMessage(""), 3000);
     } catch (err) {
-      setSaveMessage(err instanceof Error ? err.message : "Failed to save changes");
+      setSaveMessage(
+        err instanceof Error ? err.message : "Failed to save changes"
+      );
     } finally {
       setIsSaving(false);
     }
@@ -256,10 +280,10 @@ export default function IdentificationsClient({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ 
+      transition={{
         duration: 0.5,
         ease: "easeOut",
-        delay: 0.1 // Small delay to ensure smooth transition after loader hides
+        delay: 0.1, // Small delay to ensure smooth transition after loader hides
       }}
       className="space-y-4"
     >
@@ -267,26 +291,33 @@ export default function IdentificationsClient({
       <DashboardFormWizard contractContext={ctx} />
 
       {/* Identifications Content */}
-      <div className="rounded-xl border p-4 sm:p-6 lg:p-8 shadow-sm dark:shadow-none" style={{
-        background: "var(--color-card)",
-        borderColor: "var(--color-outline)",
-      }}>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-6">
-          <h1 className="text-lg sm:text-xl font-semibold" style={{ color: "var(--color-on-surface)" }}>Identifications</h1>
+      <div
+        className="rounded-xl border p-4 sm:p-6 lg:p-8 shadow-sm dark:shadow-none"
+        style={{
+          background: "var(--color-card)",
+          borderColor: "var(--color-outline)",
+        }}
+      >
+        <div className="flex justify-end mb-6">
           <div className="flex items-center gap-2">
-            <span className="text-xs sm:text-sm" style={{ color: "var(--color-on-surface-variant)" }}>
+            <span
+              className="text-xs sm:text-sm"
+              style={{ color: "var(--color-on-surface-variant)" }}
+            >
               Edit Mode:
             </span>
-            <span className={`px-2 py-1 rounded text-xs font-medium ${
-              isEditMode
-                ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                : "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
-            }`}>
+            <span
+              className={`px-2 py-1 rounded text-xs font-medium ${
+                isEditMode
+                  ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                  : "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
+              }`}
+            >
               {isEditMode ? "ON" : "OFF"}
             </span>
           </div>
         </div>
-        
+
         {/* Save Message and Controls */}
         <div className="mb-6 space-y-4">
           {saveMessage && (
@@ -357,7 +388,9 @@ export default function IdentificationsClient({
           onDiscard={handleDiscard}
           onStage={setStaged}
           countryCode={(() => {
-            const company = COMPANIES.find(c => c.id === contractData.companyId);
+            const company = COMPANIES.find(
+              (c) => c.id === contractData.companyId
+            );
             return company?.countryCode || ECountryCode.CA;
           })()}
         />

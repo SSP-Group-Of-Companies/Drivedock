@@ -118,8 +118,28 @@ export default function AccidentCriminalClient() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-64">
-        <div className="text-lg">Loading...</div>
+      <div
+        className="rounded-xl border p-8 text-center"
+        style={{
+          borderColor: "var(--color-outline)",
+          background: "var(--color-card)",
+        }}
+      >
+        <div className="flex flex-col items-center gap-2">
+          <div
+            className="h-6 w-6 animate-spin rounded-full border-2 border-transparent"
+            style={{
+              borderTopColor: "var(--color-primary)",
+              borderWidth: "2px",
+            }}
+          />
+          <span
+            className="text-xs font-medium"
+            style={{ color: "var(--color-on-surface-variant)" }}
+          >
+            Loading Accident & Criminal Records...
+          </span>
+        </div>
       </div>
     );
   }

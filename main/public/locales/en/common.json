@@ -386,6 +386,189 @@
           "confirmMessage": "You cannot retake this competency test once submitted. Are you sure you want to proceed?",
           "cancel": "Cancel",
           "confirm": "Yes, Submit"
+        },
+        "questions": {
+          "1": {
+            "question": "According to FMCSA, you may not drive for more than:",
+            "options": {
+              "a": "11 Hours",
+              "b": "After being on duty for 14 hours",
+              "c": "After being on duty for more than 8 hours following continuous 10 hours off duty",
+              "d": "All of the above"
+            }
+          },
+          "2": {
+            "question": "According to FMCSA, you may not work for more than ____ hours in 8 days:",
+            "options": {
+              "a": "70 Hours",
+              "b": "120 Hours",
+              "c": "11 hours",
+              "d": "500 miles round trip"
+            }
+          },
+          "3": {
+            "question": "After 11 hours of driving time you must",
+            "options": {
+              "a": "Stop working and go home",
+              "b": "Can work 5 more hours",
+              "c": "Get 10 consecutive hours of rest before driving again",
+              "d": "All of the above"
+            }
+          },
+          "4": {
+            "question": "In Canada you may have two extra hours of driving time in addition to the 14 hours shift rule if",
+            "options": {
+              "a": "Weather/driving conditions interfere with the ability to perform duties within 11 hours of and you could not foresee them before you set out",
+              "b": "You use the split-breaking option",
+              "c": "You get 6 consecutive hours of rest between driving periods",
+              "d": "All of the above"
+            }
+          },
+          "5": {
+            "question": "During pre-trip inspection you must show that the",
+            "options": {
+              "a": "The vehicle is safe to drive",
+              "b": "The vehicle is newer than 4 years",
+              "c": "You are competent and have no alcohol in the system"
+            }
+          },
+          "6": {
+            "question": "During the pre-trip inspection you will",
+            "options": {
+              "a": "Sit in the truck and drive around talking about your expertise",
+              "b": "Take a computerized test about truck driving",
+              "c": "Walk around the vehicle and point out to the coach each item and explain to the examiner what you are checking and why"
+            }
+          },
+          "7": {
+            "question": "During pre-trip inspection the mirror and windscreen should be checked for",
+            "options": {
+              "a": "Proper alignment",
+              "b": "Stickers",
+              "c": "Cleanliness, obstruction and damage"
+            }
+          },
+          "8": {
+            "question": "What is meant by C-TPAT",
+            "options": {
+              "a": "Canadian Transportation Participation Against Terrorism",
+              "b": "Customs Trade Partnership Against Terrorism",
+              "c": "Canadian Trade Partnership Against Terrorism"
+            }
+          },
+          "9": {
+            "question": "While doing trailer inspection which of the following should make you suspicious",
+            "options": {
+              "a": "Abnormal noise while knocking the door",
+              "b": "Fresh paint on any component",
+              "c": "Glue on tire",
+              "d": "All of the above"
+            }
+          },
+          "10": {
+            "question": "If a driver finds trailers seal broken at a truck stop he must",
+            "options": {
+              "a": "Report to dispatch immediately",
+              "b": "Re-inspect his equipment for any suspicious behavior",
+              "c": "Should put another seal",
+              "d": "All of the above"
+            }
+          },
+          "11": {
+            "question": "When a driver receives notice of license or permit revocation, suspension he must",
+            "options": {
+              "a": "Notify the carrier within 72 hours",
+              "b": "Notify the carrier within a week",
+              "c": "Notify the carrier immediately",
+              "d": "Take no action since the carrier will get notification"
+            }
+          },
+          "12": {
+            "question": "The maximum gross weight a tandem combination is permitted in the US",
+            "options": {
+              "a": "90000 Lbs",
+              "b": "84000 Lbs",
+              "c": "80000 Lbs",
+              "d": "15000 Lbs per axle"
+            }
+          },
+          "13": {
+            "question": "You may reset your 70 hour cycle by having at-least ____ hours off duty in Canada",
+            "options": {
+              "a": "10",
+              "b": "24",
+              "c": "32",
+              "d": "36"
+            }
+          },
+          "14": {
+            "question": "If you are inspected and put OOS at a road side inspection for any reason you must",
+            "options": {
+              "a": "Accurately log the event in your book and continue your trip",
+              "b": "Not leave the inspection station until you have accumulated enough hours to drive again",
+              "c": "Inform your carrier of the incident",
+              "d": "All of the above"
+            }
+          },
+          "15": {
+            "question": "A driver may not drive faster than the posted speed limit",
+            "options": {
+              "a": "Unless the driver is sick and must complete the run quickly to see a doctor",
+              "b": "At any time",
+              "c": "During the day as you can see things clearly",
+              "d": "Unless the driver is late and is making for the time lost"
+            }
+          },
+          "16": {
+            "question": "Empty trailer crossing border do not require bolt seal",
+            "options": {
+              "a": "True",
+              "b": "False"
+            }
+          },
+          "17": {
+            "question": "When should an inspection be completed",
+            "options": {
+              "a": "Any time during the trip",
+              "b": "Pre and Post trip",
+              "c": "Before you reach the border",
+              "d": "If dispatch asks you to do"
+            }
+          },
+          "18": {
+            "question": "What should you do if you find an un-authorized person on the premises",
+            "options": {
+              "a": "Call the police",
+              "b": "Call dispatch",
+              "c": "Talk to person",
+              "d": "Don't do anything"
+            }
+          },
+          "19": {
+            "question": "Who should be putting the seal on the trailer",
+            "options": {
+              "a": "Anyone",
+              "b": "Dispatch"
+            }
+          },
+          "20": {
+            "question": "Who should be contacted if you detect tampering on your truck or trailer",
+            "options": {
+              "a": "Call the other driver who is senior in the company",
+              "b": "Call police",
+              "c": "Go to border and tell customs",
+              "d": "Call dispatch"
+            }
+          },
+          "21": {
+            "question": "What kind of seal should be put on trailer",
+            "options": {
+              "a": "Plastic",
+              "b": "Bolt",
+              "c": "Metal",
+              "d": "Certified ISA PAS 17712 seals"
+            }
+          }
         }
       }
     },
@@ -455,6 +638,7 @@
       "description": "Please upload clear photos of your drug test documents. You can add up to {{count}} photos. Once uploaded, documents will be verified before you can continue.",
       "verified": "Documents verified.",
       "pending": "Documents uploaded. Pending verification. Uploads are disabled.",
+      "rejected": "Your drug test documents were rejected. Please re-upload and re-submit.",
       "labelDocuments": "Drug Test Documents",
       "success": {
         "title": "Congratulations! 🎉",
@@ -556,9 +740,11 @@
     "upload": "Upload",
     "clear": "Clear",
     "processing": "Processing...",
+    "submitting": "Submitting...",
     "submitAnswers": "Submit Answers",
     "continue": "Continue",
     "submitDocuments": "Submit Documents",
+    "resubmitDocuments": "Re-submit Documents",
     "pendingVerification": "Pending Verification"
   },
 

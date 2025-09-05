@@ -31,7 +31,7 @@ export default function CompletedOnboardingClient({
   }, []);
 
   const handleGoHome = useCallback(() => {
-    router.push("/start");
+    router.push("/");
   }, [router]);
 
   if (!mounted) return null;

@@ -46,7 +46,11 @@ import LanguageDropdown from "@/components/shared/LanguageDropdown";
 
 import { handleBackNavigation } from "@/lib/utils/onboardingUtils";
 
-export default function Navbar() {
+type NavbarProps = {
+  needsFlatbedTraining?: boolean;
+};
+
+export default function Navbar({ needsFlatbedTraining = false }: NavbarProps = {}) {
   const mounted = useMounted();
   const { t } = useTranslation("common");
 
@@ -59,7 +63,7 @@ export default function Navbar() {
    */
   const handleBackClick = () => {
     const trackerId = (params?.id as string) || undefined;
-    handleBackNavigation(pathname, trackerId, router, { needsFlatbedTraining: false });
+    handleBackNavigation(pathname, trackerId, router, { needsFlatbedTraining });
   };
 
   // UI control flags
