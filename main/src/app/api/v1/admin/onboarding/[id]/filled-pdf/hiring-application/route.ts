@@ -51,6 +51,7 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     // ------- Load Onboarding (fail fast if missing)
     const onboarding = await OnboardingTracker.findById(onboardingId).lean();
     if (!onboarding) return errorResponse(404, "Onboarding document not found");
+    if (!onboarding.status.completed) return errorResponse(400, "Onboarding is not yet completed");
 
     // ------- Resolve referenced form IDs
     const appFormId = onboarding.forms?.driverApplication;
