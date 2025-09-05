@@ -672,7 +672,6 @@
     "continue": "Continuar",
     "loading": "Cargando...",
     "loadingCta": "Reanudando...",
-    **
     "validation": {
       "enterSin": "Ingresa tu SIN",
       "sinLength": "El SIN debe tener exactamente 9 dígitos"
