@@ -8,6 +8,8 @@ export type ContractContext = {
   needsFlatbedTraining?: boolean;
   resumeExpiresAt?: string;
   status: { currentStep?: EStepPath; completed?: boolean };
+  terminated?: boolean;
+  terminationType?: string;
   itemSummary?: { driverName?: string; driverEmail?: string };
   forms?: {
     driveTest?: { completed?: boolean };
@@ -68,6 +70,8 @@ export async function fetchContractContext(
     needsFlatbedTraining: ctx.needsFlatbedTraining,
     resumeExpiresAt: (ctx as any).resumeExpiresAt,
     status: ctx.status ?? {},
+    terminated: (ctx as any).terminated,
+    terminationType: (ctx as any).terminationType,
     itemSummary: ctx.itemSummary ?? {},
     forms,
   };
@@ -84,23 +88,20 @@ export async function changeCompany(
   companyId: string,
   signal?: AbortSignal
 ): Promise<ContractContext | null> {
-  const res = await fetch(
-    `/api/v1/admin/onboarding/${trackerId}/change-company`,
-    {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({ companyId }),
-      signal,
-    }
-  );
+  const res = await fetch(`/api/v1/admin/onboarding/${trackerId}/change-company`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ companyId }),
+    signal,
+  });
 
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok || json?.success === false) {
-    throw new Error(json?.message || `Change company failed (${res.status})`);
+  if (!res.ok) {
+    const msg = `Failed to change company (${res.status})`;
+    const err = new Error(msg) as Error & { status?: number };
+    (err as any).status = res.status;
+    throw err;
   }
 
-  return (json?.data?.onboardingContext ?? null) as ContractContext | null;
+  const json = await res.json();
+  return json?.data ?? null;
 }

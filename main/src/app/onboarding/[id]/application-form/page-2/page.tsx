@@ -84,8 +84,30 @@ export default async function ApplicationFormPage2({ params }: { params: Promise
                 gapExplanationBefore: e.gapExplanationBefore ?? "",
               }))
             : [emptyEmploymentRow()],
+        
+        // New employment-related fields
+        workedWithCompanyBefore: page2.workedWithCompanyBefore ?? undefined,
+        reasonForLeavingCompany: page2.reasonForLeavingCompany ?? "",
+        previousWorkDetails: page2.previousWorkDetails ? {
+          from: formatInputDate(page2.previousWorkDetails.from),
+          to: formatInputDate(page2.previousWorkDetails.to),
+          rateOfPay: page2.previousWorkDetails.rateOfPay ?? "",
+          position: page2.previousWorkDetails.position ?? "",
+        } : undefined,
+        currentlyEmployed: page2.currentlyEmployed ?? undefined,
+        referredBy: page2.referredBy ?? "",
+        expectedRateOfPay: page2.expectedRateOfPay ?? "",
       }
-    : { employments: [emptyEmploymentRow()] };
+    : { 
+        employments: [emptyEmploymentRow()],
+        // Default values for new fields
+        workedWithCompanyBefore: undefined,
+        reasonForLeavingCompany: "",
+        previousWorkDetails: undefined,
+        currentlyEmployed: undefined,
+        referredBy: "",
+        expectedRateOfPay: "",
+      };
 
   return <Page2Client defaultValues={defaultValues} trackerId={trackerId} trackerContextFromGet={trackerContextFromGet} />;
 }

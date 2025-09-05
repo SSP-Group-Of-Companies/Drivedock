@@ -199,12 +199,20 @@ export async function GET(req: NextRequest) {
     const matchBase: Record<string, any> = { ...baseFilter };
     const matchItems: Record<string, any> = { ...baseFilter };
 
-    if (currentStep) matchItems["status.currentStep"] = currentStep;
+    if (currentStep) {
+      matchItems["status.currentStep"] = currentStep;
+      // Exclude completed drivers from step-specific tabs
+      matchItems["status.completed"] = false;
+    }
     if (typeof ceEmailSent === "boolean" && !currentStep) {
       matchItems["status.currentStep"] = EStepPath.CARRIERS_EDGE_TRAINING;
+      // Exclude completed drivers from step-specific tabs
+      matchItems["status.completed"] = false;
     }
     if (dtStatus && !currentStep) {
       matchItems["status.currentStep"] = EStepPath.DRUG_TEST;
+      // Exclude completed drivers from step-specific tabs
+      matchItems["status.completed"] = false;
     }
 
     const sortStage =
@@ -300,6 +308,7 @@ export async function GET(req: NextRequest) {
             {
               $match: {
                 "status.currentStep": EStepPath.CARRIERS_EDGE_TRAINING,
+                "status.completed": false,
                 ceEmailSent,
               },
             },
@@ -310,6 +319,7 @@ export async function GET(req: NextRequest) {
             {
               $match: {
                 "status.currentStep": EStepPath.DRUG_TEST,
+                "status.completed": false,
                 dtStatus,
               },
             },
@@ -340,6 +350,7 @@ export async function GET(req: NextRequest) {
           createdAt: 1,
           updatedAt: 1,
           terminated: 1,
+          terminationType: 1,
           resumeExpiresAt: 1,
           forms: 1,
           needsFlatbedTraining: 1,
@@ -357,15 +368,18 @@ export async function GET(req: NextRequest) {
           OnboardingTracker.countDocuments({
             ...matchBase,
             "status.currentStep": EStepPath.DRIVE_TEST,
+            "status.completed": false,
           }),
           OnboardingTracker.countDocuments({
             ...matchBase,
             "status.currentStep": EStepPath.CARRIERS_EDGE_TRAINING,
+            "status.completed": false,
             ...(typeof ceEmailSent === "boolean" ? { "forms.carriersEdgeTraining": { $exists: true } } : {}),
           }),
           OnboardingTracker.countDocuments({
             ...matchBase,
             "status.currentStep": EStepPath.DRUG_TEST,
+            "status.completed": false,
             ...(dtStatus ? { "forms.drugTest": { $exists: true } } : {}),
           }),
         ]);

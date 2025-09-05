@@ -1,12 +1,10 @@
-// src/app/api/v1/onboarding/[id]/flatbed-training/route.ts
+// src/app/api/v1/onboarding/[id]/completion-status/route.ts
 import { NextRequest } from "next/server";
 import { errorResponse, successResponse } from "@/lib/utils/apiResponse";
 import connectDB from "@/lib/utils/connectDB";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
-import FlatbedTraining from "@/mongoose/models/FlatbedTraining";
 import { isValidObjectId } from "mongoose";
-import { buildTrackerContext, hasReachedStep, onboardingExpired } from "@/lib/utils/onboardingUtils";
-import { EStepPath } from "@/types/onboardingTracker.types";
+import { buildTrackerContext, onboardingExpired } from "@/lib/utils/onboardingUtils";
 
 export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
@@ -17,19 +15,15 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
 
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
     if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
-    if (onboardingDoc.status.completed === true) return errorResponse(401, "onboarding process already completed");
     if (onboardingExpired(onboardingDoc)) return errorResponse(400, "Onboarding session expired");
 
-    if (!hasReachedStep(onboardingDoc, EStepPath.FLATBED_TRAINING)) {
-      return errorResponse(403, "Please complete previous steps first");
+    // Check if onboarding is actually completed
+    if (!onboardingDoc.status.completed) {
+      return errorResponse(403, "Onboarding process not completed yet");
     }
 
-    const flatbedTrainingId = onboardingDoc.forms?.flatbedTraining as any | undefined;
-    const flatbedTrainingDoc = flatbedTrainingId ? await FlatbedTraining.findById(flatbedTrainingId) : null;
-
-    // Build base context and enrich with itemSummary
-    // Use FLATBED_TRAINING as the current step to get the correct nextStep
-    const baseContext = buildTrackerContext(onboardingDoc, EStepPath.FLATBED_TRAINING);
+    // Build context for completed onboarding
+    const baseContext = buildTrackerContext(onboardingDoc);
     const enrichedContext = {
       ...baseContext,
       itemSummary: {
@@ -37,9 +31,8 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
       },
     };
 
-    return successResponse(200, "Flatbed training data retrieved", {
+    return successResponse(200, "Completion status retrieved", {
       onboardingContext: enrichedContext,
-      flatbedTraining: flatbedTrainingDoc?.toObject() ?? {},
     });
   } catch (error) {
     return errorResponse(error);

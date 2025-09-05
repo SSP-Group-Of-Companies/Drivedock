@@ -244,6 +244,13 @@
           "employment": "Employment History"
         },
         "requirements": "The Federal Motor Carrier Safety Regulations (49CFR391.21) require that all applicants wishing to drive a commercial vehicle list all employment for the last two (2) years. In addition, if you have driven a commercial vehicle previously, you must provide employment history for an additional eight (8) years for a total of ten (10) years. Any 1 month or more gaps in employment must be explained.",
+        "questions": {
+          "workedWithCompanyBefore": "Have you ever worked (Under Sub-contractor) with this company previously?",
+          "reasonForLeavingCompany": "What was the reason for leaving the company?",
+          "currentlyEmployed": "Are you currently employed?",
+          "referredBy": "Who referred you to us?",
+          "expectedRateOfPay": "What is your expected rate of pay?"
+        },
         "labels": {
           "currentEmployer": "Current Employer",
           "previousEmployer": "Previous Employer"
@@ -264,7 +271,11 @@
           "salary": "Salary",
           "reasonForLeaving": "Reason for Leaving...",
           "subjectToFMCSR": "Were you subject to FMCSR (Federal Motor Carrier Safety Regulations)?",
-          "safetySensitiveFunction": "Was your job designated as a safety sensitive function in any DOT regulated mode subject to the drug and alcohol testing requirement of 49 CFR part 40."
+          "safetySensitiveFunction": "Was your job designated as a safety sensitive function in any DOT regulated mode subject to the drug and alcohol testing requirement of 49 CFR part 40.",
+          "previousWorkFrom": "From Date",
+          "previousWorkTo": "To Date",
+          "previousWorkRateOfPay": "Rate of Pay",
+          "previousWorkPosition": "Position"
         },
         "actions": {
           "addPrevious": "Add Previous Employer",
@@ -451,6 +462,25 @@
         "continueButton": "Next"
       }
     },
+
+    "step7": {
+      "title": "Flatbed Training",
+      "instructions": {
+        "header": "You have reached the Flatbed Training stage of the application process.",
+        "contactSafety": "Please speak with Safety department to begin your flatbed training.",
+        "passMessage": "If you pass: You will proceed to the next step of your onboarding process.",
+        "failMessage": "If you do not pass: A decision would be made on either equipping you with additional training or terminating your application.",
+        "note": "Note: This training is required for drivers who need flatbed driving experience. The Safety department will contact you to schedule your training session."
+      },
+      "success": {
+        "title": "Congratulations! 🎉",
+        "message": "You have successfully completed your Flatbed Training! Your flatbed driving skills have been evaluated and approved. You can now proceed to the next step of your onboarding process.",
+        "continueButton": "Next"
+      },
+      "buttons": {
+        "completeTraining": "Next"
+      }
+    },
     "errors": {
       "minimum5Years": "You must provide at least 5 years of address history.",
       "addressDurationError": "Address provided should span for the last 5 years. Please add previous address if you lived in more than one location."
@@ -503,8 +533,8 @@
         "desc": "If required, you'll receive instructions and a referral location."
       },
       "step7": {
-        "label": "7. Yard Training (Potential)",
-        "desc": "On-site orientation and equipment walkthrough."
+        "label": "7. Flatbed Training (If Required)",
+        "desc": "On-site flatbed training and evaluation for drivers who need this specialized skill."
       }
     },
     "saving": {
@@ -537,5 +567,19 @@
     "managePhotos": "Manage Photos",
     "maxReached": "Maximum of {{count}} photos reached",
     "moreCount": "+{{count}}"
+  },
+
+  "completion": {
+    "title": "Application Completed Successfully! 🎉",
+    "message": "Congratulations! You have successfully completed your driver onboarding application! Your application has been submitted and is now under review by our team. We will contact you soon with next steps.",
+    "nextSteps": {
+      "title": "What Happens Next?",
+      "message": "Our team will review your application and contact you within 2-3 business days to discuss the next steps in your hiring process. Please keep your phone and email available for our team to reach you."
+    },
+    "buttons": {
+      "goHome": "Return to Home",
+      "resume": "View Application"
+    },
+    "resumeInfo": "You can use your SIN/SSN to resume and view your completed application anytime from the home page."
   }
 }

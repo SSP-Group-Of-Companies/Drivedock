@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import useMounted from "@/hooks/useMounted";
 import EmploymentCard from "./EmploymentCard";
 import GapBlock from "./GapBlock";
+import EmploymentQuestionsSection from "./EmploymentQuestionsSection";
 import { ApplicationFormPage2Schema } from "@/lib/zodSchemas/applicationFormPage2.schema";
 import { calculateTimelineFromCurrent, getEmploymentGaps } from "@/lib/frontendConfigs/applicationFormConfigs/validateEmploymentHistory";
 
@@ -68,6 +69,9 @@ export default function EmploymentSection() {
   if (!mounted) return null;
   return (
     <section className="space-y-6">
+      {/* Employment Questions Section - NEW */}
+      <EmploymentQuestionsSection />
+
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6 relative">
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white px-3">
           <h2 className="text-sm font-bold text-gray-700">{t("form.step2.page2.sections.employment")}</h2>

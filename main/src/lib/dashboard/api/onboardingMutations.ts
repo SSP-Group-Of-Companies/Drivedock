@@ -38,10 +38,14 @@ async function patchJson<T>(
   return json;
 }
 
-export async function terminateTracker(id: string, signal?: AbortSignal) {
+export async function terminateTracker(
+  id: string, 
+  terminationType: "resigned" | "terminated", 
+  signal?: AbortSignal
+) {
   return patchJson<void>(
     `${BASE}/${id}/terminate`,
-    { terminated: true },
+    { terminationType },
     signal
   );
 }

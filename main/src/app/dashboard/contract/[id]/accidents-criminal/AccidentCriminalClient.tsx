@@ -220,15 +220,11 @@ function AccidentCriminalContent({
             Edit Mode:
           </span>
           <span
-            className="px-2 py-1 rounded text-xs font-medium transition-colors"
-            style={{
-              background: isEditMode
-                ? "var(--color-success)"
-                : "var(--color-surface-variant)",
-              color: isEditMode
-                ? "var(--color-on-success)"
-                : "var(--color-on-surface-variant)",
-            }}
+            className={`px-2 py-1 rounded text-xs font-medium ${
+              isEditMode
+                ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                : "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
+            }`}
           >
             {isEditMode ? "ON" : "OFF"}
           </span>

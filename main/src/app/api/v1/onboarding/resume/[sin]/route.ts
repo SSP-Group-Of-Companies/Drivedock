@@ -23,11 +23,23 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ sin: s
     // Check if resume session has expired
     if (onboardingExpired(tracker)) return errorResponse(410, "Resume link has expired");
 
+    // Check if onboarding is completed - if so, return completion status
+    if (tracker.status.completed) {
+      return Response.json({
+        success: true,
+        data: {
+          onboardingContext: buildTrackerContext(tracker),
+          isCompleted: true,
+        },
+      });
+    }
+
     // Return JSON for frontend fetch()
     return Response.json({
       success: true,
       data: {
         onboardingContext: buildTrackerContext(tracker),
+        isCompleted: false,
       },
     });
   } catch (error) {

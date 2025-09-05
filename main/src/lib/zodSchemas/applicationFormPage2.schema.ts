@@ -5,6 +5,21 @@ import {
   isValidPhoneNumber,
 } from "@/lib/utils/validationUtils";
 
+// Previous work details schema
+export const previousWorkDetailsSchema = z.object({
+  from: z.string().trim().min(1, "Start date is required"),
+  to: z.string().trim().min(1, "End date is required"),
+  rateOfPay: z.string().trim().min(1, "Rate of pay is required"),
+  position: z.string().trim().min(1, "Position is required"),
+}).refine(
+  (data) => {
+    const from = new Date(data.from);
+    const to = new Date(data.to);
+    return !isNaN(from.getTime()) && !isNaN(to.getTime()) && to > from;
+  },
+  { path: ["to"], message: "End date must be after start date" }
+);
+
 // Single employment entry
 export const employmentEntrySchema = z
   .object({
@@ -60,8 +75,51 @@ export const applicationFormPage2Schema = z
     employments: z
       .array(employmentEntrySchema)
       .min(1, "At least one employment entry is required"),
+    
+    // New employment-related questions
+    workedWithCompanyBefore: z
+      .union([z.boolean(), z.undefined()])
+      .refine((val) => val !== undefined, {
+        message: "Please select whether you have worked with this company before",
+      }),
+    
+    reasonForLeavingCompany: z.string().optional(),
+    
+    previousWorkDetails: previousWorkDetailsSchema.optional(),
+    
+    currentlyEmployed: z
+      .union([z.boolean(), z.undefined()])
+      .refine((val) => val !== undefined, {
+        message: "Please select whether you are currently employed",
+      }),
+    
+    referredBy: z.string().trim().optional(),
+    
+    expectedRateOfPay: z.string().trim().min(1, "Expected rate of pay is required"),
   })
-  .superRefine(({ employments }, ctx) => {
+  .superRefine((data, ctx) => {
+    // Validate conditional fields based on workedWithCompanyBefore
+    if (data.workedWithCompanyBefore === true) {
+      if (!data.reasonForLeavingCompany || data.reasonForLeavingCompany.trim() === "") {
+        ctx.addIssue({
+          code: "custom",
+          path: ["reasonForLeavingCompany"],
+          message: "Please explain your reason for leaving the company",
+        });
+      }
+      
+      if (!data.previousWorkDetails) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["previousWorkDetails"],
+          message: "Please provide your previous work details",
+        });
+      }
+    }
+    
+    // Validate employments array
+    const { employments } = data;
+    
     // normalize booleans for util
     const normalized = employments.map((emp) => ({
       ...emp,

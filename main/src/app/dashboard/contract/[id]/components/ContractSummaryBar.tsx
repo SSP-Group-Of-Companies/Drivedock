@@ -53,24 +53,28 @@ export default function ContractSummaryBar({ trackerId }: Props) {
   const [whichOpen, setWhichOpen] = useState<"company" | "notif" | null>(null);
   const isCompanyOpen = whichOpen === "company";
   const isNotifOpen = whichOpen === "notif";
-  
+
   // Notes modal state
   const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
-  
+
   // Edit mode context
   const { isEditMode, setIsEditMode } = useEditMode();
   
+  // Check if driver is terminated or resigned
+  const isTerminated = data?.terminated === true;
+
   // Check if we're on the safety processing page (don't show notes icon there)
-  const isSafetyProcessingPage = pathname?.includes('/safety-processing');
-  
+  const isSafetyProcessingPage = pathname?.includes("/safety-processing");
+
   // Check if we're on the prequalification page (toggle should be disabled)
-  const isPrequalificationPage = pathname?.includes('/prequalification');
-  
+  const isPrequalificationPage = pathname?.includes("/prequalification");
+
   // Check if we're on the quiz-result page (toggle should be disabled)
-  const isQuizResultPage = pathname?.includes('/quiz-result');
-  
-  // Check if edit mode toggle should be functional (not prequalification, not quiz-result, not safety processing)
-  const canToggleEditMode = !isPrequalificationPage && !isQuizResultPage && !isSafetyProcessingPage;
+  const isQuizResultPage = pathname?.includes("/quiz-result");
+
+  // Check if edit mode toggle should be functional (not prequalification, not quiz-result, not safety processing, not terminated)
+  const canToggleEditMode =
+    !isPrequalificationPage && !isQuizResultPage && !isSafetyProcessingPage && !isTerminated;
 
   const companyMenuRef = useRef<HTMLDivElement | null>(null);
   const notifMenuRef = useRef<HTMLDivElement | null>(null);
@@ -226,13 +230,15 @@ export default function ContractSummaryBar({ trackerId }: Props) {
             }}
             aria-hidden
           />
-          <span
-            className="min-w-0 truncate text-xs font-medium"
-            style={{ color: "var(--color-on-surface)" }}
-            title={stepLabel(step)}
-          >
-            {stepLabel(step)}
-          </span>
+          {inProgress && (
+            <span
+              className="min-w-0 truncate text-xs font-medium"
+              style={{ color: "var(--color-on-surface)" }}
+              title={stepLabel(step)}
+            >
+              {stepLabel(step)}
+            </span>
+          )}
 
           {/* Percentage circle */}
           <div className="relative w-10 h-10 flex-shrink-0">
@@ -433,29 +439,62 @@ export default function ContractSummaryBar({ trackerId }: Props) {
           {/* Edit Mode Toggle - hidden on safety processing page, functional state varies on other pages */}
           {!isSafetyProcessingPage && (
             <div className="flex items-center gap-2">
-              <span className="text-xs font-medium" style={{ color: "var(--color-on-surface-variant)" }}>
+              <span
+                className="text-xs font-medium"
+                style={{ color: "var(--color-on-surface-variant)" }}
+              >
                 Edit Mode
               </span>
-              <button
-                type="button"
-                onClick={() => canToggleEditMode && setIsEditMode(!isEditMode)}
-                disabled={!canToggleEditMode}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  canToggleEditMode ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
-                }`}
-                style={{
-                  background: canToggleEditMode && isEditMode 
-                    ? "var(--color-primary)" 
-                    : "var(--color-outline-variant)",
-                }}
-                aria-label={canToggleEditMode ? `Edit mode is ${isEditMode ? 'on' : 'off'}` : 'Edit mode disabled'}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    isEditMode ? 'translate-x-6' : 'translate-x-1'
+              <div className="relative group">
+                <button
+                  type="button"
+                  onClick={() => canToggleEditMode && setIsEditMode(!isEditMode)}
+                  disabled={!canToggleEditMode}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    canToggleEditMode
+                      ? "cursor-pointer"
+                      : "cursor-not-allowed opacity-50"
                   }`}
-                />
-              </button>
+                  style={{
+                    background:
+                      canToggleEditMode && isEditMode
+                        ? "var(--color-primary)"
+                        : "var(--color-outline-variant)",
+                  }}
+                  aria-label={
+                    canToggleEditMode
+                      ? `Edit mode is ${isEditMode ? "on" : "off"}`
+                      : isTerminated
+                      ? "Edit mode disabled - driver is terminated/resigned"
+                      : "Edit mode disabled"
+                  }
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      isEditMode ? "translate-x-6" : "translate-x-1"
+                    }`}
+                  />
+                </button>
+                {/* Tooltip for terminated/resigned drivers */}
+                {isTerminated && (
+                  <div 
+                    className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50"
+                    style={{
+                      backgroundColor: "var(--color-surface-container-highest)",
+                      color: "var(--color-on-surface)",
+                      border: "1px solid var(--color-outline)",
+                    }}
+                  >
+                    Cannot edit terminated/resigned driver
+                    <div 
+                      className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent"
+                      style={{
+                        borderTopColor: "var(--color-surface-container-highest)",
+                      }}
+                    ></div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -465,10 +504,10 @@ export default function ContractSummaryBar({ trackerId }: Props) {
 
   /* ---------- Desktop (grid so the middle stays centered/roomy) ---------- */
   const DesktopRow = (
-    <div className="hidden xl:grid xl:grid-cols-[minmax(0,1fr)_minmax(320px,42%)_auto] xl:items-center xl:gap-4">
+    <div className="hidden xl:grid xl:grid-cols-[minmax(200px,1fr)_minmax(280px,400px)_auto] xl:items-center xl:gap-4 2xl:grid-cols-[minmax(250px,1fr)_minmax(300px,450px)_auto] 2xl:gap-6">
       {/* Left */}
       <div className="min-w-0 flex items-start gap-3">
-        <div className="relative h-12 w-12 overflow-hidden rounded">
+        <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded">
           <Image
             src={company.logoSrc}
             alt={`${company.label} logo`}
@@ -477,7 +516,7 @@ export default function ContractSummaryBar({ trackerId }: Props) {
             sizes="48px"
           />
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <div
             className="truncate text-lg font-semibold"
             style={{ color: "var(--color-on-surface)" }}
@@ -511,12 +550,14 @@ export default function ContractSummaryBar({ trackerId }: Props) {
           >
             {inProgress ? "In Progress" : "Completed"}
           </span>
-          <span
-            className="text-xs"
-            style={{ color: "var(--color-on-surface-variant)" }}
-          >
-            {stepLabel(step)}
-          </span>
+          {inProgress && (
+            <span
+              className="text-xs"
+              style={{ color: "var(--color-on-surface-variant)" }}
+            >
+              {stepLabel(step)}
+            </span>
+          )}
           <div className="ml-auto">
             <div className="relative h-3.5 w-5 overflow-hidden ring-1 ring-[var(--color-outline-variant)] opacity-[.5]">
               <Image
@@ -690,29 +731,62 @@ export default function ContractSummaryBar({ trackerId }: Props) {
         {/* Edit Mode Toggle - hidden on safety processing page, functional state varies on other pages */}
         {!isSafetyProcessingPage && (
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium" style={{ color: "var(--color-on-surface-variant)" }}>
+            <span
+              className="text-sm font-medium"
+              style={{ color: "var(--color-on-surface-variant)" }}
+            >
               Edit Mode
             </span>
-            <button
-              type="button"
-              onClick={() => canToggleEditMode && setIsEditMode(!isEditMode)}
-              disabled={!canToggleEditMode}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                canToggleEditMode ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
-              }`}
-              style={{
-                background: canToggleEditMode && isEditMode 
-                  ? "var(--color-primary)" 
-                  : "var(--color-outline-variant)",
-              }}
-              aria-label={canToggleEditMode ? `Edit mode is ${isEditMode ? 'on' : 'off'}` : 'Edit mode disabled'}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  isEditMode ? 'translate-x-6' : 'translate-x-1'
+            <div className="relative group">
+              <button
+                type="button"
+                onClick={() => canToggleEditMode && setIsEditMode(!isEditMode)}
+                disabled={!canToggleEditMode}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                  canToggleEditMode
+                    ? "cursor-pointer"
+                    : "cursor-not-allowed opacity-50"
                 }`}
-              />
-            </button>
+                style={{
+                  background:
+                    canToggleEditMode && isEditMode
+                      ? "var(--color-primary)"
+                      : "var(--color-outline-variant)",
+                }}
+                aria-label={
+                  canToggleEditMode
+                    ? `Edit mode is ${isEditMode ? "on" : "off"}`
+                    : isTerminated
+                    ? "Edit mode disabled - driver is terminated/resigned"
+                    : "Edit mode disabled"
+                }
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    isEditMode ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
+              {/* Tooltip for terminated/resigned drivers */}
+              {isTerminated && (
+                <div 
+                  className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50"
+                  style={{
+                    backgroundColor: "var(--color-surface-container-highest)",
+                    color: "var(--color-on-surface)",
+                    border: "1px solid var(--color-outline)",
+                  }}
+                >
+                  Cannot edit terminated/resigned driver
+                  <div 
+                    className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent"
+                    style={{
+                      borderTopColor: "var(--color-surface-container-highest)",
+                    }}
+                  ></div>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

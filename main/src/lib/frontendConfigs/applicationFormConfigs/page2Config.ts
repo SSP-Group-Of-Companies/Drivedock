@@ -8,8 +8,33 @@ export const page2ConfigFactory: FormPageConfigFactory<ApplicationFormPage2Schem
 
   return {
     validationFields: (values) => {
+      // Include new employment-related fields
+      const fields: string[] = [
+        "workedWithCompanyBefore",
+        "currentlyEmployed", 
+        "expectedRateOfPay"
+      ];
+
+      // Include conditional fields when workedWithCompanyBefore is true
+      if (values.workedWithCompanyBefore === true) {
+        fields.push("reasonForLeavingCompany");
+        if (values.previousWorkDetails) {
+          fields.push(
+            "previousWorkDetails.from",
+            "previousWorkDetails.to",
+            "previousWorkDetails.rateOfPay",
+            "previousWorkDetails.position"
+          );
+        }
+      }
+
+      // Include optional field
+      if (values.referredBy !== undefined) {
+        fields.push("referredBy");
+      }
+
       // Include array root so Zod superRefine can attach a top-level error.
-      const fields: string[] = ["employments"];
+      fields.push("employments");
 
       values.employments.forEach((e, i) => {
         // (Optional) only validate rows currently rendered
@@ -42,8 +67,16 @@ export const page2ConfigFactory: FormPageConfigFactory<ApplicationFormPage2Schem
       return fields;
     },
 
-    // Backend expects { employments: [...] } for PATCH /page-2
-    buildPayload: (values) => ({ employments: values.employments }),
+    // Backend expects all page2 fields for PATCH /page-2
+    buildPayload: (values) => ({
+      employments: values.employments,
+      workedWithCompanyBefore: values.workedWithCompanyBefore,
+      reasonForLeavingCompany: values.reasonForLeavingCompany,
+      previousWorkDetails: values.previousWorkDetails,
+      currentlyEmployed: values.currentlyEmployed,
+      referredBy: values.referredBy,
+      expectedRateOfPay: values.expectedRateOfPay,
+    }),
 
     // Fully resolved fallback (no [id] token)
     nextRoute: `/onboarding/${id}/application-form/page-3`,

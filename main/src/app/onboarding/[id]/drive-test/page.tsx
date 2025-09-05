@@ -17,9 +17,17 @@ import "server-only";
 import DriveTestClient, { DriveTestClientProps } from "./DriveTestClient";
 import { resolveInternalBaseUrl } from "@/lib/utils/urlHelper.server";
 import { fetchServerPageData } from "@/lib/utils/fetchServerPageData";
+import { checkCompletionAndReturnRedirect } from "@/lib/utils/completionCheck";
+import { redirect } from "next/navigation";
 
 export default async function OnboardingDriveTestPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: trackerId } = await params;
+
+  // Check if onboarding is completed and redirect if needed
+  const redirectPath = await checkCompletionAndReturnRedirect(trackerId);
+  if (redirectPath) {
+    redirect(redirectPath);
+  }
 
   // Build same-origin absolute URL (dev + Vercel preview safe)
   const base = await resolveInternalBaseUrl();

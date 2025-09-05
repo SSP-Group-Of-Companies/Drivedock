@@ -11,14 +11,14 @@ interface QuizQuestionCardProps {
   questionNumber: number;
 }
 
-export default function QuizQuestionCard({ 
-  question, 
-  userAnswer, 
-  isCorrect, 
-  questionNumber 
+export default function QuizQuestionCard({
+  question,
+  userAnswer,
+  isCorrect,
+  questionNumber,
 }: QuizQuestionCardProps) {
   return (
-    <div 
+    <div
       className="p-4 sm:p-6 rounded-2xl shadow-sm border w-full max-w-3xl"
       style={{
         background: "var(--color-surface)",
@@ -27,16 +27,16 @@ export default function QuizQuestionCard({
     >
       {/* Question Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-0 mb-4">
-        <h3 
+        <h3
           className="text-base sm:text-lg font-medium flex-1"
           style={{ color: "var(--color-on-surface)" }}
         >
           {question.questionText}
         </h3>
-        
+
         {/* Question Number and Result Indicator */}
         <div className="flex items-center gap-2 sm:ml-4">
-          <span 
+          <span
             className="text-sm font-medium px-2 py-1 rounded-full"
             style={{
               background: "var(--color-surface-variant)",
@@ -45,7 +45,7 @@ export default function QuizQuestionCard({
           >
             Q{questionNumber}
           </span>
-          
+
           {userAnswer && (
             <div className="flex items-center gap-1">
               {isCorrect ? (
@@ -63,7 +63,7 @@ export default function QuizQuestionCard({
         {question.options.map((option) => {
           const isUserAnswer = userAnswer === option.id;
           const isCorrectAnswer = option.id === question.correctAnswerId;
-          
+
           let optionStyle = {
             background: "var(--color-surface)",
             borderColor: "var(--color-outline)",
@@ -98,7 +98,7 @@ export default function QuizQuestionCard({
               <div className="flex items-center gap-2">
                 <span className="uppercase font-medium">{option.id}.</span>
                 <span>{option.value}</span>
-                
+
                 {/* Show indicators for correct and user answers */}
                 {isCorrectAnswer && (
                   <CheckCircle className="h-4 w-4 ml-auto text-green-500" />
@@ -116,22 +116,20 @@ export default function QuizQuestionCard({
       {userAnswer && (
         <div className="mt-4 p-2 sm:p-3 rounded-lg text-xs sm:text-sm">
           {isCorrect ? (
-            <div 
-              className="flex items-center gap-2 text-green-700"
-              style={{ background: "var(--color-success-container)" }}
-            >
+            <div className="flex items-center gap-2 text-green-700">
               <CheckCircle className="h-4 w-4" />
               <span>Correct answer!</span>
             </div>
           ) : (
-            <div 
+            <div
               className="flex items-center gap-2 text-red-700"
               style={{ background: "var(--color-error-container)" }}
             >
               <XCircle className="h-4 w-4" />
               <span>
-                Incorrect. Your answer: <strong>{userAnswer.toUpperCase()}</strong>. 
-                Correct answer: <strong>{question.correctAnswerId.toUpperCase()}</strong>.
+                Incorrect. Driver answer:{" "}
+                <strong>{userAnswer.toUpperCase()}</strong>. Correct answer:{" "}
+                <strong>{question.correctAnswerId.toUpperCase()}</strong>.
               </span>
             </div>
           )}

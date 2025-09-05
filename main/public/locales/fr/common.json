@@ -451,6 +451,26 @@
         "continueButton": "Suivant"
       }
     },
+
+    "step7": {
+      "title": "Formation sur Plateau",
+      "instructions": {
+        "header": "Vous avez atteint l'étape de formation sur plateau dans le processus de candidature.",
+        "contactSafety": "Veuillez communiquer avec le service Sécurité pour commencer votre formation sur plateau.",
+        "passMessage": "Si vous réussissez : vous passerez à l'étape suivante de votre processus d'intégration.",
+        "failMessage": "Si vous ne réussissez pas : une décision sera prise quant à vous fournir une formation supplémentaire ou à mettre fin à votre candidature.",
+        "note": "Remarque : Cette formation est requise pour les conducteurs qui ont besoin d'expérience de conduite sur plateau. Le service Sécurité communiquera avec vous pour planifier votre session de formation."
+      },
+      "success": {
+        "title": "Félicitations ! 🎉",
+        "message": "Vous avez terminé avec succès votre formation sur plateau ! Vos compétences de conduite sur plateau ont été évaluées et approuvées. Vous pouvez maintenant passer à l'étape suivante de votre intégration.",
+        "continueButton": "Suivant"
+      },
+      "buttons": {
+        "completeTraining": "Suivant"
+      }
+    },
+
     "errors": {
       "minimum5Years": "Vous devez fournir au moins 5 ans d’historique d’adresses.",
       "addressDurationError": "L’historique d’adresses fourni doit couvrir les 5 dernières années. Veuillez ajouter une adresse précédente si vous avez vécu à plus d’un endroit."
@@ -503,7 +523,7 @@
         "desc": "Si nécessaire, vous recevrez les instructions et l’adresse de référence."
       },
       "step7": {
-        "label": "7. Formation en cour (potentielle)",
+        "label": "7. Formation sur Plateau (Si Requise)",
         "desc": "Orientation sur site et présentation de l’équipement."
       }
     },
@@ -537,5 +557,19 @@
     "managePhotos": "Gérer les photos",
     "maxReached": "Maximum de {{count}} photos atteint",
     "moreCount": "+{{count}}"
+  },
+
+  "completion": {
+    "title": "Candidature Terminée avec Succès ! 🎉",
+    "message": "Félicitations ! Vous avez terminé avec succès votre candidature d'intégration de conducteur ! Votre candidature a été soumise et est maintenant en cours d'examen par notre équipe. Nous vous contacterons bientôt pour les prochaines étapes.",
+    "nextSteps": {
+      "title": "Que Se Passe-t-il Ensuite ?",
+      "message": "Notre équipe examinera votre candidature et vous contactera dans les 2-3 jours ouvrables pour discuter des prochaines étapes de votre processus d'embauche. Veuillez garder votre courriel et votre téléphone disponibles pour que notre équipe puisse vous joindre."
+    },
+    "buttons": {
+      "goHome": "Retour à l'Accueil",
+      "resume": "Voir la Candidature"
+    },
+    "resumeInfo": "Vous pouvez utiliser votre NAS/SSN pour reprendre et consulter votre candidature terminée à tout moment depuis la page d'accueil."
   }
 }

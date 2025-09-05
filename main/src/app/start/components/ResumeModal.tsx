@@ -92,13 +92,23 @@ export default function ResumeModal({ isOpen, onClose }: ResumeModalProps) {
       }
 
       const trackerContext = data?.data?.onboardingContext;
+      const isCompleted = data?.data?.isCompleted;
       const currentStep: EStepPath | undefined = trackerContext?.status?.currentStep;
 
-      if (trackerContext && currentStep) {
+      if (trackerContext) {
         setStatus("success");
         startTransition(() => {
           setTracker(trackerContext);
-          router.replace(buildOnboardingStepPath(trackerContext));
+          
+          // If onboarding is completed, redirect to completed page
+          if (isCompleted) {
+            router.replace(`/onboarding/${trackerContext.id}/completed`);
+          } else if (currentStep) {
+            // Otherwise, redirect to current step
+            router.replace(buildOnboardingStepPath(trackerContext));
+          } else {
+            throw new Error("Resume info missing");
+          }
         });
       } else {
         throw new Error("Resume info missing");

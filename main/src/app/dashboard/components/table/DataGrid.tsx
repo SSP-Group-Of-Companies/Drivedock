@@ -156,12 +156,22 @@ export default function DataGrid({
       busyRowId === rowId) ||
     (pending?.mode === "restore" && restore.isPending && busyRowId === rowId);
 
-  const confirm = async () => {
+  const confirm = async (action?: "resigned" | "terminated") => {
     if (!pending) return;
     try {
-      if (pending.mode === "terminate")
-        await terminate.mutateAsync({ id: pending.id });
-      else await restore.mutateAsync({ id: pending.id });
+      if (pending.mode === "terminate") {
+        if (!action) {
+          throw new Error("Termination type is required");
+        }
+        await terminate.mutateAsync({ 
+          id: pending.id, 
+          terminationType: action,
+          signal: undefined
+        });
+      } else {
+        // For restore, we don't need an action parameter
+        await restore.mutateAsync({ id: pending.id });
+      }
       close();
     } catch (err) {
       alert((err as Error)?.message ?? "Action failed");
@@ -376,12 +386,13 @@ export default function DataGrid({
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3, delay: 0.1 }}
         >
-          <colgroup>
-            <col className="w-[46%] sm:w-auto" />
-            <col className="w-[34%] sm:w-auto" />
-            <col className="hidden sm:table-column" />
-            <col className="w-[20%] sm:w-auto" />
-          </colgroup>
+                     <colgroup>
+             <col className="w-[40%] sm:w-auto" />
+             <col className="w-[30%] sm:w-auto" />
+             <col className="hidden sm:table-column" />
+             <col className="w-[15%] sm:w-auto" />
+             <col className="w-[15%] sm:w-auto" />
+           </colgroup>
 
           <thead
             className="sticky top-0 z-30"
@@ -403,18 +414,26 @@ export default function DataGrid({
               >
                 Status / Progress
               </th>
-              <th
-                className="hidden px-3 py-3 text-left font-medium sm:table-cell"
-                style={{ borderBottom: "1px solid var(--color-outline)" }}
-              >
-                Company
-              </th>
-              <th
-                className="px-2 py-3 text-center font-medium sm:px-3"
-                style={{ borderBottom: "1px solid var(--color-outline)" }}
-              >
-                <span className="hidden sm:inline">Actions</span>
-              </th>
+                             <th
+                 className="hidden px-3 py-3 text-left font-medium sm:table-cell"
+                 style={{ borderBottom: "1px solid var(--color-outline)" }}
+               >
+                 Company
+               </th>
+               {mode === "terminated" && (
+                 <th
+                   className="px-2 py-3 text-center font-medium sm:px-3"
+                   style={{ borderBottom: "1px solid var(--color-outline)" }}
+                 >
+                   <span className="hidden sm:inline">Termination Type</span>
+                 </th>
+               )}
+               <th
+                 className="px-2 py-3 text-center font-medium sm:px-3"
+                 style={{ borderBottom: "1px solid var(--color-outline)" }}
+               >
+                 <span className="hidden sm:inline">Actions</span>
+               </th>
             </tr>
           </thead>
 
@@ -430,7 +449,7 @@ export default function DataGrid({
                   transition={{ duration: 0.2 }}
                 >
                   <td
-                    colSpan={4}
+                    colSpan={mode === "terminated" ? 5 : 4}
                     className="px-3 py-16 text-center"
                     style={{ color: "var(--color-on-surface-variant)" }}
                   >
@@ -460,7 +479,7 @@ export default function DataGrid({
                   transition={{ duration: 0.2 }}
                 >
                   <td
-                    colSpan={4}
+                    colSpan={mode === "terminated" ? 5 : 4}
                     className="px-3 py-10 text-center"
                     style={{ color: "var(--color-on-surface-variant)" }}
                   >
@@ -545,13 +564,15 @@ export default function DataGrid({
                                 }}
                                 aria-hidden
                               />
-                              <span
-                                className="min-w-0 flex-1 truncate text-xs font-medium"
-                                style={{ color: "var(--color-on-surface)" }}
-                                title={step}
-                              >
-                                {step}
-                              </span>
+                              {inProgress && (
+                                <span
+                                  className="min-w-0 flex-1 truncate text-xs font-medium"
+                                  style={{ color: "var(--color-on-surface)" }}
+                                  title={step}
+                                >
+                                  {step}
+                                </span>
+                              )}
                               <div className="relative w-10 h-10 flex-shrink-0">
                                 {/* Circular progress with dots */}
                                 <svg
@@ -644,14 +665,16 @@ export default function DataGrid({
                                 >
                                   {inProgress ? "In Progress" : "Completed"}
                                 </span>
-                                <span
-                                  className="text-xs"
-                                  style={{
-                                    color: "var(--color-on-surface-variant)",
-                                  }}
-                                >
-                                  {step}
-                                </span>
+                                {inProgress && (
+                                  <span
+                                    className="text-xs"
+                                    style={{
+                                      color: "var(--color-on-surface-variant)",
+                                    }}
+                                  >
+                                    {step}
+                                  </span>
+                                )}
                                 <div className="ml-auto flex items-center">
                                   <CountryFlag
                                     companyId={it.companyId}
@@ -679,15 +702,47 @@ export default function DataGrid({
                           </div>
                         </td>
 
-                        {/* Company (desktop only) */}
-                        <td
-                          className="hidden px-3 py-4 sm:table-cell align-middle"
-                          style={{
-                            borderBottom: "1px solid var(--color-outline)",
-                          }}
-                        >
-                          <CompanyBadge companyId={it.companyId} size="xl" />
-                        </td>
+                                                 {/* Company (desktop only) */}
+                         <td
+                           className="hidden px-3 py-4 sm:table-cell align-middle"
+                           style={{
+                             borderBottom: "1px solid var(--color-outline)",
+                           }}
+                         >
+                           <CompanyBadge companyId={it.companyId} size="xl" />
+                         </td>
+
+                         {/* Termination Type (only shown on terminated page) */}
+                         {mode === "terminated" && (
+                           <td
+                             className="px-2 py-4 text-center sm:px-3 align-middle"
+                             style={{
+                               borderBottom: "1px solid var(--color-outline)",
+                             }}
+                           >
+                             {it.terminationType === "resigned" ? (
+                               <span
+                                 className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium"
+                                 style={{
+                                   backgroundColor: "var(--color-warning-container)",
+                                   color: "var(--color-warning-on-container)",
+                                 }}
+                               >
+                                 Resigned
+                               </span>
+                             ) : (
+                               <span
+                                 className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium"
+                                 style={{
+                                   backgroundColor: "var(--color-error-container)",
+                                   color: "var(--color-error-on-container)",
+                                 }}
+                               >
+                                 Terminated
+                               </span>
+                             )}
+                           </td>
+                         )}
 
                         {/* Actions */}
                         <td

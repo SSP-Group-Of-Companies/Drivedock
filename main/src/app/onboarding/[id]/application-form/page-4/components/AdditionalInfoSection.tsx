@@ -10,11 +10,20 @@ type BoolFieldName = "deniedLicenseOrPermit" | "suspendedOrRevoked" | "testedPos
 
 // Reusable Yes/No using your segmented <QuestionGroup />
 function YesNoQuestion({ name, labelKey }: { name: BoolFieldName; labelKey: string }) {
+  const { t } = useTranslation("common");
+  const formContext = useFormContext<ApplicationFormPage4Input>();
+  
+  // Always destructure (hooks must be called unconditionally)
   const {
     control,
     formState: { errors },
-  } = useFormContext<ApplicationFormPage4Input>();
-  const { t } = useTranslation("common");
+  } = formContext || { control: null, formState: { errors: {} } };
+  
+  // Defensive check after all hooks are called
+  if (!formContext) {
+    console.error("YesNoQuestion: useFormContext returned null - component not wrapped in FormProvider");
+    return <div>Form context error</div>;
+  }
 
   return (
     <div className="space-y-1" data-field={name}>
@@ -50,15 +59,24 @@ function YesNoQuestion({ name, labelKey }: { name: BoolFieldName; labelKey: stri
 export default function AdditionalInfoSection() {
   const mounted = useMounted();
   const { t } = useTranslation("common");
+  const formContext = useFormContext<ApplicationFormPage4Input>();
+  
+  // Always destructure (hooks must be called unconditionally)
   const {
     control,
     register,
     formState: { errors },
-  } = useFormContext<ApplicationFormPage4Input>();
+  } = formContext || { control: null, register: () => {}, formState: { errors: {} } };
 
-  const suspended = useWatch({ control, name: "suspendedOrRevoked" });
+  const suspended = useWatch({ control: control || undefined, name: "suspendedOrRevoked" });
 
+  // Defensive checks after all hooks are called
   if (!mounted) return null;
+  
+  if (!formContext) {
+    console.error("AdditionalInfoSection: useFormContext returned null - component not wrapped in FormProvider");
+    return <div>Form context error</div>;
+  }
 
   return (
     <section className="space-y-6 border border-gray-200 p-6 rounded-lg bg-white shadow-sm">

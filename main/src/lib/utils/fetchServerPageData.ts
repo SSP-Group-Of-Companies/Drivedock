@@ -146,6 +146,7 @@ export async function fetchServerPageData<T = unknown>(inputUrl: string, init: S
     const json = (await res.json().catch(() => null)) as any;
     if (json == null) return { error: "Empty JSON response." };
 
+
     const payload = (Object.prototype.hasOwnProperty.call(json, "data") ? json.data : json) as T;
     return { data: payload };
   } catch (err) {

@@ -7,37 +7,36 @@ import { useDashboardPageLoading } from "@/hooks/useDashboardPageLoading";
 import { useDashboardLoading } from "@/store/useDashboardLoading";
 import DashboardFormWizard from "../components/DashboardFormWizard";
 import { useEditMode } from "../components/EditModeContext";
-import { type EmploymentHistoryResponse } from "@/app/api/v1/admin/onboarding/[id]/application-form/employment-history/types";
-import { validateEmployments } from "@/app/api/v1/admin/onboarding/[id]/application-form/employment-history/employmentValidation";
-import { EmploymentForm } from "./components";
+import { type ExtrasResponse } from "@/app/api/v1/admin/onboarding/[id]/application-form/extras/types";
+import { EducationSection, CanadianHoursSection, AdditionalInfoSection } from "./components";
 import StepNotCompletedMessage from "../components/StepNotCompletedMessage";
-import AdminEmploymentQuestionsSection from "./components/AdminEmploymentQuestionsSection";
 
-
-// Helper function for API calls
-async function fetchEmploymentHistory(
+// Helper functions for API calls
+async function fetchExtras(
   trackerId: string
-): Promise<EmploymentHistoryResponse> {
+): Promise<ExtrasResponse> {
   const response = await fetch(
-    `/api/v1/admin/onboarding/${trackerId}/application-form/employment-history`
+    `/api/v1/admin/onboarding/${trackerId}/application-form/extras`
   );
   if (!response.ok) {
     // Check if it's a 401 error and include the error message
     if (response.status === 401) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(`401: ${errorData.message || 'Driver hasn\'t completed this step yet'}`);
+      throw new Error(
+        `401: ${errorData.message || "Driver hasn't completed this step yet"}`
+      );
     }
     throw new Error(`HTTP error! status: ${response.status}`);
   }
   return response.json();
 }
 
-async function patchEmploymentHistory(
+async function patchExtras(
   trackerId: string,
   data: any
-): Promise<EmploymentHistoryResponse> {
+): Promise<ExtrasResponse> {
   const response = await fetch(
-    `/api/v1/admin/onboarding/${trackerId}/application-form/employment-history`,
+    `/api/v1/admin/onboarding/${trackerId}/application-form/extras`,
     {
       method: "PATCH",
       headers: {
@@ -51,7 +50,9 @@ async function patchEmploymentHistory(
     // Check if it's a 401 error and include the error message
     if (response.status === 401) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(`401: ${errorData.message || 'Driver hasn\'t completed this step yet'}`);
+      throw new Error(
+        `401: ${errorData.message || "Driver hasn't completed this step yet"}`
+      );
     }
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.message || response.statusText);
@@ -60,7 +61,7 @@ async function patchEmploymentHistory(
   return response.json();
 }
 
-export default function EmploymentHistoryClient({
+export default function ExtrasClient({
   trackerId,
 }: {
   trackerId: string;
@@ -75,39 +76,39 @@ export default function EmploymentHistoryClient({
   const [saveMessage, setSaveMessage] = useState("");
 
   // Direct state management instead of hooks
-  const [employmentData, setEmploymentData] =
-    useState<EmploymentHistoryResponse | null>(null);
-  const [isEmploymentLoading, setIsEmploymentLoading] = useState(true);
+  const [extrasData, setExtrasData] =
+    useState<ExtrasResponse | null>(null);
+  const [isExtrasLoading, setIsExtrasLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  // Staged changes (page-level) - like safety processing
+  // Staged changes (page-level) - like other pages
   const [staged, setStaged] = useState<Record<string, any>>({});
+  
+
 
   const hasUnsavedChanges = Object.keys(staged).length > 0;
 
   const clearStaged = () => setStaged({});
 
-  // Fetch employment history data
+  // Fetch extras data
   useEffect(() => {
-    const loadEmploymentHistory = async () => {
+    const loadExtras = async () => {
       try {
-        setIsEmploymentLoading(true);
+        setIsExtrasLoading(true);
         setError(null);
-        const data = await fetchEmploymentHistory(trackerId);
-        setEmploymentData(data);
+        const data = await fetchExtras(trackerId);
+        setExtrasData(data);
+        // Don't initialize staged with current data - start empty like accidents-criminal
+        setStaged({});
       } catch (err) {
-        setError(
-          err instanceof Error
-            ? err
-            : new Error("Failed to load employment history")
-        );
+        setError(err instanceof Error ? err : new Error('Failed to load extras'));
       } finally {
-        setIsEmploymentLoading(false);
+        setIsExtrasLoading(false);
       }
     };
 
     if (trackerId) {
-      loadEmploymentHistory();
+      loadExtras();
     }
   }, [trackerId]);
 
@@ -122,56 +123,44 @@ export default function EmploymentHistoryClient({
     }
   }, [contractData, isContractLoading, hideLoader]);
 
-
-
   const handleSave = async () => {
     if (!hasUnsavedChanges) return;
-
-    // Validate employments before saving
-    if (staged.employments) {
-      const employmentErrors = validateEmployments(staged.employments);
-      if (employmentErrors.length > 0) {
-        setSaveMessage("Please fix employment validation errors before saving");
-        setTimeout(() => setSaveMessage(""), 5000);
-        return;
-      }
-    }
 
     setIsSaving(true);
     setSaveMessage("");
 
     try {
-      // Prepare the data in the format the API expects
+      // Prepare the data in the format the API expects (like employment history)
       const dataToSend = {
-        employments:
-          staged.employments ||
-          employmentData?.data.employmentHistory.employments ||
-          [],
-        // Include employment questions data
-        workedWithCompanyBefore: staged.workedWithCompanyBefore !== undefined 
-          ? staged.workedWithCompanyBefore 
-          : employmentData?.data.employmentHistory.workedWithCompanyBefore,
-        reasonForLeavingCompany: staged.reasonForLeavingCompany !== undefined 
-          ? staged.reasonForLeavingCompany 
-          : employmentData?.data.employmentHistory.reasonForLeavingCompany,
-        previousWorkDetails: staged.previousWorkDetails !== undefined 
-          ? staged.previousWorkDetails 
-          : employmentData?.data.employmentHistory.previousWorkDetails,
-        currentlyEmployed: staged.currentlyEmployed !== undefined 
-          ? staged.currentlyEmployed 
-          : employmentData?.data.employmentHistory.currentlyEmployed,
-        referredBy: staged.referredBy !== undefined 
-          ? staged.referredBy 
-          : employmentData?.data.employmentHistory.referredBy,
-        expectedRateOfPay: staged.expectedRateOfPay !== undefined 
-          ? staged.expectedRateOfPay 
-          : employmentData?.data.employmentHistory.expectedRateOfPay,
+        // Education
+        ...(staged.gradeSchool !== undefined || staged.college !== undefined || staged.postGraduate !== undefined) && {
+          education: {
+            gradeSchool: staged.gradeSchool ?? extrasData?.data.education.gradeSchool ?? 0,
+            college: staged.college ?? extrasData?.data.education.college ?? 0,
+            postGraduate: staged.postGraduate ?? extrasData?.data.education.postGraduate ?? 0,
+          }
+        },
+        
+        // Canadian Hours
+        ...(staged.dayOneDate !== undefined || staged.dailyHours !== undefined) && {
+          canadianHoursOfService: {
+            dayOneDate: staged.dayOneDate ?? extrasData?.data.canadianHoursOfService.dayOneDate,
+            dailyHours: staged.dailyHours ?? extrasData?.data.canadianHoursOfService.dailyHours ?? [],
+          }
+        },
+        
+        // Additional Info fields
+        ...(staged.deniedLicenseOrPermit !== undefined && { deniedLicenseOrPermit: staged.deniedLicenseOrPermit }),
+        ...(staged.suspendedOrRevoked !== undefined && { suspendedOrRevoked: staged.suspendedOrRevoked }),
+        ...(staged.suspensionNotes !== undefined && { suspensionNotes: staged.suspensionNotes }),
+        ...(staged.testedPositiveOrRefused !== undefined && { testedPositiveOrRefused: staged.testedPositiveOrRefused }),
+        ...(staged.completedDOTRequirements !== undefined && { completedDOTRequirements: staged.completedDOTRequirements }),
+        ...(staged.hasAccidentalInsurance !== undefined && { hasAccidentalInsurance: staged.hasAccidentalInsurance }),
       };
 
 
-
       // Use the direct API call
-      await patchEmploymentHistory(trackerId, dataToSend);
+      await patchExtras(trackerId, dataToSend);
 
       setSaveMessage("Changes saved successfully!");
       setTimeout(() => setSaveMessage(""), 3000);
@@ -180,8 +169,8 @@ export default function EmploymentHistoryClient({
       clearStaged();
 
       // Refresh the data to show updated values
-      const refreshedData = await fetchEmploymentHistory(trackerId);
-      setEmploymentData(refreshedData);
+      const refreshedData = await fetchExtras(trackerId);
+      setExtrasData(refreshedData);
     } catch (error) {
       console.error("Save error:", error);
       setSaveMessage(
@@ -197,8 +186,8 @@ export default function EmploymentHistoryClient({
   if (error && error.message.includes("401")) {
     return (
       <StepNotCompletedMessage 
-        stepName="Application Form Page 2"
-        stepDescription="This page requires the driver to complete the employment history section including work experience and gap explanations."
+        stepName="Application Form Page 4"
+        stepDescription="This page requires the driver to complete the application form including education, Canadian hours of service, and additional information."
       />
     );
   }
@@ -209,12 +198,7 @@ export default function EmploymentHistoryClient({
   }
 
   // Show loading state for contract data while layout is visible
-  if (
-    isContractLoading ||
-    !contractData ||
-    isEmploymentLoading ||
-    !employmentData
-  ) {
+  if (isContractLoading || !contractData || isExtrasLoading || !extrasData) {
     return (
       <div
         className="rounded-xl border p-8 text-center"
@@ -226,27 +210,22 @@ export default function EmploymentHistoryClient({
         <div className="flex flex-col items-center gap-2">
           <div
             className="h-6 w-6 animate-spin rounded-full border-2 border-transparent"
-            style={{
+            style={{ 
               borderTopColor: "var(--color-primary)",
-              borderWidth: "2px",
+              borderWidth: "2px"
             }}
           />
-          <span
-            className="text-xs font-medium"
-            style={{ color: "var(--color-on-surface-variant)" }}
-          >
-            Loading Employment History...
+          <span className="text-xs font-medium" style={{ color: "var(--color-on-surface-variant)" }}>
+            Loading Extras...
           </span>
         </div>
       </div>
     );
   }
 
-
-
   const ctx = contractData;
 
-  return (
+    return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -260,7 +239,7 @@ export default function EmploymentHistoryClient({
       {/* Form Wizard Progress */}
       <DashboardFormWizard contractContext={ctx} />
 
-      {/* Employment History Content */}
+      {/* Extras Content */}
       <div
         className="rounded-xl border p-6 shadow-sm dark:shadow-none"
         style={{
@@ -353,42 +332,76 @@ export default function EmploymentHistoryClient({
 
         {error ? (
           <div className="p-4 rounded-lg bg-red-100 text-red-800 border border-red-200">
-            <p className="font-medium">Error loading employment history:</p>
+            <p className="font-medium">Error loading extras:</p>
             <p className="text-sm">{error.message}</p>
           </div>
-                ) : employmentData?.data?.employmentHistory?.employments ? (
-          <>
-            <AdminEmploymentQuestionsSection
-              data={employmentData.data.employmentHistory}
-              isEditMode={isEditMode}
-              staged={staged}
-              onStage={setStaged}
-            />
-            <div className="mt-8">
-              <EmploymentForm
+        ) : extrasData?.data ? (
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+            {/* Education Section - Left Column */}
+            <div className="xl:col-span-6">
+              <EducationSection
+                data={extrasData.data.education}
+                isEditMode={isEditMode}
+                staged={staged}
+                onStage={(changes: Record<string, any>) =>
+                  setStaged((prev: Record<string, any>) => ({
+                    ...prev,
+                    ...changes,
+                  }))
+                }
+              />
+            </div>
+
+            {/* Additional Info Section - Right Column */}
+            <div className="xl:col-span-6">
+              <AdditionalInfoSection
                 data={{
-                  employments: employmentData.data.employmentHistory.employments,
+                  deniedLicenseOrPermit: extrasData.data.deniedLicenseOrPermit,
+                  suspendedOrRevoked: extrasData.data.suspendedOrRevoked,
+                  suspensionNotes: extrasData.data.suspensionNotes,
+                  testedPositiveOrRefused: extrasData.data.testedPositiveOrRefused,
+                  completedDOTRequirements: extrasData.data.completedDOTRequirements,
+                  hasAccidentalInsurance: extrasData.data.hasAccidentalInsurance,
                 }}
                 isEditMode={isEditMode}
                 staged={staged}
-                onStage={setStaged}
+                onStage={(changes: Record<string, any>) =>
+                  setStaged((prev: Record<string, any>) => ({
+                    ...prev,
+                    ...changes,
+                  }))
+                }
               />
             </div>
-          </>
+
+            {/* Canadian Hours Section - Full Width Below */}
+            <div className="xl:col-span-12">
+              <CanadianHoursSection
+                data={extrasData.data.canadianHoursOfService}
+                isEditMode={isEditMode}
+                staged={staged}
+                onStage={(changes: Record<string, any>) =>
+                  setStaged((prev: Record<string, any>) => ({
+                    ...prev,
+                    ...changes,
+                  }))
+                }
+              />
+            </div>
+          </div>
         ) : (
           <div className="text-center py-8">
             <span
               className="text-sm font-medium"
               style={{ color: "var(--color-on-surface)" }}
             >
-              No employment history data found
+              No extras data found
             </span>
             <span
               className="text-xs"
               style={{ color: "var(--color-on-surface-variant)" }}
             >
-              This driver may not have completed the employment history step
-              yet.
+              This driver may not have completed the extras step yet.
             </span>
           </div>
         )}
