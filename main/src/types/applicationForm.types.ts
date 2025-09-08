@@ -70,6 +70,8 @@ export interface IApplicationFormPage1 {
   lastName: string;
   sin?: string; // Client-provided on POST only
   sinEncrypted: string; // Server-computed; client should omit
+  sinIssueDate: string | Date; // YYYY-MM-DD (client) or Date (server)
+  gender: "male" | "female";
   sinPhoto: IPhoto;
   dob: string | Date; // YYYY-MM-DD (client) or Date (server)
   phoneHome: string;
@@ -211,6 +213,19 @@ export interface IFastCard {
  * - Canadian applicants: health card; Fast Card optional; etc.
  * - US applicants: medical certification photos; either passport OR PR/citizenship.
  */
+/**
+ * Truck details (Admin-only, all optional)
+ */
+export interface ITruckDetails {
+  vin?: string;
+  make?: string;
+  model?: string;
+  year?: string;
+  province?: string;
+  truckUnitNumber?: string;
+  plateNumber?: string;
+}
+
 export interface IApplicationFormPage4 {
   // Criminal Record Table
   criminalRecords: ICriminalRecordEntry[];
@@ -218,6 +233,7 @@ export interface IApplicationFormPage4 {
   // Incorporation / Business Details (if any of these provided, enforce all)
   employeeNumber?: string;
   hstNumber?: string;
+  businessName?: string;
   businessNumber?: string;
   incorporatePhotos?: IPhoto[];
   hstPhotos?: IPhoto[];
@@ -240,6 +256,9 @@ export interface IApplicationFormPage4 {
   testedPositiveOrRefused: boolean;
   completedDOTRequirements: boolean;
   hasAccidentalInsurance: boolean;
+
+  // Truck Details (Admin-only, all optional)
+  truckDetails?: ITruckDetails;
 }
 
 /* =========================

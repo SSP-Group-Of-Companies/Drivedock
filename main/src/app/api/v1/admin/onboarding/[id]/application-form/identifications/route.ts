@@ -36,6 +36,7 @@ type PatchBody = {
   // Page 4 subset (BODY defines truth for provided keys; required keys must be present)
   employeeNumber?: string;
   hstNumber?: string;
+  businessName?: string;
   businessNumber?: string;
 
   incorporatePhotos?: IPhoto[];
@@ -49,6 +50,9 @@ type PatchBody = {
   usVisaPhotos?: IPhoto[];
 
   fastCard?: IApplicationFormPage4["fastCard"];
+  
+  // Truck Details (Admin-only, all optional)
+  truckDetails?: IApplicationFormPage4["truckDetails"];
 };
 
 /* ----------------------------- helpers ----------------------------- */
@@ -89,19 +93,19 @@ function forbidPresence(b: PatchBody, key: keyof IApplicationFormPage4, label: s
   if (hasKey(b, key)) throw new AppError(400, `${label} must not be included for this applicant.`);
 }
 
-/** Business section presence in BODY (any of the 6 keys appears) */
+/** Business section presence in BODY (any of the 7 keys appears) */
 function businessKeysPresentInBody(b: PatchBody) {
-  return hasKey(b, "employeeNumber") || hasKey(b, "businessNumber") || hasKey(b, "hstNumber") || hasKey(b, "incorporatePhotos") || hasKey(b, "bankingInfoPhotos") || hasKey(b, "hstPhotos");
+  return hasKey(b, "employeeNumber") || hasKey(b, "businessName") || hasKey(b, "businessNumber") || hasKey(b, "hstNumber") || hasKey(b, "incorporatePhotos") || hasKey(b, "bankingInfoPhotos") || hasKey(b, "hstPhotos");
 }
 
-/** Business clear intent: ALL six keys present and all empty */
+/** Business clear intent: ALL seven keys present and all empty */
 function isBusinessClearIntent(b: PatchBody) {
   const allKeysPresent =
-    hasKey(b, "employeeNumber") && hasKey(b, "businessNumber") && hasKey(b, "hstNumber") && hasKey(b, "incorporatePhotos") && hasKey(b, "bankingInfoPhotos") && hasKey(b, "hstPhotos");
+    hasKey(b, "employeeNumber") && hasKey(b, "businessName") && hasKey(b, "businessNumber") && hasKey(b, "hstNumber") && hasKey(b, "incorporatePhotos") && hasKey(b, "bankingInfoPhotos") && hasKey(b, "hstPhotos");
 
   if (!allKeysPresent) return false;
 
-  const emptyStrings = (!b.employeeNumber || b.employeeNumber.trim() === "") && (!b.businessNumber || b.businessNumber.trim() === "") && (!b.hstNumber || b.hstNumber.trim() === "");
+  const emptyStrings = (!b.employeeNumber || b.employeeNumber.trim() === "") && (!b.businessName || b.businessName.trim() === "") && (!b.businessNumber || b.businessNumber.trim() === "") && (!b.hstNumber || b.hstNumber.trim() === "");
 
   const emptyPhotos = alen(b.incorporatePhotos) === 0 && alen(b.bankingInfoPhotos) === 0 && alen(b.hstPhotos) === 0;
 
@@ -113,12 +117,13 @@ function validateBusinessAllOrNothingOnBody(b: PatchBody) {
   if (!businessKeysPresentInBody(b)) return { mode: "skip" as const };
   if (isBusinessClearIntent(b)) return { mode: "clear" as const };
 
-  // else require all 6 keys present & valid
+  // else require all 7 keys present & valid
   const missing: string[] = [];
   const req = (k: keyof IApplicationFormPage4) => {
     if (!hasKey(b, k)) missing.push(k as string);
   };
   req("employeeNumber");
+  req("businessName");
   req("businessNumber");
   req("hstNumber");
   req("incorporatePhotos");
@@ -128,6 +133,7 @@ function validateBusinessAllOrNothingOnBody(b: PatchBody) {
   if (missing.length) throw new AppError(400, `Business section is partial. Missing: ${missing.join(", ")}. Provide all fields or clear all.`);
 
   if (!isNonEmptyString(b.employeeNumber)) throw new AppError(400, "employeeNumber is required in Business section.");
+  if (!isNonEmptyString(b.businessName)) throw new AppError(400, "businessName is required in Business section.");
   if (!isNonEmptyString(b.businessNumber)) throw new AppError(400, "businessNumber is required in Business section.");
   if (!isNonEmptyString(b.hstNumber)) throw new AppError(400, "hstNumber is required in Business section.");
 
@@ -197,11 +203,32 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     const prevP4 = appFormDoc.page4;
 
     /* -------------------- 0) ALWAYS require required groups in BODY (explicit contract) -------------------- */
-    // All PATCHes must include these required Page 4 groups
-    requirePresence(body, "passportPhotos", "Passport photos");
-    requirePresence(body, "prPermitCitizenshipPhotos", "PR/Permit/Citizenship photos");
-    expectCountExact(body, "passportPhotos", 2, "Passport photos");
-    expectCountRange(body, "prPermitCitizenshipPhotos", 1, 2, "PR/Permit/Citizenship photos");
+    // For US drivers: either passport OR PR/citizenship is required (not both)
+    // For Canadian drivers: both are required
+    if (isUS) {
+      const hasPassport = body.passportPhotos && body.passportPhotos.length === 2;
+      const hasPRCitizenship = body.prPermitCitizenshipPhotos && body.prPermitCitizenshipPhotos.length >= 1 && body.prPermitCitizenshipPhotos.length <= 2;
+      
+      if (!hasPassport && !hasPRCitizenship) {
+        throw new AppError(400, "US drivers must provide either passport photos (2 photos) or PR/Permit/Citizenship photos (1-2 photos)");
+      }
+      
+      // If passport is provided, validate it has exactly 2 photos
+      if (hasPassport) {
+        expectCountExact(body, "passportPhotos", 2, "Passport photos");
+      }
+      
+      // If PR/citizenship is provided, validate it has 1-2 photos
+      if (hasPRCitizenship) {
+        expectCountRange(body, "prPermitCitizenshipPhotos", 1, 2, "PR/Permit/Citizenship photos");
+      }
+    } else {
+      // Canadian drivers: both are required
+      requirePresence(body, "passportPhotos", "Passport photos");
+      requirePresence(body, "prPermitCitizenshipPhotos", "PR/Permit/Citizenship photos");
+      expectCountExact(body, "passportPhotos", 2, "Passport photos");
+      expectCountRange(body, "prPermitCitizenshipPhotos", 1, 2, "PR/Permit/Citizenship photos");
+    }
 
     if (isCanadian) {
       requirePresence(body, "healthCardPhotos", "Health card photos");
@@ -259,15 +286,26 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
         // Business (respect BODY if present)
         ...(hasKey(body, "employeeNumber") ? { employeeNumber: body.employeeNumber ?? "" } : {}),
+        ...(hasKey(body, "businessName") ? { businessName: body.businessName ?? "" } : {}),
         ...(hasKey(body, "businessNumber") ? { businessNumber: body.businessNumber ?? "" } : {}),
         ...(hasKey(body, "hstNumber") ? { hstNumber: body.hstNumber ?? "" } : {}),
         ...(hasKey(body, "incorporatePhotos") ? { incorporatePhotos: body.incorporatePhotos ?? [] } : {}),
         ...(hasKey(body, "bankingInfoPhotos") ? { bankingInfoPhotos: body.bankingInfoPhotos ?? [] } : {}),
         ...(hasKey(body, "hstPhotos") ? { hstPhotos: body.hstPhotos ?? [] } : {}),
 
-        // Required groups — always present
-        passportPhotos: body.passportPhotos!,
-        prPermitCitizenshipPhotos: body.prPermitCitizenshipPhotos!,
+        // Required groups — conditionally present based on country
+        ...(isUS 
+          ? {
+              // For US drivers: include only what was provided
+              ...(body.passportPhotos ? { passportPhotos: body.passportPhotos } : {}),
+              ...(body.prPermitCitizenshipPhotos ? { prPermitCitizenshipPhotos: body.prPermitCitizenshipPhotos } : {}),
+            }
+          : {
+              // For Canadian drivers: both are always present
+              passportPhotos: body.passportPhotos!,
+              prPermitCitizenshipPhotos: body.prPermitCitizenshipPhotos!,
+            }
+        ),
         ...(isCanadian
           ? {
               healthCardPhotos: body.healthCardPhotos!,
@@ -282,10 +320,14 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
         // Optional fast card
         ...(hasKey(body, "fastCard") ? { fastCard: body.fastCard } : {}),
+        
+        // Optional truck details
+        ...(hasKey(body, "truckDetails") ? { truckDetails: body.truckDetails } : {}),
       };
 
       if (bizDecision.mode === "clear") {
         nextP4.employeeNumber = "";
+        nextP4.businessName = "";
         nextP4.businessNumber = "";
         nextP4.hstNumber = "";
         nextP4.incorporatePhotos = [];
@@ -311,6 +353,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     // Use prevP4 snapshot (no Mongoose internals)
     const prevHadBiz =
       isNonEmptyString(prevP4.employeeNumber) ||
+      isNonEmptyString(prevP4.businessName) ||
       isNonEmptyString(prevP4.businessNumber) ||
       isNonEmptyString(prevP4.hstNumber) ||
       (prevP4.incorporatePhotos?.length ?? 0) > 0 ||
@@ -319,6 +362,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
     const nowBizEmpty =
       !isNonEmptyString(curP4.employeeNumber) &&
+      !isNonEmptyString(curP4.businessName) &&
       !isNonEmptyString(curP4.businessNumber) &&
       !isNonEmptyString(curP4.hstNumber) &&
       (curP4.incorporatePhotos?.length ?? 0) === 0 &&
@@ -456,6 +500,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       // Page 4 subset echo
       employeeNumber: appFormDoc.page4.employeeNumber,
       hstNumber: appFormDoc.page4.hstNumber,
+      businessName: appFormDoc.page4.businessName,
       businessNumber: appFormDoc.page4.businessNumber,
       incorporatePhotos: appFormDoc.page4.incorporatePhotos,
       hstPhotos: appFormDoc.page4.hstPhotos,
@@ -466,6 +511,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       prPermitCitizenshipPhotos: appFormDoc.page4.prPermitCitizenshipPhotos,
       usVisaPhotos: appFormDoc.page4.usVisaPhotos,
       fastCard: appFormDoc.page4.fastCard,
+      truckDetails: appFormDoc.page4.truckDetails,
     });
   } catch (err) {
     return errorResponse(err);
@@ -504,6 +550,7 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
       licenses: appFormDoc.page1.licenses,
       employeeNumber: appFormDoc.page4.employeeNumber,
       hstNumber: appFormDoc.page4.hstNumber,
+      businessName: appFormDoc.page4.businessName,
       businessNumber: appFormDoc.page4.businessNumber,
       incorporatePhotos: appFormDoc.page4.incorporatePhotos,
       hstPhotos: appFormDoc.page4.hstPhotos,
@@ -514,6 +561,7 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
       prPermitCitizenshipPhotos: appFormDoc.page4.prPermitCitizenshipPhotos,
       usVisaPhotos: appFormDoc.page4.usVisaPhotos,
       fastCard: appFormDoc.page4.fastCard,
+      truckDetails: appFormDoc.page4.truckDetails,
     });
   } catch (err) {
     return errorResponse(err);

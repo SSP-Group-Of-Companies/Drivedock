@@ -15,7 +15,18 @@ export type ContractContext = {
     driveTest?: { completed?: boolean };
     carriersEdgeTraining?: { emailSent?: boolean };
     drugTest?: { status?: EDrugTestStatus; documentsUploaded?: boolean };
-    identifications?: { driverLicenseExpiration?: string };
+    identifications?: { 
+      driverLicenseExpiration?: string;
+      truckDetails?: {
+        vin?: string;
+        make?: string;
+        model?: string;
+        year?: string;
+        province?: string;
+        truckUnitNumber?: string;
+        plateNumber?: string;
+      };
+    };
   };
 };
 

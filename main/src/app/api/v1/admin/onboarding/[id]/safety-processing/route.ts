@@ -60,10 +60,11 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
     const carriersEdge = readMongooseRefField(onboardingDoc.forms?.carriersEdgeTraining) ?? {};
     const driveTest = readMongooseRefField(onboardingDoc.forms?.driveTest) ?? {};
 
-    // --- Resolve driver name/email + license expiry (index 0) from ApplicationForm ---
+    // --- Resolve driver name/email + license expiry (index 0) + truck details from ApplicationForm ---
     let driverName: string | undefined;
     let driverEmail: string | undefined;
     let driverLicenseExpiration: Date | undefined;
+    let truckDetails: any | undefined;
 
     const driverAppRef: any = onboardingDoc.forms?.driverApplication;
 
@@ -83,6 +84,11 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
         const d = new Date(lic);
         if (!Number.isNaN(d.getTime())) driverLicenseExpiration = d;
       }
+
+      // Extract truck details from page 4
+      if (doc?.page4?.truckDetails) {
+        truckDetails = doc.page4.truckDetails;
+      }
     };
 
     if (driverAppRef?._id && typeof driverAppRef === "object" && !driverAppRef.page1) {
@@ -95,6 +101,7 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
           "page1.lastName": 1,
           "page1.email": 1,
           "page1.licenses": 1,
+          "page4.truckDetails": 1,
           licenses: 1,
         }).lean();
 
@@ -133,8 +140,13 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
       },
     };
 
-    // identifications block (license expiry for notifications)
-    const identifications = driverLicenseExpiration != null ? { driverLicenseExpiration } : undefined;
+    // identifications block (license expiry and truck details for notifications)
+    const identifications = (driverLicenseExpiration != null || truckDetails != null) 
+      ? { 
+          ...(driverLicenseExpiration != null ? { driverLicenseExpiration } : {}),
+          ...(truckDetails != null ? { truckDetails } : {})
+        } 
+      : undefined;
 
     const responseData = {
       onboardingContext: enrichedContext,
@@ -460,6 +472,11 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
         const d = new Date(lic);
         if (!Number.isNaN(d.getTime())) driverLicenseExpiration = d;
       }
+
+      // Extract truck details from page 4
+      if (doc?.page4?.truckDetails) {
+        truckDetails = doc.page4.truckDetails;
+      }
     };
 
     if (driverAppRef?._id && typeof driverAppRef === "object" && !driverAppRef.page1) {
@@ -470,6 +487,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
           "page1.lastName": 1,
           "page1.email": 1,
           "page1.licenses": 1,
+          "page4.truckDetails": 1,
           licenses: 1,
         }).lean();
         if (appDoc) tryExtractFromDoc(appDoc);

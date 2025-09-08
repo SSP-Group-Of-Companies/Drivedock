@@ -62,6 +62,7 @@ export const applicationFormPage4Schema = new Schema<IApplicationFormPage4>(
     // Incorporate, HST & Banking
     employeeNumber: { type: String },
     hstNumber: { type: String },
+    businessName: { type: String },
     businessNumber: { type: String },
 
     hstPhotos: {
@@ -158,6 +159,17 @@ export const applicationFormPage4Schema = new Schema<IApplicationFormPage4>(
     hasAccidentalInsurance: {
       type: Boolean,
       required: [true, "Accidental insurance status must be specified."],
+    },
+
+    // Truck Details (Admin-only, all optional)
+    truckDetails: {
+      vin: { type: String, default: "" },
+      make: { type: String, default: "" },
+      model: { type: String, default: "" },
+      year: { type: String, default: "" },
+      province: { type: String, default: "" },
+      truckUnitNumber: { type: String, default: "" },
+      plateNumber: { type: String, default: "" },
     },
   },
   {

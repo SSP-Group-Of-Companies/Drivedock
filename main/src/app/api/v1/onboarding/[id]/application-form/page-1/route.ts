@@ -4,7 +4,7 @@ import { decryptString, encryptString, hashString } from "@/lib/utils/cryptoUtil
 import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
 import connectDB from "@/lib/utils/connectDB";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
-import { isValidSIN, isValidPhoneNumber, isValidEmail, isValidDOB } from "@/lib/utils/validationUtils";
+import { isValidSIN, isValidPhoneNumber, isValidEmail, isValidDOB, isValidSINIssueDate, isValidGender } from "@/lib/utils/validationUtils";
 import { hasRecentAddressCoverage } from "@/lib/utils/hasMinimumAddressDuration";
 import { advanceProgress, buildTrackerContext, nextResumeExpiry, onboardingExpired } from "@/lib/utils/onboardingUtils";
 import { deleteS3Objects, finalizePhoto, buildFinalDest } from "@/lib/utils/s3Upload";
@@ -46,6 +46,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!isValidPhoneNumber(page1.phoneCell)) return errorResponse(400, "Invalid cell phone");
     if (!isValidPhoneNumber(page1.emergencyContactPhone)) return errorResponse(400, "Invalid emergency contact phone");
     if (!isValidDOB(page1.dob)) return errorResponse(400, "Invalid date of birth");
+    if (!isValidSINIssueDate(page1.sinIssueDate)) return errorResponse(400, "Invalid SIN issue date");
+    if (!isValidGender(page1.gender)) return errorResponse(400, "Invalid gender");
     if (!hasRecentAddressCoverage(page1.addresses)) return errorResponse(400, "Address history must cover 5 years");
 
     const appFormId = onboardingDoc.forms?.driverApplication;

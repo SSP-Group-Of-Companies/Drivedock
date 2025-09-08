@@ -3,59 +3,14 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useContract } from "@/hooks/dashboard/contract/useContract";
+import { useFlatbedTraining, useUpdateFlatbedTraining } from "@/hooks/dashboard/contract/useFlatbedTraining";
 import { useDashboardPageLoading } from "@/hooks/useDashboardPageLoading";
 import { useDashboardLoading } from "@/store/useDashboardLoading";
 import DashboardFormWizard from "../../components/DashboardFormWizard";
 import { useEditMode } from "../../components/EditModeContext";
 import { FlatbedTrainingContent, UpdateSubmitBar } from "./components";
-import { type FlatbedTrainingResponse } from "@/app/api/v1/admin/onboarding/[id]/appraisal/flatbed-training/types";
 import StepNotCompletedMessage from "../../components/StepNotCompletedMessage";
 
-// Helper functions for API calls
-async function fetchFlatbedTraining(trackerId: string): Promise<FlatbedTrainingResponse> {
-  const response = await fetch(`/api/v1/admin/onboarding/${trackerId}/appraisal/flatbed-training`);
-  if (!response.ok) {
-    // Check if it's a 401 or 403 error and include the error message
-    if (response.status === 401 || response.status === 403) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        `${response.status}: ${errorData.message || "Driver hasn't reached this step yet"}`
-      );
-    }
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-  return response.json();
-}
-
-async function patchFlatbedTraining(
-  trackerId: string,
-  data: any
-): Promise<FlatbedTrainingResponse> {
-  const response = await fetch(
-    `/api/v1/admin/onboarding/${trackerId}/appraisal/flatbed-training`,
-    {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    }
-  );
-
-  if (!response.ok) {
-    // Check if it's a 401 error and include the error message
-    if (response.status === 401) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        `401: ${errorData.message || "Driver hasn't completed this step yet"}`
-      );
-    }
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || response.statusText);
-  }
-
-  return response.json();
-}
 
 export default function FlatbedTrainingClient({
   trackerId,
@@ -68,14 +23,16 @@ export default function FlatbedTrainingClient({
   const { isVisible: isDashboardLoaderVisible } = useDashboardLoading();
   const [shouldRender, setShouldRender] = useState(false);
   const { isEditMode } = useEditMode();
-  const [isSaving, setIsSaving] = useState(false);
 
-  // Direct state management instead of hooks
-  const [flatbedData, setFlatbedData] =
-    useState<FlatbedTrainingResponse | null>(null);
-  const [isFlatbedLoading, setIsFlatbedLoading] =
-    useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  // React Query hooks
+  const { 
+    data: flatbedData, 
+    isLoading: isFlatbedLoading, 
+    error,
+    isError 
+  } = useFlatbedTraining(trackerId);
+  
+  const updateMutation = useUpdateFlatbedTraining(trackerId);
 
   // Staged changes (page-level) - like other contract pages
   const [staged, setStaged] = useState<Record<string, any>>({});
@@ -84,25 +41,6 @@ export default function FlatbedTrainingClient({
 
   const clearStaged = () => setStaged({});
 
-  // Fetch flatbed training data
-  useEffect(() => {
-    const loadFlatbedTraining = async () => {
-      try {
-        setIsFlatbedLoading(true);
-        setError(null);
-        const data = await fetchFlatbedTraining(trackerId);
-        setFlatbedData(data);
-      } catch (err) {
-        setError(err instanceof Error ? err : new Error('Failed to load flatbed training'));
-      } finally {
-        setIsFlatbedLoading(false);
-      }
-    };
-
-    if (trackerId) {
-      loadFlatbedTraining();
-    }
-  }, [trackerId]);
 
   // Handle rendering after contract data is loaded
   useEffect(() => {
@@ -118,20 +56,15 @@ export default function FlatbedTrainingClient({
   const handleSave = async () => {
     if (!hasUnsavedChanges) return;
 
+    const dataToSend = {
+      flatbedTraining: staged,
+    };
+
     try {
-      setIsSaving(true);
-
-      const dataToSend = {
-        flatbedTraining: staged,
-      };
-
-      const result = await patchFlatbedTraining(trackerId, dataToSend);
-      setFlatbedData(result);
+      await updateMutation.mutateAsync(dataToSend);
       clearStaged();
     } catch (err) {
       console.error("Failed to save flatbed training:", err);
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -146,7 +79,7 @@ export default function FlatbedTrainingClient({
   };
 
   // Handle 401/403 errors (step not reached)
-  if (error && (error.message.includes("401") || error.message.includes("403"))) {
+  if (isError && error && (error.message.includes("401") || error.message.includes("403"))) {
     return (
       <StepNotCompletedMessage
         stepName="Flatbed Training"
@@ -197,7 +130,7 @@ export default function FlatbedTrainingClient({
       {/* Submit bar */}
       <UpdateSubmitBar 
         dirty={hasUnsavedChanges} 
-        busy={isSaving} 
+        busy={updateMutation.isPending} 
         onSubmit={handleSave} 
         onDiscard={handleDiscard} 
       />

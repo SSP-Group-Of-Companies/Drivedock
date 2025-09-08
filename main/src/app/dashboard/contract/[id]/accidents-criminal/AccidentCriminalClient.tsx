@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { useEditMode } from "@/app/dashboard/contract/[id]/components/EditModeContext";
 import UpdateSubmitBar from "@/app/dashboard/contract/[id]/safety-processing/components/UpdateSubmitBar";
 import AccidentReportSection from "./components/AccidentReportSection";
@@ -18,6 +19,7 @@ import StepNotCompletedMessage from "../components/StepNotCompletedMessage";
 
 export default function AccidentCriminalClient() {
   const { id: trackerId } = useParams<{ id: string }>();
+  const queryClient = useQueryClient();
 
   const [data, setData] = useState<AccidentCriminalResponse["data"] | null>(
     null
@@ -90,6 +92,9 @@ export default function AccidentCriminalClient() {
 
       // Refresh data after successful save
       await fetchData();
+
+      // Invalidate contract context to update progress bar
+      queryClient.invalidateQueries({ queryKey: ["contract-context", trackerId] });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save data");
     }

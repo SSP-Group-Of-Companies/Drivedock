@@ -68,6 +68,7 @@ export default function PersonalDetails({ onboardingContext }: PersonalDetailsPr
 
   //  WATCH ALL FIELDS UP FRONT (no hooks in JSX, no conditional hooks)
   const sinValue = useWatch({ control, name: "sin" });
+  const genderValue = useWatch({ control, name: "gender" });
   const dobValue = useWatch({ control, name: "dob" });
   const canProvideProofChecked = useWatch({
     control,
@@ -253,6 +254,34 @@ export default function PersonalDetails({ onboardingContext }: PersonalDetailsPr
         {/* Last Name */}
         <TextInput name="lastName" label={t("form.step2.page1.fields.lastName")} placeholder="Deo" error={errors.lastName} register={register} />
 
+        {/* Email Address */}
+        <TextInput name="email" label={t("form.step2.page1.fields.email")} placeholder="john@gmail.com" error={errors.email} register={register} />
+
+        {/* Gender Selection */}
+        <div data-field="gender">
+          <label className="block text-sm font-medium text-gray-700 mb-2">{t("form.step2.page1.fields.gender")}</label>
+          <div className="inline-flex w-full rounded-full border border-gray-300 overflow-hidden">
+            {["male", "female"].map((option, idx) => {
+              const isSelected = genderValue === option;
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setValue("gender", option as "male" | "female", { shouldValidate: true })}
+                  className={`w-full px-4 py-2 text-sm font-medium transition-all ${
+                    isSelected
+                      ? "bg-[#0071BC] text-white"
+                      : "bg-white text-gray-800 hover:bg-gray-50"
+                  } ${idx > 0 ? "border-l border-gray-300" : ""}`}
+                >
+                  {t(`form.step2.page1.fields.${option}`)}
+                </button>
+              );
+            })}
+          </div>
+          {errors.gender && <p className="text-red-500 text-sm mt-1">{errors.gender.message?.toString()}</p>}
+        </div>
+
         {/* SIN Number */}
         <div className="relative">
           <label className="block text-sm font-medium text-gray-700">{getSINLabel()}</label>
@@ -315,8 +344,30 @@ export default function PersonalDetails({ onboardingContext }: PersonalDetailsPr
           {errors.sin && <p className="text-red-500 text-sm mt-1">{errors.sin.message?.toString()}</p>}
         </div>
 
-        {/* SIN Photo Upload */}
-        <div data-field="sinPhoto">
+        {/* SIN Issue Date */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">{t("form.step2.page1.fields.sinIssueDate")}</label>
+          <input
+            {...register("sinIssueDate")}
+            type="date"
+            name="sinIssueDate"
+            data-field="sinIssueDate"
+            max={(() => {
+              const today = new Date();
+              return today.toISOString().split("T")[0];
+            })()}
+            min={(() => {
+              const today = new Date();
+              const minDate = new Date(today.getFullYear() - 100, today.getMonth(), today.getDate());
+              return minDate.toISOString().split("T")[0];
+            })()}
+            className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
+          />
+          {errors.sinIssueDate && <p className="text-red-500 text-sm mt-1">{errors.sinIssueDate.message?.toString()}</p>}
+        </div>
+
+        {/* SIN Photo Upload - Full Width */}
+        <div className="md:col-span-2" data-field="sinPhoto">
           <label className="block text-sm font-medium text-gray-700 mb-1">{t("form.step2.page1.fields.sinPhoto")}</label>
           {sinPhotoPreview || sinPhotoUrl ? (
             <div className="relative">
@@ -412,9 +463,6 @@ export default function PersonalDetails({ onboardingContext }: PersonalDetailsPr
 
         {/* Phone: Cell */}
         <PhoneInput label={t("form.step2.page1.fields.phoneCell")} value={getDisplayPhone(phoneCellRaw)} onChange={(v) => handlePhoneChange("phoneCell", v)} error={errors.phoneCell} />
-
-        {/* Email */}
-        <TextInput name="email" label={t("form.step2.page1.fields.email")} placeholder="john@gmail.com" error={errors.email} register={register} />
 
         {/* Emergency Contact */}
         <TextInput name="emergencyContactName" label={t("form.step2.page1.fields.emergencyContactName")} error={errors.emergencyContactName} register={register} />

@@ -126,6 +126,27 @@ export function isValidDOB(dobInput: string | Date): boolean {
   return age >= 23 && age <= 100;
 }
 
+export function isValidSINIssueDate(dateInput: string | Date): boolean {
+  const issueDate = new Date(dateInput);
+  if (Number.isNaN(issueDate.getTime())) return false;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  // Issue date cannot be in the future
+  if (issueDate > today) return false;
+  
+  // Issue date cannot be more than 100 years ago (reasonable limit)
+  const hundredYearsAgo = new Date();
+  hundredYearsAgo.setFullYear(today.getFullYear() - 100);
+  
+  return issueDate >= hundredYearsAgo;
+}
+
+export function isValidGender(gender: string): boolean {
+  return gender === "male" || gender === "female";
+}
+
 /* ================================
  * Employment History (Backend-parity)
  * ================================ */

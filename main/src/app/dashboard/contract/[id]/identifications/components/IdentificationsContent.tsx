@@ -2,8 +2,11 @@
 
 import React from "react";
 import { IdentificationsData } from "@/app/api/v1/admin/onboarding/[id]/application-form/identifications/types";
-import LicenseInformationSection from "./LicenseInformationSection";
+import DriverLicenseSection from "./DriverLicenseSection";
+import FastCardSection from "./FastCardSection";
+import BusinessInformationSection from "./BusinessInformationSection";
 import ImageGallerySection from "./ImageGallerySection";
+import TruckDetailsSection from "./TruckDetailsSection";
 import { ECountryCode } from "@/types/shared.types";
 
 interface IdentificationsContentProps {
@@ -14,6 +17,7 @@ interface IdentificationsContentProps {
   onDiscard: () => void;
   onStage: (changes: any) => void;
   countryCode: ECountryCode;
+  highlightTruckDetails?: boolean;
 }
 
 export default function IdentificationsContent({
@@ -24,6 +28,7 @@ export default function IdentificationsContent({
   onDiscard: _onDiscard,
   onStage,
   countryCode,
+  highlightTruckDetails = false,
 }: IdentificationsContentProps) {
   // Extract data for components
 
@@ -36,31 +41,40 @@ export default function IdentificationsContent({
 
   return (
     <div className="space-y-6">
-      {/* License Information Section */}
-      <div className="space-y-4">
-        <div
-          className="flex items-center gap-3 pb-2 border-b"
-          style={{ borderColor: "var(--color-outline)" }}
-        >
-          <div
-            className="w-1 h-8 rounded-full"
-            style={{ background: "var(--color-primary)" }}
-          />
-          <h2
-            className="text-xl font-bold"
-            style={{ color: "var(--color-on-surface)" }}
-          >
-            License Information
-          </h2>
-        </div>
-        <LicenseInformationSection
+      {/* Row 1: Truck Details + Driver License */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        {/* Truck Details Section */}
+        <TruckDetailsSection
+          truckDetails={getCurrentValue("truckDetails")}
+          onStage={onStage}
+          highlight={highlightTruckDetails}
+        />
+
+        {/* Driver License Section */}
+        <DriverLicenseSection
           licenses={getCurrentValue("licenses") || []}
+          onStage={onStage}
+        />
+      </div>
+
+      {/* Row 2: Fast Card + Business Information */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        {/* Fast Card Section - Only for Canadian drivers */}
+        {countryCode === ECountryCode.CA && (
+          <FastCardSection
+            fastCard={getCurrentValue("fastCard")}
+            onStage={onStage}
+            countryCode={countryCode}
+          />
+        )}
+
+        {/* Business Information Section */}
+        <BusinessInformationSection
           employeeNumber={getCurrentValue("employeeNumber") || ""}
           hstNumber={getCurrentValue("hstNumber") || ""}
+          businessName={getCurrentValue("businessName") || ""}
           businessNumber={getCurrentValue("businessNumber") || ""}
-          fastCard={getCurrentValue("fastCard")}
           onStage={onStage}
-          countryCode={countryCode}
         />
       </div>
 
@@ -72,7 +86,7 @@ export default function IdentificationsContent({
         >
           <div
             className="w-1 h-8 rounded-full"
-            style={{ background: "var(--color-secondary)" }}
+            style={{ background: "var(--color-primary-container)" }}
           />
           <h2
             className="text-xl font-bold"
@@ -103,6 +117,7 @@ export default function IdentificationsContent({
           countryCode={countryCode}
         />
       </div>
+
     </div>
   );
 }

@@ -419,6 +419,7 @@ export default function ContractSummaryBar({ trackerId }: Props) {
                 id="notif-menu"
                 onClose={() => setWhichOpen(null)}
                 context={data ?? null}
+                trackerId={trackerId}
               />
             )}
           </div>
@@ -794,6 +795,7 @@ export default function ContractSummaryBar({ trackerId }: Props) {
               id="notif-menu-desktop"
               onClose={() => setWhichOpen(null)}
               context={data ?? null}
+              trackerId={trackerId}
             />
           )}
         </div>

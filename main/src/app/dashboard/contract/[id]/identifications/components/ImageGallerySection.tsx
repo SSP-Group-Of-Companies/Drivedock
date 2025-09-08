@@ -434,9 +434,14 @@ export default function ImageGallerySection({
             onStage({ licenses: updatedLicenses });
           }
         } else {
-          // Regular array-based photos
-          const newPhotos = [...item.photos, newPhoto];
-          onStage({ [item.fieldKey]: newPhotos });
+          // Regular array-based photos — derive from latest staged state to avoid stale closures
+          onStage((prev: any) => {
+            const prevArr: IPhoto[] = Array.isArray(prev?.[item.fieldKey])
+              ? prev[item.fieldKey]
+              : (item.photos || []);
+            const next = [...prevArr, newPhoto];
+            return { ...prev, [item.fieldKey]: next };
+          });
         }
 
         setIsUploading(false);
@@ -511,16 +516,17 @@ export default function ImageGallerySection({
         setCurrentPhotoIndex(0);
       }
     } else {
-      // Regular array-based photos
-      const newPhotos = item.photos.filter((_, index) => index !== photoIndex);
-      onStage({ [item.fieldKey]: newPhotos });
+      // Regular array-based photos — derive from latest staged state to avoid stale closures
+      onStage((prev: any) => {
+        const prevArr: IPhoto[] = Array.isArray(prev?.[item.fieldKey])
+          ? prev[item.fieldKey]
+          : (item.photos || []);
+        const next = prevArr.filter((_: IPhoto, index: number) => index !== photoIndex);
+        return { ...prev, [item.fieldKey]: next };
+      });
 
-      // Adjust current photo index if needed
-      if (currentPhotoIndex >= newPhotos.length && newPhotos.length > 0) {
-        setCurrentPhotoIndex(newPhotos.length - 1);
-      } else if (newPhotos.length === 0) {
-        setCurrentPhotoIndex(0);
-      }
+      // Adjust current photo index conservatively after deletion
+      setCurrentPhotoIndex((prev) => (prev > 0 ? prev - 1 : 0));
     }
   };
 
@@ -591,10 +597,15 @@ export default function ImageGallerySection({
           }
           onStage({ licenses: updatedLicenses });
         } else {
-          // Regular array-based photos
-          const newPhotos = [...item.photos];
-          newPhotos[photoIndex] = newPhoto;
-          onStage({ [item.fieldKey]: newPhotos });
+          // Regular array-based photos — derive from latest staged state to avoid stale closures
+          onStage((prev: any) => {
+            const prevArr: IPhoto[] = Array.isArray(prev?.[item.fieldKey])
+              ? prev[item.fieldKey]
+              : (item.photos || []);
+            const next = [...prevArr];
+            next[photoIndex] = newPhoto;
+            return { ...prev, [item.fieldKey]: next };
+          });
         }
 
         setIsUploading(false);

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useContract } from "@/hooks/dashboard/contract/useContract";
+import { usePersonalDetails, useUpdatePersonalDetails } from "@/hooks/dashboard/contract/usePersonalDetails";
 import { useDashboardPageLoading } from "@/hooks/useDashboardPageLoading";
 import { useDashboardLoading } from "@/store/useDashboardLoading";
 import DashboardFormWizard from "../components/DashboardFormWizard";
@@ -12,59 +13,9 @@ import {
   PlaceOfBirthSection,
   AddressHistorySection,
 } from "./components";
-import { type PersonalDetailsResponse } from "@/app/api/v1/admin/onboarding/[id]/application-form/personal-details/types";
 import { validateAddresses } from "@/app/api/v1/admin/onboarding/[id]/application-form/personal-details/addressValidation";
 import StepNotCompletedMessage from "../components/StepNotCompletedMessage";
 
-// Helper functions for API calls
-async function fetchPersonalDetails(
-  trackerId: string
-): Promise<PersonalDetailsResponse> {
-  const response = await fetch(
-    `/api/v1/admin/onboarding/${trackerId}/application-form/personal-details`
-  );
-  if (!response.ok) {
-    // Check if it's a 401 error and include the error message
-    if (response.status === 401) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        `401: ${errorData.message || "Driver hasn't completed this step yet"}`
-      );
-    }
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-  return response.json();
-}
-
-async function patchPersonalDetails(
-  trackerId: string,
-  data: any
-): Promise<PersonalDetailsResponse> {
-  const response = await fetch(
-    `/api/v1/admin/onboarding/${trackerId}/application-form/personal-details`,
-    {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    }
-  );
-
-  if (!response.ok) {
-    // Check if it's a 401 error and include the error message
-    if (response.status === 401) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        `401: ${errorData.message || "Driver hasn't completed this step yet"}`
-      );
-    }
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || response.statusText);
-  }
-
-  return response.json();
-}
 
 export default function PersonalDetailsClient({
   trackerId,
@@ -77,15 +28,17 @@ export default function PersonalDetailsClient({
   const { isVisible: isDashboardLoaderVisible } = useDashboardLoading();
   const [shouldRender, setShouldRender] = useState(false);
   const { isEditMode } = useEditMode();
-  const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
 
-  // Direct state management instead of hooks
-  const [personalDetailsData, setPersonalDetailsData] =
-    useState<PersonalDetailsResponse | null>(null);
-  const [isPersonalDetailsLoading, setIsPersonalDetailsLoading] =
-    useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  // React Query hooks
+  const { 
+    data: personalDetailsData, 
+    isLoading: isPersonalDetailsLoading, 
+    error,
+    isError 
+  } = usePersonalDetails(trackerId);
+  
+  const updateMutation = useUpdatePersonalDetails(trackerId);
 
   // Staged changes (page-level) - like safety processing
   const [staged, setStaged] = useState<Record<string, any>>({});
@@ -94,29 +47,6 @@ export default function PersonalDetailsClient({
 
   const clearStaged = () => setStaged({});
 
-  // Fetch personal details data
-  useEffect(() => {
-    const loadPersonalDetails = async () => {
-      try {
-        setIsPersonalDetailsLoading(true);
-        setError(null);
-        const data = await fetchPersonalDetails(trackerId);
-        setPersonalDetailsData(data);
-      } catch (err) {
-        setError(
-          err instanceof Error
-            ? err
-            : new Error("Failed to load personal details")
-        );
-      } finally {
-        setIsPersonalDetailsLoading(false);
-      }
-    };
-
-    if (trackerId) {
-      loadPersonalDetails();
-    }
-  }, [trackerId]);
 
   // Progressive loading: Show layout first, then content
   useEffect(() => {
@@ -130,7 +60,7 @@ export default function PersonalDetailsClient({
   }, [contractData, isContractLoading, hideLoader]);
 
   // Check for 401 error (step not completed) - MUST be before loading check
-  if (error && error.message.includes("401")) {
+  if (isError && error && error.message.includes("401")) {
     return (
       <StepNotCompletedMessage
         stepName="Application Form Page 1"
@@ -194,38 +124,25 @@ export default function PersonalDetailsClient({
       }
     }
 
-    setIsSaving(true);
-    setSaveMessage("");
+    // Prepare the data in the format the API expects
+    const dataToSend = {
+      personalDetails: {
+        ...personalData,
+        ...staged, // Merge staged changes with original data
+      },
+    };
 
     try {
-      // Prepare the data in the format the API expects
-      const dataToSend = {
-        personalDetails: {
-          ...personalData,
-          ...staged, // Merge staged changes with original data
-        },
-      };
-
-      // Use the direct API call
-      await patchPersonalDetails(trackerId, dataToSend);
-
+      await updateMutation.mutateAsync(dataToSend);
       setSaveMessage("Changes saved successfully!");
       setTimeout(() => setSaveMessage(""), 3000);
-
-      // Clear staged changes after successful save
       clearStaged();
-
-      // Refresh the data to show updated values
-      const refreshedData = await fetchPersonalDetails(trackerId);
-      setPersonalDetailsData(refreshedData);
     } catch (error) {
       console.error("Save error:", error);
       setSaveMessage(
         error instanceof Error ? error.message : "Failed to save changes"
       );
       setTimeout(() => setSaveMessage(""), 5000);
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -294,7 +211,7 @@ export default function PersonalDetailsClient({
                   className="rounded-lg border px-3 py-1.5 text-sm"
                   style={{ borderColor: "var(--color-outline)" }}
                   onClick={clearStaged}
-                  disabled={!hasUnsavedChanges || isSaving}
+                  disabled={!hasUnsavedChanges || updateMutation.isPending}
                 >
                   Discard
                 </button>
@@ -306,9 +223,9 @@ export default function PersonalDetailsClient({
                     background: "var(--color-primary)",
                   }}
                   onClick={handleSave}
-                  disabled={!hasUnsavedChanges || isSaving}
+                  disabled={!hasUnsavedChanges || updateMutation.isPending}
                 >
-                  {isSaving ? "Submitting…" : "Submit changes"}
+                  {updateMutation.isPending ? "Submitting…" : "Submit changes"}
                 </button>
               </div>
             </div>

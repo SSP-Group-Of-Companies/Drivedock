@@ -41,6 +41,8 @@ export default function ApplicationFormPage1() {
       firstName: "",
       lastName: "",
       sin: "",
+      sinIssueDate: "",
+      gender: "" as "male" | "female",
       sinPhoto: EMPTY_PHOTO,
       dob: "",
       phoneHome: "",

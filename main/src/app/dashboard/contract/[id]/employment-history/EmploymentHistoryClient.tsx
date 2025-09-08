@@ -3,62 +3,17 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useContract } from "@/hooks/dashboard/contract/useContract";
+import { useEmploymentHistory, useUpdateEmploymentHistory } from "@/hooks/dashboard/contract/useEmploymentHistory";
 import { useDashboardPageLoading } from "@/hooks/useDashboardPageLoading";
 import { useDashboardLoading } from "@/store/useDashboardLoading";
 import DashboardFormWizard from "../components/DashboardFormWizard";
 import { useEditMode } from "../components/EditModeContext";
-import { type EmploymentHistoryResponse } from "@/app/api/v1/admin/onboarding/[id]/application-form/employment-history/types";
 import { validateEmployments } from "@/app/api/v1/admin/onboarding/[id]/application-form/employment-history/employmentValidation";
 import { EmploymentForm } from "./components";
 import StepNotCompletedMessage from "../components/StepNotCompletedMessage";
 import AdminEmploymentQuestionsSection from "./components/AdminEmploymentQuestionsSection";
 
 
-// Helper function for API calls
-async function fetchEmploymentHistory(
-  trackerId: string
-): Promise<EmploymentHistoryResponse> {
-  const response = await fetch(
-    `/api/v1/admin/onboarding/${trackerId}/application-form/employment-history`
-  );
-  if (!response.ok) {
-    // Check if it's a 401 error and include the error message
-    if (response.status === 401) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(`401: ${errorData.message || 'Driver hasn\'t completed this step yet'}`);
-    }
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-  return response.json();
-}
-
-async function patchEmploymentHistory(
-  trackerId: string,
-  data: any
-): Promise<EmploymentHistoryResponse> {
-  const response = await fetch(
-    `/api/v1/admin/onboarding/${trackerId}/application-form/employment-history`,
-    {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    }
-  );
-
-  if (!response.ok) {
-    // Check if it's a 401 error and include the error message
-    if (response.status === 401) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(`401: ${errorData.message || 'Driver hasn\'t completed this step yet'}`);
-    }
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || response.statusText);
-  }
-
-  return response.json();
-}
 
 export default function EmploymentHistoryClient({
   trackerId,
@@ -71,14 +26,17 @@ export default function EmploymentHistoryClient({
   const { isVisible: isDashboardLoaderVisible } = useDashboardLoading();
   const { isEditMode } = useEditMode();
   const [shouldRender, setShouldRender] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
 
-  // Direct state management instead of hooks
-  const [employmentData, setEmploymentData] =
-    useState<EmploymentHistoryResponse | null>(null);
-  const [isEmploymentLoading, setIsEmploymentLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  // React Query hooks
+  const { 
+    data: employmentData, 
+    isLoading: isEmploymentLoading, 
+    error,
+    isError 
+  } = useEmploymentHistory(trackerId);
+  
+  const updateMutation = useUpdateEmploymentHistory(trackerId);
 
   // Staged changes (page-level) - like safety processing
   const [staged, setStaged] = useState<Record<string, any>>({});
@@ -87,29 +45,15 @@ export default function EmploymentHistoryClient({
 
   const clearStaged = () => setStaged({});
 
-  // Fetch employment history data
-  useEffect(() => {
-    const loadEmploymentHistory = async () => {
-      try {
-        setIsEmploymentLoading(true);
-        setError(null);
-        const data = await fetchEmploymentHistory(trackerId);
-        setEmploymentData(data);
-      } catch (err) {
-        setError(
-          err instanceof Error
-            ? err
-            : new Error("Failed to load employment history")
-        );
-      } finally {
-        setIsEmploymentLoading(false);
-      }
-    };
-
-    if (trackerId) {
-      loadEmploymentHistory();
+  // Merge-friendly staged updater used across sections
+  const stageUpdate = (changes: any) => {
+    if (typeof changes === "function") {
+      setStaged((prev) => changes(prev));
+    } else {
+      setStaged((prev) => ({ ...prev, ...changes }));
     }
-  }, [trackerId]);
+  };
+
 
   // Progressive loading: Show layout first, then content
   useEffect(() => {
@@ -137,64 +81,49 @@ export default function EmploymentHistoryClient({
       }
     }
 
-    setIsSaving(true);
-    setSaveMessage("");
+    // Prepare the data in the format the API expects
+    const dataToSend = {
+      employments:
+        staged.employments ||
+        employmentData?.data.employmentHistory.employments ||
+        [],
+      // Include employment questions data
+      workedWithCompanyBefore: staged.workedWithCompanyBefore !== undefined 
+        ? staged.workedWithCompanyBefore 
+        : employmentData?.data.employmentHistory.workedWithCompanyBefore,
+      reasonForLeavingCompany: staged.reasonForLeavingCompany !== undefined 
+        ? staged.reasonForLeavingCompany 
+        : employmentData?.data.employmentHistory.reasonForLeavingCompany,
+      previousWorkDetails: staged.previousWorkDetails !== undefined 
+        ? staged.previousWorkDetails 
+        : employmentData?.data.employmentHistory.previousWorkDetails,
+      currentlyEmployed: staged.currentlyEmployed !== undefined 
+        ? staged.currentlyEmployed 
+        : employmentData?.data.employmentHistory.currentlyEmployed,
+      referredBy: staged.referredBy !== undefined 
+        ? staged.referredBy 
+        : employmentData?.data.employmentHistory.referredBy,
+      expectedRateOfPay: staged.expectedRateOfPay !== undefined 
+        ? staged.expectedRateOfPay 
+        : employmentData?.data.employmentHistory.expectedRateOfPay,
+    };
 
     try {
-      // Prepare the data in the format the API expects
-      const dataToSend = {
-        employments:
-          staged.employments ||
-          employmentData?.data.employmentHistory.employments ||
-          [],
-        // Include employment questions data
-        workedWithCompanyBefore: staged.workedWithCompanyBefore !== undefined 
-          ? staged.workedWithCompanyBefore 
-          : employmentData?.data.employmentHistory.workedWithCompanyBefore,
-        reasonForLeavingCompany: staged.reasonForLeavingCompany !== undefined 
-          ? staged.reasonForLeavingCompany 
-          : employmentData?.data.employmentHistory.reasonForLeavingCompany,
-        previousWorkDetails: staged.previousWorkDetails !== undefined 
-          ? staged.previousWorkDetails 
-          : employmentData?.data.employmentHistory.previousWorkDetails,
-        currentlyEmployed: staged.currentlyEmployed !== undefined 
-          ? staged.currentlyEmployed 
-          : employmentData?.data.employmentHistory.currentlyEmployed,
-        referredBy: staged.referredBy !== undefined 
-          ? staged.referredBy 
-          : employmentData?.data.employmentHistory.referredBy,
-        expectedRateOfPay: staged.expectedRateOfPay !== undefined 
-          ? staged.expectedRateOfPay 
-          : employmentData?.data.employmentHistory.expectedRateOfPay,
-      };
-
-
-
-      // Use the direct API call
-      await patchEmploymentHistory(trackerId, dataToSend);
-
+      await updateMutation.mutateAsync(dataToSend);
       setSaveMessage("Changes saved successfully!");
       setTimeout(() => setSaveMessage(""), 3000);
-
-      // Clear staged changes after successful save
       clearStaged();
-
-      // Refresh the data to show updated values
-      const refreshedData = await fetchEmploymentHistory(trackerId);
-      setEmploymentData(refreshedData);
     } catch (error) {
       console.error("Save error:", error);
       setSaveMessage(
         error instanceof Error ? error.message : "Failed to save changes"
       );
       setTimeout(() => setSaveMessage(""), 5000);
-    } finally {
-      setIsSaving(false);
     }
   };
 
   // Check for 401 error (step not completed) - MUST be before loading check
-  if (error && error.message.includes("401")) {
+  if (isError && error && error.message.includes("401")) {
     return (
       <StepNotCompletedMessage 
         stepName="Application Form Page 2"
@@ -310,7 +239,7 @@ export default function EmploymentHistoryClient({
                   className="rounded-lg border px-3 py-1.5 text-sm"
                   style={{ borderColor: "var(--color-outline)" }}
                   onClick={clearStaged}
-                  disabled={!hasUnsavedChanges || isSaving}
+                  disabled={!hasUnsavedChanges || updateMutation.isPending}
                 >
                   Discard
                 </button>
@@ -321,9 +250,9 @@ export default function EmploymentHistoryClient({
                     background: "var(--color-primary)",
                   }}
                   onClick={handleSave}
-                  disabled={!hasUnsavedChanges || isSaving}
+                  disabled={!hasUnsavedChanges || updateMutation.isPending}
                 >
-                  {isSaving ? "Submitting…" : "Submit changes"}
+                  {updateMutation.isPending ? "Submitting…" : "Submit changes"}
                 </button>
               </div>
             </div>
@@ -362,7 +291,7 @@ export default function EmploymentHistoryClient({
               data={employmentData.data.employmentHistory}
               isEditMode={isEditMode}
               staged={staged}
-              onStage={setStaged}
+              onStage={stageUpdate}
             />
             <div className="mt-8">
               <EmploymentForm
@@ -371,7 +300,7 @@ export default function EmploymentHistoryClient({
                 }}
                 isEditMode={isEditMode}
                 staged={staged}
-                onStage={setStaged}
+                onStage={stageUpdate}
               />
             </div>
           </>
