@@ -45,6 +45,7 @@ export function makePage4Config(trackerId: string): FormPageConfig<ApplicationFo
 
         "employeeNumber",
         "hstNumber",
+        "businessName",
         "businessNumber",
         "hstPhotos",
         "incorporatePhotos",
@@ -55,6 +56,7 @@ export function makePage4Config(trackerId: string): FormPageConfig<ApplicationFo
         "passportPhotos",
         "usVisaPhotos",
         "prPermitCitizenshipPhotos",
+        "eligibilityDocs.root", // For US driver passport/PR validation
 
         // validate leaves (not just "fastCard")
         "fastCard.fastCardNumber",

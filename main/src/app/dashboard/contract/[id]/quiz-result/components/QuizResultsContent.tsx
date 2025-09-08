@@ -2,7 +2,8 @@
 
 import React from "react";
 import { QuizResultsData } from "@/app/api/v1/admin/onboarding/[id]/quiz-results/types";
-import { competencyQuestions } from "@/constants/competencyTestQuestions";
+import { getCompetencyQuestions } from "@/constants/competencyTestQuestions";
+import { useTranslation } from "react-i18next";
 import QuizSummaryCard from "./QuizSummaryCard";
 import QuizQuestionCard from "./QuizQuestionCard";
 
@@ -12,11 +13,13 @@ interface QuizResultsContentProps {
 }
 
 export default function QuizResultsContent({ data, onRefresh: _onRefresh }: QuizResultsContentProps) {
+  const { t } = useTranslation("common");
   const { quizResults, lastUpdated } = data;
   const { answers, score } = quizResults;
   
   // Ensure lastUpdated is a proper Date object
   const completionDate = lastUpdated ? new Date(lastUpdated) : new Date();
+  const competencyQuestions = getCompetencyQuestions(t);
   
   // Calculate percentage
   const percentage = score !== null ? Math.round((score / 21) * 100) : null;
@@ -28,6 +31,17 @@ export default function QuizResultsContent({ data, onRefresh: _onRefresh }: Quiz
 
   return (
     <div className="space-y-6">
+      {/* Quiz Results Section Header */}
+      <div className="flex items-center gap-3 pb-2 border-b" style={{ borderColor: "var(--color-outline)" }}>
+        <div 
+          className="w-1 h-8 rounded-full"
+          style={{ background: "var(--color-info)" }}
+        />
+        <h2 className="text-xl font-bold" style={{ color: "var(--color-on-surface)" }}>
+          Quiz Results Summary
+        </h2>
+      </div>
+
       {/* Responsive Layout: Stack on mobile, side-by-side on larger screens */}
       <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 items-start">
         {/* Quiz Summary Card - First on mobile, left side on desktop */}

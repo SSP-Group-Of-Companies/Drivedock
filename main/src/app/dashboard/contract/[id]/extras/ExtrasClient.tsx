@@ -3,63 +3,14 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useContract } from "@/hooks/dashboard/contract/useContract";
+import { useExtras, useUpdateExtras } from "@/hooks/dashboard/contract/useExtras";
 import { useDashboardPageLoading } from "@/hooks/useDashboardPageLoading";
 import { useDashboardLoading } from "@/store/useDashboardLoading";
 import DashboardFormWizard from "../components/DashboardFormWizard";
 import { useEditMode } from "../components/EditModeContext";
-import { type ExtrasResponse } from "@/app/api/v1/admin/onboarding/[id]/application-form/extras/types";
 import { EducationSection, CanadianHoursSection, AdditionalInfoSection } from "./components";
 import StepNotCompletedMessage from "../components/StepNotCompletedMessage";
 
-// Helper functions for API calls
-async function fetchExtras(
-  trackerId: string
-): Promise<ExtrasResponse> {
-  const response = await fetch(
-    `/api/v1/admin/onboarding/${trackerId}/application-form/extras`
-  );
-  if (!response.ok) {
-    // Check if it's a 401 error and include the error message
-    if (response.status === 401) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        `401: ${errorData.message || "Driver hasn't completed this step yet"}`
-      );
-    }
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-  return response.json();
-}
-
-async function patchExtras(
-  trackerId: string,
-  data: any
-): Promise<ExtrasResponse> {
-  const response = await fetch(
-    `/api/v1/admin/onboarding/${trackerId}/application-form/extras`,
-    {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    }
-  );
-
-  if (!response.ok) {
-    // Check if it's a 401 error and include the error message
-    if (response.status === 401) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        `401: ${errorData.message || "Driver hasn't completed this step yet"}`
-      );
-    }
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || response.statusText);
-  }
-
-  return response.json();
-}
 
 export default function ExtrasClient({
   trackerId,
@@ -72,14 +23,17 @@ export default function ExtrasClient({
   const { isVisible: isDashboardLoaderVisible } = useDashboardLoading();
   const { isEditMode } = useEditMode();
   const [shouldRender, setShouldRender] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
 
-  // Direct state management instead of hooks
-  const [extrasData, setExtrasData] =
-    useState<ExtrasResponse | null>(null);
-  const [isExtrasLoading, setIsExtrasLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  // React Query hooks
+  const { 
+    data: extrasData, 
+    isLoading: isExtrasLoading, 
+    error,
+    isError 
+  } = useExtras(trackerId);
+  
+  const updateMutation = useUpdateExtras(trackerId);
 
   // Staged changes (page-level) - like other pages
   const [staged, setStaged] = useState<Record<string, any>>({});
@@ -90,27 +44,6 @@ export default function ExtrasClient({
 
   const clearStaged = () => setStaged({});
 
-  // Fetch extras data
-  useEffect(() => {
-    const loadExtras = async () => {
-      try {
-        setIsExtrasLoading(true);
-        setError(null);
-        const data = await fetchExtras(trackerId);
-        setExtrasData(data);
-        // Don't initialize staged with current data - start empty like accidents-criminal
-        setStaged({});
-      } catch (err) {
-        setError(err instanceof Error ? err : new Error('Failed to load extras'));
-      } finally {
-        setIsExtrasLoading(false);
-      }
-    };
-
-    if (trackerId) {
-      loadExtras();
-    }
-  }, [trackerId]);
 
   // Progressive loading: Show layout first, then content
   useEffect(() => {
@@ -126,64 +59,50 @@ export default function ExtrasClient({
   const handleSave = async () => {
     if (!hasUnsavedChanges) return;
 
-    setIsSaving(true);
-    setSaveMessage("");
+    // Prepare the data in the format the API expects (like employment history)
+    const dataToSend = {
+      // Education
+      ...(staged.gradeSchool !== undefined || staged.college !== undefined || staged.postGraduate !== undefined) && {
+        education: {
+          gradeSchool: staged.gradeSchool ?? extrasData?.data.education.gradeSchool ?? 0,
+          college: staged.college ?? extrasData?.data.education.college ?? 0,
+          postGraduate: staged.postGraduate ?? extrasData?.data.education.postGraduate ?? 0,
+        }
+      },
+      
+      // Canadian Hours
+      ...(staged.dayOneDate !== undefined || staged.dailyHours !== undefined) && {
+        canadianHoursOfService: {
+          dayOneDate: staged.dayOneDate ?? extrasData?.data.canadianHoursOfService.dayOneDate,
+          dailyHours: staged.dailyHours ?? extrasData?.data.canadianHoursOfService.dailyHours ?? [],
+        }
+      },
+      
+      // Additional Info fields
+      ...(staged.deniedLicenseOrPermit !== undefined && { deniedLicenseOrPermit: staged.deniedLicenseOrPermit }),
+      ...(staged.suspendedOrRevoked !== undefined && { suspendedOrRevoked: staged.suspendedOrRevoked }),
+      ...(staged.suspensionNotes !== undefined && { suspensionNotes: staged.suspensionNotes }),
+      ...(staged.testedPositiveOrRefused !== undefined && { testedPositiveOrRefused: staged.testedPositiveOrRefused }),
+      ...(staged.completedDOTRequirements !== undefined && { completedDOTRequirements: staged.completedDOTRequirements }),
+      ...(staged.hasAccidentalInsurance !== undefined && { hasAccidentalInsurance: staged.hasAccidentalInsurance }),
+    };
 
     try {
-      // Prepare the data in the format the API expects (like employment history)
-      const dataToSend = {
-        // Education
-        ...(staged.gradeSchool !== undefined || staged.college !== undefined || staged.postGraduate !== undefined) && {
-          education: {
-            gradeSchool: staged.gradeSchool ?? extrasData?.data.education.gradeSchool ?? 0,
-            college: staged.college ?? extrasData?.data.education.college ?? 0,
-            postGraduate: staged.postGraduate ?? extrasData?.data.education.postGraduate ?? 0,
-          }
-        },
-        
-        // Canadian Hours
-        ...(staged.dayOneDate !== undefined || staged.dailyHours !== undefined) && {
-          canadianHoursOfService: {
-            dayOneDate: staged.dayOneDate ?? extrasData?.data.canadianHoursOfService.dayOneDate,
-            dailyHours: staged.dailyHours ?? extrasData?.data.canadianHoursOfService.dailyHours ?? [],
-          }
-        },
-        
-        // Additional Info fields
-        ...(staged.deniedLicenseOrPermit !== undefined && { deniedLicenseOrPermit: staged.deniedLicenseOrPermit }),
-        ...(staged.suspendedOrRevoked !== undefined && { suspendedOrRevoked: staged.suspendedOrRevoked }),
-        ...(staged.suspensionNotes !== undefined && { suspensionNotes: staged.suspensionNotes }),
-        ...(staged.testedPositiveOrRefused !== undefined && { testedPositiveOrRefused: staged.testedPositiveOrRefused }),
-        ...(staged.completedDOTRequirements !== undefined && { completedDOTRequirements: staged.completedDOTRequirements }),
-        ...(staged.hasAccidentalInsurance !== undefined && { hasAccidentalInsurance: staged.hasAccidentalInsurance }),
-      };
-
-
-      // Use the direct API call
-      await patchExtras(trackerId, dataToSend);
-
+      await updateMutation.mutateAsync(dataToSend);
       setSaveMessage("Changes saved successfully!");
       setTimeout(() => setSaveMessage(""), 3000);
-
-      // Clear staged changes after successful save
       clearStaged();
-
-      // Refresh the data to show updated values
-      const refreshedData = await fetchExtras(trackerId);
-      setExtrasData(refreshedData);
     } catch (error) {
       console.error("Save error:", error);
       setSaveMessage(
         error instanceof Error ? error.message : "Failed to save changes"
       );
       setTimeout(() => setSaveMessage(""), 5000);
-    } finally {
-      setIsSaving(false);
     }
   };
 
   // Check for 401 error (step not completed) - MUST be before loading check
-  if (error && error.message.includes("401")) {
+  if (isError && error && error.message.includes("401")) {
     return (
       <StepNotCompletedMessage 
         stepName="Application Form Page 4"
@@ -289,7 +208,7 @@ export default function ExtrasClient({
                   className="rounded-lg border px-3 py-1.5 text-sm"
                   style={{ borderColor: "var(--color-outline)" }}
                   onClick={clearStaged}
-                  disabled={!hasUnsavedChanges || isSaving}
+                  disabled={!hasUnsavedChanges || updateMutation.isPending}
                 >
                   Discard
                 </button>
@@ -300,9 +219,9 @@ export default function ExtrasClient({
                     background: "var(--color-primary)",
                   }}
                   onClick={handleSave}
-                  disabled={!hasUnsavedChanges || isSaving}
+                  disabled={!hasUnsavedChanges || updateMutation.isPending}
                 >
-                  {isSaving ? "Submitting…" : "Submit changes"}
+                  {updateMutation.isPending ? "Submitting…" : "Submit changes"}
                 </button>
               </div>
             </div>

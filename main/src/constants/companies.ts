@@ -14,7 +14,11 @@ export enum ECompanyId {
   NESH = "nesh",
 }
 
-export type CanadianCompanyId = ECompanyId.SSP_CA | ECompanyId.FELLOW_TRANS | ECompanyId.NESH | ECompanyId.WEB_FREIGHT;
+export type CanadianCompanyId =
+  | ECompanyId.SSP_CA
+  | ECompanyId.FELLOW_TRANS
+  | ECompanyId.NESH
+  | ECompanyId.WEB_FREIGHT;
 
 export interface Company {
   id: string;
@@ -23,7 +27,6 @@ export interface Company {
   country: string;
   countryCode: ECountryCode;
   countryBadgeColor: string;
-  description: string;
   location: string;
   operations: string;
   buttonColor: string;
@@ -40,7 +43,6 @@ export const COMPANIES: Company[] = [
     country: "Canada",
     countryCode: ECountryCode.CA,
     countryBadgeColor: "bg-green-100 text-green-700",
-    description: "Leading transportation solutions across Canada with specialized freight services",
     location: "Toronto, Ontario",
     operations: "Canada Operations",
     buttonColor: "", // not used
@@ -55,7 +57,6 @@ export const COMPANIES: Company[] = [
     country: "USA",
     countryCode: ECountryCode.US,
     countryBadgeColor: "bg-blue-100 text-blue-700",
-    description: "Premier freight solutions across the United States with cross-border coverage",
     location: "Cross-border Operations",
     operations: "United States Operations",
     buttonColor: "",
@@ -70,7 +71,6 @@ export const COMPANIES: Company[] = [
     country: "Canada",
     countryCode: ECountryCode.CA,
     countryBadgeColor: "bg-green-100 text-green-700",
-    description: "Reliable freight solutions with a focus on customer satisfaction",
     location: "Canada Operations",
     operations: "Canada Operations",
     buttonColor: "",
@@ -85,7 +85,6 @@ export const COMPANIES: Company[] = [
     country: "Canada",
     countryCode: ECountryCode.CA,
     countryBadgeColor: "bg-green-100 text-green-700",
-    description: "Modern logistics solutions powered by technology and innovation",
     location: "Canada Operations",
     operations: "Canada Operations",
     buttonColor: "",
@@ -100,12 +99,12 @@ export const COMPANIES: Company[] = [
     country: "Canada",
     countryCode: ECountryCode.CA,
     countryBadgeColor: "bg-green-100 text-green-700",
-    description: "Specialized steel and heavy materials transportation across North America",
     location: "United States Operations",
     operations: "United States Operations",
     buttonColor: "",
     buttonTextColor: "text-white",
-    buttonGradient: "bg-gradient-to-r from-purple-700 via-purple-500 to-pink-400",
+    buttonGradient:
+      "bg-gradient-to-r from-purple-700 via-purple-500 to-pink-400",
     hasFlatbed: true,
   },
 ];
@@ -128,13 +127,19 @@ export function isCanadianCompany(companyId: string): boolean {
  * - Special case: SSP-Canada with DRY_VAN application → not possible.
  * - Otherwise → possible.
  */
-export function canHaveFlatbedTraining(companyId: string, applicationType?: ECompanyApplicationType): boolean {
+export function canHaveFlatbedTraining(
+  companyId: string,
+  applicationType?: ECompanyApplicationType
+): boolean {
   const company = getCompanyById(companyId);
   if (!company) return false;
 
   if (!company.hasFlatbed) return false;
 
-  if (company.id === ECompanyId.SSP_CA && applicationType === ECompanyApplicationType.DRY_VAN) {
+  if (
+    company.id === ECompanyId.SSP_CA &&
+    applicationType === ECompanyApplicationType.DRY_VAN
+  ) {
     return false;
   }
 

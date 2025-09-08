@@ -1,4 +1,4 @@
-import type { ILicenseEntry, IFastCard } from "@/types/applicationForm.types";
+import type { ILicenseEntry, IFastCard, ITruckDetails } from "@/types/applicationForm.types";
 import type { IPhoto } from "@/types/shared.types";
 import type { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
 
@@ -10,6 +10,7 @@ export interface IdentificationsResponse {
     licenses: ILicenseEntry[];
     employeeNumber?: string;
     hstNumber?: string;
+    businessName?: string;
     businessNumber?: string;
     incorporatePhotos?: IPhoto[];
     hstPhotos?: IPhoto[];
@@ -20,6 +21,7 @@ export interface IdentificationsResponse {
     prPermitCitizenshipPhotos?: IPhoto[];
     usVisaPhotos?: IPhoto[];
     fastCard?: IFastCard;
+    truckDetails?: ITruckDetails;
   };
 }
 

@@ -15,7 +15,7 @@ import { advanceProgress, buildTrackerContext, nextResumeExpiry } from "@/lib/ut
 import { S3_SUBMISSIONS_FOLDER, S3_TEMP_FOLDER } from "@/constants/aws";
 import { ES3Folder } from "@/types/aws.types";
 import { ECountryCode, ELicenseType } from "@/types/shared.types";
-import { isValidEmail, isValidPhoneNumber, isValidDOB, isValidSIN } from "@/lib/utils/validationUtils";
+import { isValidEmail, isValidPhoneNumber, isValidDOB, isValidSIN, isValidSINIssueDate, isValidGender } from "@/lib/utils/validationUtils";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
 
 export async function POST(req: NextRequest) {
@@ -44,6 +44,8 @@ export async function POST(req: NextRequest) {
     if (!isValidPhoneNumber(page1.phoneCell)) return errorResponse(400, "Invalid cell phone");
     if (!isValidPhoneNumber(page1.emergencyContactPhone)) return errorResponse(400, "Invalid emergency contact phone");
     if (!isValidDOB(page1.dob)) return errorResponse(400, "Invalid DOB");
+    if (!isValidSINIssueDate(page1.sinIssueDate)) return errorResponse(400, "Invalid SIN issue date");
+    if (!isValidGender(page1.gender)) return errorResponse(400, "Invalid gender");
     if (!hasRecentAddressCoverage(page1.addresses)) return errorResponse(400, "Address history must cover 5 years");
 
     const licenses = page1.licenses;

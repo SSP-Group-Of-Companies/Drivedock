@@ -305,3 +305,17 @@
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
 }
+
+/* =========================
+ * Date Input Calendar Icon Dark Mode Fix
+ * ========================= */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+}
+
+/* For Firefox */
+input[type="date"]::-moz-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+}

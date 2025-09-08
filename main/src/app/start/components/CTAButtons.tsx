@@ -70,7 +70,7 @@ export default function CTAButtons() {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.98 }}
           onClick={() => router.push("/start/start-info-page")}
-          className="relative rounded-full bg-blue-700 px-6 py-3 text-white font-medium text-sm shadow hover:bg-blue-800 transition"
+          className="relative rounded-full bg-blue-700 px-6 py-3 text-white font-medium text-sm shadow hover:bg-blue-800 transition cursor-pointer"
         >
           <span className="block relative">
             {/* Invisible placeholder to maintain button size across translations */}
@@ -97,7 +97,7 @@ export default function CTAButtons() {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.98 }}
           onClick={() => setIsModalOpen(true)} // Open resume modal
-          className="relative rounded-full bg-white border border-blue-700 text-blue-700 px-6 py-3 font-medium text-sm shadow hover:bg-blue-50 transition"
+          className="relative rounded-full bg-white border border-blue-700 text-blue-700 px-6 py-3 font-medium text-sm shadow hover:bg-blue-50 transition cursor-pointer"
         >
           <span className="block relative">
             <span className="invisible">Reprendre la demande</span>

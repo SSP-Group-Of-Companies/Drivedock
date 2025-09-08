@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useRouter } from "next/navigation";
 import type { ContractContext } from "@/lib/dashboard/api/contracts";
 import { EStepPath } from "@/types/onboardingTracker.types";
 import { EDrugTestStatus } from "@/types/drugTest.types";
@@ -11,6 +12,17 @@ function daysUntil(dateIso?: string): number | null {
   const d = new Date(dateIso);
   if (isNaN(d.getTime())) return null;
   return Math.ceil((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+function hasTruckDetails(truckDetails?: any): boolean {
+  if (!truckDetails) return false;
+  
+  // Check if any truck detail field has meaningful data
+  const fields = ['vin', 'make', 'model', 'year', 'province', 'truckUnitNumber', 'plateNumber'];
+  return fields.some(field => {
+    const value = truckDetails[field];
+    return value && typeof value === 'string' && value.trim().length > 0;
+  });
 }
 
 function computeNotifications(ctx: ContractContext | null) {
@@ -52,19 +64,73 @@ function computeNotifications(ctx: ContractContext | null) {
     });
   }
 
+  // Truck details notification - show when driver has completed page 4 or beyond and truck details are missing
+  if (
+    (step === EStepPath.APPLICATION_PAGE_4 ||
+     step === EStepPath.APPLICATION_PAGE_5 ||
+     step === EStepPath.POLICIES_CONSENTS ||
+     step === EStepPath.DRIVE_TEST ||
+     step === EStepPath.CARRIERS_EDGE_TRAINING ||
+     step === EStepPath.DRUG_TEST ||
+     step === EStepPath.FLATBED_TRAINING) &&
+    (!ctx.forms?.identifications?.truckDetails || !hasTruckDetails(ctx.forms.identifications.truckDetails))
+  ) {
+    notes.push({
+      id: "truck-details",
+      text: "Truck details hasn't been submitted",
+    });
+  }
+
   return notes;
 }
 
 export default function NotificationsMenu({
   onClose,
   context,
+  trackerId,
   id,
 }: {
   onClose: () => void;
   context: ContractContext | null;
+  trackerId: string;
   id?: string;
 }) {
+  const router = useRouter();
   const items = useMemo(() => computeNotifications(context), [context]);
+
+  const handleNotificationClick = (notificationId: string) => {
+    if (!trackerId) {
+      console.error("No trackerId available for navigation");
+      return;
+    }
+
+    let targetUrl: string;
+    
+    switch (notificationId) {
+      case "truck-details":
+        targetUrl = `/dashboard/contract/${trackerId}/identifications?highlight=truck-details`;
+        break;
+      case "license":
+        targetUrl = `/dashboard/contract/${trackerId}/identifications`;
+        break;
+      case "dt":
+        targetUrl = `/dashboard/contract/${trackerId}/appraisal/drive-test`;
+        break;
+      case "ce":
+        targetUrl = `/dashboard/contract/${trackerId}/safety-processing`;
+        break;
+      case "drug":
+        targetUrl = `/dashboard/contract/${trackerId}/safety-processing`;
+        break;
+      default:
+        console.warn("Unknown notification ID:", notificationId);
+        return;
+    }
+    
+    console.log("Navigating to:", targetUrl);
+    router.push(targetUrl);
+    onClose();
+  };
 
   return (
     <div
@@ -106,16 +172,39 @@ export default function NotificationsMenu({
         </div>
       ) : (
         <ul className="space-y-1">
-          {items.map((n) => (
-            <li
-              key={n.id}
-              className="rounded-lg px-2 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/5"
-              style={{ color: "var(--color-on-surface)" }}
-              role="menuitem"
-            >
-              {n.text}
-            </li>
-          ))}
+          {items.map((n) => {
+            const isClickable = ["truck-details", "license", "dt", "ce", "drug"].includes(n.id);
+            return (
+              <li
+                key={n.id}
+                className={`rounded-lg px-2 py-2 text-sm transition-colors ${
+                  isClickable 
+                    ? "cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 active:scale-95" 
+                    : "hover:bg-black/5 dark:hover:bg-white/5"
+                }`}
+                style={{ color: "var(--color-on-surface)" }}
+                role="menuitem"
+                onClick={isClickable ? () => handleNotificationClick(n.id) : undefined}
+                onKeyDown={isClickable ? (e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    handleNotificationClick(n.id);
+                  }
+                } : undefined}
+                tabIndex={isClickable ? 0 : -1}
+                aria-label={isClickable ? `${n.text} - Click to navigate` : n.text}
+              >
+                <div className="flex items-center justify-between">
+                  <span>{n.text}</span>
+                  {isClickable && (
+                    <span className="text-xs opacity-60" style={{ color: "var(--color-on-surface-variant)" }}>
+                      →
+                    </span>
+                  )}
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
 

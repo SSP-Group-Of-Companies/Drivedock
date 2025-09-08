@@ -127,14 +127,21 @@
     }
   },
   "company": {
-    "heading": "Rejoignez notre famille d’entreprises",
-    "subheading": "Choisissez l’entreprise où vous souhaitez bâtir votre carrière de conducteur",
+    "heading": "Rejoignez notre famille d'entreprises",
+    "subheading": "Choisissez l'entreprise où vous souhaitez bâtir votre carrière de conducteur",
     "applyNow": "Postuler maintenant",
     "selectType": "Sélectionner le type de candidature",
     "selectTypeDesc": "Veuillez choisir le type de poste pour lequel vous postulez :",
     "flatbed": "Plateau",
     "dropdeck": "Fourgon sec",
-    "cancel": "Annuler"
+    "cancel": "Annuler",
+    "descriptions": {
+      "ssp-ca": "Solutions de transport de premier plan au Canada avec des services de fret spécialisés",
+      "ssp-us": "Solutions de fret de premier plan aux États-Unis avec couverture transfrontalière",
+      "fellowtrans": "Solutions de fret fiables axées sur la satisfaction client",
+      "webfreight": "Solutions logistiques modernes alimentées par la technologie et l'innovation",
+      "nesh": "Transport spécialisé d'acier et de matériaux lourds en Amérique du Nord"
+    }
   },
 
   "form": {
@@ -204,7 +211,11 @@
         "fields": {
           "firstName": "Prénom",
           "lastName": "Nom",
-          "sin": "NAS (Numéro d’assurance sociale)",
+          "sin": "NAS (Numéro d'assurance sociale)",
+          "sinIssueDate": "Date d'émission du NAS",
+          "gender": "Genre",
+          "male": "Masculin",
+          "female": "Féminin",
           "sinPhoto": "Photo de la carte NAS",
           "sinPhotoDesc": "Cliquez pour capturer ou sélectionner une image",
           "dob": "Date de naissance",
@@ -344,9 +355,10 @@
           "dateOfSentence": "Date de la sentence",
           "offense": "Infraction",
           "courtLocation": "Lieu du tribunal",
-          "employeeNumber": "Numéro d’employé",
+          "employeeNumber": "Numéro d'employé",
           "hstNumber": "Numéro de TVH",
-          "businessNumber": "Numéro d’entreprise",
+          "businessName": "Nom de l'entreprise",
+          "businessNumber": "Numéro d'entreprise",
           "incorporatePhotos": "Photos d’incorporation",
           "hstPhotos": "Photos du numéro de TVH",
           "bankingInfoPhotos": "Photos des coordonnées bancaires",
@@ -375,6 +387,189 @@
           "confirmMessage": "Vous ne pourrez pas repasser ce test de compétences une fois soumis. Êtes-vous sûr de vouloir continuer ?",
           "cancel": "Annuler",
           "confirm": "Oui, soumettre"
+        },
+        "questions": {
+          "1": {
+            "question": "Selon la FMCSA, vous ne pouvez pas conduire pendant plus de :",
+            "options": {
+              "a": "11 Heures",
+              "b": "Après avoir été en service pendant 14 heures",
+              "c": "Après avoir été en service pendant plus de 8 heures suivant 10 heures consécutives hors service",
+              "d": "Toutes les réponses ci-dessus"
+            }
+          },
+          "2": {
+            "question": "Selon la FMCSA, vous ne pouvez pas travailler pendant plus de ____ heures en 8 jours :",
+            "options": {
+              "a": "70 Heures",
+              "b": "120 Heures",
+              "c": "11 heures",
+              "d": "500 milles aller-retour"
+            }
+          },
+          "3": {
+            "question": "Après 11 heures de temps de conduite, vous devez",
+            "options": {
+              "a": "Arrêter de travailler et rentrer à la maison",
+              "b": "Pouvez travailler 5 heures de plus",
+              "c": "Obtenir 10 heures consécutives de repos avant de conduire à nouveau",
+              "d": "Toutes les réponses ci-dessus"
+            }
+          },
+          "4": {
+            "question": "Au Canada, vous pouvez avoir deux heures supplémentaires de temps de conduite en plus de la règle de quart de 14 heures si",
+            "options": {
+              "a": "Les conditions météorologiques/de conduite interfèrent avec la capacité d'exécuter les fonctions dans les 11 heures et vous ne pouviez pas les prévoir avant de partir",
+              "b": "Vous utilisez l'option de repos fractionné",
+              "c": "Vous obtenez 6 heures consécutives de repos entre les périodes de conduite",
+              "d": "Toutes les réponses ci-dessus"
+            }
+          },
+          "5": {
+            "question": "Lors de l'inspection pré-voyage, vous devez montrer que le",
+            "options": {
+              "a": "Le véhicule est sûr à conduire",
+              "b": "Le véhicule a moins de 4 ans",
+              "c": "Vous êtes compétent et n'avez pas d'alcool dans le système"
+            }
+          },
+          "6": {
+            "question": "Lors de l'inspection pré-voyage, vous",
+            "options": {
+              "a": "Vous asseoir dans le camion et conduire en parlant de votre expertise",
+              "b": "Passer un test informatisé sur la conduite de camion",
+              "c": "Marcher autour du véhicule et pointer chaque élément à l'entraîneur et expliquer à l'examinateur ce que vous vérifiez et pourquoi"
+            }
+          },
+          "7": {
+            "question": "Lors de l'inspection pré-voyage, le miroir et le pare-brise doivent être vérifiés pour",
+            "options": {
+              "a": "Alignement approprié",
+              "b": "Autocollants",
+              "c": "Propreté, obstruction et dommages"
+            }
+          },
+          "8": {
+            "question": "Que signifie C-TPAT ?",
+            "options": {
+              "a": "Participation Canadienne au Transport Contre le Terrorisme",
+              "b": "Partenariat Commercial Douanier Contre le Terrorisme",
+              "c": "Partenariat Commercial Canadien Contre le Terrorisme"
+            }
+          },
+          "9": {
+            "question": "Lors de l'inspection de la remorque, lequel des éléments suivants devrait vous rendre suspect",
+            "options": {
+              "a": "Bruit anormal en frappant la porte",
+              "b": "Peinture fraîche sur n'importe quel composant",
+              "c": "Colle sur le pneu",
+              "d": "Toutes les réponses ci-dessus"
+            }
+          },
+          "10": {
+            "question": "Si un conducteur trouve le sceau de la remorque cassé à un arrêt de camion, il doit",
+            "options": {
+              "a": "Signaler immédiatement à la répartition",
+              "b": "Ré-inspecter son équipement pour tout comportement suspect",
+              "c": "Devrait mettre un autre sceau",
+              "d": "Toutes les réponses ci-dessus"
+            }
+          },
+          "11": {
+            "question": "Lorsqu'un conducteur reçoit un avis de révocation ou de suspension de permis ou de licence, il doit",
+            "options": {
+              "a": "Notifier le transporteur dans les 72 heures",
+              "b": "Notifier le transporteur dans la semaine",
+              "c": "Notifier le transporteur immédiatement",
+              "d": "Ne prendre aucune mesure car le transporteur recevra la notification"
+            }
+          },
+          "12": {
+            "question": "Le poids brut maximum autorisé pour une combinaison tandem aux États-Unis",
+            "options": {
+              "a": "90000 Lbs",
+              "b": "84000 Lbs",
+              "c": "80000 Lbs",
+              "d": "15000 Lbs par essieu"
+            }
+          },
+          "13": {
+            "question": "Vous pouvez réinitialiser votre cycle de 70 heures en ayant au moins ____ heures hors service au Canada",
+            "options": {
+              "a": "10",
+              "b": "24",
+              "c": "32",
+              "d": "36"
+            }
+          },
+          "14": {
+            "question": "Si vous êtes inspecté et mis OOS lors d'une inspection routière pour quelque raison que ce soit, vous devez",
+            "options": {
+              "a": "Enregistrer avec précision l'événement dans votre livre et continuer votre voyage",
+              "b": "Ne pas quitter la station d'inspection jusqu'à ce que vous ayez accumulé assez d'heures pour conduire à nouveau",
+              "c": "Informer votre transporteur de l'incident",
+              "d": "Toutes les réponses ci-dessus"
+            }
+          },
+          "15": {
+            "question": "Un conducteur ne peut pas conduire plus vite que la limite de vitesse affichée",
+            "options": {
+              "a": "Sauf si le conducteur est malade et doit terminer le voyage rapidement pour voir un médecin",
+              "b": "À tout moment",
+              "c": "Pendant la journée car vous pouvez voir les choses clairement",
+              "d": "Sauf si le conducteur est en retard et rattrape le temps perdu"
+            }
+          },
+          "16": {
+            "question": "Les remorques vides traversant la frontière ne nécessitent pas de sceau à boulon",
+            "options": {
+              "a": "Vrai",
+              "b": "Faux"
+            }
+          },
+          "17": {
+            "question": "Quand une inspection doit-elle être terminée ?",
+            "options": {
+              "a": "N'importe quand pendant le voyage",
+              "b": "Pré et post voyage",
+              "c": "Avant d'atteindre la frontière",
+              "d": "Si la répartition vous demande de le faire"
+            }
+          },
+          "18": {
+            "question": "Que devez-vous faire si vous trouvez une personne non autorisée sur les lieux ?",
+            "options": {
+              "a": "Appeler la police",
+              "b": "Appeler la répartition",
+              "c": "Parler à la personne",
+              "d": "Ne rien faire"
+            }
+          },
+          "19": {
+            "question": "Qui devrait mettre le sceau sur la remorque ?",
+            "options": {
+              "a": "N'importe qui",
+              "b": "Répartition"
+            }
+          },
+          "20": {
+            "question": "Qui doit être contacté si vous détectez une manipulation sur votre camion ou remorque ?",
+            "options": {
+              "a": "Appeler l'autre conducteur qui est senior dans l'entreprise",
+              "b": "Appeler la police",
+              "c": "Aller à la frontière et dire aux douanes",
+              "d": "Appeler la répartition"
+            }
+          },
+          "21": {
+            "question": "Quel type de sceau doit être mis sur la remorque ?",
+            "options": {
+              "a": "Plastique",
+              "b": "Boulon",
+              "c": "Métal",
+              "d": "Sceaux certifiés ISA PAS 17712"
+            }
+          }
         }
       }
     },
@@ -444,6 +639,7 @@
       "description": "Veuillez téléverser des photos claires de vos documents de dépistage. Vous pouvez ajouter jusqu’à {{count}} photos. Une fois téléversés, les documents seront vérifiés avant que vous puissiez continuer.",
       "verified": "Documents vérifiés.",
       "pending": "Documents téléversés. Vérification en attente. Les téléversements sont désactivés.",
+      "rejected": "Vos documents de test de dépistage ont été rejetés. Veuillez les téléverser à nouveau et les soumettre.",
       "labelDocuments": "Documents de test de dépistage",
       "success": {
         "title": "Félicitations ! 🎉",
@@ -487,7 +683,17 @@
     "error": "Aucune candidature trouvée pour ce NAS.",
     "cancel": "Annuler",
     "continue": "Continuer",
-    "loading": "Chargement..."
+    "loading": "Chargement...",
+    "loadingCta": "Reprise en cours...",
+    "validation": {
+      "enterSin": "Veuillez saisir votre NAS",
+      "sinLength": "Le NAS doit comporter exactement 9 chiffres"
+    },
+    "errors": {
+      "invalidResponse": "Réponse invalide du serveur",
+      "generic": "Impossible de reprendre la candidature. Veuillez réessayer.",
+      "resumeInfoMissing": "Informations de reprise manquantes"
+    }
   },
 
   "infoPopUp": {
@@ -546,9 +752,11 @@
     "upload": "Téléverser",
     "clear": "Effacer",
     "processing": "Traitement...",
+    "submitting": "Soumission...",
     "submitAnswers": "Soumettre les réponses",
     "continue": "Continuer",
     "submitDocuments": "Soumettre les documents",
+    "resubmitDocuments": "Resoumettre les documents",
     "pendingVerification": "Vérification en attente"
   },
 

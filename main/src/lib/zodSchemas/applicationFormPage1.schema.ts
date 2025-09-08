@@ -91,6 +91,32 @@ export const applicationFormPage1Schema = z.object({
     message: "SIN must be 9 digits",
   }),
 
+  sinIssueDate: dateYMD.refine(
+    (date) => {
+      const issueDate = new Date(date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      // Issue date cannot be in the future
+      if (issueDate > today) {
+        return false;
+      }
+      
+      // Issue date cannot be more than 100 years ago (reasonable limit)
+      const hundredYearsAgo = new Date();
+      hundredYearsAgo.setFullYear(today.getFullYear() - 100);
+      
+      return issueDate >= hundredYearsAgo;
+    },
+    {
+      message: "SIN issue date cannot be in the future or more than 100 years ago",
+    }
+  ),
+
+  gender: z.enum(["male", "female"], {
+    message: "Gender must be either 'male' or 'female'",
+  }),
+
   sinPhoto: photoSchema,
 
   dob: dateYMD.refine(

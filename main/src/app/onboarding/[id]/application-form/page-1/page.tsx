@@ -34,6 +34,8 @@ const EMPTY_DEFAULTS: ApplicationFormPage1Schema = {
   firstName: "",
   lastName: "",
   sin: "",
+  sinIssueDate: "",
+  gender: "" as "male" | "female",
   sinPhoto: emptyS3Photo(),
   dob: "",
   phoneHome: "",
@@ -80,7 +82,7 @@ export default async function Page1ServerWrapper({
 
   const pageData = data?.page1;
 
-  // Keep your existing “empty defaults for new apps” behavior
+  // Keep your existing "empty defaults for new apps" behavior
   const defaultValues: ApplicationFormPage1Schema = pageData
     ? {
         firstName: pageData.firstName || "",
@@ -89,6 +91,8 @@ export default async function Page1ServerWrapper({
           typeof pageData.sin === "string" && /^\d{9}$/.test(pageData.sin)
             ? pageData.sin
             : "",
+        sinIssueDate: pageData.sinIssueDate ? formatInputDate(pageData.sinIssueDate) : "",
+        gender: pageData.gender || ("" as "male" | "female"),
         sinPhoto: pageData.sinPhoto || emptyS3Photo(),
         dob: formatInputDate(pageData.dob),
         phoneHome: pageData.phoneHome || "",

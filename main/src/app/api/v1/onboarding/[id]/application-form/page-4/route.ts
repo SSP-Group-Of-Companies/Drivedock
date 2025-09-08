@@ -1,10 +1,25 @@
 import { NextRequest } from "next/server";
-import { AppError, errorResponse, successResponse } from "@/lib/utils/apiResponse";
+import {
+  AppError,
+  errorResponse,
+  successResponse,
+} from "@/lib/utils/apiResponse";
 import connectDB from "@/lib/utils/connectDB";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import { IApplicationFormPage4 } from "@/types/applicationForm.types";
-import { advanceProgress, buildTrackerContext, hasReachedStep, nextResumeExpiry, onboardingExpired } from "@/lib/utils/onboardingUtils";
-import { deleteS3Objects, finalizePhoto, finalizeVector, buildFinalDest } from "@/lib/utils/s3Upload";
+import {
+  advanceProgress,
+  buildTrackerContext,
+  hasReachedStep,
+  nextResumeExpiry,
+  onboardingExpired,
+} from "@/lib/utils/onboardingUtils";
+import {
+  deleteS3Objects,
+  finalizePhoto,
+  finalizeVector,
+  buildFinalDest,
+} from "@/lib/utils/s3Upload";
 import { COMPANIES } from "@/constants/companies";
 import { EStepPath } from "@/types/onboardingTracker.types";
 import { ECountryCode, IPhoto } from "@/types/shared.types";
@@ -15,7 +30,8 @@ import { ES3Folder } from "@/types/aws.types";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
 
 /** ======== helpers ======== */
-const hasKey = <T extends object>(o: T, k: keyof any) => Object.prototype.hasOwnProperty.call(o, k);
+const hasKey = <T extends object>(o: T, k: keyof any) =>
+  Object.prototype.hasOwnProperty.call(o, k);
 
 const isNonEmptyString = (v?: string | null) => !!v && v.trim().length > 0;
 
@@ -32,45 +48,89 @@ const dedupeByS3Key = (arr?: IPhoto[]) => {
   }
   return out;
 };
-const len = (arr?: IPhoto[]) => (Array.isArray(arr) ? dedupeByS3Key(arr).length : 0);
+const len = (arr?: IPhoto[]) =>
+  Array.isArray(arr) ? dedupeByS3Key(arr).length : 0;
 
 /** validate array count ONLY if key exists in body (strict “body defines truth”) */
-function expectCountExact(body: any, key: keyof IApplicationFormPage4, exact: number, label: string) {
+function expectCountExact(
+  body: any,
+  key: keyof IApplicationFormPage4,
+  exact: number,
+  label: string
+) {
   if (!hasKey(body, key)) throw new AppError(400, `${label} is required.`);
   const n = len(body[key as keyof IApplicationFormPage4] as IPhoto[]);
-  if (n !== exact) throw new AppError(400, `${label} must have exactly ${exact} photo${exact === 1 ? "" : "s"}. You sent ${n}.`);
+  if (n !== exact)
+    throw new AppError(
+      400,
+      `${label} must have exactly ${exact} photo${
+        exact === 1 ? "" : "s"
+      }. You sent ${n}.`
+    );
 }
-function expectCountRange(body: any, key: keyof IApplicationFormPage4, min: number, max: number, label: string) {
+function expectCountRange(
+  body: any,
+  key: keyof IApplicationFormPage4,
+  min: number,
+  max: number,
+  label: string
+) {
   if (!hasKey(body, key)) throw new AppError(400, `${label} is required.`);
   const n = len(body[key as keyof IApplicationFormPage4] as IPhoto[]);
-  if (n < min || n > max) throw new AppError(400, `${label} must have between ${min} and ${max} photos. You sent ${n}.`);
+  if (n < min || n > max)
+    throw new AppError(
+      400,
+      `${label} must have between ${min} and ${max} photos. You sent ${n}.`
+    );
 }
 
 /** forbid sending non-empty photos for certain fields; empty array is tolerated (but better to omit) */
-function forbidNonEmpty(body: any, key: keyof IApplicationFormPage4, label: string) {
+function forbidNonEmpty(
+  body: any,
+  key: keyof IApplicationFormPage4,
+  label: string
+) {
   if (!hasKey(body, key)) return;
   const n = len(body[key as keyof IApplicationFormPage4] as IPhoto[]);
-  if (n > 0) throw new AppError(400, `${label} is not accepted for this applicant.`);
+  if (n > 0)
+    throw new AppError(400, `${label} is not accepted for this applicant.`);
 }
 
 /** business section presence detectors (in body) */
 function businessKeysPresentInBody(b: Partial<IApplicationFormPage4>) {
-  const keys: (keyof IApplicationFormPage4)[] = ["employeeNumber", "businessNumber", "hstNumber", "incorporatePhotos", "bankingInfoPhotos", "hstPhotos"];
+  const keys: (keyof IApplicationFormPage4)[] = [
+    "employeeNumber",
+    "businessName",
+    "businessNumber",
+    "hstNumber",
+    "incorporatePhotos",
+    "bankingInfoPhotos",
+    "hstPhotos",
+  ];
   return keys.some((k) => hasKey(b, k));
 }
 
 function isBusinessClearIntent(b: Partial<IApplicationFormPage4>) {
   const emptyStrings =
     (!hasKey(b, "employeeNumber") || !isNonEmptyString(b.employeeNumber)) &&
+    (!hasKey(b, "businessName") || !isNonEmptyString(b.businessName)) &&
     (!hasKey(b, "businessNumber") || !isNonEmptyString(b.businessNumber)) &&
     (!hasKey(b, "hstNumber") || !isNonEmptyString(b.hstNumber));
 
   const emptyPhotos =
-    (!hasKey(b, "incorporatePhotos") || len(b.incorporatePhotos) === 0) && (!hasKey(b, "bankingInfoPhotos") || len(b.bankingInfoPhotos) === 0) && (!hasKey(b, "hstPhotos") || len(b.hstPhotos) === 0);
+    (!hasKey(b, "incorporatePhotos") || len(b.incorporatePhotos) === 0) &&
+    (!hasKey(b, "bankingInfoPhotos") || len(b.bankingInfoPhotos) === 0) &&
+    (!hasKey(b, "hstPhotos") || len(b.hstPhotos) === 0);
 
   // Clear intent only if ALL keys are present AND all are empty
   const allKeysPresent =
-    hasKey(b, "employeeNumber") && hasKey(b, "businessNumber") && hasKey(b, "hstNumber") && hasKey(b, "incorporatePhotos") && hasKey(b, "bankingInfoPhotos") && hasKey(b, "hstPhotos");
+    hasKey(b, "employeeNumber") &&
+    hasKey(b, "businessName") &&
+    hasKey(b, "businessNumber") &&
+    hasKey(b, "hstNumber") &&
+    hasKey(b, "incorporatePhotos") &&
+    hasKey(b, "bankingInfoPhotos") &&
+    hasKey(b, "hstPhotos");
 
   return allKeysPresent && emptyStrings && emptyPhotos;
 }
@@ -86,6 +146,7 @@ function validateBusinessAllOrNothing(b: Partial<IApplicationFormPage4>) {
     if (!hasKey(b, k)) missing.push(label);
   };
   requireKey("employeeNumber", "employeeNumber");
+  requireKey("businessName", "businessName");
   requireKey("businessNumber", "businessNumber");
   requireKey("hstNumber", "hstNumber");
   requireKey("incorporatePhotos", "incorporatePhotos");
@@ -93,37 +154,62 @@ function validateBusinessAllOrNothing(b: Partial<IApplicationFormPage4>) {
   requireKey("hstPhotos", "hstPhotos");
 
   if (missing.length) {
-    throw new AppError(400, `Business section is partial. Missing: ${missing.join(", ")}. Provide all fields or explicitly clear all.`);
+    throw new AppError(
+      400,
+      `Business section is partial. Missing: ${missing.join(
+        ", "
+      )}. Provide all fields or explicitly clear all.`
+    );
   }
 
   // strings non-empty
-  if (!isNonEmptyString(b.employeeNumber)) throw new AppError(400, "employeeNumber is required in Business section.");
-  if (!isNonEmptyString(b.businessNumber)) throw new AppError(400, "businessNumber is required in Business section.");
-  if (!isNonEmptyString(b.hstNumber)) throw new AppError(400, "hstNumber is required in Business section.");
+  if (!isNonEmptyString(b.employeeNumber))
+    throw new AppError(400, "employeeNumber is required in Business section.");
+  if (!isNonEmptyString(b.businessName))
+    throw new AppError(400, "businessName is required in Business section.");
+  if (!isNonEmptyString(b.businessNumber))
+    throw new AppError(400, "businessNumber is required in Business section.");
+  if (!isNonEmptyString(b.hstNumber))
+    throw new AppError(400, "hstNumber is required in Business section.");
 
   // photos within limits
   const inc = len(b.incorporatePhotos);
   const bank = len(b.bankingInfoPhotos);
   const hst = len(b.hstPhotos);
 
-  if (inc < 1 || inc > 10) throw new AppError(400, `incorporatePhotos must have 1–10 photos. You sent ${inc}.`);
-  if (bank < 1 || bank > 2) throw new AppError(400, `bankingInfoPhotos must have 1–2 photos. You sent ${bank}.`);
-  if (hst < 1 || hst > 2) throw new AppError(400, `hstPhotos must have 1–2 photos. You sent ${hst}.`);
+  if (inc < 1 || inc > 10)
+    throw new AppError(
+      400,
+      `incorporatePhotos must have 1–10 photos. You sent ${inc}.`
+    );
+  if (bank < 1 || bank > 2)
+    throw new AppError(
+      400,
+      `bankingInfoPhotos must have 1–2 photos. You sent ${bank}.`
+    );
+  if (hst < 1 || hst > 2)
+    throw new AppError(400, `hstPhotos must have 1–2 photos. You sent ${hst}.`);
 
   return { mode: "validate" as const };
 }
 
-export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+export const PATCH = async (
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) => {
   try {
     await connectDB();
 
     const { id } = await params;
-    if (!isValidObjectId(id)) return errorResponse(400, "Invalid onboarding ID");
+    if (!isValidObjectId(id))
+      return errorResponse(400, "Invalid onboarding ID");
 
     const onboardingDoc = await OnboardingTracker.findById(id);
-    if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
+    if (!onboardingDoc || onboardingDoc.terminated)
+      return errorResponse(404, "Onboarding document not found");
     if (onboardingDoc.status.completed === true) return errorResponse(401, "onboarding process already completed");
-    if (onboardingExpired(onboardingDoc)) return errorResponse(400, "Onboarding session expired");
+    if (onboardingExpired(onboardingDoc))
+      return errorResponse(400, "Onboarding session expired");
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) return errorResponse(404, "ApplicationForm not linked");
@@ -139,15 +225,44 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
     // Determine country
     const company = COMPANIES.find((c) => c.id === onboardingDoc.companyId);
-    if (!company) throw new AppError(400, "Invalid company assigned to applicant");
+    if (!company)
+      throw new AppError(400, "Invalid company assigned to applicant");
     const isCanadian = company.countryCode === ECountryCode.CA;
     const isUS = company.countryCode === ECountryCode.US;
 
     // =========================
     // 1) Required-for-all logic
     // =========================
-    expectCountExact(body, "passportPhotos", 2, "Passport photos");
-    expectCountRange(body, "prPermitCitizenshipPhotos", 1, 2, "PR/Permit/Citizenship photos");
+    // For US drivers: either passport OR PR/citizenship is required (not both)
+    // For Canadian drivers: both are required
+    if (isUS) {
+      const hasPassport = body.passportPhotos && body.passportPhotos.length === 2;
+      const hasPRCitizenship = body.prPermitCitizenshipPhotos && body.prPermitCitizenshipPhotos.length >= 1 && body.prPermitCitizenshipPhotos.length <= 2;
+      
+      if (!hasPassport && !hasPRCitizenship) {
+        throw new AppError(400, "US drivers must provide either passport photos (2 photos) or PR/Permit/Citizenship photos (1-2 photos)");
+      }
+      
+      // If passport is provided, validate it has exactly 2 photos
+      if (hasPassport) {
+        expectCountExact(body, "passportPhotos", 2, "Passport photos");
+      }
+      
+      // If PR/citizenship is provided, validate it has 1-2 photos
+      if (hasPRCitizenship) {
+        expectCountRange(body, "prPermitCitizenshipPhotos", 1, 2, "PR/Permit/Citizenship photos");
+      }
+    } else {
+      // Canadian drivers: both are required
+      expectCountExact(body, "passportPhotos", 2, "Passport photos");
+      expectCountRange(
+        body,
+        "prPermitCitizenshipPhotos",
+        1,
+        2,
+        "PR/Permit/Citizenship photos"
+      );
+    }
 
     // =========================
     // 2) Country-specific logic
@@ -157,16 +272,29 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       expectCountRange(body, "usVisaPhotos", 1, 2, "US visa photos");
 
       // Forbidden for CA
-      forbidNonEmpty(body, "medicalCertificationPhotos", "Medical certification photos");
+      forbidNonEmpty(
+        body,
+        "medicalCertificationPhotos",
+        "Medical certification photos"
+      );
     } else if (isUS) {
-      expectCountRange(body, "medicalCertificationPhotos", 1, 2, "Medical certification photos");
+      expectCountRange(
+        body,
+        "medicalCertificationPhotos",
+        1,
+        2,
+        "Medical certification photos"
+      );
 
       // Forbidden for US
       forbidNonEmpty(body, "healthCardPhotos", "Health card photos");
       forbidNonEmpty(body, "usVisaPhotos", "US visa photos");
     } else {
       // In case new regions ever appear, be explicit
-      throw new AppError(400, "Unsupported applicant country for Page 4 rules.");
+      throw new AppError(
+        400,
+        "Unsupported applicant country for Page 4 rules."
+      );
     }
 
     // =========================
@@ -182,7 +310,10 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     const bodyHasFastCard =
       hasKey(body, "fastCard") &&
       body.fastCard &&
-      (isNonEmptyString(body.fastCard.fastCardNumber) || !!body.fastCard.fastCardExpiry || !!body.fastCard.fastCardFrontPhoto || !!body.fastCard.fastCardBackPhoto);
+      (isNonEmptyString(body.fastCard.fastCardNumber) ||
+        !!body.fastCard.fastCardExpiry ||
+        !!body.fastCard.fastCardFrontPhoto ||
+        !!body.fastCard.fastCardBackPhoto);
 
     // =========================
     // Phase 1: write page4 only (raw body, no S3 finalize yet)
@@ -195,15 +326,22 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     // Section clear detection & hard delete (Business + Fast Card)
     // =========================
     const keysToHardDelete: string[] = [];
-    const finalizedOnly = (ks: (string | undefined)[]) => ks.filter((k): k is string => !!k && !k.startsWith(`${S3_TEMP_FOLDER}/`));
-    const collect = (arr?: IPhoto[]) => (Array.isArray(arr) ? arr.map((p) => p.s3Key).filter(Boolean) : []);
+    const finalizedOnly = (ks: (string | undefined)[]) =>
+      ks.filter((k): k is string => !!k && !k.startsWith(`${S3_TEMP_FOLDER}/`));
+    const collect = (arr?: IPhoto[]) =>
+      Array.isArray(arr) ? arr.map((p) => p.s3Key).filter(Boolean) : [];
 
     if (bizDecision.mode === "clear") {
       if (prev) {
-        keysToHardDelete.push(...finalizedOnly(collect(prev.incorporatePhotos)), ...finalizedOnly(collect(prev.bankingInfoPhotos)), ...finalizedOnly(collect(prev.hstPhotos)));
+        keysToHardDelete.push(
+          ...finalizedOnly(collect(prev.incorporatePhotos)),
+          ...finalizedOnly(collect(prev.bankingInfoPhotos)),
+          ...finalizedOnly(collect(prev.hstPhotos))
+        );
       }
       // overwrite to empty in DB (already set above by body), ensure saved
       appFormDoc.set("page4.employeeNumber", "");
+      appFormDoc.set("page4.businessName", "");
       appFormDoc.set("page4.businessNumber", "");
       appFormDoc.set("page4.hstNumber", "");
       appFormDoc.set("page4.incorporatePhotos", []);
@@ -213,7 +351,12 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     }
 
     if (!bodyHasFastCard && prev?.fastCard) {
-      keysToHardDelete.push(...finalizedOnly([prev.fastCard.fastCardFrontPhoto?.s3Key, prev.fastCard.fastCardBackPhoto?.s3Key]));
+      keysToHardDelete.push(
+        ...finalizedOnly([
+          prev.fastCard.fastCardFrontPhoto?.s3Key,
+          prev.fastCard.fastCardBackPhoto?.s3Key,
+        ])
+      );
       appFormDoc.set("page4.fastCard", undefined);
       await appFormDoc.save({ validateBeforeSave: false });
     }
@@ -229,22 +372,54 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     // =========================
     // Phase 2: finalize S3 files
     // =========================
-    const page4Final: IApplicationFormPage4 = JSON.parse(JSON.stringify(appFormDoc.page4)) as IApplicationFormPage4;
+    const page4Final: IApplicationFormPage4 = JSON.parse(
+      JSON.stringify(appFormDoc.page4)
+    ) as IApplicationFormPage4;
 
-    page4Final.hstPhotos = (await finalizeVector(page4Final.hstPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.HST_PHOTOS))) as IPhoto[];
-    page4Final.incorporatePhotos = (await finalizeVector(page4Final.incorporatePhotos, buildFinalDest(onboardingDoc.id, ES3Folder.INCORPORATION_PHOTOS))) as IPhoto[];
-    page4Final.bankingInfoPhotos = (await finalizeVector(page4Final.bankingInfoPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.BANKING_INFO_PHOTOS))) as IPhoto[];
-    page4Final.healthCardPhotos = (await finalizeVector(page4Final.healthCardPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.HEALTH_CARD_PHOTOS))) as IPhoto[];
-    page4Final.medicalCertificationPhotos = (await finalizeVector(page4Final.medicalCertificationPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.MEDICAL_CERT_PHOTOS))) as IPhoto[];
-    page4Final.passportPhotos = (await finalizeVector(page4Final.passportPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.PASSPORT_PHOTOS))) as IPhoto[];
-    page4Final.usVisaPhotos = (await finalizeVector(page4Final.usVisaPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.US_VISA_PHOTOS))) as IPhoto[];
-    page4Final.prPermitCitizenshipPhotos = (await finalizeVector(page4Final.prPermitCitizenshipPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.PR_CITIZENSHIP_PHOTOS))) as IPhoto[];
+    page4Final.hstPhotos = (await finalizeVector(
+      page4Final.hstPhotos,
+      buildFinalDest(onboardingDoc.id, ES3Folder.HST_PHOTOS)
+    )) as IPhoto[];
+    page4Final.incorporatePhotos = (await finalizeVector(
+      page4Final.incorporatePhotos,
+      buildFinalDest(onboardingDoc.id, ES3Folder.INCORPORATION_PHOTOS)
+    )) as IPhoto[];
+    page4Final.bankingInfoPhotos = (await finalizeVector(
+      page4Final.bankingInfoPhotos,
+      buildFinalDest(onboardingDoc.id, ES3Folder.BANKING_INFO_PHOTOS)
+    )) as IPhoto[];
+    page4Final.healthCardPhotos = (await finalizeVector(
+      page4Final.healthCardPhotos,
+      buildFinalDest(onboardingDoc.id, ES3Folder.HEALTH_CARD_PHOTOS)
+    )) as IPhoto[];
+    page4Final.medicalCertificationPhotos = (await finalizeVector(
+      page4Final.medicalCertificationPhotos,
+      buildFinalDest(onboardingDoc.id, ES3Folder.MEDICAL_CERT_PHOTOS)
+    )) as IPhoto[];
+    page4Final.passportPhotos = (await finalizeVector(
+      page4Final.passportPhotos,
+      buildFinalDest(onboardingDoc.id, ES3Folder.PASSPORT_PHOTOS)
+    )) as IPhoto[];
+    page4Final.usVisaPhotos = (await finalizeVector(
+      page4Final.usVisaPhotos,
+      buildFinalDest(onboardingDoc.id, ES3Folder.US_VISA_PHOTOS)
+    )) as IPhoto[];
+    page4Final.prPermitCitizenshipPhotos = (await finalizeVector(
+      page4Final.prPermitCitizenshipPhotos,
+      buildFinalDest(onboardingDoc.id, ES3Folder.PR_CITIZENSHIP_PHOTOS)
+    )) as IPhoto[];
 
     if (page4Final.fastCard?.fastCardFrontPhoto) {
-      page4Final.fastCard.fastCardFrontPhoto = await finalizePhoto(page4Final.fastCard.fastCardFrontPhoto, buildFinalDest(onboardingDoc.id, ES3Folder.FAST_CARD_PHOTOS));
+      page4Final.fastCard.fastCardFrontPhoto = await finalizePhoto(
+        page4Final.fastCard.fastCardFrontPhoto,
+        buildFinalDest(onboardingDoc.id, ES3Folder.FAST_CARD_PHOTOS)
+      );
     }
     if (page4Final.fastCard?.fastCardBackPhoto) {
-      page4Final.fastCard.fastCardBackPhoto = await finalizePhoto(page4Final.fastCard.fastCardBackPhoto, buildFinalDest(onboardingDoc.id, ES3Folder.FAST_CARD_PHOTOS));
+      page4Final.fastCard.fastCardBackPhoto = await finalizePhoto(
+        page4Final.fastCard.fastCardBackPhoto,
+        buildFinalDest(onboardingDoc.id, ES3Folder.FAST_CARD_PHOTOS)
+      );
     }
 
     // =========================
@@ -254,7 +429,8 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       if (!p) return [];
       const keys: string[] = [];
       const pushArr = (arr?: IPhoto[]) => {
-        if (Array.isArray(arr)) for (const ph of arr) if (ph?.s3Key) keys.push(ph.s3Key);
+        if (Array.isArray(arr))
+          for (const ph of arr) if (ph?.s3Key) keys.push(ph.s3Key);
       };
 
       pushArr(p.hstPhotos);
@@ -266,8 +442,10 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       pushArr(p.usVisaPhotos);
       pushArr(p.prPermitCitizenshipPhotos);
 
-      if (p.fastCard?.fastCardFrontPhoto?.s3Key) keys.push(p.fastCard.fastCardFrontPhoto.s3Key);
-      if (p.fastCard?.fastCardBackPhoto?.s3Key) keys.push(p.fastCard.fastCardBackPhoto.s3Key);
+      if (p.fastCard?.fastCardFrontPhoto?.s3Key)
+        keys.push(p.fastCard.fastCardFrontPhoto.s3Key);
+      if (p.fastCard?.fastCardBackPhoto?.s3Key)
+        keys.push(p.fastCard.fastCardBackPhoto.s3Key);
 
       return keys;
     }
@@ -275,7 +453,12 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     const prevKeys = new Set(collectAllKeys(prev));
     const newKeys = new Set(collectAllKeys(page4Final));
     const alreadyDeleted = new Set(keysToHardDelete);
-    const removedFinalKeys = [...prevKeys].filter((k) => !newKeys.has(k) && !k.startsWith(`${S3_TEMP_FOLDER}/`) && !alreadyDeleted.has(k));
+    const removedFinalKeys = [...prevKeys].filter(
+      (k) =>
+        !newKeys.has(k) &&
+        !k.startsWith(`${S3_TEMP_FOLDER}/`) &&
+        !alreadyDeleted.has(k)
+    );
 
     if (removedFinalKeys.length) {
       try {
@@ -293,12 +476,18 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     await appFormDoc.save({ validateBeforeSave: false });
 
     // Tracker & resume expiry
-    onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.APPLICATION_PAGE_4);
+    onboardingDoc.status = advanceProgress(
+      onboardingDoc,
+      EStepPath.APPLICATION_PAGE_4
+    );
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();
     await onboardingDoc.save();
 
     return successResponse(200, "ApplicationForm Page 4 updated", {
-      onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_4),
+      onboardingContext: buildTrackerContext(
+        onboardingDoc,
+        EStepPath.APPLICATION_PAGE_4
+      ),
       page4: page4Final,
     });
   } catch (err) {
@@ -306,7 +495,10 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
   }
 };
 
-export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+export const GET = async (
+  _: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) => {
   try {
     await connectDB();
 
@@ -323,7 +515,8 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
     }
 
     if (onboardingDoc.status.completed === true) return errorResponse(401, "onboarding process already completed");
-    if (onboardingExpired(onboardingDoc)) return errorResponse(400, "Onboarding session expired");
+    if (onboardingExpired(onboardingDoc))
+      return errorResponse(400, "Onboarding session expired");
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) {
@@ -340,7 +533,10 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
     }
 
     return successResponse(200, "Page 4 data retrieved", {
-      onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_4),
+      onboardingContext: buildTrackerContext(
+        onboardingDoc,
+        EStepPath.APPLICATION_PAGE_4
+      ),
       page4: appFormDoc.page4,
     });
   } catch (error) {

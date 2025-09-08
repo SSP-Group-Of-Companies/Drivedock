@@ -34,6 +34,17 @@ export const fastCardSchema = z.object({
   fastCardBackPhoto: photoSchema.optional(),
 });
 
+// Truck details schema (all optional)
+export const truckDetailsSchema = z.object({
+  vin: z.string().optional().transform((v) => v?.trim() ?? ""),
+  make: z.string().optional().transform((v) => v?.trim() ?? ""),
+  model: z.string().optional().transform((v) => v?.trim() ?? ""),
+  year: z.string().optional().transform((v) => v?.trim() ?? ""),
+  province: z.string().optional().transform((v) => v?.trim() ?? ""),
+  truckUnitNumber: z.string().optional().transform((v) => v?.trim() ?? ""),
+  plateNumber: z.string().optional().transform((v) => v?.trim() ?? ""),
+});
+
 // ---- Factory so we can consider existing values and country rules ----
 type FactoryOpts = {
   countryCode: ECountryCode; // 'CA' | 'US'
@@ -53,6 +64,10 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
       .optional()
       .transform((v) => v?.trim() ?? ""),
     hstNumber: z
+      .string()
+      .optional()
+      .transform((v) => v?.trim() ?? ""),
+    businessName: z
       .string()
       .optional()
       .transform((v) => v?.trim() ?? ""),
@@ -95,6 +110,9 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
     testedPositiveOrRefused: z.boolean().optional(),
     completedDOTRequirements: z.boolean().optional(),
     hasAccidentalInsurance: z.boolean().optional(),
+
+    // Truck Details (Admin-only, all optional)
+    truckDetails: truckDetailsSchema.optional(),
   });
 
   type Out = z.infer<typeof base>;
@@ -102,7 +120,7 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
   const schema = base
     // Business all-or-nothing (unchanged)
     .superRefine((data: Out, ctx) => {
-      const textProvided = !!data.employeeNumber?.trim() || !!data.hstNumber?.trim() || !!data.businessNumber?.trim();
+      const textProvided = !!data.employeeNumber?.trim() || !!data.hstNumber?.trim() || !!data.businessName?.trim() || !!data.businessNumber?.trim();
       const photosProvided = data.hstPhotos.length > 0 || data.incorporatePhotos.length > 0 || data.bankingInfoPhotos.length > 0;
       if (!textProvided && !photosProvided) return;
 
@@ -113,6 +131,10 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
       }
       if (!data.hstNumber?.trim()) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["hstNumber"], message: "HST number is required when any business detail is provided." });
+        hadError = true;
+      }
+      if (!data.businessName?.trim()) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["businessName"], message: "Business name is required when any business detail is provided." });
         hadError = true;
       }
       if (!data.businessNumber?.trim()) {

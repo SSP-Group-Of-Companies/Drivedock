@@ -58,7 +58,7 @@ export default function OnboardingLayoutClientShell({
     <>
       {/* Top navbar hidden on scroll */}
       <div className={isScrolled ? "hidden" : "block"}>
-        <Navbar />
+        <Navbar needsFlatbedTraining={!!ctx?.needsFlatbedTraining} />
       </div>
 
       {/* Sticky Header on scroll */}

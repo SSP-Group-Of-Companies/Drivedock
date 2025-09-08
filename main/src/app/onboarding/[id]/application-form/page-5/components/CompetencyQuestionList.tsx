@@ -1,5 +1,6 @@
 import { useFormContext } from "react-hook-form";
-import { competencyQuestions } from "@/constants/competencyTestQuestions";
+import { getCompetencyQuestions } from "@/constants/competencyTestQuestions";
+import { useTranslation } from "react-i18next";
 import clsx from "clsx";
 
 type Props = {
@@ -7,6 +8,7 @@ type Props = {
 };
 
 export default function CompetencyQuestionList({ disabled }: Props) {
+  const { t } = useTranslation("common");
   const {
     register,
     watch,
@@ -15,6 +17,7 @@ export default function CompetencyQuestionList({ disabled }: Props) {
 
   const answers = watch("answers");
   const answerErrors = errors.answers as any[] | undefined;
+  const competencyQuestions = getCompetencyQuestions(t);
 
   return (
     <div className="space-y-10">

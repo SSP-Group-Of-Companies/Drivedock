@@ -27,10 +27,28 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
     return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6, 10)}`;
   };
 
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' });
+  const formatDisplayDate = (date: string | Date) => {
+    if (!date) return "Not provided";
+    const s = String(date);
+    
+    // If already plain date (yyyy-MM-dd), format directly without timezone conversion
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+      const [year, month, day] = s.split('-');
+      return `${month}/${day}/${year}`;
+    }
+    
+    // For ISO strings, use UTC methods to avoid timezone drift
+    try {
+      const dateObj = new Date(s);
+      if (isNaN(dateObj.getTime())) return s;
+      
+      const year = dateObj.getUTCFullYear();
+      const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(dateObj.getUTCDate()).padStart(2, '0');
+      return `${month}/${day}/${year}`;
+    } catch {
+      return s;
+    }
   };
 
   const calculateAge = (dob: string) => {
@@ -199,6 +217,68 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
           </div>
         </div>
 
+        {/* SIN Issue Date and Gender - One Row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium" style={{ color: "var(--color-on-surface-variant)" }}>
+              SIN Issue Date
+            </label>
+            {isEditMode ? (
+              <input
+                type="date"
+                value={formatInputDate(formData.sinIssueDate) || ""}
+                onChange={(e) => updateField('sinIssueDate', e.target.value)}
+                className="w-full p-3 rounded-lg border text-sm transition-colors"
+                style={{
+                  background: "var(--color-surface)",
+                  borderColor: "var(--color-outline)",
+                  color: "var(--color-on-surface)",
+                }}
+              />
+            ) : (
+              <div className="p-3 rounded-lg border" style={{
+                background: "var(--color-surface)",
+                borderColor: "var(--color-outline)",
+              }}>
+                <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
+                  {formatDisplayDate(formData.sinIssueDate)}
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium" style={{ color: "var(--color-on-surface-variant)" }}>
+              Gender
+            </label>
+            {isEditMode ? (
+              <select
+                value={formData.gender || ""}
+                onChange={(e) => updateField('gender', e.target.value)}
+                className="w-full p-3 rounded-lg border text-sm transition-colors"
+                style={{
+                  background: "var(--color-surface)",
+                  borderColor: "var(--color-outline)",
+                  color: "var(--color-on-surface)",
+                }}
+              >
+                <option value="">Select gender</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+              </select>
+            ) : (
+              <div className="p-3 rounded-lg border" style={{
+                background: "var(--color-surface)",
+                borderColor: "var(--color-outline)",
+              }}>
+                <span className="text-sm capitalize" style={{ color: "var(--color-on-surface)" }}>
+                  {formData.gender || "Not provided"}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
                 {/* Date of Birth and Proof of Age - One Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
@@ -224,7 +304,7 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
                   borderColor: "var(--color-outline)",
                 }}>
                   <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
-                    {formData.dob ? formatDate(formData.dob) : "Not provided"}
+                    {formatDisplayDate(formData.dob)}
                   </span>
                 </div>
               )}

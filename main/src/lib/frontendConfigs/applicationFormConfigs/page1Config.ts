@@ -26,6 +26,8 @@ export const page1ConfigFactory: FormPageConfigFactory<
         "firstName",
         "lastName",
         "sin",
+        "sinIssueDate",
+        "gender",
         // include nested photo keys so RHF can surface specific errors
         "sinPhoto.s3Key",
         "sinPhoto.url",

@@ -44,8 +44,28 @@ export default function QuizResultsClient() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-64">
-        <div className="text-lg">Loading...</div>
+      <div
+        className="rounded-xl border p-8 text-center"
+        style={{
+          borderColor: "var(--color-outline)",
+          background: "var(--color-card)",
+        }}
+      >
+        <div className="flex flex-col items-center gap-2">
+          <div
+            className="h-6 w-6 animate-spin rounded-full border-2 border-transparent"
+            style={{
+              borderTopColor: "var(--color-primary)",
+              borderWidth: "2px",
+            }}
+          />
+          <span
+            className="text-xs font-medium"
+            style={{ color: "var(--color-on-surface-variant)" }}
+          >
+            Loading Quiz Results...
+          </span>
+        </div>
       </div>
     );
   }
@@ -84,8 +104,7 @@ export default function QuizResultsClient() {
         background: "var(--color-card)",
         borderColor: "var(--color-outline)",
       }}>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-6">
-          <h1 className="text-lg sm:text-xl font-semibold" style={{ color: "var(--color-on-surface)" }}>Quiz Results</h1>
+        <div className="flex justify-end mb-6">
           <div className="flex items-center gap-2">
             <span className="text-xs sm:text-sm" style={{ color: "var(--color-on-surface-variant)" }}>
               Edit Mode:

@@ -117,14 +117,14 @@ export default function TermsModal({ onAgree, onCancel }: TermsModalProps) {
       <div className="mt-5 flex justify-between gap-2 pb-6">
         <button
           onClick={handleCancel}
-          className="px-4 py-2 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200"
+          className="px-4 py-2 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 cursor-pointer"
         >
           {t("start.termsModal.cancel")}
         </button>
         <button
           onClick={handleNext}
           disabled={!masterChecked}
-          className="px-4 py-2 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+          className="px-4 py-2 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 cursor-pointer"
           aria-disabled={!masterChecked}
         >
           {t("start.termsModal.next")}
@@ -188,13 +188,13 @@ export default function TermsModal({ onAgree, onCancel }: TermsModalProps) {
       <div className="mt-5 flex justify-between gap-2 pb-6">
         <button
           onClick={handleBack}
-          className="px-4 py-2 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200"
+          className="px-4 py-2 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 cursor-pointer"
         >
           {t("start.policiesModal.back")}
         </button>
         <button
           onClick={handleAgree}
-          className="px-4 py-2 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700"
+          className="px-4 py-2 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700 cursor-pointer"
         >
           {t("start.policiesModal.agree")}
         </button>
@@ -263,7 +263,9 @@ export default function TermsModal({ onAgree, onCancel }: TermsModalProps) {
 
             {/* Scrollable content area */}
             <div className="flex-1 overflow-y-auto px-6">
-              {currentStep === "terms" ? renderTermsStep() : renderPoliciesStep()}
+              {currentStep === "terms"
+                ? renderTermsStep()
+                : renderPoliciesStep()}
             </div>
           </Dialog.Panel>
         </div>
