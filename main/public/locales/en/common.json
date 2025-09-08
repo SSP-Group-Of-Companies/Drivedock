@@ -134,7 +134,14 @@
     "selectTypeDesc": "Please choose the type of position you are applying for:",
     "flatbed": "Flatbed",
     "dropdeck": "Dry Van",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "descriptions": {
+      "ssp-ca": "Leading transportation solutions across Canada with specialized freight services",
+      "ssp-us": "Premier freight solutions across the United States with cross-border coverage",
+      "fellowtrans": "Reliable freight solutions with a focus on customer satisfaction",
+      "webfreight": "Modern logistics solutions powered by technology and innovation",
+      "nesh": "Specialized steel and heavy materials transportation across North America"
+    }
   },
 
   "form": {

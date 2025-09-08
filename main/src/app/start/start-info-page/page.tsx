@@ -118,7 +118,7 @@ function StartPageContent() {
           <button
             onClick={handleContinue}
             disabled={!canProceed}
-            className={`mt-6 w-full flex items-center justify-center gap-2 px-4 py-2 rounded-md text-white text-sm font-semibold transition ${
+            className={`mt-6 w-full flex items-center justify-center gap-2 px-4 py-2 rounded-md text-white text-sm cursor-pointer font-semibold transition ${
               canProceed
                 ? "bg-blue-600 hover:bg-blue-700"
                 : "bg-gray-300 cursor-not-allowed"

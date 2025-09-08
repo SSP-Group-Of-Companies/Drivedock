@@ -134,7 +134,14 @@
     "selectTypeDesc": "Elige el tipo de puesto al que estás postulando:",
     "flatbed": "Plataforma (Flatbed)",
     "dropdeck": "Furgón seco (Dry Van)",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "descriptions": {
+      "ssp-ca": "Soluciones de transporte líderes en Canadá con servicios de carga especializados",
+      "ssp-us": "Soluciones de carga premium en los Estados Unidos con cobertura transfronteriza",
+      "fellowtrans": "Soluciones de carga confiables con enfoque en la satisfacción del cliente",
+      "webfreight": "Soluciones logísticas modernas impulsadas por tecnología e innovación",
+      "nesh": "Transporte especializado de acero y materiales pesados en América del Norte"
+    }
   },
 
   "form": {

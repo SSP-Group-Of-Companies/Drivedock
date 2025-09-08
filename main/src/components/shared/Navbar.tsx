@@ -50,7 +50,9 @@ type NavbarProps = {
   needsFlatbedTraining?: boolean;
 };
 
-export default function Navbar({ needsFlatbedTraining = false }: NavbarProps = {}) {
+export default function Navbar({
+  needsFlatbedTraining = false,
+}: NavbarProps = {}) {
   const mounted = useMounted();
   const { t } = useTranslation("common");
 
@@ -100,11 +102,15 @@ export default function Navbar({ needsFlatbedTraining = false }: NavbarProps = {
           {showBack && (
             <button
               onClick={handleBackClick}
-              className="ml-2 flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 text-white font-medium shadow hover:opacity-90 transition focus:outline-none focus:ring-2 focus:ring-blue-300"
+              className="ml-2 flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 text-white font-medium shadow hover:opacity-90 transition focus:outline-none focus:ring-2 focus:ring-blue-300 cursor-pointer"
               aria-label="Go Back"
             >
               {/* Back arrow with hover animation */}
-              <motion.span initial={{ x: 0 }} whileHover={{ x: -8 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}>
+              <motion.span
+                initial={{ x: 0 }}
+                whileHover={{ x: -8 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              >
                 <ArrowLeft size={18} />
               </motion.span>
               <span className="hidden sm:inline">{t("navbar.backButton")}</span>

@@ -127,14 +127,21 @@
     }
   },
   "company": {
-    "heading": "Rejoignez notre famille d’entreprises",
-    "subheading": "Choisissez l’entreprise où vous souhaitez bâtir votre carrière de conducteur",
+    "heading": "Rejoignez notre famille d'entreprises",
+    "subheading": "Choisissez l'entreprise où vous souhaitez bâtir votre carrière de conducteur",
     "applyNow": "Postuler maintenant",
     "selectType": "Sélectionner le type de candidature",
     "selectTypeDesc": "Veuillez choisir le type de poste pour lequel vous postulez :",
     "flatbed": "Plateau",
     "dropdeck": "Fourgon sec",
-    "cancel": "Annuler"
+    "cancel": "Annuler",
+    "descriptions": {
+      "ssp-ca": "Solutions de transport de premier plan au Canada avec des services de fret spécialisés",
+      "ssp-us": "Solutions de fret de premier plan aux États-Unis avec couverture transfrontalière",
+      "fellowtrans": "Solutions de fret fiables axées sur la satisfaction client",
+      "webfreight": "Solutions logistiques modernes alimentées par la technologie et l'innovation",
+      "nesh": "Transport spécialisé d'acier et de matériaux lourds en Amérique du Nord"
+    }
   },
 
   "form": {

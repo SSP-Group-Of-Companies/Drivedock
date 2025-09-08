@@ -78,7 +78,7 @@ export default function CompanyCard({
 
       {/* Company name & description */}
       <h3 className="font-bold text-lg text-gray-900 mb-1">{company.name}</h3>
-      <p className="text-gray-600 text-sm mb-2">{company.description}</p>
+      <p className="text-gray-600 text-sm mb-2">{t(`company.descriptions.${company.id}`)}</p>
 
       {/* Location */}
       <div className="flex items-center text-xs text-gray-500 mb-4">
@@ -88,7 +88,7 @@ export default function CompanyCard({
       {/* Apply button */}
       <motion.button
         whileHover={{ scale: 1.03 }}
-        className={`mt-auto px-5 py-2 rounded-lg font-semibold text-sm shadow transition flex items-center gap-2 ${company.buttonGradient} ${company.buttonTextColor}`}
+        className={`mt-auto px-5 py-2 rounded-lg font-semibold text-sm shadow transition cursor-pointer flex items-center gap-2 ${company.buttonGradient} ${company.buttonTextColor}`}
         onClick={handleClick}
       >
         {t("company.applyNow")}
