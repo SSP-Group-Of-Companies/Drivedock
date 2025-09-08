@@ -1,8 +1,9 @@
 import { CanadianCompanyId, ECompanyId, isCanadianCompany } from "./companies";
 
 /**
- * New folder layout used below:
- * /docs/companies/{ca|us}/{company-policies|hiring}/*.pdf
+ * Folder layout:
+ * /docs/companies/{ca|us}/{company-policies|hiring|road-test-certificates}/*.pdf
+ * /docs/companies/shared/*.pdf   <-- applies to BOTH CA and US companies
  */
 
 /** Per-company "Company Policy" PDFs */
@@ -29,20 +30,23 @@ export const COMPANY_POLICY_PDFS: Record<ECompanyId, { label: string; path: stri
   },
 };
 
-/** Common CA consent forms (shared across all Canadian companies) */
-export const CANADIAN_COMMON_FORMS: { label: string; path: string }[] = [
-  { label: "ISB Consent Form", path: "/docs/companies/ca/hiring/isb-consent-form.pdf" },
-  { label: "Personal Consent (CROF-I)", path: "/docs/companies/ca/hiring/personal-consent-form-cfroi.pdf" },
-  { label: "PSP Authorization Form", path: "/docs/companies/ca/hiring/psp-authorization-form.pdf" },
-  { label: "Road Test Certificate", path: "/docs/companies/ca/hiring/road-test-certificate.pdf" },
+/** PDFs shared by ALL companies (CA + US) */
+export const SHARED_FORMS: { label: string; path: string }[] = [
+  { label: "Personal Consent (CROF-I)", path: "/docs/companies/shared/personal-consent-cfroi.pdf" },
+  { label: "PSP Authorization Form", path: "/docs/companies/shared/psp-authorization.pdf" },
 ];
 
-/** Common US consent forms (shared across the US) */
+/** Canada-only common forms */
+export const CANADIAN_COMMON_FORMS: { label: string; path: string }[] = [
+  ...SHARED_FORMS,
+  { label: "ISB Consent Form", path: "/docs/companies/ca/isb-consent.pdf" },
+  { label: "Road Test Certificate", path: "/docs/companies/ca/road-test-certificates/road-test-certificate.pdf" },
+];
+
+/** US-only common forms */
 export const US_COMMON_FORMS: { label: string; path: string }[] = [
-  { label: "Personal Consent (CROF-I)", path: "/docs/companies/us/hiring/personal-consent-form-cfroi-us-drivers.pdf" },
-  { label: "PSP Authorization Form", path: "/docs/companies/us/hiring/psp-authorization-form-us-drivers.pdf" },
-  // Note: filename is spelled 'raod' in the repo; keep as-is.
-  { label: "Road Test Certificate", path: "/docs/companies/us/hiring/raod-test-certificate-us-drivers.pdf" },
+  ...SHARED_FORMS,
+  { label: "Road Test Certificate", path: "/docs/companies/us/road-test-certificates/road-test-certificate-us-drivers.pdf" },
 ];
 
 /** Canadian Hiring Application PDFs — mapped by company */
@@ -86,3 +90,14 @@ export function getPoliciesPdfsForCompany(companyId: ECompanyId): { label: strin
   // US
   return [policy, ...US_COMMON_FORMS, US_HIRING_PDF];
 }
+
+/** Region-level bundles (policy not included here on purpose) */
+export const policiesConsentFormsUS: { label: string; path: string }[] = [...US_COMMON_FORMS, US_HIRING_PDF];
+export const policiesConsentFormsCA: { label: string; path: string }[] = [...CANADIAN_COMMON_FORMS];
+
+/** Per-company single lookups */
+export const companyPolicyByCompany: Record<ECompanyId, { label: string; path: string }> = COMPANY_POLICY_PDFS;
+export const hiringAppByCompany: Partial<Record<ECompanyId, { label: string; path: string }>> = {
+  ...CANADIAN_HIRING_PDFS,
+  [ECompanyId.SSP_US]: US_HIRING_PDF,
+};

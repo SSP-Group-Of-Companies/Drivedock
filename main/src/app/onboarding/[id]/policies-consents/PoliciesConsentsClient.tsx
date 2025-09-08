@@ -1,7 +1,7 @@
 "use client";
 
 import { getCompanyById, ECompanyId } from "@/constants/companies";
-import { getPoliciesPdfsForCompany } from "@/constants/policiesConsentForms";
+import { getPoliciesPdfsForCompany } from "@/constants/policiesConsentsPdfs";
 import { IPoliciesConsents } from "@/types/policiesConsents.types";
 import { EStepPath, IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
 import { ES3Folder } from "@/types/aws.types";

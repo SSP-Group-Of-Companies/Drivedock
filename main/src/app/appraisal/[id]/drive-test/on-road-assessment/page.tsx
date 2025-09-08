@@ -79,6 +79,7 @@ export default async function OnRoadAssessmentPage({ params }: { params: Promise
       overallAssessment: (onRoad?.overallAssessment as any) || ("" as any),
       // initialize to false if not possible; server will ignore if not applicable
       needsFlatbedTraining: showFlatbedToggle ? Boolean(onRoad?.needsFlatbedTraining ?? !!data?.onboardingContext?.needsFlatbedTraining) : false,
+      milesKmsDriven: onRoad?.milesKmsDriven ?? 0,
       comments: onRoad?.comments || "",
       supervisorSignature: {
         s3Key: onRoad?.supervisorSignature?.s3Key ?? "",

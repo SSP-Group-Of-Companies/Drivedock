@@ -218,6 +218,7 @@ export interface IOnRoadAssessment {
   expectedStandard: EExpectedStandard;
   overallAssessment: EDriveTestOverall;
   needsFlatbedTraining?: boolean;
+  milesKmsDriven: number;
   comments?: string;
   supervisorSignature: IPhoto;
   assessedAt: Date;

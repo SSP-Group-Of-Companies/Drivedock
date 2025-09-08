@@ -94,6 +94,18 @@ export default function OnRoadMetaFields({ isLocked, showFlatbedToggle, onboardi
       </div>
 
       <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Miles / KMs Driven</label>
+        <input
+          type="number"
+          {...register("onRoad.milesKmsDriven", { valueAsNumber: true })}
+          disabled={isLocked}
+          aria-invalid={!!errors?.onRoad?.milesKmsDriven?.message}
+          className={withError(inputBase, !!errors?.onRoad?.milesKmsDriven?.message)}
+        />
+        {!!errors?.onRoad?.milesKmsDriven?.message && <p className="mt-1 text-sm text-red-600">{errors.onRoad.milesKmsDriven.message as string}</p>}
+      </div>
+
+      <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">Comments</label>
         <textarea {...register("onRoad.comments")} disabled={isLocked} aria-invalid={!!commentsErr} className={withError(textareaBase, !!commentsErr)} rows={4} />
         {!!commentsErr && <p className="mt-1 text-sm text-red-600">{commentsErr}</p>}

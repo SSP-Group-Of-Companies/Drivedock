@@ -185,6 +185,7 @@ const onRoadSchema = new Schema<IOnRoadAssessment>(
       required: [true, "overallAssessment is required"],
     },
     needsFlatbedTraining: { type: Boolean, default: undefined },
+    milesKmsDriven: { type: Number, required: [true, "milesKmsDriven is required"], min: [0, "milesKmsDriven cannot be negative"] },
     comments: { type: String },
     supervisorSignature: {
       type: photoSchema,
