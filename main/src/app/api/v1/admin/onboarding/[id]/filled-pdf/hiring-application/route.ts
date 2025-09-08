@@ -24,6 +24,7 @@ import { buildHiringApplicationFieldMap, resolveHiringTemplate } from "@/lib/pdf
 import { EDriverApplicationFillableFormFields as F } from "@/lib/pdf/hiring-application/mappers/hiring-application.types";
 
 import { ESafetyAdminId, getSafetyAdminById } from "@/constants/safetyAdmins";
+import { ECompanyId } from "@/constants/companies";
 
 // ----------------------------------------------------------------------
 
@@ -53,6 +54,9 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     if (!onboarding) return errorResponse(404, "Onboarding document not found");
     if (!onboarding.status.completed) return errorResponse(400, "Onboarding is not yet completed");
 
+    const companyId = onboarding.companyId as ECompanyId | undefined;
+    if (!companyId || !Object.values(ECompanyId).includes(companyId)) return errorResponse(400, "invalid company ID");
+
     // ------- Resolve referenced form IDs
     const appFormId = onboarding.forms?.driverApplication;
     const policiesId = onboarding.forms?.policiesConsents;
@@ -72,7 +76,7 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     if (!policies) return errorResponse(404, "Policies & Consents document not found");
 
     // ------- Resolve and load template (company-based)
-    const templatePath = resolveHiringTemplate(onboarding.companyId);
+    const templatePath = resolveHiringTemplate(companyId);
     const pdfBytes = await fs.readFile(templatePath);
 
     // ------- Prepare driver & admin signature bytes
