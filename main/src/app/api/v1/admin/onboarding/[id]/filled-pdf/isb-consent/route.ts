@@ -101,7 +101,7 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
       firstName,
       lastName,
       middleNames: "", // not captured on page1
-      surnameAtBirth: "", // not captured
+      surnameAtBirth: lastName,
       formerNames: "", // not captured
 
       birthCity: page1.birthCity,
@@ -134,6 +134,8 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
 
     // Signatures
     const tasks: Promise<void>[] = [];
+    const sigWidth = 78;
+    const sigHeight = 20;
 
     // Applicant signature (Consent page)
     try {
@@ -145,8 +147,8 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
           page: pages[0], // Consent page
           fieldName: F.AUTH_APPLICANT_SIGNATURE,
           imageBytes: sigBytes,
-          width: 120,
-          height: 35,
+          width: sigWidth,
+          height: sigHeight,
           yOffset: 0,
         })
       );
@@ -159,8 +161,8 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
           page: pages[1],
           fieldName: F.DECL_APPLICANT_SIGNATURE,
           imageBytes: sigBytes,
-          width: 120,
-          height: 35,
+          width: sigWidth,
+          height: sigHeight,
           yOffset: 0,
         })
       );
@@ -179,8 +181,8 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
           page: pages[0],
           fieldName: F.WITNESS_SIGNATURE,
           imageBytes: adminBytes,
-          width: 100,
-          height: 28,
+          width: sigWidth,
+          height: sigHeight,
           yOffset: 0,
         })
       );

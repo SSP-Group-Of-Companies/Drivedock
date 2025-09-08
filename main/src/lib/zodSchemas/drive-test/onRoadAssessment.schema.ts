@@ -36,7 +36,7 @@ const OnRoadAssessmentSchema = z.object({
 
   // shown conditionally in UI; server ignores it for companies where flatbed isn’t possible
   needsFlatbedTraining: z.boolean().optional(),
-
+  milesKmsDriven: z.number().min(0, { message: "Miles/KMs driven cannot be negative" }),
   comments: z.string().optional(),
   supervisorSignature: z.object({
     s3Key: z.string().min(1, { message: "Supervisor signature is required" }),
