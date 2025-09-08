@@ -454,6 +454,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     let driverName: string | undefined;
     let driverEmail: string | undefined;
     let driverLicenseExpiration: Date | undefined;
+    let truckDetails: any | undefined;
 
     const driverAppRef: any = onboardingDoc.forms?.driverApplication;
 
@@ -517,7 +518,12 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       },
     };
 
-    const identifications = driverLicenseExpiration != null ? { driverLicenseExpiration } : undefined;
+    const identifications = (driverLicenseExpiration != null || truckDetails != null) 
+      ? { 
+          ...(driverLicenseExpiration != null ? { driverLicenseExpiration } : {}),
+          ...(truckDetails != null ? { truckDetails } : {})
+        } 
+      : undefined;
 
     return successResponse(200, "Onboarding safety data updated", {
       onboardingContext: enrichedContext,
