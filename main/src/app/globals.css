@@ -321,3 +321,13 @@
   filter: invert(1);
   cursor: pointer;
 }
+
+/* ------------------------------
+   8. Custom Breakpoints
+------------------------------ */
+/* Custom breakpoint for icons-only mode at 1450px */
+@media (max-width: 1449px) {
+  .xl-custom\:hidden {
+    display: none !important;
+  }
+}

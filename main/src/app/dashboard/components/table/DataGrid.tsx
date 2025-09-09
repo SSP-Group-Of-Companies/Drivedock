@@ -249,7 +249,7 @@ export default function DataGrid({
     "data-testid"?: string;
   }) => {
     const base =
-      "inline-flex items-center gap-1.5 sm:gap-2 rounded-lg px-2 py-1.5 sm:px-2.5 text-sm transition-colors disabled:opacity-50 cursor-pointer";
+      "inline-flex items-center gap-1 rounded-lg px-1.5 py-1 sm:gap-2 sm:px-2.5 sm:py-1.5 text-sm transition-colors disabled:opacity-50 cursor-pointer";
     const styleBtn: React.CSSProperties = {
       backgroundColor: "var(--color-card)",
       color: "var(--color-on-surface)",
@@ -258,7 +258,7 @@ export default function DataGrid({
     const label = children;
     const content = (
       <>
-        <Icon className="h-4 w-4" aria-hidden />
+        <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden />
         <span className="hidden sm:inline">{children}</span>
       </>
     );
@@ -379,7 +379,7 @@ export default function DataGrid({
       </div>
 
       {/* Table (fills remaining space) */}
-      <div className="relative -mx-2 flex-1 min-h-[400px] overflow-x-auto overflow-y-auto overscroll-auto no-scrollbar sm:mx-0">
+      <div className="relative flex-1 min-h-[400px] overflow-x-auto overflow-y-auto overscroll-auto no-scrollbar">
         <motion.table
           className="w-full border-separate border-spacing-0 text-sm table-fixed sm:table-auto"
           initial={{ opacity: 0 }}
@@ -387,11 +387,22 @@ export default function DataGrid({
           transition={{ duration: 0.3, delay: 0.1 }}
         >
                      <colgroup>
-             <col className="w-[40%] sm:w-auto" />
-             <col className="w-[30%] sm:w-auto" />
-             <col className="hidden sm:table-column" />
-             <col className="w-[15%] sm:w-auto" />
-             <col className="w-[15%] sm:w-auto" />
+             {mode === "terminated" ? (
+               <>
+                 <col className="w-[30%] sm:w-[20%]" />
+                 <col className="w-[40%] sm:w-[30%]" />
+                 <col className="hidden sm:table-column sm:w-[20%]" />
+                 <col className="w-[15%] sm:w-[15%]" />
+                 <col className="w-[15%] sm:w-[15%]" />
+               </>
+             ) : (
+               <>
+                 <col className="w-[30%] sm:w-[30%]" />
+                 <col className="w-[40%] sm:w-[40%]" />
+                 <col className="hidden sm:table-column sm:w-[15%]" />
+                 <col className="w-[30%] sm:w-[15%]" />
+               </>
+             )}
            </colgroup>
 
           <thead
@@ -432,7 +443,7 @@ export default function DataGrid({
                  className="px-2 py-3 text-center font-medium sm:px-3"
                  style={{ borderBottom: "1px solid var(--color-outline)" }}
                >
-                 <span className="hidden sm:inline">Actions</span>
+                 Actions
                </th>
             </tr>
           </thead>
@@ -754,7 +765,7 @@ export default function DataGrid({
                           {mode === "active" ? (
                             <>
                               {currentTab === "all" && (
-                                <div className="inline-flex flex-wrap justify-end gap-1 sm:flex-nowrap sm:gap-1.5 lg:gap-2">
+                                <div className="inline-flex justify-end gap-1 sm:gap-1.5 lg:gap-2">
                                   <ActionBtn
                                     icon={Eye}
                                     onClick={() => navigateToContract(it._id)}
@@ -780,7 +791,7 @@ export default function DataGrid({
                               )}
 
                               {currentTab === "drive-test" && (
-                                <div className="inline-flex flex-wrap justify-end gap-1 sm:flex-nowrap sm:gap-1.5 lg:gap-2">
+                                <div className="inline-flex justify-end gap-1 sm:gap-1.5 lg:gap-2">
                                   <ActionBtn
                                     icon={FlaskConical}
                                     href={`/dashboard/contract/${it._id}/appraisal/drive-test`}
@@ -791,7 +802,7 @@ export default function DataGrid({
                               )}
 
                               {currentTab === "carriers-edge-training" && (
-                                <div className="inline-flex flex-wrap justify-end gap-1 sm:flex-nowrap sm:gap-1.5 lg:gap-2">
+                                <div className="inline-flex justify-end gap-1 sm:gap-1.5 lg:gap-2">
                                   {it.itemSummary?.carrierEdgeTraining
                                     ?.emailSent ? (
                                     <ActionBtn
@@ -822,7 +833,7 @@ export default function DataGrid({
 
                               {/* Actions → currentTab === "drug-test" */}
                               {currentTab === "drug-test" && (
-                                <div className="inline-flex flex-wrap justify-end gap-1 sm:flex-nowrap sm:gap-1.5 lg:gap-2">
+                                <div className="inline-flex justify-end gap-1 sm:gap-1.5 lg:gap-2">
                                   {(() => {
                                     const s = it.itemSummary?.drugTest?.status;
 
@@ -897,7 +908,7 @@ export default function DataGrid({
                               )}
                             </>
                           ) : (
-                            <div className="inline-flex flex-wrap justify-end gap-1 sm:flex-nowrap sm:gap-1.5 lg:gap-2">
+                            <div className="inline-flex justify-end gap-1 sm:gap-1.5 lg:gap-2">
                               <ActionBtn
                                 icon={Eye}
                                 href={`/dashboard/contract/${it._id}`}
