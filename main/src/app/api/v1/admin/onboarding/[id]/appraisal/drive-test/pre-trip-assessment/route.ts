@@ -4,7 +4,7 @@ import connectDB from "@/lib/utils/connectDB";
 import { errorResponse, successResponse } from "@/lib/utils/apiResponse";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import DriveTest from "@/mongoose/models/DriveTest";
-import { EStepPath } from "@/types/onboardingTracker.types";
+import { EStepPath, ETerminationType } from "@/types/onboardingTracker.types";
 import { buildTrackerContext, hasReachedStep, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
 import { isValidObjectId } from "mongoose";
 import { deleteS3Objects, finalizePhoto } from "@/lib/utils/s3Upload";
@@ -196,6 +196,9 @@ export const POST = async (req: NextRequest, { params }: { params: Promise<{ id:
     // D) Business outcome
     if (driveTestDoc.preTrip?.overallAssessment === EDriveTestOverall.FAIL) {
       onboardingDoc.terminated = true;
+      onboardingDoc.terminationDate = new Date();
+      onboardingDoc.terminationType = ETerminationType.TERMINATED;
+
       // Reset fields on DriveTest
       driveTestDoc.set("powerUnitType", "");
       driveTestDoc.set("trailerType", "");

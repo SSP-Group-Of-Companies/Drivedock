@@ -162,6 +162,7 @@ export function buildHiringApplicationFieldMap({ onboarding, application, prequa
     [F.LICENSE_TYPE]: az?.licenseType || "",
     // Single date fields without a specific format comment -> dd/mm/yyyy
     [F.DL_EXPIRY]: fmtDDMMYYYY(az?.licenseExpiry),
+    [F.SIN_ISSUE_DATE]: fmtDDMMYYYY(p1.sinIssueDate),
     [F.LICENSE_ISSUE_PROVINCE]: az?.licenseStateOrProvince || "",
     [F.DOB]: fmtDDMMYYYY(p1.dob),
     [F.FORM_DATE]: `${formDMY.d}/${formDMY.m}/${formDMY.y}`,
@@ -206,14 +207,14 @@ export function buildHiringApplicationFieldMap({ onboarding, application, prequa
     [F.DOB_MONTH]: splitDMY(p1.dob).m,
     [F.DOB_YEAR]: splitDMY(p1.dob).y,
 
-    [F.PROOF_OF_AGE_PROVIDED]: p1.canProvideProofOfAge ? "Yes" : "No",
+    [F.PROOF_OF_AGE_PROVIDED]: p1.canProvideProofOfAge ? true : false,
 
-    [F.LEGAL_RIGHT_TO_WORK_YES]: legalRight ? "Yes" : "",
-    [F.LEGAL_RIGHT_TO_WORK_NO]: legalRightNo ? "Yes" : "",
+    [F.LEGAL_RIGHT_TO_WORK_YES]: legalRight ? true : false,
+    [F.LEGAL_RIGHT_TO_WORK_NO]: legalRightNo ? true : false,
 
     // have you worked with the company before?
-    [F.WORKED_WITH_COMPANY_BEFORE_YES]: workedBefore ? "Yes" : "",
-    [F.WORKED_WITH_COMPANY_BEFORE_NO]: !workedBefore ? "Yes" : "",
+    [F.WORKED_WITH_COMPANY_BEFORE_YES]: workedBefore ? true : false,
+    [F.WORKED_WITH_COMPANY_BEFORE_NO]: !workedBefore ? true : false,
 
     // if yes, when? (enum comments say mm/yyyy)
     [F.WORKWCOMP_PREV_FROM]: fmtMMYYYY(p2?.previousWorkDetails?.from),
@@ -223,17 +224,17 @@ export function buildHiringApplicationFieldMap({ onboarding, application, prequa
     [F.WORKWCOMP__PREV_REASON_FOR_LEAVING]: p2?.reasonForLeavingCompany || "",
 
     // are you currently employed?
-    [F.CURRENTLY_EMPLOYED]: p2?.currentlyEmployed ? "Yes" : "No",
+    [F.CURRENTLY_EMPLOYED]: p2?.currentlyEmployed ? true : false,
     [F.REFERRAL_SOURCE]: p2?.referredBy || "",
     [F.EXPECTED_PAY_RATE]: p2?.expectedRateOfPay || "",
 
     // Western Canada availability (derived from prequal preferLocalDriving)
-    [F.AVAILABLE_WESTERN_CANADA_YES]: preferLocal ? "Yes" : "",
-    [F.AVAILABLE_WESTERN_CANADA_NO]: !preferLocal ? "Yes" : "",
+    [F.AVAILABLE_WESTERN_CANADA_YES]: preferLocal ? true : false,
+    [F.AVAILABLE_WESTERN_CANADA_NO]: !preferLocal ? true : false,
 
     // FAST Card block (page 3)
-    [F.HAS_FAST_CARD_YES]: hasFast ? "Yes" : "",
-    [F.HAS_FAST_CARD_NO]: !hasFast ? "Yes" : "",
+    [F.HAS_FAST_CARD_YES]: hasFast ? true : false,
+    [F.HAS_FAST_CARD_NO]: !hasFast ? true : false,
     [F.FAST_CARD_NUMBER]: p4?.fastCard?.fastCardNumber || "",
 
     // Contact info + emergency contact
@@ -292,10 +293,10 @@ export function buildHiringApplicationFieldMap({ onboarding, application, prequa
         [F.CURRENT_POSITION_TO]: fmtDDMMYYYY(e.to),
         [F.CURRENT_SALARY]: String(e.salary ?? ""),
         [F.CURRENT_REASON_FOR_LEAVING]: e.reasonForLeaving,
-        [F.CURRENT_FMCSR_YES]: e.subjectToFMCSR ? "Yes" : "",
-        [F.CURRENT_FMCSR_NO]: !e.subjectToFMCSR ? "Yes" : "",
-        [F.CURRENT_DOT_SENSITIVE_YES]: e.safetySensitiveFunction ? "Yes" : "",
-        [F.CURRENT_DOT_SENSITIVE_NO]: !e.safetySensitiveFunction ? "Yes" : "",
+        [F.CURRENT_FMCSR_YES]: e.subjectToFMCSR ? true : false,
+        [F.CURRENT_FMCSR_NO]: !e.subjectToFMCSR ? true : false,
+        [F.CURRENT_DOT_SENSITIVE_YES]: e.safetySensitiveFunction ? true : false,
+        [F.CURRENT_DOT_SENSITIVE_NO]: !e.safetySensitiveFunction ? true : false,
       });
     }
     if (base === 1) {
@@ -314,10 +315,10 @@ export function buildHiringApplicationFieldMap({ onboarding, application, prequa
         [F.PREV_1_POSITION_TO]: fmtDDMMYYYY(e.to),
         [F.PREV_1_SALARY]: String(e.salary ?? ""),
         [F.PREV_1_REASON_FOR_LEAVING]: e.reasonForLeaving,
-        [F.PREV_1_FMCSR_YES]: e.subjectToFMCSR ? "Yes" : "",
-        [F.PREV_1_FMCSR_NO]: !e.subjectToFMCSR ? "Yes" : "",
-        [F.PREV_1_DOT_SENSITIVE_YES]: e.safetySensitiveFunction ? "Yes" : "",
-        [F.PREV_1_DOT_SENSITIVE_NO]: !e.safetySensitiveFunction ? "Yes" : "",
+        [F.PREV_1_FMCSR_YES]: e.subjectToFMCSR ? true : false,
+        [F.PREV_1_FMCSR_NO]: !e.subjectToFMCSR ? true : false,
+        [F.PREV_1_DOT_SENSITIVE_YES]: e.safetySensitiveFunction ? true : false,
+        [F.PREV_1_DOT_SENSITIVE_NO]: !e.safetySensitiveFunction ? true : false,
       });
     }
     if (base === 2) {
@@ -336,10 +337,10 @@ export function buildHiringApplicationFieldMap({ onboarding, application, prequa
         [F.PREV_2_POSITION_TO]: fmtDDMMYYYY(e.to),
         [F.PREV_2_SALARY]: String(e.salary ?? ""),
         [F.PREV_2_REASON_FOR_LEAVING]: e.reasonForLeaving,
-        [F.PREV_2_FMCSR_YES]: e.subjectToFMCSR ? "Yes" : "",
-        [F.PREV_2_FMCSR_NO]: !e.subjectToFMCSR ? "Yes" : "",
-        [F.PREV_2_DOT_SENSITIVE_YES]: e.safetySensitiveFunction ? "Yes" : "",
-        [F.PREV_2_DOT_SENSITIVE_NO]: !e.safetySensitiveFunction ? "Yes" : "",
+        [F.PREV_2_FMCSR_YES]: e.subjectToFMCSR ? true : false,
+        [F.PREV_2_FMCSR_NO]: !e.subjectToFMCSR ? true : false,
+        [F.PREV_2_DOT_SENSITIVE_YES]: e.safetySensitiveFunction ? true : false,
+        [F.PREV_2_DOT_SENSITIVE_NO]: !e.safetySensitiveFunction ? true : false,
       });
     }
     if (base === 3) {
@@ -358,10 +359,10 @@ export function buildHiringApplicationFieldMap({ onboarding, application, prequa
         [F.PREV_3_TO]: fmtDDMMYYYY(e.to),
         [F.PREV_3_SALARY]: String(e.salary ?? ""),
         [F.PREV_3_REASON_FOR_LEAVING]: e.reasonForLeaving,
-        [F.PREV_3_FMCSR_YES]: e.subjectToFMCSR ? "Yes" : "",
-        [F.PREV_3_FMCSR_NO]: !e.subjectToFMCSR ? "Yes" : "",
-        [F.PREV_3_DOT_SENSITIVE_YES]: e.safetySensitiveFunction ? "Yes" : "",
-        [F.PREV_3_DOT_SENSITIVE_NO]: !e.safetySensitiveFunction ? "Yes" : "",
+        [F.PREV_3_FMCSR_YES]: e.subjectToFMCSR ? true : false,
+        [F.PREV_3_FMCSR_NO]: !e.subjectToFMCSR ? true : false,
+        [F.PREV_3_DOT_SENSITIVE_YES]: e.safetySensitiveFunction ? true : "",
+        [F.PREV_3_DOT_SENSITIVE_NO]: !e.safetySensitiveFunction ? false : "",
       });
     }
   };
@@ -415,11 +416,11 @@ export function buildHiringApplicationFieldMap({ onboarding, application, prequa
   const edu = p3?.education;
   if (edu) {
     for (let i = 1; i <= 12; i++) {
-      (map as any)[F[`GRADE_SCHOOL_${i}` as keyof typeof F]] = i === (edu.gradeSchool ?? 0) ? "Yes" : "";
+      (map as any)[F[`GRADE_SCHOOL_${i}` as keyof typeof F]] = i === (edu.gradeSchool ?? 0) ? true : false;
     }
     for (let i = 1; i <= 4; i++) {
-      (map as any)[F[`COLLEGE_${i}` as keyof typeof F]] = i === (edu.college ?? 0) ? "Yes" : "";
-      (map as any)[F[`POSTGRAD_${i}` as keyof typeof F]] = i === (edu.postGraduate ?? 0) ? "Yes" : "";
+      (map as any)[F[`COLLEGE_${i}` as keyof typeof F]] = i === (edu.college ?? 0) ? true : false;
+      (map as any)[F[`POSTGRAD_${i}` as keyof typeof F]] = i === (edu.postGraduate ?? 0) ? true : false;
     }
   }
 
@@ -445,10 +446,10 @@ export function buildHiringApplicationFieldMap({ onboarding, application, prequa
 
   // License history questions
   Object.assign(map, {
-    [F.LICENSE_DENIED_YES]: p4?.deniedLicenseOrPermit ? "Yes" : "",
-    [F.LICENSE_DENIED_NO]: p4?.deniedLicenseOrPermit ? "" : "Yes",
-    [F.LICENSE_RECEIVED_YE]: p4?.suspendedOrRevoked ? "Yes" : "",
-    [F.LICENSE_RECEIVED_NO]: p4?.suspendedOrRevoked ? "" : "Yes",
+    [F.LICENSE_DENIED_YES]: p4?.deniedLicenseOrPermit ? true : false,
+    [F.LICENSE_DENIED_NO]: p4?.deniedLicenseOrPermit ? false : true,
+    [F.LICENSE_RECEIVED_YE]: p4?.suspendedOrRevoked ? true : false,
+    [F.LICENSE_RECEIVED_NO]: p4?.suspendedOrRevoked ? false : true,
   });
 
   // HOS block (Canadian Hours of Service)
@@ -514,16 +515,16 @@ export function buildHiringApplicationFieldMap({ onboarding, application, prequa
   const completed = onboarding.status?.completed ?? (onboarding as any).completed ?? false;
   if (!completed) {
     Object.assign(map, {
-      [F.PROCESS_APPLICANT_HIRED_YES]: "",
-      [F.PROCESS_APPLICANT_HIRED_NO]: "Yes",
+      [F.PROCESS_APPLICANT_HIRED_YES]: false,
+      [F.PROCESS_APPLICANT_HIRED_NO]: true,
     });
   } else {
     const isTerminated = !!onboarding.terminated;
     Object.assign(map, {
-      [F.PROCESS_APPLICANT_HIRED_YES]: isTerminated ? "" : "Yes",
-      [F.PROCESS_APPLICANT_HIRED_NO]: isTerminated ? "Yes" : "",
-      [F.PROCESS_TERMINATION_RESIGNED]: isTerminated && onboarding.terminationType === ETerminationType.RESIGNED ? "Yes" : "",
-      [F.PROCESS_TERMINATION_TERMINATE]: isTerminated && onboarding.terminationType === ETerminationType.TERMINATED ? "Yes" : "",
+      [F.PROCESS_APPLICANT_HIRED_YES]: completed,
+      [F.PROCESS_APPLICANT_HIRED_NO]: !completed,
+      [F.PROCESS_TERMINATION_RESIGNED]: isTerminated && onboarding.terminationType === ETerminationType.RESIGNED ? true : false,
+      [F.PROCESS_TERMINATION_TERMINATE]: isTerminated && onboarding.terminationType === ETerminationType.TERMINATED ? true : false,
       // Single date fields → dd/mm/yyyy
       [F.PROCESS_HIRING_DATE]: fmtDDMMYYYY(onboarding.status?.completionDate),
       [F.PROCESS_RELEASE_DATE]: fmtDDMMYYYY((onboarding as any).terminationDate),
@@ -575,11 +576,11 @@ export function buildHiringApplicationFieldMap({ onboarding, application, prequa
 
     [F.ALCOHOL_DRUG_STATEMENT_PROVINCE]: az?.licenseStateOrProvince || "",
 
-    [F.ALCOHOL_DRUG_STATEMENT_Q1_YES]: p4?.testedPositiveOrRefused ? "Yes" : "",
-    [F.ALCOHOL_DRUG_STATEMENT_Q1_NO]: p4?.testedPositiveOrRefused ? "" : "Yes",
+    [F.ALCOHOL_DRUG_STATEMENT_Q1_YES]: p4?.testedPositiveOrRefused ? true : false,
+    [F.ALCOHOL_DRUG_STATEMENT_Q1_NO]: p4?.testedPositiveOrRefused ? false : true,
 
-    [F.ALCOHOL_DRUG_STATEMENT_Q2_YES]: p4?.completedDOTRequirements ? "Yes" : "",
-    [F.ALCOHOL_DRUG_STATEMENT_Q2_NO]: p4?.completedDOTRequirements ? "" : "Yes",
+    [F.ALCOHOL_DRUG_STATEMENT_Q2_YES]: p4?.completedDOTRequirements ? true : false,
+    [F.ALCOHOL_DRUG_STATEMENT_Q2_NO]: p4?.completedDOTRequirements ? false : true,
 
     [F.DRUG_NOTICE_DRIVER_NAME]: name,
     [F.DRUG_NOTICE_DRIVER_SIGNATURE]: (policies as any)?.signature?.url || "",
@@ -647,7 +648,7 @@ export function buildHiringApplicationFieldMap({ onboarding, application, prequa
   /* =========================
    * Page 12 - Acknowledgement & Insurance
    * ========================= */
-  const contractorName = application.page4?.businessNumber || getCompanyById(onboarding.companyId)?.name || "N/A";
+  const contractorName = (application.page4?.businessName ?? application.page4?.businessNumber) || getCompanyById(onboarding.companyId)?.name || "N/A";
 
   Object.assign(map, {
     [F.COMP_ACK_DRIVER_NAME]: name,

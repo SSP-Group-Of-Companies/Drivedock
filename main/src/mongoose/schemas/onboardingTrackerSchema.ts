@@ -49,6 +49,9 @@ const onboardingTrackerSchema = new Schema<IOnboardingTrackerDoc>(
         default: false,
         required: [true, "Completion status is required."],
       },
+      completionDate: {
+        type: Date,
+      },
     },
     companyId: {
       type: String,
@@ -84,6 +87,12 @@ const onboardingTrackerSchema = new Schema<IOnboardingTrackerDoc>(
         values: Object.values(ETerminationType),
         message: `termination type can only be one of ${Object.values(ETerminationType)}`,
       },
+      required: function (this: IOnboardingTrackerDoc) {
+        return this.terminated === true;
+      },
+    },
+    terminationDate: {
+      type: Date,
       required: function (this: IOnboardingTrackerDoc) {
         return this.terminated === true;
       },

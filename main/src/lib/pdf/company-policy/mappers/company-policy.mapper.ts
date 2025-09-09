@@ -1,7 +1,7 @@
-import type { PDFForm } from "pdf-lib";
-import { ECompanyPolicyFillableFormFields as F, type CompanyPolicyPayload } from "./company-policy.types";
 import path from "node:path";
+import type { PDFForm } from "pdf-lib";
 import { ECompanyId } from "@/constants/companies";
+import { ECompanyPolicyFillableFormFields as F, type CompanyPolicyPayload } from "./company-policy.types";
 
 /* ------------------------------- helpers ------------------------------- */
 
@@ -53,11 +53,11 @@ export type BuildCompanyPolicyPayloadArgs = {
 
   // IPASS / Toll
   ipassDate?: MaybeDate;
-  ipassTruckNumber?: string;
+  ipassTruckNumber?: string; // from applicationForm.page4.truckDetails.truckUnitNumber
 
   // Speed Locker policy
-  speedTruckYear?: string;
-  speedVIN?: string;
+  speedTruckYear?: string; // from applicationForm.page4.truckDetails.year
+  speedVIN?: string; // from applicationForm.page4.truckDetails.vin
   ownerOperatorName?: string;
 
   // Dates (driver + witness where applicable)

@@ -1,4 +1,7 @@
-// src/app/api/v1/admin/onboarding/[id]/filled-pdf/company-policy/route.ts
+// ======================================================================
+// app/api/v1/admin/onboarding/[id]/filled-pdf/company-policy/route.ts
+// ======================================================================
+
 import { NextRequest, NextResponse } from "next/server";
 import path from "node:path";
 import fs from "node:fs/promises";
@@ -46,17 +49,27 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     if (!onboarding.status?.completed) return errorResponse(400, "Onboarding is not completed yet");
 
     const companyId = onboarding.companyId as ECompanyId | undefined;
+    if (!companyId || !Object.values(ECompanyId).includes(companyId)) {
+      return errorResponse(400, "invalid company ID");
+    }
 
-    if (!companyId || !Object.values(ECompanyId).includes(companyId)) return errorResponse(400, "invalid company ID");
-
-    // Application – driver name
+    // Application – names + TRUCK DETAILS (unit#, year, VIN)
     const appId = onboarding.forms?.driverApplication;
     if (!appId || !isValidObjectId(appId)) return errorResponse(404, "Driver application not found");
-    const application = await ApplicationForm.findById(appId).select("page1.firstName page1.lastName").lean();
+
+    const application = await ApplicationForm.findById(appId)
+      .select(["page1.firstName", "page1.lastName", "page4.truckDetails.vin", "page4.truckDetails.year", "page4.truckDetails.truckUnitNumber"].join(" "))
+      .lean();
+
     const first = (application as any)?.page1?.firstName?.toString().trim();
     const last = (application as any)?.page1?.lastName?.toString().trim();
     if (!first || !last) return errorResponse(400, "Applicant name missing");
     const driverFullName = [first, last].filter(Boolean).join(" ");
+
+    // Truck details — all optional; fallback to empty strings in mapper
+    const truckUnitNumber = (application as any)?.page4?.truckDetails?.truckUnitNumber?.toString().trim() || "";
+    const truckYear = (application as any)?.page4?.truckDetails?.year?.toString().trim() || "";
+    const truckVIN = (application as any)?.page4?.truckDetails?.vin?.toString().trim() || "";
 
     // Policies & Consents – driver signature is REQUIRED
     const polId = onboarding.forms?.policiesConsents;
@@ -64,7 +77,7 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     const policies = await PoliciesConsents.findById(polId).lean();
     if (!policies?.signature) return errorResponse(400, "Driver signature is missing in Policies & Consents");
 
-    const effectiveSignedAt: Date | string = (policies?.signedAt as any) || (onboarding as any)?.createdAt;
+    const effectiveSignedAt: Date | string = (policies as any)?.signedAt || (onboarding as any)?.createdAt;
 
     // Load signatures (both REQUIRED)
     let driverSigBytes: Uint8Array;
@@ -92,20 +105,26 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     const form = pdfDoc.getForm();
     const pages = pdfDoc.getPages();
 
-    // Build payload – dates use effectiveSignedAt; witness name included via mapper
+    // Build payload – includes truck details
     const payload = buildCompanyPolicyPayload({
       driverFullName,
-      companyContactName: "SSP Truck Line Inc", // text on Pg1; OK to remain generic
+      companyContactName: "SSP Truck Line Inc", // Pg1 (generic ok)
       witnessName: safetyAdmin.name,
+
+      // dates
       ipassDate: effectiveSignedAt, // Pg16
-      ipassTruckNumber: "",
-      speedTruckYear: "",
-      speedVIN: "",
-      ownerOperatorName: driverFullName, // Pg17
       acknowledgementDate: effectiveSignedAt, // Pg4
-      requirementsDate: effectiveSignedAt, // Pg11 (driver & witness)
-      medicalWitnessDate: effectiveSignedAt, // Pg2 (witness)
-      finalAckDate: effectiveSignedAt, // Pg22 (driver & witness)
+      requirementsDate: effectiveSignedAt, // Pg11
+      medicalWitnessDate: effectiveSignedAt, // Pg2
+      finalAckDate: effectiveSignedAt, // Pg22
+
+      // truck details (optional)
+      ipassTruckNumber: truckUnitNumber, // -> IPASS_TRUCK_NUMBER (Pg16)
+      speedTruckYear: truckYear, // -> SPEED_TRUCK_YEAR (Pg17)
+      speedVIN: truckVIN, // -> SPEED_VIN (Pg17)
+
+      // owner-operator name defaults to driverFullName if omitted
+      ownerOperatorName: driverFullName,
     });
 
     applyCompanyPolicyPayloadToForm(form, payload);
