@@ -52,51 +52,46 @@ export default function TermsModal({ onAgree, onCancel }: TermsModalProps) {
         {t("start.termsModal.intro")}
       </p>
 
-      {/* Top checklist */}
+      {/* Unified checklist - all 6 statements together */}
       <div className="mb-4">
         <ul className="space-y-2">
-          {["points.accurateInfo", "points.digitalProcess", "points.laws"].map(
-            (key) => (
-              <li key={key} className="flex items-start gap-3">
-                <CheckCircle
-                  aria-hidden="true"
-                  className="text-blue-500 mt-1 flex-shrink-0"
-                  size={16}
-                />
-                <span className="text-sm text-gray-700">
-                  {t(`start.termsModal.${key}`)}
-                </span>
-              </li>
-            )
-          )}
+          {[
+            "points.selfApplication",
+            "points.accurateInfo", 
+            "points.digitalProcess", 
+            "points.laws",
+            "points.truthfulInfo",
+            "points.applicationType"
+          ].map((key) => (
+            <li key={key} className="flex items-start gap-3">
+              <CheckCircle
+                aria-hidden="true"
+                className="text-blue-500 mt-1 flex-shrink-0"
+                size={16}
+              />
+              <span className={`text-sm text-gray-700 ${
+                key === "points.selfApplication" ? "font-bold" : 
+                key === "points.truthfulInfo" || key === "points.applicationType" ? "font-medium" : ""
+              }`}>
+                {t(`start.termsModal.${key}`)}
+              </span>
+            </li>
+          ))}
         </ul>
       </div>
 
-      {/* Clean, seamless middle section (soft card look) */}
-      <section className="bg-gray-50 rounded-lg p-4 shadow-sm">
-        <div className="space-y-3 text-sm text-gray-900">
-          <p className="font-medium">
-            {t("start.termsModal.points.truthfulInfo")}
-          </p>
-          <p className="font-medium">
-            {t("start.termsModal.points.applicationType")}
-          </p>
-
-          <div className="pt-2">
-            <p className="font-medium mb-2">
-              {t("start.termsModal.points.rulesTitle")}
-            </p>
-            <ul className="list-disc list-inside space-y-1 text-gray-800">
-              <li>{t("start.termsModal.points.drugPolicy")}</li>
-              <li>{t("start.termsModal.points.dashCam")}</li>
-              <li>{t("start.termsModal.points.safetyRules")}</li>
-              <li>{t("start.termsModal.points.seals")}</li>
-            </ul>
-          </div>
-
-          <p className="font-medium">{t("start.termsModal.points.laws")}</p>
-        </div>
-      </section>
+      {/* Rules section */}
+      <div className="mb-4">
+        <p className="font-medium mb-2 text-sm text-gray-900">
+          {t("start.termsModal.points.rulesTitle")}
+        </p>
+        <ul className="list-disc list-inside space-y-1 text-sm text-gray-800">
+          <li>{t("start.termsModal.points.drugPolicy")}</li>
+          <li>{t("start.termsModal.points.dashCam")}</li>
+          <li>{t("start.termsModal.points.safetyRules")}</li>
+          <li>{t("start.termsModal.points.seals")}</li>
+        </ul>
+      </div>
 
       {/* Consent checkbox */}
       <label className="flex items-start gap-2 mt-4">

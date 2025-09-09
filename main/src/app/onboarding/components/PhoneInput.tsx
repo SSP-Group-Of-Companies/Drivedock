@@ -32,6 +32,12 @@ export default function PhoneInput({
             value={value}
             onChange={(e) => onChange(e.target.value)}
             data-field={label}
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck="false"
+            data-lpignore="true"
+            data-form-type="other"
             className="flex-1 py-2 px-3 border border-gray-300 rounded-r-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md focus:border-transparent"
           />
         </div>
