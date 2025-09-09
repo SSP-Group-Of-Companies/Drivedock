@@ -302,7 +302,7 @@ export default function ContractSummaryBar({ trackerId }: Props) {
         {/* Right chunk: company + notifications + notes */}
         <div className="flex items-center gap-2">
           {/* Company */}
-          <div className="relative" ref={companyMenuRef}>
+          <div className="relative hidden sm:block" ref={companyMenuRef}>
             <button
               type="button"
               onPointerDown={onToggleCompany}
@@ -393,7 +393,7 @@ export default function ContractSummaryBar({ trackerId }: Props) {
           </div>
 
           {/* Notifications */}
-          <div className="relative" ref={notifMenuRef}>
+          <div className="relative hidden sm:block" ref={notifMenuRef}>
             <button
               type="button"
               onPointerDown={onToggleNotif}
@@ -745,7 +745,7 @@ export default function ContractSummaryBar({ trackerId }: Props) {
             <div
               id="company-menu-desktop"
               role="menu"
-              className="absolute right-0 z-40 mt-2 w-72 rounded-xl border p-2 shadow-lg"
+              className="absolute right-0 z-40 mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-xl border p-2 shadow-lg"
               style={{
                 background: "var(--color-surface)",
                 borderColor: "var(--color-outline)",

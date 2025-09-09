@@ -102,17 +102,21 @@ export default function PersonalDetails({ onboardingContext }: PersonalDetailsPr
   const getSINLabel = () => {
     // ALWAYS prioritize onboarding context if it exists (for resumed applications)
     if (onboardingContext?.companyId) {
-      const company = COMPANIES.find((c) => c.id === onboardingContext.companyId);
+      const company = COMPANIES.find(c => c.id === onboardingContext.companyId);
       if (company) {
-        return company.countryCode === ECountryCode.US ? "SSN (Social Security Number)" : "SIN (Social Insurance Number)";
+        return company.countryCode === ECountryCode.US 
+          ? "SSN (Social Security Number)"
+          : "SIN (Social Insurance Number)";
       }
     }
-
+    
     // Only use selected company if we have NO onboarding context (truly new application)
     if (selectedCompany && !onboardingContext) {
-      return selectedCompany.countryCode === ECountryCode.US ? "SSN (Social Security Number)" : "SIN (Social Insurance Number)";
+      return selectedCompany.countryCode === ECountryCode.US 
+        ? "SSN (Social Security Number)"
+        : "SIN (Social Insurance Number)";
     }
-
+    
     // Final fallback to translation
     return t("form.step2.page1.fields.sin");
   };
@@ -271,9 +275,11 @@ export default function PersonalDetails({ onboardingContext }: PersonalDetailsPr
                   key={option}
                   type="button"
                   onClick={() => setValue("gender", option as "male" | "female", { shouldValidate: true })}
-                  className={`w-full px-4 py-2 text-sm font-medium transition-all ${isSelected ? "bg-[#0071BC] text-white" : "bg-white text-gray-800 hover:bg-gray-50"} ${
-                    idx > 0 ? "border-l border-gray-300" : ""
-                  }`}
+                  className={`w-full px-4 py-2 text-sm font-medium transition-all ${
+                    isSelected
+                      ? "bg-[#0071BC] text-white"
+                      : "bg-white text-gray-800 hover:bg-gray-50"
+                  } ${idx > 0 ? "border-l border-gray-300" : ""}`}
                 >
                   {t(`form.step2.page1.fields.${option}`)}
                 </button>
