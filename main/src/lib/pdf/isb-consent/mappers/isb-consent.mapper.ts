@@ -1,6 +1,6 @@
-// src/lib/pdf/isb-consent/mappers/isb-consent.mapper.ts
 import type { PDFForm } from "pdf-lib";
 import { EIsbConsentFillableFormFields as F, type IsbConsentPayload } from "./isb-consent.types";
+import { EGender } from "@/types/applicationForm.types";
 
 type MaybeDate = Date | string | undefined | null;
 
@@ -35,6 +35,7 @@ export type BuildIsbConsentArgs = {
   birthProvince?: string;
   birthCountry?: string;
   dob?: MaybeDate;
+  gender?: EGender;
 
   phone?: string;
   email?: string;
@@ -126,6 +127,7 @@ export function buildIsbConsentPayload(args: BuildIsbConsentArgs): IsbConsentPay
     birthProvince,
     birthCountry,
     dob,
+    gender,
     phone,
     email,
     addresses,
@@ -148,6 +150,7 @@ export function buildIsbConsentPayload(args: BuildIsbConsentArgs): IsbConsentPay
   payload[F.PI_PLACE_OF_BIRTH] = placeOfBirth;
   payload[F.PI_DOB] = fmt(dob);
 
+  // Phone / Email
   payload[F.PI_PHONE] = (phone || "").trim();
   payload[F.PI_EMAIL] = (email || "").trim();
 
@@ -197,9 +200,13 @@ export function buildIsbConsentPayload(args: BuildIsbConsentArgs): IsbConsentPay
   payload[F.AUTH_SIGNED_AT_PROVINCE] = signedAtProvince || curr?.stateOrProvince || "";
 
   // Declaration header
-  payload[F.DECL_SURNAME] = payload[F.PI_SURNAME];
-  payload[F.DECL_GIVEN_NAMES] = payload[F.PI_GIVEN_NAMES];
-  payload[F.DECL_DOB] = payload[F.PI_DOB];
+  payload[F.DECL_SURNAME] = payload[F.PI_SURNAME] as string;
+  payload[F.DECL_GIVEN_NAMES] = payload[F.PI_GIVEN_NAMES] as string;
+  payload[F.DECL_DOB] = payload[F.PI_DOB] as string;
+
+  // Sex checkboxes (booleans)
+  payload[F.PI_SEX_MALE_CHECKED] = gender === EGender.MALE;
+  payload[F.PI_SEX_FEMALE_CHECKED] = gender === EGender.FEMALE;
 
   // Declaration rows (up to 7)
   const rows = (criminalRecords || []).slice(0, 7);
@@ -216,15 +223,44 @@ export function buildIsbConsentPayload(args: BuildIsbConsentArgs): IsbConsentPay
   return payload;
 }
 
-/** Apply payload to pdf-lib form (text fields only) */
+/** Apply payload to pdf-lib form (text fields + checkboxes) */
 export function applyIsbConsentPayloadToForm(form: PDFForm, payload: IsbConsentPayload): void {
   for (const [name, value] of Object.entries(payload)) {
     if (value == null) continue;
+
     try {
+      if (typeof value === "boolean") {
+        // Checkbox handling
+        try {
+          const cb = form.getCheckBox(name);
+          console.log("Checking box", name, "to", value);
+          if (value) cb.check();
+          else cb.uncheck();
+          cb.updateAppearances();
+          continue;
+        } catch {
+          // Field is not a checkbox or missing — ignore silently
+          continue;
+        }
+      }
+
+      // Text field handling
       const tf = form.getTextField(name);
-      tf.setText(value);
+      tf.setText(value as string);
     } catch {
-      // ignore: field missing or not a text field
+      // ignore missing or mismatched fields
     }
   }
+
+  // If neither sex is set explicitly, ensure both are unchecked (defensive)
+  try {
+    if (typeof payload[F.PI_SEX_MALE_CHECKED] !== "boolean" && typeof payload[F.PI_SEX_FEMALE_CHECKED] !== "boolean") {
+      try {
+        form.getCheckBox(F.PI_SEX_MALE_CHECKED).uncheck();
+      } catch {}
+      try {
+        form.getCheckBox(F.PI_SEX_FEMALE_CHECKED).uncheck();
+      } catch {}
+    }
+  } catch {}
 }

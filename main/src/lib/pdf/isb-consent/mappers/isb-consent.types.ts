@@ -107,4 +107,4 @@ export enum EIsbConsentFillableFormFields {
 }
 
 /** FieldName -> value used by the PDF filler */
-export type IsbConsentPayload = Partial<Record<EIsbConsentFillableFormFields, string>>;
+export type IsbConsentPayload = Partial<Record<EIsbConsentFillableFormFields, string | boolean>>;

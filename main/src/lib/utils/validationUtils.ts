@@ -16,7 +16,7 @@ import { differenceInDays } from "date-fns";
 import mongoose from "mongoose";
 
 import { COMPANIES } from "@/constants/companies";
-import type { IEmploymentEntry } from "@/types/applicationForm.types";
+import { EGender, type IEmploymentEntry } from "@/types/applicationForm.types";
 
 /* ================================
  * Postal / Image / Basic Validators
@@ -132,19 +132,19 @@ export function isValidSINIssueDate(dateInput: string | Date): boolean {
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  
+
   // Issue date cannot be in the future
   if (issueDate > today) return false;
-  
+
   // Issue date cannot be more than 100 years ago (reasonable limit)
   const hundredYearsAgo = new Date();
   hundredYearsAgo.setFullYear(today.getFullYear() - 100);
-  
+
   return issueDate >= hundredYearsAgo;
 }
 
 export function isValidGender(gender: string): boolean {
-  return gender === "male" || gender === "female";
+  return Object.values(EGender).includes(gender as any);
 }
 
 /* ================================

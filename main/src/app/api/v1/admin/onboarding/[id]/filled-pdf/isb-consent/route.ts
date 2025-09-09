@@ -1,4 +1,3 @@
-// src/app/api/v1/admin/onboarding/[id]/filled-pdf/isb-consent/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import path from "node:path";
 import fs from "node:fs/promises";
@@ -68,12 +67,14 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     if (!appId || !isValidObjectId(appId)) return errorResponse(404, "Driver application missing");
     const application = await ApplicationForm.findById(appId)
       .select(
-        "page1.firstName page1.lastName page1.dob page1.email page1.phoneCell page1.phoneHome page1.birthCity page1.birthStateOrProvince page1.birthCountry page1.addresses page4.criminalRecords"
+        "page1.firstName page1.lastName page1.gender page1.dob page1.email page1.phoneCell page1.phoneHome page1.birthCity page1.birthStateOrProvince page1.birthCountry page1.addresses page4.criminalRecords"
       )
       .lean();
 
-    const page1 = (application as any)?.page1;
-    const page4 = (application as any)?.page4;
+    if (!application) return errorResponse(404, "Driver application not found");
+
+    const page1 = application.page1;
+    const page4 = application.page4;
 
     if (!page1) return errorResponse(404, "Application form Page 1 not found");
 
@@ -108,6 +109,7 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
       birthProvince: page1.birthStateOrProvince,
       birthCountry: page1.birthCountry,
       dob,
+      gender: page1.gender,
 
       phone: pickPhone(page1),
       email: page1.email,
@@ -129,7 +131,7 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     const form = pdfDoc.getForm();
     const pages = pdfDoc.getPages(); // expect 2 pages: [0]=Consent, [1]=Declaration
 
-    // Apply text payload
+    // Apply text + checkbox payload
     applyIsbConsentPayloadToForm(form, payload);
 
     // Signatures

@@ -54,6 +54,14 @@ export interface ILicenseEntry {
 }
 
 /**
+ * Gender Enums
+ */
+export enum EGender {
+  MALE = "male",
+  FEMALE = "female",
+}
+
+/**
  * Application - Page 1
  * Personal details, place of birth, license(s), and address history.
  *
@@ -71,7 +79,7 @@ export interface IApplicationFormPage1 {
   sin?: string; // Client-provided on POST only
   sinEncrypted: string; // Server-computed; client should omit
   sinIssueDate: string | Date; // YYYY-MM-DD (client) or Date (server)
-  gender: "male" | "female";
+  gender: EGender;
   sinPhoto: IPhoto;
   dob: string | Date; // YYYY-MM-DD (client) or Date (server)
   phoneHome: string;

@@ -1,5 +1,5 @@
 import { decryptString } from "@/lib/utils/cryptoUtils";
-import { Iaddress, IApplicationFormPage1, ILicenseEntry } from "@/types/applicationForm.types";
+import { EGender, Iaddress, IApplicationFormPage1, ILicenseEntry } from "@/types/applicationForm.types";
 import { ELicenseType } from "@/types/shared.types";
 import { Schema } from "mongoose";
 import { photoSchema } from "../sharedSchemas";
@@ -57,8 +57,8 @@ export const applicationFormPage1Schema = new Schema<IApplicationFormPage1>(
     gender: {
       type: String,
       enum: {
-        values: ["male", "female"],
-        message: "Gender must be either 'male' or 'female'.",
+        values: Object.values(EGender),
+        message: `Gender must be one of: ${Object.values(EGender).join(", ")}`,
       },
       required: [true, "Gender is required."],
     },
