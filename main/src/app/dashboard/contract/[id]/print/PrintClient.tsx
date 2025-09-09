@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Download, Eye, FileText, User } from "lucide-react";
+import { Download, Eye, FileText, User, AlertTriangle } from "lucide-react";
 import { useContract } from "@/hooks/dashboard/contract/useContract";
 import { useDashboardPageLoading } from "@/hooks/useDashboardPageLoading";
 import { useDashboardLoading } from "@/store/useDashboardLoading";
@@ -11,6 +11,18 @@ import { getCompanyPdfList } from "@/lib/pdf/utils/frontendPdfUtils";
 import { ESafetyAdminId } from "@/constants/safetyAdmins";
 import PrintPdfViewerModal from "./components/PrintPdfViewerModal";
 import SafetyAdminPickerModal from "./components/SafetyAdminPickerModal";
+
+// Helper function to check if truck details exist
+function hasTruckDetails(truckDetails?: any): boolean {
+  if (!truckDetails) return false;
+  
+  // Check if any truck detail field has meaningful data
+  const fields = ['vin', 'make', 'model', 'year', 'province', 'truckUnitNumber', 'plateNumber'];
+  return fields.some(field => {
+    const value = truckDetails[field];
+    return value && typeof value === 'string' && value.trim().length > 0;
+  });
+}
 
 export default function PrintClient({ trackerId }: { trackerId: string }) {
   const { data: contractData, isLoading: isContractLoading } =
@@ -183,6 +195,35 @@ export default function PrintClient({ trackerId }: { trackerId: string }) {
             Print Documents
           </h2>
         </div>
+
+        {/* Truck Details Warning */}
+        {contractData?.forms?.identifications?.truckDetails && !hasTruckDetails(contractData.forms.identifications.truckDetails) && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="rounded-lg border p-4 mb-6"
+            style={{
+              background: "var(--color-warning-container)",
+              borderColor: "var(--color-warning)",
+            }}
+          >
+            <div className="flex items-start gap-3">
+              <div className="p-1 rounded" style={{ background: "var(--color-warning)" }}>
+                <AlertTriangle className="h-4 w-4" style={{ color: "var(--color-on-warning)" }} />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-medium text-sm mb-1" style={{ color: "var(--color-on-warning-container)" }}>
+                  Missing Truck Details
+                </h4>
+                <p className="text-xs" style={{ color: "var(--color-on-warning-container)" }}>
+                  Truck details are missing. Company Policy PDF will have empty truck detail fields. 
+                  Please ensure truck details are completed in the Identifications section.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         {/* PDF List Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
