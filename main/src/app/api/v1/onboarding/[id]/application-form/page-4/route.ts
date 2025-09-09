@@ -101,7 +101,6 @@ function businessKeysPresentInBody(b: Partial<IApplicationFormPage4>) {
   const keys: (keyof IApplicationFormPage4)[] = [
     "employeeNumber",
     "businessName",
-    "businessNumber",
     "hstNumber",
     "incorporatePhotos",
     "bankingInfoPhotos",
@@ -114,7 +113,6 @@ function isBusinessClearIntent(b: Partial<IApplicationFormPage4>) {
   const emptyStrings =
     (!hasKey(b, "employeeNumber") || !isNonEmptyString(b.employeeNumber)) &&
     (!hasKey(b, "businessName") || !isNonEmptyString(b.businessName)) &&
-    (!hasKey(b, "businessNumber") || !isNonEmptyString(b.businessNumber)) &&
     (!hasKey(b, "hstNumber") || !isNonEmptyString(b.hstNumber));
 
   const emptyPhotos =
@@ -126,7 +124,6 @@ function isBusinessClearIntent(b: Partial<IApplicationFormPage4>) {
   const allKeysPresent =
     hasKey(b, "employeeNumber") &&
     hasKey(b, "businessName") &&
-    hasKey(b, "businessNumber") &&
     hasKey(b, "hstNumber") &&
     hasKey(b, "incorporatePhotos") &&
     hasKey(b, "bankingInfoPhotos") &&
@@ -147,7 +144,6 @@ function validateBusinessAllOrNothing(b: Partial<IApplicationFormPage4>) {
   };
   requireKey("employeeNumber", "employeeNumber");
   requireKey("businessName", "businessName");
-  requireKey("businessNumber", "businessNumber");
   requireKey("hstNumber", "hstNumber");
   requireKey("incorporatePhotos", "incorporatePhotos");
   requireKey("bankingInfoPhotos", "bankingInfoPhotos");
@@ -163,14 +159,12 @@ function validateBusinessAllOrNothing(b: Partial<IApplicationFormPage4>) {
   }
 
   // strings non-empty
-  if (!isNonEmptyString(b.employeeNumber))
-    throw new AppError(400, "employeeNumber is required in Business section.");
   if (!isNonEmptyString(b.businessName))
     throw new AppError(400, "businessName is required in Business section.");
-  if (!isNonEmptyString(b.businessNumber))
-    throw new AppError(400, "businessNumber is required in Business section.");
   if (!isNonEmptyString(b.hstNumber))
     throw new AppError(400, "hstNumber is required in Business section.");
+  if (!isNonEmptyString(b.employeeNumber))
+    throw new AppError(400, "employeeNumber is required in Business section.");
 
   // photos within limits
   const inc = len(b.incorporatePhotos);
@@ -342,7 +336,6 @@ export const PATCH = async (
       // overwrite to empty in DB (already set above by body), ensure saved
       appFormDoc.set("page4.employeeNumber", "");
       appFormDoc.set("page4.businessName", "");
-      appFormDoc.set("page4.businessNumber", "");
       appFormDoc.set("page4.hstNumber", "");
       appFormDoc.set("page4.incorporatePhotos", []);
       appFormDoc.set("page4.bankingInfoPhotos", []);

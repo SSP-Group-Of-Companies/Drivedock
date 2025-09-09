@@ -37,7 +37,7 @@ interface ImageGallerySectionProps {
   fastCard?: IFastCard;
   employeeNumber?: string;
   hstNumber?: string;
-  businessNumber?: string;
+  businessName?: string;
   onStage: (changes: any) => void;
   countryCode: ECountryCode;
 }
@@ -67,7 +67,7 @@ export default function ImageGallerySection({
   fastCard,
   employeeNumber,
   hstNumber,
-  businessNumber,
+  businessName,
   onStage,
   countryCode,
 }: ImageGallerySectionProps) {
@@ -652,9 +652,9 @@ export default function ImageGallerySection({
   // Business section validation helper
   const getBusinessValidationStatus = () => {
     const hasBusinessData =
-      (employeeNumber && employeeNumber.trim()) ||
+      (businessName && businessName.trim()) ||
       (hstNumber && hstNumber.trim()) ||
-      (businessNumber && businessNumber.trim()) ||
+      (employeeNumber && employeeNumber.trim()) ||
       (incorporatePhotos && incorporatePhotos.length > 0) ||
       (hstPhotos && hstPhotos.length > 0) ||
       (bankingInfoPhotos && bankingInfoPhotos.length > 0);
@@ -663,12 +663,12 @@ export default function ImageGallerySection({
 
     // Check if all business fields are filled
     const allFieldsFilled =
-      employeeNumber &&
-      employeeNumber.trim() &&
+      businessName &&
+      businessName.trim() &&
       hstNumber &&
       hstNumber.trim() &&
-      businessNumber &&
-      businessNumber.trim() &&
+      employeeNumber &&
+      employeeNumber.trim() &&
       incorporatePhotos &&
       incorporatePhotos.length > 0 &&
       hstPhotos &&

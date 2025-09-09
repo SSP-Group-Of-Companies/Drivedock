@@ -20,7 +20,6 @@ export default function BusinessSection() {
   const employeeNumber = useWatch({ control, name: "employeeNumber" });
   const hstNumber = useWatch({ control, name: "hstNumber" });
   const businessName = useWatch({ control, name: "businessName" });
-  const businessNumber = useWatch({ control, name: "businessNumber" });
 
   const incorporatePhotos = useWatch({ control, name: "incorporatePhotos" });
   const hstPhotos = useWatch({ control, name: "hstPhotos" });
@@ -31,12 +30,12 @@ export default function BusinessSection() {
     const isEmptyStr = (v?: string | null) => !v || v.trim().length === 0;
     const isEmptyArr = (v?: unknown[] | null) => !v || v.length === 0;
 
-    const allEmpty = isEmptyStr(employeeNumber) && isEmptyStr(hstNumber) && isEmptyStr(businessName) && isEmptyStr(businessNumber) && isEmptyArr(incorporatePhotos) && isEmptyArr(hstPhotos) && isEmptyArr(bankingInfoPhotos);
+    const allEmpty = isEmptyStr(employeeNumber) && isEmptyStr(hstNumber) && isEmptyStr(businessName) && isEmptyArr(incorporatePhotos) && isEmptyArr(hstPhotos) && isEmptyArr(bankingInfoPhotos);
 
     if (allEmpty) {
-      clearErrors(["employeeNumber", "hstNumber", "businessName", "businessNumber", "incorporatePhotos", "hstPhotos", "bankingInfoPhotos"]);
+      clearErrors(["employeeNumber", "hstNumber", "businessName", "incorporatePhotos", "hstPhotos", "bankingInfoPhotos"]);
     }
-  }, [employeeNumber, hstNumber, businessName, businessNumber, incorporatePhotos, hstPhotos, bankingInfoPhotos, clearErrors]);
+  }, [employeeNumber, hstNumber, businessName, incorporatePhotos, hstPhotos, bankingInfoPhotos, clearErrors]);
 
   const rootMessage = (errors as any)?.root?.message as string | undefined;
 
@@ -53,39 +52,14 @@ export default function BusinessSection() {
           <p>
             {t(
               "form.step2.page4.sections.business.disclaimer.text",
-              "If you provide any incorporation detail, you must complete every field and upload all related documents in this section. This includes Employee Number, HST Number, Business Name, Business Number, and the required photos (Incorporation, HST, Banking)."
+              "If you provide any incorporation detail, you must complete every field and upload all related documents in this section. This includes Employee Number, HST Number, Business Name, and the required photos (Incorporation, HST, Banking)."
             )}
           </p>
         </div>
       </div>
 
       <div className="space-y-6">
-        {/* Row 1: Employee Number and HST Number */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">{t("form.step2.page4.fields.employeeNumber", "Employee Number")}</label>
-            <input
-              {...register("employeeNumber")}
-              data-field="employeeNumber"
-              className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
-              aria-invalid={!!errors.employeeNumber || !!rootMessage}
-            />
-            {errors.employeeNumber && <p className="text-red-500 text-xs mt-1">{errors.employeeNumber.message?.toString()}</p>}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">{t("form.step2.page4.fields.hstNumber", "HST Number")}</label>
-            <input
-              {...register("hstNumber")}
-              data-field="hstNumber"
-              className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
-              aria-invalid={!!errors.hstNumber || !!rootMessage}
-            />
-            {errors.hstNumber && <p className="text-red-500 text-xs mt-1">{errors.hstNumber.message?.toString()}</p>}
-          </div>
-        </div>
-
-        {/* Row 2: Business Name and Business Number */}
+        {/* Row 1: Business Name */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700">{t("form.step2.page4.fields.businessName", "Business Name")}</label>
@@ -97,17 +71,32 @@ export default function BusinessSection() {
             />
             {errors.businessName && <p className="text-red-500 text-xs mt-1">{errors.businessName.message?.toString()}</p>}
           </div>
+        </div>
+
+        {/* Row 2: HST Number and Employee Number */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">{t("form.step2.page4.fields.hstNumber", "HST Number")}</label>
+            <input
+              {...register("hstNumber")}
+              data-field="hstNumber"
+              className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
+              aria-invalid={!!errors.hstNumber || !!rootMessage}
+            />
+            {errors.hstNumber && <p className="text-red-500 text-xs mt-1">{errors.hstNumber.message?.toString()}</p>}
+          </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">{t("form.step2.page4.fields.businessNumber", "Business Number")}</label>
+            <label className="block text-sm font-medium text-gray-700">{t("form.step2.page4.fields.employeeNumber", "Employee Number")}</label>
             <input
-              {...register("businessNumber")}
-              data-field="businessNumber"
+              {...register("employeeNumber")}
+              data-field="employeeNumber"
               className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
-              aria-invalid={!!errors.businessNumber || !!rootMessage}
+              aria-invalid={!!errors.employeeNumber || !!rootMessage}
             />
-            {errors.businessNumber && <p className="text-red-500 text-xs mt-1">{errors.businessNumber.message?.toString()}</p>}
+            {errors.employeeNumber && <p className="text-red-500 text-xs mt-1">{errors.employeeNumber.message?.toString()}</p>}
           </div>
+
         </div>
       </div>
 

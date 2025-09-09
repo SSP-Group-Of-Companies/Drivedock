@@ -196,9 +196,8 @@ export const POST = async (req: NextRequest, { params }: { params: Promise<{ id:
     // D) Business outcome
     if (driveTestDoc.preTrip?.overallAssessment === EDriveTestOverall.FAIL) {
       onboardingDoc.terminated = true;
-      onboardingDoc.terminationDate = new Date();
       onboardingDoc.terminationType = ETerminationType.TERMINATED;
-
+      onboardingDoc.terminationDate = new Date();
       // Reset fields on DriveTest
       driveTestDoc.set("powerUnitType", "");
       driveTestDoc.set("trailerType", "");

@@ -8,7 +8,6 @@ interface BusinessInformationSectionProps {
   employeeNumber: string;
   hstNumber: string;
   businessName: string;
-  businessNumber: string;
   onStage: (changes: any) => void;
 }
 
@@ -16,7 +15,6 @@ export default function BusinessInformationSection({
   employeeNumber,
   hstNumber,
   businessName,
-  businessNumber,
   onStage,
 }: BusinessInformationSectionProps) {
   const { isEditMode } = useEditMode();
@@ -52,12 +50,12 @@ export default function BusinessInformationSection({
             className="block text-sm font-medium mb-1"
             style={{ color: "var(--color-on-surface-variant)" }}
           >
-            Employee Number
+            Business Name
           </label>
           <input
             type="text"
-            value={employeeNumber || ""}
-            onChange={(e) => onStage({ employeeNumber: e.target.value })}
+            value={businessName || ""}
+            onChange={(e) => onStage({ businessName: e.target.value })}
             disabled={!isEditMode}
             className="w-full px-3 py-2 border rounded-lg text-sm transition-colors"
             style={{
@@ -98,12 +96,12 @@ export default function BusinessInformationSection({
             className="block text-sm font-medium mb-1"
             style={{ color: "var(--color-on-surface-variant)" }}
           >
-            Business Name
+            Employee Number
           </label>
           <input
             type="text"
-            value={businessName || ""}
-            onChange={(e) => onStage({ businessName: e.target.value })}
+            value={employeeNumber || ""}
+            onChange={(e) => onStage({ employeeNumber: e.target.value })}
             disabled={!isEditMode}
             className="w-full px-3 py-2 border rounded-lg text-sm transition-colors"
             style={{
@@ -116,28 +114,6 @@ export default function BusinessInformationSection({
           />
         </div>
 
-        <div>
-          <label
-            className="block text-sm font-medium mb-1"
-            style={{ color: "var(--color-on-surface-variant)" }}
-          >
-            Business Number
-          </label>
-          <input
-            type="text"
-            value={businessNumber || ""}
-            onChange={(e) => onStage({ businessNumber: e.target.value })}
-            disabled={!isEditMode}
-            className="w-full px-3 py-2 border rounded-lg text-sm transition-colors"
-            style={{
-              background: isEditMode
-                ? "var(--color-surface)"
-                : "var(--color-surface-variant)",
-              borderColor: "var(--color-outline)",
-              color: "var(--color-on-surface)",
-            }}
-          />
-        </div>
 
         <div
           className="text-xs"

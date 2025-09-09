@@ -46,7 +46,6 @@ export function makePage4Config(trackerId: string): FormPageConfig<ApplicationFo
         "employeeNumber",
         "hstNumber",
         "businessName",
-        "businessNumber",
         "hstPhotos",
         "incorporatePhotos",
         "bankingInfoPhotos",

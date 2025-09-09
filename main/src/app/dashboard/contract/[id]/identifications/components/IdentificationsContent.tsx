@@ -73,7 +73,6 @@ export default function IdentificationsContent({
           employeeNumber={getCurrentValue("employeeNumber") || ""}
           hstNumber={getCurrentValue("hstNumber") || ""}
           businessName={getCurrentValue("businessName") || ""}
-          businessNumber={getCurrentValue("businessNumber") || ""}
           onStage={onStage}
         />
       </div>
@@ -112,7 +111,7 @@ export default function IdentificationsContent({
           fastCard={getCurrentValue("fastCard")}
           employeeNumber={getCurrentValue("employeeNumber") || ""}
           hstNumber={getCurrentValue("hstNumber") || ""}
-          businessNumber={getCurrentValue("businessNumber") || ""}
+          businessName={getCurrentValue("businessName") || ""}
           onStage={onStage}
           countryCode={countryCode}
         />

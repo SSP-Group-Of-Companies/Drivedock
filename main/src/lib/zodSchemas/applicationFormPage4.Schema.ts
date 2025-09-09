@@ -71,10 +71,6 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
       .string()
       .optional()
       .transform((v) => v?.trim() ?? ""),
-    businessNumber: z
-      .string()
-      .optional()
-      .transform((v) => v?.trim() ?? ""),
     hstPhotos: z.array(photoSchema).default([]),
     incorporatePhotos: z.array(photoSchema).default([]),
     bankingInfoPhotos: z.array(photoSchema).default([]),
@@ -120,25 +116,21 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
   const schema = base
     // Business all-or-nothing (unchanged)
     .superRefine((data: Out, ctx) => {
-      const textProvided = !!data.employeeNumber?.trim() || !!data.hstNumber?.trim() || !!data.businessName?.trim() || !!data.businessNumber?.trim();
+      const textProvided = !!data.businessName?.trim() || !!data.hstNumber?.trim() || !!data.employeeNumber?.trim();
       const photosProvided = data.hstPhotos.length > 0 || data.incorporatePhotos.length > 0 || data.bankingInfoPhotos.length > 0;
       if (!textProvided && !photosProvided) return;
 
       let hadError = false;
-      if (!data.employeeNumber?.trim()) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["employeeNumber"], message: "Employee number is required when any business detail is provided." });
+      if (!data.businessName?.trim()) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["businessName"], message: "Business name is required when any business detail is provided." });
         hadError = true;
       }
       if (!data.hstNumber?.trim()) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["hstNumber"], message: "HST number is required when any business detail is provided." });
         hadError = true;
       }
-      if (!data.businessName?.trim()) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["businessName"], message: "Business name is required when any business detail is provided." });
-        hadError = true;
-      }
-      if (!data.businessNumber?.trim()) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["businessNumber"], message: "Business number is required when any business detail is provided." });
+      if (!data.employeeNumber?.trim()) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["employeeNumber"], message: "Employee number is required when any business detail is provided." });
         hadError = true;
       }
       if (data.incorporatePhotos.length === 0) {

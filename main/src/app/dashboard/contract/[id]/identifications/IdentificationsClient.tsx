@@ -169,7 +169,6 @@ export default function IdentificationsClient({
       employeeNumber: baseData.employeeNumber,
       hstNumber: baseData.hstNumber,
       businessName: baseData.businessName,
-      businessNumber: baseData.businessNumber,
       incorporatePhotos: baseData.incorporatePhotos,
       hstPhotos: baseData.hstPhotos,
       bankingInfoPhotos: baseData.bankingInfoPhotos,
