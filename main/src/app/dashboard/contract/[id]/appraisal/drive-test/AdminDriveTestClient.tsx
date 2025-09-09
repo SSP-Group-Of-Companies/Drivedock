@@ -6,13 +6,15 @@ import { useId, useMemo } from "react";
 import { useParams } from "next/navigation";
 
 import type { IDriveTest, IOnRoadAssessment, IPreTripAssessment } from "@/types/driveTest.types";
+import { EDriveTestOverall } from "@/types/driveTest.types";
 import type { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
 
 /* ------------------------------- Utilities ------------------------------- */
 
-function isCompleted(block: { overallAssessment?: string | null } | undefined | null): boolean {
-  const v = block?.overallAssessment;
-  return v === "pass" || v === "fail" || v === "conditional_pass";
+const isOverall = (v: unknown): v is EDriveTestOverall => v === EDriveTestOverall.PASS || v === EDriveTestOverall.FAIL || v === EDriveTestOverall.CONDITIONAL_PASS;
+
+function isCompleted(block: { overallAssessment?: EDriveTestOverall | null } | undefined | null): boolean {
+  return isOverall(block?.overallAssessment ?? null);
 }
 
 function fmtDate(d?: string | Date | null): string {
@@ -26,15 +28,15 @@ function fmtDate(d?: string | Date | null): string {
   }
 }
 
-function overallBadge(overall?: string | null) {
+function overallBadge(overall?: EDriveTestOverall | null) {
   if (!overall) return null;
   let bg = "var(--color-warning-container)";
   let fg = "var(--color-warning-on-container)";
 
-  if (overall === "pass") {
+  if (overall === EDriveTestOverall.PASS) {
     bg = "var(--color-success-container)";
     fg = "var(--color-success-on-container)";
-  } else if (overall === "fail") {
+  } else if (overall === EDriveTestOverall.FAIL) {
     bg = "var(--color-error)";
     fg = "white";
   }
@@ -93,9 +95,17 @@ export default function AdminDriveTestClient({
     color: "var(--color-primary-on-container)",
     border: "1px solid var(--color-outline-variant)",
   };
+  const disabledTileStyle: React.CSSProperties = {
+    ...tileStyle,
+    filter: "brightness(0.9)", // a bit darker to indicate disabled
+    cursor: "not-allowed",
+  };
 
   const preTripApiUrl = `/api/v1/admin/onboarding/${trackerId}/appraisal/drive-test/pre-trip-assessment/filled-pdf`;
   const onRoadApiUrl = `/api/v1/admin/onboarding/${trackerId}/appraisal/drive-test/on-road-assessment/filled-pdf`;
+
+  const openPreTrip = () => window.open(preTripApiUrl, "_blank", "noopener,noreferrer");
+  const openOnRoad = () => window.open(onRoadApiUrl, "_blank", "noopener,noreferrer");
 
   return (
     <div className="space-y-4">
@@ -158,7 +168,16 @@ export default function AdminDriveTestClient({
             <Link className={tileBase} style={tileStyle} href={`/appraisal/${trackerId}/drive-test/pre-trip-assessment`} target="_blank">
               Pre-Trip Assessment
             </Link>
-            <button type="button" className={tileBase} style={tileStyle} onClick={() => window.open(preTripApiUrl, "_blank", "noopener,noreferrer")}>
+
+            {/* Print button disabled until pre-trip is completed */}
+            <button
+              type="button"
+              className={tileBase}
+              style={preDone ? tileStyle : disabledTileStyle}
+              disabled={!preDone}
+              title={!preDone ? "Driver hasn't completed Pre-Trip" : undefined}
+              onClick={preDone ? openPreTrip : undefined}
+            >
               Print
             </button>
           </div>
@@ -212,7 +231,16 @@ export default function AdminDriveTestClient({
             <Link className={tileBase} style={tileStyle} href={`/appraisal/${trackerId}/drive-test/on-road-assessment`} target="_blank">
               On-Road Assessment
             </Link>
-            <button type="button" className={tileBase} style={tileStyle} onClick={() => window.open(onRoadApiUrl, "_blank", "noopener,noreferrer")}>
+
+            {/* Print button disabled until on-road is completed */}
+            <button
+              type="button"
+              className={tileBase}
+              style={roadDone ? tileStyle : disabledTileStyle}
+              disabled={!roadDone}
+              title={!roadDone ? "Driver hasn't completed On-Road" : undefined}
+              onClick={roadDone ? openOnRoad : undefined}
+            >
               Print
             </button>
           </div>

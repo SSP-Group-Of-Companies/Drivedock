@@ -11,10 +11,7 @@ import { UploadResult, uploadToS3Presigned } from "@/lib/utils/s3Upload";
 import { getBlobFromCanvas } from "@/lib/frontendUtils/reactCanvasUtils";
 import clsx from "clsx";
 
-// 1) Dynamically import the actual component (client-only)
 const RawSigCanvas = dynamic(() => import("react-signature-canvas"), { ssr: false });
-
-// 2) Bridge component to restore proper ref support for TS
 const SigCanvas = forwardRef(function SigCanvas(props: any, ref: Ref<ReactSignatureCanvas>) {
   return <RawSigCanvas ref={ref} {...props} />;
 });
@@ -44,20 +41,10 @@ type Props = {
   }>;
   onDirtyChange?: (dirty: boolean) => void;
   disabled?: boolean;
-
-  /** External error for form validation (shows with red outline unless internal error takes over) */
   errorMsg?: string;
-
-  /** Fires after a successful upload (from file picker or ensureUploaded()) */
   onUploaded?: (result: UploadResult) => void;
-
-  /** Fires after the signature is cleared */
   onCleared?: () => void;
-
-  /** Optional error surface to parent */
   onError?: (message: string) => void;
-
-  /** Notify parent about draw state and whether there is an unuploaded drawing */
   onDrawStateChange?: (state: { isDrawing: boolean; hasUnuploadedDrawing: boolean }) => void;
 };
 
@@ -92,13 +79,13 @@ export default memo(
     const [preview, setPreview] = useState<string | null>(initialSignature?.url ?? null);
 
     const [isDrawing, setIsDrawing] = useState(false);
+    const drawingRef = useRef(false); // guard against resize during stroke
     const [isEmpty, setIsEmpty] = useState(true);
-    const [drawnDirty, setDrawnDirty] = useState(false); // true = there is an unuploaded drawing
+    const [drawnDirty, setDrawnDirty] = useState(false);
 
     const [status, setStatus] = useState<"idle" | "uploading" | "deleting" | "error">("idle");
     const [message, setMessage] = useState<string>("");
 
-    // Hide external error/ring once the user interacts (draws or uploads)
     const [suppressExternalError, setSuppressExternalError] = useState(false);
     useEffect(() => {
       if (errorMsg) setSuppressExternalError(false);
@@ -313,14 +300,70 @@ export default memo(
       }
     }, [preview]);
 
+    // ─────────────────────────────────────────────────────────────────────
+    // Canvas sizing (no disappearing strokes)
+    // ─────────────────────────────────────────────────────────────────────
+    const wrapperRef = useRef<HTMLDivElement | null>(null);
+    const [canvasSize, setCanvasSize] = useState<{ width: number; height: number }>({ width: 0, height: 0 });
+    const lastDataUrlRef = useRef<string | null>(null);
+
+    useEffect(() => {
+      const el = wrapperRef.current;
+      if (!el) return;
+
+      const measure = () => {
+        // Avoid re-measuring during a stroke (pointer math is stable)
+        if (drawingRef.current) return;
+
+        const w = Math.max(1, Math.round(el.clientWidth));
+        const h = Math.max(1, Math.round(el.clientHeight));
+
+        // Ignore micro-deltas (from subpixel/layout jitter)
+        const dx = Math.abs(w - canvasSize.width);
+        const dy = Math.abs(h - canvasSize.height);
+        if (dx < 2 && dy < 2) return;
+
+        // Snapshot existing drawing so we can restore after resize
+        const sig = canvasRef.current;
+        if (sig && !sig.isEmpty()) {
+          try {
+            lastDataUrlRef.current = sig.toDataURL();
+          } catch {}
+        } else {
+          lastDataUrlRef.current = null;
+        }
+
+        setCanvasSize({ width: w, height: h });
+      };
+
+      measure();
+      const ro = new ResizeObserver(measure);
+      ro.observe(el);
+      window.addEventListener("orientationchange", measure);
+      window.addEventListener("resize", measure);
+      return () => {
+        ro.disconnect();
+        window.removeEventListener("orientationchange", measure);
+        window.removeEventListener("resize", measure);
+      };
+    }, [canvasSize.width, canvasSize.height]);
+
+    // After canvas size changes, restore strokes if we saved a snapshot
+    useEffect(() => {
+      if (!lastDataUrlRef.current) return;
+      const sig = canvasRef.current;
+      if (!sig) return;
+      try {
+        sig.fromDataURL(lastDataUrlRef.current);
+      } catch {}
+      lastDataUrlRef.current = null;
+    }, [canvasSize]);
+
     const showHint = !isDrawing && !preview && isEmpty;
 
-    // Decide which error to show:
     const hasInternalError = status === "error" && !!message;
     const externalErrorToShow = !suppressExternalError ? errorMsg || "" : "";
     const displayError = hasInternalError ? message : externalErrorToShow;
-
-    // 🔴 Red outline for EITHER internal or external errors
     const showErrorOutline = hasInternalError || !!externalErrorToShow;
 
     useImperativeHandle(
@@ -341,45 +384,65 @@ export default memo(
           className={clsx(
             "relative mx-auto flex h-48 w-full max-w-xl items-center justify-center",
             "rounded-2xl bg-white/80 shadow-sm backdrop-blur",
+            // keep border width constant to avoid size changes
+            "border ring-1 ring-black/5",
             showErrorOutline
-              ? "border-2 border-red-500 ring-2 ring-red-300"
+              ? "ring-2 ring-red-300 border-red-500"
               : isLocked
-              ? "border border-slate-300/70 ring-1 ring-black/5 opacity-90"
+              ? "opacity-90"
               : isDrawing
-              ? "border-2 border-blue-400/50 ring-2 ring-blue-500/20"
-              : "border border-slate-300/70 ring-1 ring-black/5"
+              ? "ring-2 ring-blue-500/30" // visual emphasis without layout shift
+              : ""
           )}
           aria-disabled={isLocked}
         >
           {showHint && <span className="pointer-events-none absolute z-10 text-sm text-slate-400">{L.hint}</span>}
 
           {!preview && (
-            <div className={clsx("relative h-full w-full", isLocked && "pointer-events-none")}>
+            <div ref={wrapperRef} className={clsx("relative h-full w-full", isLocked && "pointer-events-none")}>
               <SigCanvas
                 ref={canvasRef}
                 penColor="black"
                 backgroundColor="#ffffff"
                 onBegin={() => {
                   if (isLocked) return;
+                  drawingRef.current = true;
                   setSuppressExternalError(true);
                   setIsDrawing(true);
                   setIsEmpty(false);
-                  setDrawnDirty(true); // we now have an unuploaded drawing
+                  setDrawnDirty(true);
                   notifyDrawState(true, true);
                 }}
                 onEnd={() => {
                   if (isLocked) return;
+                  drawingRef.current = false;
                   setIsDrawing(false);
                   setIsEmpty(canvasRef.current?.isEmpty?.() ?? true);
-                  // no auto-upload here; just report state to parent
                   notifyDrawState(false, true);
+                  // in case a resize was coalesced at stroke end,
+                  // force one measurement now (without border width changes)
+                  const el = wrapperRef.current;
+                  if (el) {
+                    const w = Math.max(1, Math.round(el.clientWidth));
+                    const h = Math.max(1, Math.round(el.clientHeight));
+                    if (Math.abs(w - canvasSize.width) >= 2 || Math.abs(h - canvasSize.height) >= 2) {
+                      const sig = canvasRef.current;
+                      if (sig && !sig.isEmpty()) {
+                        try {
+                          lastDataUrlRef.current = sig.toDataURL();
+                        } catch {}
+                      }
+                      setCanvasSize({ width: w, height: h });
+                    }
+                  }
                 }}
                 canvasProps={{
-                  width: 600,
-                  height: 180,
-                  className: "bg-transparent w-full h-full rounded-2xl [touch-action:none]",
+                  width: Math.max(1, canvasSize.width),
+                  height: Math.max(1, canvasSize.height),
+                  className: "bg-transparent w-full h-full block rounded-2xl [touch-action:none]",
                 }}
               />
+
               {isLocked && <div className="pointer-events-none absolute inset-0 rounded-2xl bg-white/40 backdrop-blur-[1px]" aria-hidden="true" />}
             </div>
           )}
@@ -387,7 +450,6 @@ export default memo(
           {preview && <Image src={preview} alt="Signature Preview" fill className="absolute inset-0 z-10 rounded-2xl bg-white p-2 object-contain" sizes="" draggable={false} />}
         </div>
 
-        {/* Primary error area (internal or external). Single place for errors. */}
         {!!displayError && <p className={clsx("text-sm text-center", hasInternalError ? "text-red-600" : "text-red-500")}>{displayError}</p>}
 
         {!isLocked && (
@@ -418,7 +480,6 @@ export default memo(
           </p>
         )}
 
-        {/* Success-only line. Errors are already handled above. */}
         {status === "idle" && !!message && <p className="text-green-600 text-sm text-center">{message}</p>}
       </div>
     );
