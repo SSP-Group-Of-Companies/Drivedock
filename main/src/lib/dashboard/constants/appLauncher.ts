@@ -17,37 +17,37 @@ export const APP_LAUNCHER_ITEMS: readonly SSPApp[] = [
   {
     id: "drivedock",
     label: "Driver Application",
-    url: "http://localhost:3000/dashboard/home",
+    url: "/dashboard/home",
     logoSrc: "/assets/logos/drivedockIcon.png",
   },
   {
     id: "dispatch",
     label: "Dispatch Safe",
-    url: "http://localhost:3000/dashboard/home",
+    url: "/dashboard/home",
     logoSrc: "/assets/logos/dispatchSafeIcon.png",
   },
   {
     id: "global",
     label: "GlobalOps",
-    url: "http://localhost:3000/dashboard/home",
+    url: "/dashboard/home",
     logoSrc: "/assets/logos/globalOpsIcon.png",
   },
   {
     id: "Fleet",
     label: "Fleet Track",
-    url: "http://localhost:3000/dashboard/home",
+    url: "/dashboard/home",
     logoSrc: "/assets/logos/fleetTrackIcon.png",
   },
   {
     id: "hrms",
     label: "HR Management",
-    url: "http://localhost:3000/dashboard/home",
+    url: "/dashboard/home",
     logoSrc: "/assets/logos/hrDockIcon.png",
   },
   {
     id: "inventory",
     label: "Trailer Managemnt",
-    url: "http://localhost:3000/dashboard/home",
+    url: "/dashboard/home",
     logoSrc: "/assets/logos/trailerInventoryIcon.png",
   },
   // add more as needed…

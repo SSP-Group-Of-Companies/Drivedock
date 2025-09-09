@@ -59,7 +59,7 @@ export default function ContractSummaryBar({ trackerId }: Props) {
 
   // Edit mode context
   const { isEditMode, setIsEditMode } = useEditMode();
-  
+
   // Check if driver is terminated or resigned
   const isTerminated = data?.terminated === true;
 
@@ -80,7 +80,12 @@ export default function ContractSummaryBar({ trackerId }: Props) {
 
   // Check if edit mode toggle should be functional (not prequalification, not quiz-result, not policies, not print, not safety processing, not terminated)
   const canToggleEditMode =
-    !isPrequalificationPage && !isQuizResultPage && !isPoliciesPage && !isPrintPage && !isSafetyProcessingPage && !isTerminated;
+    !isPrequalificationPage &&
+    !isQuizResultPage &&
+    !isPoliciesPage &&
+    !isPrintPage &&
+    !isSafetyProcessingPage &&
+    !isTerminated;
 
   const companyMenuRef = useRef<HTMLDivElement | null>(null);
   const notifMenuRef = useRef<HTMLDivElement | null>(null);
@@ -370,7 +375,9 @@ export default function ContractSummaryBar({ trackerId }: Props) {
                               sizes="24px"
                             />
                           </div>
-                          <span className="flex-1">{c.name}</span>
+                          <span className="flex-1 truncate" title={c.name}>
+                            {c.name}
+                          </span>
                           {active && (
                             <span className="text-xs opacity-60">
                               (current)
@@ -455,7 +462,9 @@ export default function ContractSummaryBar({ trackerId }: Props) {
               <div className="relative group">
                 <button
                   type="button"
-                  onClick={() => canToggleEditMode && setIsEditMode(!isEditMode)}
+                  onClick={() =>
+                    canToggleEditMode && setIsEditMode(!isEditMode)
+                  }
                   disabled={!canToggleEditMode}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                     canToggleEditMode
@@ -471,6 +480,8 @@ export default function ContractSummaryBar({ trackerId }: Props) {
                   aria-label={
                     canToggleEditMode
                       ? `Edit mode is ${isEditMode ? "on" : "off"}`
+                      : isTerminated
+                      ? "Edit mode disabled - driver is terminated/resigned"
                       : isPrequalificationPage
                       ? "Edit mode disabled - prequalification is read-only"
                       : isQuizResultPage
@@ -481,8 +492,6 @@ export default function ContractSummaryBar({ trackerId }: Props) {
                       ? "Edit mode disabled - print page is read-only"
                       : isSafetyProcessingPage
                       ? "Edit mode disabled during safety processing"
-                      : isTerminated
-                      ? "Edit mode disabled - driver is terminated/resigned"
                       : "Edit mode disabled"
                   }
                 >
@@ -492,9 +501,29 @@ export default function ContractSummaryBar({ trackerId }: Props) {
                     }`}
                   />
                 </button>
+                {/* Tooltip for terminated/resigned driver */}
+                {isTerminated && (
+                  <div
+                    className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50"
+                    style={{
+                      backgroundColor: "var(--color-surface-container-highest)",
+                      color: "var(--color-on-surface)",
+                      border: "1px solid var(--color-outline)",
+                    }}
+                  >
+                    Driver is terminated/resigned
+                    <div
+                      className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent"
+                      style={{
+                        borderTopColor:
+                          "var(--color-surface-container-highest)",
+                      }}
+                    ></div>
+                  </div>
+                )}
                 {/* Tooltip for prequalification page */}
-                {isPrequalificationPage && (
-                  <div 
+                {!isTerminated && isPrequalificationPage && (
+                  <div
                     className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50"
                     style={{
                       backgroundColor: "var(--color-surface-container-highest)",
@@ -503,17 +532,18 @@ export default function ContractSummaryBar({ trackerId }: Props) {
                     }}
                   >
                     Prequalification is read-only
-                    <div 
+                    <div
                       className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent"
                       style={{
-                        borderTopColor: "var(--color-surface-container-highest)",
+                        borderTopColor:
+                          "var(--color-surface-container-highest)",
                       }}
                     ></div>
                   </div>
                 )}
                 {/* Tooltip for quiz result page */}
-                {isQuizResultPage && (
-                  <div 
+                {!isTerminated && isQuizResultPage && (
+                  <div
                     className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50"
                     style={{
                       backgroundColor: "var(--color-surface-container-highest)",
@@ -522,17 +552,18 @@ export default function ContractSummaryBar({ trackerId }: Props) {
                     }}
                   >
                     Quiz results are read-only
-                    <div 
+                    <div
                       className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent"
                       style={{
-                        borderTopColor: "var(--color-surface-container-highest)",
+                        borderTopColor:
+                          "var(--color-surface-container-highest)",
                       }}
                     ></div>
                   </div>
                 )}
                 {/* Tooltip for policies page */}
-                {isPoliciesPage && (
-                  <div 
+                {!isTerminated && isPoliciesPage && (
+                  <div
                     className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50"
                     style={{
                       backgroundColor: "var(--color-surface-container-highest)",
@@ -541,17 +572,18 @@ export default function ContractSummaryBar({ trackerId }: Props) {
                     }}
                   >
                     Policies are read-only
-                    <div 
+                    <div
                       className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent"
                       style={{
-                        borderTopColor: "var(--color-surface-container-highest)",
+                        borderTopColor:
+                          "var(--color-surface-container-highest)",
                       }}
                     ></div>
                   </div>
                 )}
                 {/* Tooltip for print page */}
-                {isPrintPage && (
-                  <div 
+                {!isTerminated && isPrintPage && (
+                  <div
                     className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50"
                     style={{
                       backgroundColor: "var(--color-surface-container-highest)",
@@ -560,17 +592,18 @@ export default function ContractSummaryBar({ trackerId }: Props) {
                     }}
                   >
                     Print page is read-only
-                    <div 
+                    <div
                       className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent"
                       style={{
-                        borderTopColor: "var(--color-surface-container-highest)",
+                        borderTopColor:
+                          "var(--color-surface-container-highest)",
                       }}
                     ></div>
                   </div>
                 )}
                 {/* Tooltip for safety processing page */}
-                {isSafetyProcessingPage && (
-                  <div 
+                {!isTerminated && isSafetyProcessingPage && (
+                  <div
                     className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50"
                     style={{
                       backgroundColor: "var(--color-surface-container-highest)",
@@ -579,29 +612,11 @@ export default function ContractSummaryBar({ trackerId }: Props) {
                     }}
                   >
                     Edit mode disabled during safety processing
-                    <div 
+                    <div
                       className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent"
                       style={{
-                        borderTopColor: "var(--color-surface-container-highest)",
-                      }}
-                    ></div>
-                  </div>
-                )}
-                {/* Tooltip for terminated/resigned drivers */}
-                {isTerminated && (
-                  <div 
-                    className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50"
-                    style={{
-                      backgroundColor: "var(--color-surface-container-highest)",
-                      color: "var(--color-on-surface)",
-                      border: "1px solid var(--color-outline)",
-                    }}
-                  >
-                    Cannot edit terminated/resigned driver
-                    <div 
-                      className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent"
-                      style={{
-                        borderTopColor: "var(--color-surface-container-highest)",
+                        borderTopColor:
+                          "var(--color-surface-container-highest)",
                       }}
                     ></div>
                   </div>
@@ -664,8 +679,9 @@ export default function ContractSummaryBar({ trackerId }: Props) {
           </span>
           {inProgress && (
             <span
-              className="text-xs"
+              className="text-xs truncate max-w-[150px]"
               style={{ color: "var(--color-on-surface-variant)" }}
+              title={stepLabel(step)}
             >
               {stepLabel(step)}
             </span>
@@ -705,7 +721,7 @@ export default function ContractSummaryBar({ trackerId }: Props) {
           <button
             type="button"
             onPointerDown={onToggleCompany}
-            className="inline-flex items-center gap-1.5 rounded-lg border px-2 py-1.5 text-sm"
+            className="inline-flex items-center gap-1.5 rounded-lg border px-2 py-1.5 text-sm max-w-[200px]"
             style={{
               background: "var(--color-surface)",
               borderColor: "var(--color-outline)",
@@ -714,10 +730,15 @@ export default function ContractSummaryBar({ trackerId }: Props) {
             aria-expanded={isCompanyOpen}
             aria-controls="company-menu-desktop"
           >
-            <Building2 className="h-4 w-4" />
-            <span>Company:</span>
-            <span className="font-medium">{company.label}</span>
-            <ChevronDown className="h-4 w-4 opacity-60" />
+            <Building2 className="h-4 w-4 flex-shrink-0" />
+            <span className="flex-shrink-0 xl-custom:hidden">Company:</span>
+            <span
+              className="font-medium truncate min-w-0 xl-custom:hidden"
+              title={company.label}
+            >
+              {company.label}
+            </span>
+            <ChevronDown className="h-4 w-4 opacity-60 flex-shrink-0" />
           </button>
 
           {isCompanyOpen && (
@@ -768,7 +789,9 @@ export default function ContractSummaryBar({ trackerId }: Props) {
                             sizes="24px"
                           />
                         </div>
-                        <span className="flex-1">{c.name}</span>
+                        <span className="flex-1 truncate" title={c.name}>
+                          {c.name}
+                        </span>
                         {active && (
                           <span className="text-xs opacity-60">(current)</span>
                         )}
@@ -786,7 +809,7 @@ export default function ContractSummaryBar({ trackerId }: Props) {
           <button
             type="button"
             onPointerDown={onToggleNotif}
-            className="relative inline-flex items-center gap-1.5 rounded-lg border px-2 py-1.5 text-sm"
+            className="inline-flex items-center gap-1.5 rounded-lg border px-2 py-1.5 text-sm max-w-[150px]"
             style={{
               background: "var(--color-surface)",
               borderColor: "var(--color-outline)",
@@ -796,7 +819,7 @@ export default function ContractSummaryBar({ trackerId }: Props) {
             aria-controls="notif-menu-desktop"
           >
             <Bell className="h-4 w-4" />
-            <span>Notifications</span>
+            <span className="truncate xl-custom:hidden">Notifications</span>
             {notifCount > 0 && (
               <span
                 className="ml-1 inline-flex items-center justify-center rounded-full px-1 text-[10px] font-bold leading-none"
@@ -837,7 +860,7 @@ export default function ContractSummaryBar({ trackerId }: Props) {
             aria-label="Open contract notes"
           >
             <StickyNote className="h-4 w-4" />
-            <span>Notes</span>
+            <span className="xl-custom:hidden">Notes</span>
           </button>
         )}
 
@@ -869,6 +892,8 @@ export default function ContractSummaryBar({ trackerId }: Props) {
                 aria-label={
                   canToggleEditMode
                     ? `Edit mode is ${isEditMode ? "on" : "off"}`
+                    : isTerminated
+                    ? "Edit mode disabled - driver is terminated/resigned"
                     : isPrequalificationPage
                     ? "Edit mode disabled - prequalification is read-only"
                     : isQuizResultPage
@@ -879,8 +904,6 @@ export default function ContractSummaryBar({ trackerId }: Props) {
                     ? "Edit mode disabled - print page is read-only"
                     : isSafetyProcessingPage
                     ? "Edit mode disabled during safety processing"
-                    : isTerminated
-                    ? "Edit mode disabled - driver is terminated/resigned"
                     : "Edit mode disabled"
                 }
               >
@@ -890,9 +913,28 @@ export default function ContractSummaryBar({ trackerId }: Props) {
                   }`}
                 />
               </button>
+              {/* Tooltip for terminated/resigned driver */}
+              {isTerminated && (
+                <div
+                  className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50"
+                  style={{
+                    backgroundColor: "var(--color-surface-container-highest)",
+                    color: "var(--color-on-surface)",
+                    border: "1px solid var(--color-outline)",
+                  }}
+                >
+                  Driver is terminated/resigned
+                  <div
+                    className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent"
+                    style={{
+                      borderTopColor: "var(--color-surface-container-highest)",
+                    }}
+                  ></div>
+                </div>
+              )}
               {/* Tooltip for prequalification page */}
-              {isPrequalificationPage && (
-                <div 
+              {!isTerminated && isPrequalificationPage && (
+                <div
                   className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50"
                   style={{
                     backgroundColor: "var(--color-surface-container-highest)",
@@ -901,7 +943,7 @@ export default function ContractSummaryBar({ trackerId }: Props) {
                   }}
                 >
                   Prequalification is read-only
-                  <div 
+                  <div
                     className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent"
                     style={{
                       borderTopColor: "var(--color-surface-container-highest)",
@@ -910,8 +952,8 @@ export default function ContractSummaryBar({ trackerId }: Props) {
                 </div>
               )}
               {/* Tooltip for quiz result page */}
-              {isQuizResultPage && (
-                <div 
+              {!isTerminated && isQuizResultPage && (
+                <div
                   className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50"
                   style={{
                     backgroundColor: "var(--color-surface-container-highest)",
@@ -920,7 +962,7 @@ export default function ContractSummaryBar({ trackerId }: Props) {
                   }}
                 >
                   Quiz results are read-only
-                  <div 
+                  <div
                     className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent"
                     style={{
                       borderTopColor: "var(--color-surface-container-highest)",
@@ -929,8 +971,8 @@ export default function ContractSummaryBar({ trackerId }: Props) {
                 </div>
               )}
               {/* Tooltip for policies page */}
-              {isPoliciesPage && (
-                <div 
+              {!isTerminated && isPoliciesPage && (
+                <div
                   className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50"
                   style={{
                     backgroundColor: "var(--color-surface-container-highest)",
@@ -939,7 +981,7 @@ export default function ContractSummaryBar({ trackerId }: Props) {
                   }}
                 >
                   Policies are read-only
-                  <div 
+                  <div
                     className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent"
                     style={{
                       borderTopColor: "var(--color-surface-container-highest)",
@@ -948,8 +990,8 @@ export default function ContractSummaryBar({ trackerId }: Props) {
                 </div>
               )}
               {/* Tooltip for print page */}
-              {isPrintPage && (
-                <div 
+              {!isTerminated && isPrintPage && (
+                <div
                   className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50"
                   style={{
                     backgroundColor: "var(--color-surface-container-highest)",
@@ -958,7 +1000,7 @@ export default function ContractSummaryBar({ trackerId }: Props) {
                   }}
                 >
                   Print page is read-only
-                  <div 
+                  <div
                     className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent"
                     style={{
                       borderTopColor: "var(--color-surface-container-highest)",
@@ -967,8 +1009,8 @@ export default function ContractSummaryBar({ trackerId }: Props) {
                 </div>
               )}
               {/* Tooltip for safety processing page */}
-              {isSafetyProcessingPage && (
-                <div 
+              {!isTerminated && isSafetyProcessingPage && (
+                <div
                   className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50"
                   style={{
                     backgroundColor: "var(--color-surface-container-highest)",
@@ -977,26 +1019,7 @@ export default function ContractSummaryBar({ trackerId }: Props) {
                   }}
                 >
                   Edit mode disabled during safety processing
-                  <div 
-                    className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent"
-                    style={{
-                      borderTopColor: "var(--color-surface-container-highest)",
-                    }}
-                  ></div>
-                </div>
-              )}
-              {/* Tooltip for terminated/resigned drivers */}
-              {isTerminated && (
-                <div 
-                  className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50"
-                  style={{
-                    backgroundColor: "var(--color-surface-container-highest)",
-                    color: "var(--color-on-surface)",
-                    border: "1px solid var(--color-outline)",
-                  }}
-                >
-                  Cannot edit terminated/resigned driver
-                  <div 
+                  <div
                     className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent"
                     style={{
                       borderTopColor: "var(--color-surface-container-highest)",

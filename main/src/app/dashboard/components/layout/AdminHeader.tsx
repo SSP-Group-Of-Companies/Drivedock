@@ -32,7 +32,7 @@ export default function AdminHeader({
         borderBottom: "1px solid var(--color-header-border)",
       }}
     >
-             <div className="mx-auto flex h-12 sm:h-14 max-w-none sm:max-w-none md:max-w-none lg:max-w-7xl xl:max-w-8xl 2xl:max-w-[1500px] items-center justify-between px-3 sm:px-4 xl:ml-64">
+             <div className="mx-auto flex h-12 sm:h-14 max-w-none sm:max-w-none md:max-w-none lg:max-w-7xl xl:max-w-8xl 2xl:max-w-[1500px] items-center justify-between px-3 sm:px-4 xl:pl-80 xl:pr-4">
         {/* Left: sidebar toggle (visible below lg) */}
         <div className="flex items-center">
           <button
