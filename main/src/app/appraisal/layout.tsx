@@ -15,7 +15,7 @@ export default function AdminOnlyLayout({ children }: { children: ReactNode }) {
 
       <div className="flex flex-col">
         <Suspense fallback={null}>
-          <AdminHeader />
+          <AdminHeader showSidebarToggle={false} showThemeToggle={false} />
         </Suspense>
 
         <main id="main" role="main">
