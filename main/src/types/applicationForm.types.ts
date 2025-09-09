@@ -234,7 +234,6 @@ export interface IApplicationFormPage4 {
   employeeNumber?: string;
   hstNumber?: string;
   businessName?: string;
-  businessNumber?: string;
   incorporatePhotos?: IPhoto[];
   hstPhotos?: IPhoto[];
   bankingInfoPhotos?: IPhoto[];

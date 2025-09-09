@@ -44,7 +44,6 @@ function mapDefaults(page4: IApplicationFormPage4 | null): ApplicationFormPage4I
     employeeNumber: page4?.employeeNumber ?? "",
     hstNumber: page4?.hstNumber ?? "",
     businessName: page4?.businessName ?? "",
-    businessNumber: page4?.businessNumber ?? "",
     hstPhotos: page4?.hstPhotos ?? [],
     incorporatePhotos: page4?.incorporatePhotos ?? [],
     bankingInfoPhotos: page4?.bankingInfoPhotos ?? [],

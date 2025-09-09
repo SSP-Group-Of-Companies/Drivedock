@@ -63,7 +63,6 @@ export const applicationFormPage4Schema = new Schema<IApplicationFormPage4>(
     employeeNumber: { type: String },
     hstNumber: { type: String },
     businessName: { type: String },
-    businessNumber: { type: String },
 
     hstPhotos: {
       type: [photoSchema],

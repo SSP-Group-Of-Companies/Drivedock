@@ -37,7 +37,6 @@ type PatchBody = {
   employeeNumber?: string;
   hstNumber?: string;
   businessName?: string;
-  businessNumber?: string;
 
   incorporatePhotos?: IPhoto[];
   hstPhotos?: IPhoto[];
@@ -93,19 +92,19 @@ function forbidPresence(b: PatchBody, key: keyof IApplicationFormPage4, label: s
   if (hasKey(b, key)) throw new AppError(400, `${label} must not be included for this applicant.`);
 }
 
-/** Business section presence in BODY (any of the 7 keys appears) */
+/** Business section presence in BODY (any of the 6 keys appears) */
 function businessKeysPresentInBody(b: PatchBody) {
-  return hasKey(b, "employeeNumber") || hasKey(b, "businessName") || hasKey(b, "businessNumber") || hasKey(b, "hstNumber") || hasKey(b, "incorporatePhotos") || hasKey(b, "bankingInfoPhotos") || hasKey(b, "hstPhotos");
+  return hasKey(b, "employeeNumber") || hasKey(b, "businessName") || hasKey(b, "hstNumber") || hasKey(b, "incorporatePhotos") || hasKey(b, "bankingInfoPhotos") || hasKey(b, "hstPhotos");
 }
 
-/** Business clear intent: ALL seven keys present and all empty */
+/** Business clear intent: ALL six keys present and all empty */
 function isBusinessClearIntent(b: PatchBody) {
   const allKeysPresent =
-    hasKey(b, "employeeNumber") && hasKey(b, "businessName") && hasKey(b, "businessNumber") && hasKey(b, "hstNumber") && hasKey(b, "incorporatePhotos") && hasKey(b, "bankingInfoPhotos") && hasKey(b, "hstPhotos");
+    hasKey(b, "employeeNumber") && hasKey(b, "businessName") && hasKey(b, "hstNumber") && hasKey(b, "incorporatePhotos") && hasKey(b, "bankingInfoPhotos") && hasKey(b, "hstPhotos");
 
   if (!allKeysPresent) return false;
 
-  const emptyStrings = (!b.employeeNumber || b.employeeNumber.trim() === "") && (!b.businessName || b.businessName.trim() === "") && (!b.businessNumber || b.businessNumber.trim() === "") && (!b.hstNumber || b.hstNumber.trim() === "");
+  const emptyStrings = (!b.employeeNumber || b.employeeNumber.trim() === "") && (!b.businessName || b.businessName.trim() === "") && (!b.hstNumber || b.hstNumber.trim() === "");
 
   const emptyPhotos = alen(b.incorporatePhotos) === 0 && alen(b.bankingInfoPhotos) === 0 && alen(b.hstPhotos) === 0;
 
@@ -124,7 +123,6 @@ function validateBusinessAllOrNothingOnBody(b: PatchBody) {
   };
   req("employeeNumber");
   req("businessName");
-  req("businessNumber");
   req("hstNumber");
   req("incorporatePhotos");
   req("bankingInfoPhotos");
@@ -132,10 +130,9 @@ function validateBusinessAllOrNothingOnBody(b: PatchBody) {
 
   if (missing.length) throw new AppError(400, `Business section is partial. Missing: ${missing.join(", ")}. Provide all fields or clear all.`);
 
-  if (!isNonEmptyString(b.employeeNumber)) throw new AppError(400, "employeeNumber is required in Business section.");
   if (!isNonEmptyString(b.businessName)) throw new AppError(400, "businessName is required in Business section.");
-  if (!isNonEmptyString(b.businessNumber)) throw new AppError(400, "businessNumber is required in Business section.");
   if (!isNonEmptyString(b.hstNumber)) throw new AppError(400, "hstNumber is required in Business section.");
+  if (!isNonEmptyString(b.employeeNumber)) throw new AppError(400, "employeeNumber is required in Business section.");
 
   const inc = alen(b.incorporatePhotos);
   const bank = alen(b.bankingInfoPhotos);
@@ -287,7 +284,6 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
         // Business (respect BODY if present)
         ...(hasKey(body, "employeeNumber") ? { employeeNumber: body.employeeNumber ?? "" } : {}),
         ...(hasKey(body, "businessName") ? { businessName: body.businessName ?? "" } : {}),
-        ...(hasKey(body, "businessNumber") ? { businessNumber: body.businessNumber ?? "" } : {}),
         ...(hasKey(body, "hstNumber") ? { hstNumber: body.hstNumber ?? "" } : {}),
         ...(hasKey(body, "incorporatePhotos") ? { incorporatePhotos: body.incorporatePhotos ?? [] } : {}),
         ...(hasKey(body, "bankingInfoPhotos") ? { bankingInfoPhotos: body.bankingInfoPhotos ?? [] } : {}),
@@ -328,7 +324,6 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       if (bizDecision.mode === "clear") {
         nextP4.employeeNumber = "";
         nextP4.businessName = "";
-        nextP4.businessNumber = "";
         nextP4.hstNumber = "";
         nextP4.incorporatePhotos = [];
         nextP4.bankingInfoPhotos = [];
@@ -354,7 +349,6 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     const prevHadBiz =
       isNonEmptyString(prevP4.employeeNumber) ||
       isNonEmptyString(prevP4.businessName) ||
-      isNonEmptyString(prevP4.businessNumber) ||
       isNonEmptyString(prevP4.hstNumber) ||
       (prevP4.incorporatePhotos?.length ?? 0) > 0 ||
       (prevP4.bankingInfoPhotos?.length ?? 0) > 0 ||
@@ -363,7 +357,6 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     const nowBizEmpty =
       !isNonEmptyString(curP4.employeeNumber) &&
       !isNonEmptyString(curP4.businessName) &&
-      !isNonEmptyString(curP4.businessNumber) &&
       !isNonEmptyString(curP4.hstNumber) &&
       (curP4.incorporatePhotos?.length ?? 0) === 0 &&
       (curP4.bankingInfoPhotos?.length ?? 0) === 0 &&
@@ -501,7 +494,6 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       employeeNumber: appFormDoc.page4.employeeNumber,
       hstNumber: appFormDoc.page4.hstNumber,
       businessName: appFormDoc.page4.businessName,
-      businessNumber: appFormDoc.page4.businessNumber,
       incorporatePhotos: appFormDoc.page4.incorporatePhotos,
       hstPhotos: appFormDoc.page4.hstPhotos,
       bankingInfoPhotos: appFormDoc.page4.bankingInfoPhotos,
@@ -551,7 +543,6 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
       employeeNumber: appFormDoc.page4.employeeNumber,
       hstNumber: appFormDoc.page4.hstNumber,
       businessName: appFormDoc.page4.businessName,
-      businessNumber: appFormDoc.page4.businessNumber,
       incorporatePhotos: appFormDoc.page4.incorporatePhotos,
       hstPhotos: appFormDoc.page4.hstPhotos,
       bankingInfoPhotos: appFormDoc.page4.bankingInfoPhotos,

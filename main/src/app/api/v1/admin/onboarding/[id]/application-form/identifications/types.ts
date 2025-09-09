@@ -11,7 +11,6 @@ export interface IdentificationsResponse {
     employeeNumber?: string;
     hstNumber?: string;
     businessName?: string;
-    businessNumber?: string;
     incorporatePhotos?: IPhoto[];
     hstPhotos?: IPhoto[];
     bankingInfoPhotos?: IPhoto[];

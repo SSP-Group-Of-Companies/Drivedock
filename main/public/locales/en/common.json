@@ -351,7 +351,7 @@
           "business": {
             "title": "Incorporate Details",
             "disclaimer": {
-              "text": "If you provide any incorporation detail, you must complete every field and upload all related documents in this section. This includes Employee Number, HST Number, Business Number, and the required photos (Incorporation, HST, Banking)."
+              "text": "If you provide any incorporation detail, you must complete every field and upload all related documents in this section. This includes Employee Number, HST Number, Business Name, and the required photos (Incorporation, HST, Banking)."
             }
           },
           "additionalInfo": {
@@ -369,7 +369,6 @@
           "employeeNumber": "Employee Number",
           "hstNumber": "HST Number",
           "businessName": "Business Name",
-          "businessNumber": "Business Number",
           "incorporatePhotos": "Incorporate Photos",
           "hstPhotos": "HST Business Number Photos",
           "bankingInfoPhotos": "Banking Info Photos",
