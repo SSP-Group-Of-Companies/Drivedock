@@ -36,17 +36,30 @@ export const SHARED_FORMS: { label: string; path: string }[] = [
   { label: "PSP Authorization Form", path: "/docs/companies/shared/psp-authorization.pdf" },
 ];
 
-/** Canada-only common forms */
-export const CANADIAN_COMMON_FORMS: { label: string; path: string }[] = [
-  ...SHARED_FORMS,
-  { label: "ISB Consent Form", path: "/docs/companies/ca/isb-consent.pdf" },
-  { label: "Road Test Certificate", path: "/docs/companies/ca/road-test-certificates/road-test-certificate.pdf" },
-];
+/** Company-specific Road Test Certificates (CANADA) */
+export const CANADIAN_ROAD_TEST_CERTS: Record<CanadianCompanyId, { label: string; path: string }> = {
+  [ECompanyId.SSP_CA]: {
+    label: "Road Test Certificate",
+    path: "/docs/companies/ca/road-test-certificates/road-test-certificate-ssp-ca.pdf",
+  },
+  [ECompanyId.FELLOW_TRANS]: {
+    label: "Road Test Certificate",
+    path: "/docs/companies/ca/road-test-certificates/road-test-certificate-fellows.pdf",
+  },
+  [ECompanyId.NESH]: {
+    label: "Road Test Certificate",
+    path: "/docs/companies/ca/road-test-certificates/road-test-certificate-nesh.pdf",
+  },
+  [ECompanyId.WEB_FREIGHT]: {
+    label: "Road Test Certificate",
+    path: "/docs/companies/ca/road-test-certificates/road-test-certificate-webfreight.pdf",
+  },
+};
 
 /** US-only common forms */
 export const US_COMMON_FORMS: { label: string; path: string }[] = [
   ...SHARED_FORMS,
-  { label: "Road Test Certificate", path: "/docs/companies/us/road-test-certificates/road-test-certificate-us-drivers.pdf" },
+  { label: "Road Test Certificate", path: "/docs/companies/us/road-test-certificates/road-test-certificate-ssp-us.pdf" },
 ];
 
 /** Canadian Hiring Application PDFs — mapped by company */
@@ -84,19 +97,32 @@ export function getPoliciesPdfsForCompany(companyId: ECompanyId): { label: strin
 
   if (isCanadianCompany(companyId)) {
     const hiring = CANADIAN_HIRING_PDFS[companyId as CanadianCompanyId];
-    return [policy, ...CANADIAN_COMMON_FORMS, hiring];
+    const roadCert = CANADIAN_ROAD_TEST_CERTS[companyId as CanadianCompanyId];
+    // Keep ISB Consent and other shared forms; add company-specific road cert
+    const canadianCommon: { label: string; path: string }[] = [...SHARED_FORMS, { label: "ISB Consent Form", path: "/docs/companies/ca/isb-consent.pdf" }, roadCert];
+    return [policy, ...canadianCommon, hiring];
   }
 
   // US
   return [policy, ...US_COMMON_FORMS, US_HIRING_PDF];
 }
 
-/** Region-level bundles (policy not included here on purpose) */
-export const policiesConsentFormsUS: { label: string; path: string }[] = [...US_COMMON_FORMS, US_HIRING_PDF];
-export const policiesConsentFormsCA: { label: string; path: string }[] = [...CANADIAN_COMMON_FORMS];
+/**
+ * Region-level bundles (policy not included here on purpose)
+ * NOTE: CA now depends on company (company-specific road test cert),
+ * so it's exposed as a function instead of a static array.
+ */
+export const policiesConsentFormsUS: { label: string; path: string }[] = [...US_COMMON_FORMS];
+
+export const policiesConsentFormsCA = (companyId: CanadianCompanyId): { label: string; path: string }[] => [
+  ...SHARED_FORMS,
+  { label: "ISB Consent Form", path: "/docs/companies/ca/isb-consent.pdf" },
+  CANADIAN_ROAD_TEST_CERTS[companyId],
+];
 
 /** Per-company single lookups */
 export const companyPolicyByCompany: Record<ECompanyId, { label: string; path: string }> = COMPANY_POLICY_PDFS;
+
 export const hiringAppByCompany: Partial<Record<ECompanyId, { label: string; path: string }>> = {
   ...CANADIAN_HIRING_PDFS,
   [ECompanyId.SSP_US]: US_HIRING_PDF,
