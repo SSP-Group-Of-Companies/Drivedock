@@ -24,6 +24,8 @@ import { ECompanyPolicyFillableFormFields as F } from "@/lib/pdf/company-policy/
 
 import { drawPdfImage } from "@/lib/pdf/utils/drawPdfImage";
 import { loadImageBytesFromPhoto } from "@/lib/utils/s3Upload";
+import PreQualifications from "@/mongoose/models/Prequalifications";
+import { EDriverType } from "@/types/preQualifications.types";
 
 export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
@@ -61,8 +63,19 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
       .select(["page1.firstName", "page1.lastName", "page4.truckDetails.vin", "page4.truckDetails.year", "page4.truckDetails.truckUnitNumber"].join(" "))
       .lean();
 
-    const first = (application as any)?.page1?.firstName?.toString().trim();
-    const last = (application as any)?.page1?.lastName?.toString().trim();
+    if (!application) return errorResponse(404, "Driver application not found");
+
+    // Prequalification - to determine if owner-operator
+    const preQualId = onboarding.forms?.preQualification;
+    if (!preQualId || !isValidObjectId(preQualId)) return errorResponse(404, "Pre-qualification form not found");
+
+    const preQual = await PreQualifications.findById(preQualId).lean();
+    if (!preQual) return errorResponse(404, "Pre-qualification form not found");
+
+    const isOwnerOperator = preQual.driverType === EDriverType.OwnerDriver || preQual.driverType === EDriverType.OwnerOperator;
+
+    const first = application?.page1?.firstName?.toString().trim();
+    const last = application?.page1?.lastName?.toString().trim();
     if (!first || !last) return errorResponse(400, "Applicant name missing");
     const driverFullName = [first, last].filter(Boolean).join(" ");
 
@@ -110,6 +123,7 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
       driverFullName,
       companyContactName: "SSP Truck Line Inc", // Pg1 (generic ok)
       witnessName: safetyAdmin.name,
+      isOwnerOperator,
 
       // dates
       ipassDate: effectiveSignedAt, // Pg16
@@ -161,7 +175,10 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     await draw(idx.ackDriver, F.ACK_DRIVER_SIGNATURE, driverSigBytes, 53, 15); // Pg4
     await draw(idx.reqBoth, F.REQ_ACK_DRIVER_SIGNATURE, driverSigBytes, 100, 28); // Pg11
     await draw(idx.reqBoth, F.REQ_ACK_WITNESS_SIGNATURE, witnessSigBytes, 100, 28); // Pg11
-    await draw(idx.speedDriver, F.SPEED_SIGNATURE, driverSigBytes, 71, 20); // Pg17 or Pg16 (WF)
+
+    // only sign if owner-operator
+    if (isOwnerOperator) await draw(idx.speedDriver, F.SPEED_SIGNATURE, driverSigBytes, 71, 20); // Pg17 or Pg16 (WF)
+
     await draw(idx.finalBoth, F.FINAL_DRIVER_SIGNATURE, driverSigBytes, 53, 15); // Pg22 or Pg21 (WF)
     await draw(idx.finalBoth, F.FINAL_WITNESS_SIGNATURE, witnessSigBytes, 53, 15); // Pg22 or Pg21 (WF)
 

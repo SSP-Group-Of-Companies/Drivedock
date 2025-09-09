@@ -50,6 +50,7 @@ export type BuildCompanyPolicyPayloadArgs = {
   driverFullName: string;
   companyContactName?: string; // “inform ____ if my medical status changes”
   witnessName?: string; // safety admin name (printed on Pg2, Pg11, Pg22)
+  isOwnerOperator?: boolean;
 
   // IPASS / Toll
   ipassDate?: MaybeDate;
@@ -73,6 +74,7 @@ export function buildCompanyPolicyPayload({
   driverFullName,
   companyContactName,
   witnessName,
+  isOwnerOperator,
   ipassDate,
   ipassTruckNumber,
   speedTruckYear,
@@ -113,10 +115,12 @@ export function buildCompanyPolicyPayload({
   payload[F.IPASS_TRUCK_NUMBER] = ipassTruckNumber || "";
 
   /* Pg 17 – Speed Locker Policy */
-  payload[F.SPEED_DRIVER_NAME_TEXT] = name;
-  payload[F.SPEED_TRUCK_YEAR] = speedTruckYear || "";
-  payload[F.SPEED_VIN] = speedVIN || "";
-  payload[F.SPEED_OWNER_OPERATOR_NAME] = ownerOperatorName || name;
+  if (isOwnerOperator) {
+    payload[F.SPEED_DRIVER_NAME_TEXT] = name;
+    payload[F.SPEED_TRUCK_YEAR] = speedTruckYear || "";
+    payload[F.SPEED_VIN] = speedVIN || "";
+    payload[F.SPEED_OWNER_OPERATOR_NAME] = ownerOperatorName || name;
+  }
 
   /* Pg 22 – Final Acknowledgement (driver + witness) */
   payload[F.FINAL_DRIVER_NAME] = name;
