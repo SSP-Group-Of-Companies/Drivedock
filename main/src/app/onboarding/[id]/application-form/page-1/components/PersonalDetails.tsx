@@ -241,17 +241,24 @@ export default function PersonalDetails({ onboardingContext }: PersonalDetailsPr
 
   return (
     <section className="space-y-6 border border-gray-200 p-6 rounded-lg bg-white/80 shadow-sm">
+      {/* Hidden fields to prevent autocomplete - more aggressive approach */}
+      <input type="text" style={{ display: 'none' }} autoComplete="new-password" tabIndex={-1} />
+      <input type="email" style={{ display: 'none' }} autoComplete="new-password" tabIndex={-1} />
+      <input type="password" style={{ display: 'none' }} autoComplete="new-password" tabIndex={-1} />
+      <input type="text" name="fake-username" style={{ display: 'none' }} autoComplete="username" tabIndex={-1} />
+      <input type="password" name="fake-password" style={{ display: 'none' }} autoComplete="current-password" tabIndex={-1} />
+      
       <h2 className="text-center text-lg font-semibold text-gray-800">{t("form.step2.page1.sections.personal")}</h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* First Name */}
-        <TextInput name="firstName" label={t("form.step2.page1.fields.firstName")} placeholder="John" error={errors.firstName} register={register} />
+        <TextInput name="firstName" label={t("form.step2.page1.fields.firstName")} placeholder="John" error={errors.firstName} register={register} autoComplete="new-password" />
 
         {/* Last Name */}
-        <TextInput name="lastName" label={t("form.step2.page1.fields.lastName")} placeholder="Deo" error={errors.lastName} register={register} />
+        <TextInput name="lastName" label={t("form.step2.page1.fields.lastName")} placeholder="Deo" error={errors.lastName} register={register} autoComplete="new-password" />
 
         {/* Email Address */}
-        <TextInput name="email" label={t("form.step2.page1.fields.email")} placeholder="john@gmail.com" error={errors.email} register={register} />
+        <TextInput name="email" label={t("form.step2.page1.fields.email")} placeholder="john@gmail.com" error={errors.email} register={register} autoComplete="new-password" />
 
         {/* Gender Selection */}
         <div data-field="gender">
@@ -285,7 +292,10 @@ export default function PersonalDetails({ onboardingContext }: PersonalDetailsPr
             placeholder="963-456-789"
             value={displaySIN}
             inputMode="numeric"
-            autoComplete="off"
+            autoComplete="new-password"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck="false"
             maxLength={11}
             onChange={(e) => {
               const raw = e.target.value.replace(/\D/g, "");
@@ -293,6 +303,8 @@ export default function PersonalDetails({ onboardingContext }: PersonalDetailsPr
             }}
             pattern="\d{9}"
             data-field="sin"
+            data-lpignore="true"
+            data-form-type="other"
             className={`py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md pr-10 ${
               sinValidationStatus === "valid"
                 ? "border-green-500 focus:border-green-500"

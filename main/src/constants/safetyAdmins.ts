@@ -22,7 +22,8 @@ export const SAFETY_ADMINS: SafetyAdmin[] = [
   {
     id: ESafetyAdminId.BALKARAN_DHILLON,
     name: "Balkaran Dhillon",
-    signature: "lib/assets/safetyAdmins/signatures/signature-balkaran-dhillon.png",
+    signature:
+      "lib/assets/safetyAdmins/signatures/signature-balkaran-dhillon.png",
   },
   {
     id: ESafetyAdminId.GURINDER_MANN,
@@ -42,12 +43,16 @@ export function listSafetyAdmins(): SafetyAdmin[] {
   return SAFETY_ADMINS;
 }
 
-export function getSafetyAdminById(id: ESafetyAdminId): SafetyAdmin | undefined {
+export function getSafetyAdminById(
+  id: ESafetyAdminId
+): SafetyAdmin | undefined {
   return SAFETY_ADMINS.find((admin) => admin.id === id);
 }
 
 export function findSafetyAdminByName(name: string): SafetyAdmin | undefined {
-  return SAFETY_ADMINS.find((admin) => admin.name.toLowerCase() === name.toLowerCase());
+  return SAFETY_ADMINS.find(
+    (admin) => admin.name.toLowerCase() === name.toLowerCase()
+  );
 }
 
 export function getSignaturePathById(id: ESafetyAdminId): string | null {

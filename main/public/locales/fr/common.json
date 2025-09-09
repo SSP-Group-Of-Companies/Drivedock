@@ -80,7 +80,8 @@
       "intro": "Veuillez lire les conditions ci-dessous. Pour continuer, confirmez votre accord.",
       "points": {
         "accurateInfo": "Toutes les informations que je fournis seront exactes et véridiques.",
-        "digitalProcess": "Je comprends qu’il s’agit d’une candidature numérique et que les dossiers peuvent être conservés électroniquement.",
+        "digitalProcess": "Je comprends qu'il s'agit d'une candidature numérique et que les dossiers peuvent être conservés électroniquement.",
+        "selfApplication": "Je confirme que je suis la personne qui remplit cette candidature et que je ne le fais pas au nom d'une autre personne.",
         "truthfulInfo": "Je confirme que toutes les informations soumises sont vraies et exactes.",
         "applicationType": "Je reconnais le type de candidature sélectionné (entrepreneur ou employé) dans cette demande.",
         "rulesTitle": "Je comprends et j’accepte les règles de l’entreprise suivantes :",

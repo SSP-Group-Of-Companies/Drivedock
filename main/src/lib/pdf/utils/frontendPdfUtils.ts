@@ -7,7 +7,10 @@ type IPdfListItem = {
   needsSafetyAdminId: boolean;
 };
 
-export const getCompanyPdfList = (companyId: ECompanyId, onboardingId: string): IPdfListItem[] => {
+export const getCompanyPdfList = (
+  companyId: ECompanyId,
+  onboardingId: string
+): IPdfListItem[] => {
   const isCa = getCompanyById(companyId)?.countryCode === ECountryCode.CA;
 
   const apiBase = `/api/v1/admin/onboarding/${onboardingId}/filled-pdf`;
@@ -29,12 +32,12 @@ export const getCompanyPdfList = (companyId: ECompanyId, onboardingId: string): 
     },
     {
       label: "Pre-Trip Assessment",
-      apiUrl: `/api/v1/admin/onboarding/${onboardingId}/appraisal/pre-trip-assessment/filled-pdf`,
+      apiUrl: `/api/v1/admin/onboarding/${onboardingId}/appraisal/drive-test/pre-trip-assessment/filled-pdf`,
       needsSafetyAdminId: false,
     },
     {
       label: "ON-Road Assessment",
-      apiUrl: `/api/v1/admin/onboarding/${onboardingId}/appraisal/on-road-assessment/filled-pdf`,
+      apiUrl: `/api/v1/admin/onboarding/${onboardingId}/appraisal/drive-test/on-road-assessment/filled-pdf`,
       needsSafetyAdminId: false,
     },
     {

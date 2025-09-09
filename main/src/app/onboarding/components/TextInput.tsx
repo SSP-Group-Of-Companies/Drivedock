@@ -14,6 +14,7 @@ interface TextInputProps {
   register: UseFormRegister<any>;
   error?: FieldError | Merge<FieldError, FieldErrorsImpl<any>>;
   type?: string;
+  autoComplete?: string;
 }
 
 export default function TextInput({
@@ -23,6 +24,7 @@ export default function TextInput({
   register,
   error,
   type = "text",
+  autoComplete = "off",
 }: TextInputProps) {
   return (
     <div>
@@ -33,6 +35,12 @@ export default function TextInput({
         type={type}
         placeholder={placeholder}
         data-field={name}
+        autoComplete={autoComplete}
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck="false"
+        data-lpignore="true"
+        data-form-type="other"
         className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
       />
       {error && (
