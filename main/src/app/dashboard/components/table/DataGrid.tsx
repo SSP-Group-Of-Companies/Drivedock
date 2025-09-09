@@ -249,7 +249,7 @@ export default function DataGrid({
     "data-testid"?: string;
   }) => {
     const base =
-      "inline-flex items-center gap-1.5 sm:gap-2 rounded-lg px-2 py-1.5 sm:px-2.5 text-sm transition-colors disabled:opacity-50";
+      "inline-flex items-center gap-1.5 sm:gap-2 rounded-lg px-2 py-1.5 sm:px-2.5 text-sm transition-colors disabled:opacity-50 cursor-pointer";
     const styleBtn: React.CSSProperties = {
       backgroundColor: "var(--color-card)",
       color: "var(--color-on-surface)",

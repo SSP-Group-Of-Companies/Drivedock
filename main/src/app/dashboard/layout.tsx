@@ -115,7 +115,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           {shouldRender && (
             <div
               className={`
-                flex flex-col transition-colors duration-200
+                dashboard flex flex-col transition-colors duration-200
                 ${
                   pathData.isContract
                     ? "min-h-screen"

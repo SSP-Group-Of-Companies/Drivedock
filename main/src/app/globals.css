@@ -307,15 +307,15 @@
 }
 
 /* =========================
- * Date Input Calendar Icon Dark Mode Fix
+ * Date Input Calendar Icon Dark Mode Fix (Dashboard Only)
  * ========================= */
-input[type="date"]::-webkit-calendar-picker-indicator {
+.dashboard input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(1);
   cursor: pointer;
 }
 
-/* For Firefox */
-input[type="date"]::-moz-calendar-picker-indicator {
+/* For Firefox - Dashboard Only */
+.dashboard input[type="date"]::-moz-calendar-picker-indicator {
   filter: invert(1);
   cursor: pointer;
 }
