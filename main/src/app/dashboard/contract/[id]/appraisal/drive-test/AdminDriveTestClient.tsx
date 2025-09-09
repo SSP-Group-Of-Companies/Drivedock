@@ -94,6 +94,9 @@ export default function AdminDriveTestClient({
     border: "1px solid var(--color-outline-variant)",
   };
 
+  const preTripApiUrl = `/api/v1/admin/onboarding/${trackerId}/appraisal/drive-test/pre-trip-assessment/filled-pdf`;
+  const onRoadApiUrl = `/api/v1/admin/onboarding/${trackerId}/appraisal/drive-test/on-road-assessment/filled-pdf`;
+
   return (
     <div className="space-y-4">
       {/* Page header (overview with badge in top right) */}
@@ -155,7 +158,7 @@ export default function AdminDriveTestClient({
             <Link className={tileBase} style={tileStyle} href={`/appraisal/${trackerId}/drive-test/pre-trip-assessment`} target="_blank">
               Pre-Trip Assessment
             </Link>
-            <button type="button" className={tileBase} style={tileStyle} onClick={() => window.print()}>
+            <button type="button" className={tileBase} style={tileStyle} onClick={() => window.open(preTripApiUrl, "_blank", "noopener,noreferrer")}>
               Print
             </button>
           </div>
@@ -209,7 +212,7 @@ export default function AdminDriveTestClient({
             <Link className={tileBase} style={tileStyle} href={`/appraisal/${trackerId}/drive-test/on-road-assessment`} target="_blank">
               On-Road Assessment
             </Link>
-            <button type="button" className={tileBase} style={tileStyle} onClick={() => window.print()}>
+            <button type="button" className={tileBase} style={tileStyle} onClick={() => window.open(onRoadApiUrl, "_blank", "noopener,noreferrer")}>
               Print
             </button>
           </div>
