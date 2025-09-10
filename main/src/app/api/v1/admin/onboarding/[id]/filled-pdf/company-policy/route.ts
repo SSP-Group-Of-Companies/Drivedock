@@ -101,9 +101,6 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
       return errorResponse(500, "Failed to load driver signature image");
     }
 
-    const pdfPath = resolveCompanyPolicyTemplate(companyId);
-    const pdfBytes = await fs.readFile(pdfPath);
-
     let witnessSigBytes: Uint8Array;
     try {
       witnessSigBytes = new Uint8Array(await fs.readFile(safetyAdmin.signatureAbsPath));
@@ -113,7 +110,8 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     }
 
     // Template (by company)
-
+    const pdfPath = resolveCompanyPolicyTemplate(companyId);
+    const pdfBytes = await fs.readFile(pdfPath);
     const pdfDoc = await PDFDocument.load(pdfBytes);
     const form = pdfDoc.getForm();
     const pages = pdfDoc.getPages();

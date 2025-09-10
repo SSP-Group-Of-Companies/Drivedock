@@ -12,11 +12,12 @@ export type SafetyAdminServer = SafetyAdmin & {
   signatureAbsPath: string;
 };
 
+const base = "src/lib/assets/safetyAdmins/signatures";
 const SIGNATURE_PATHS: Record<ESafetyAdminId, string> = {
-  [ESafetyAdminId.AMAN_JOSUN]: path.join(process.cwd(), "src/lib/safetyAdmins/signatures/signature-aman-josun.png"),
-  [ESafetyAdminId.BALKARAN_DHILLON]: path.join(process.cwd(), "src/lib/safetyAdmins/signatures/signature-balkaran-dhillon.png"),
-  [ESafetyAdminId.GURINDER_MANN]: path.join(process.cwd(), "src/lib/safetyAdmins/signatures/signature-gurinder-mann.png"),
-  [ESafetyAdminId.KIRAN_SANDHU]: path.join(process.cwd(), "src/lib/safetyAdmins/signatures/signature-kiran-sandhu.png"),
+  [ESafetyAdminId.AMAN_JOSUN]: path.join(process.cwd(), `${base}/signature-aman-josun.png`),
+  [ESafetyAdminId.BALKARAN_DHILLON]: path.join(process.cwd(), `${base}/signature-balkaran-dhillon.png`),
+  [ESafetyAdminId.GURINDER_MANN]: path.join(process.cwd(), `${base}/signature-gurinder-mann.png`),
+  [ESafetyAdminId.KIRAN_SANDHU]: path.join(process.cwd(), `${base}/signature-kiran-sandhu.png`),
 };
 
 function withServerFields(a: SafetyAdmin): SafetyAdminServer {
