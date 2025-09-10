@@ -1,34 +1,30 @@
 import "server-only";
-import { fileURLToPath } from "node:url";
+import path from "node:path";
 import { ESafetyAdminId, SAFETY_ADMINS, type SafetyAdmin } from "@/constants/safetyAdmins";
 
 /**
  * Server-only shape: includes a real absolute filesystem path (signatureAbsPath)
  * that you can hand directly to fs.readFile(). Files are bundled because we
- * reference each PNG with a literal `new URL("./signatures/...", import.meta.url)`.
+ * reference each PNG with a literal relative path.
  */
 export type SafetyAdminServer = SafetyAdmin & {
   /** Absolute filesystem path to the PNG (safe for fs.readFile in dev & Vercel) */
   signatureAbsPath: string;
-  /** Also keep the URL around in case you prefer fs.readFile(URL) */
-  signatureFileUrl: URL;
 };
 
-// Map literal file URLs so Vercel bundles them automatically
-const SIGNATURE_URLS: Record<ESafetyAdminId, URL> = {
-  [ESafetyAdminId.AMAN_JOSUN]: new URL("./signatures/signature-aman-josun.png", import.meta.url),
-  [ESafetyAdminId.BALKARAN_DHILLON]: new URL("./signatures/signature-balkaran-dhillon.png", import.meta.url),
-  [ESafetyAdminId.GURINDER_MANN]: new URL("./signatures/signature-gurinder-mann.png", import.meta.url),
-  [ESafetyAdminId.KIRAN_SANDHU]: new URL("./signatures/signature-kiran-sandhu.png", import.meta.url),
+const SIGNATURE_PATHS: Record<ESafetyAdminId, string> = {
+  [ESafetyAdminId.AMAN_JOSUN]: path.join(process.cwd(), "src/lib/safetyAdmins/signatures/signature-aman-josun.png"),
+  [ESafetyAdminId.BALKARAN_DHILLON]: path.join(process.cwd(), "src/lib/safetyAdmins/signatures/signature-balkaran-dhillon.png"),
+  [ESafetyAdminId.GURINDER_MANN]: path.join(process.cwd(), "src/lib/safetyAdmins/signatures/signature-gurinder-mann.png"),
+  [ESafetyAdminId.KIRAN_SANDHU]: path.join(process.cwd(), "src/lib/safetyAdmins/signatures/signature-kiran-sandhu.png"),
 };
 
 function withServerFields(a: SafetyAdmin): SafetyAdminServer {
-  const url = SIGNATURE_URLS[a.id];
-  if (!url) throw new Error(`Missing signature mapping for safety admin id: ${a.id}`);
+  const absPath = SIGNATURE_PATHS[a.id];
+  if (!absPath) throw new Error(`Missing signature mapping for safety admin id: ${a.id}`);
   return {
     ...a,
-    signatureFileUrl: url,
-    signatureAbsPath: fileURLToPath(url),
+    signatureAbsPath: absPath,
   };
 }
 
