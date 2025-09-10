@@ -20,7 +20,7 @@ import { buildIsbConsentPayload, applyIsbConsentPayloadToForm } from "@/lib/pdf/
 
 import { drawPdfImage } from "@/lib/pdf/utils/drawPdfImage";
 import { loadImageBytesFromPhoto } from "@/lib/utils/s3Upload";
-import { getSafetyAdminServerById } from "@/lib/assets/safetyAdminss/safetyAdmins.server";
+import { getSafetyAdminServerById } from "@/lib/assets/safetyAdmins/safetyAdmins.server";
 
 /* ------------------------------ helpers ------------------------------ */
 

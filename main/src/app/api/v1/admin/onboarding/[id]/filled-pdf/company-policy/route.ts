@@ -25,7 +25,7 @@ import { drawPdfImage } from "@/lib/pdf/utils/drawPdfImage";
 import { loadImageBytesFromPhoto } from "@/lib/utils/s3Upload";
 import PreQualifications from "@/mongoose/models/Prequalifications";
 import { EDriverType } from "@/types/preQualifications.types";
-import { getSafetyAdminServerById } from "@/lib/assets/safetyAdminss/safetyAdmins.server";
+import { getSafetyAdminServerById } from "@/lib/assets/safetyAdmins/safetyAdmins.server";
 
 export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
