@@ -82,7 +82,7 @@ export interface IApplicationFormPage1 {
   gender: EGender;
   sinPhoto: IPhoto;
   dob: string | Date; // YYYY-MM-DD (client) or Date (server)
-  phoneHome: string;
+  phoneHome?: string;
   phoneCell: string;
   canProvideProofOfAge: boolean;
   email: string;

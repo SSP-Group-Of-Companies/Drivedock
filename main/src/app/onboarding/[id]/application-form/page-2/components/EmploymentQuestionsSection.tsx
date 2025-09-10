@@ -110,7 +110,7 @@ export default function EmploymentQuestionsSection() {
                     type="text"
                     {...register("previousWorkDetails.rateOfPay")}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="e.g., $25/hour, $50,000/year"
+                    placeholder="$0.50/mile or $25/hr"
                   />
                   {errors.previousWorkDetails?.rateOfPay && (
                     <p className="text-red-600 text-sm mt-1">{errors.previousWorkDetails.rateOfPay.message}</p>
@@ -189,7 +189,7 @@ export default function EmploymentQuestionsSection() {
             type="text"
             {...register("expectedRateOfPay")}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="e.g., $25/hour, $50,000/year"
+            placeholder="$0.50/mile or $25/hr"
           />
           {errors.expectedRateOfPay && (
             <p className="text-red-600 text-sm mt-1">{errors.expectedRateOfPay.message}</p>

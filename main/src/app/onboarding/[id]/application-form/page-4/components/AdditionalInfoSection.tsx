@@ -2,14 +2,16 @@
 
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import { useState } from "react";
 import useMounted from "@/hooks/useMounted";
 import QuestionGroup from "@/app/onboarding/components/QuestionGroup";
+import AccidentalInsurancePopup from "@/app/onboarding/components/AccidentalInsurancePopup";
 import type { ApplicationFormPage4Input } from "@/lib/zodSchemas/applicationFormPage4.Schema";
 
 type BoolFieldName = "deniedLicenseOrPermit" | "suspendedOrRevoked" | "testedPositiveOrRefused" | "completedDOTRequirements" | "hasAccidentalInsurance";
 
 // Reusable Yes/No using your segmented <QuestionGroup />
-function YesNoQuestion({ name, labelKey }: { name: BoolFieldName; labelKey: string }) {
+function YesNoQuestion({ name, labelKey, onChange }: { name: BoolFieldName; labelKey: string; onChange?: (value: boolean | undefined) => void }) {
   const { t } = useTranslation("common");
   const formContext = useFormContext<ApplicationFormPage4Input>();
   
@@ -41,11 +43,14 @@ function YesNoQuestion({ name, labelKey }: { name: BoolFieldName; labelKey: stri
               value={current}
               onChange={(v?: string) => {
                 // Map to tri-state: undefined | "form.yes" | "form.no"
+                let value: boolean | undefined;
                 if (v === undefined || v === "") {
-                  field.onChange(undefined);
+                  value = undefined;
                 } else {
-                  field.onChange(v === "form.yes");
+                  value = v === "form.yes";
                 }
+                field.onChange(value);
+                onChange?.(value);
               }}
             />
           );
@@ -69,6 +74,16 @@ export default function AdditionalInfoSection() {
   } = formContext || { control: null, register: () => {}, formState: { errors: {} } };
 
   const suspended = useWatch({ control: control || undefined, name: "suspendedOrRevoked" });
+  
+  // State for showing the accidental insurance popup
+  const [showAccidentalInsurancePopup, setShowAccidentalInsurancePopup] = useState(false);
+
+  // Handler for accidental insurance question changes
+  const handleAccidentalInsuranceChange = (value: boolean | undefined) => {
+    if (value !== undefined) {
+      setShowAccidentalInsurancePopup(true);
+    }
+  };
 
   // Defensive checks after all hooks are called
   if (!mounted) return null;
@@ -104,8 +119,15 @@ export default function AdditionalInfoSection() {
 
         <YesNoQuestion name="completedDOTRequirements" labelKey="form.step2.page4.fields.completedDOT" />
 
-        <YesNoQuestion name="hasAccidentalInsurance" labelKey="form.step2.page4.fields.hasInsurance" />
+        <YesNoQuestion name="hasAccidentalInsurance" labelKey="form.step2.page4.fields.hasInsurance" onChange={handleAccidentalInsuranceChange} />
       </div>
+      
+      {/* Accidental Insurance Popup */}
+      {showAccidentalInsurancePopup && (
+        <AccidentalInsurancePopup
+          onClose={() => setShowAccidentalInsurancePopup(false)}
+        />
+      )}
     </section>
   );
 }

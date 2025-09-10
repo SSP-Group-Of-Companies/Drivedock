@@ -96,8 +96,8 @@ async function buildBaseFilter(searchParams: URLSearchParams) {
     if (updatedAtTo) filter.updatedAt.$lte = updatedAtTo;
   }
 
-  // Robust name search:
-  // Supports: "john", "doe", "john doe", "johndoe", "john, doe", and wild spacing.
+  // Robust name and truck number search:
+  // Supports: "john", "doe", "john doe", "johndoe", "john, doe", "TRK123", and wild spacing.
   const driverNameInput = searchParams.get("driverName") || "";
   const driverNameRaw = driverNameInput.trim();
 
@@ -118,23 +118,28 @@ async function buildBaseFilter(searchParams: URLSearchParams) {
     // JS regex for first/last direct matches (used in a normal .find query)
     const rxWhole = new RegExp(escapeRegex(driverNameRaw), "i");
 
-    // Tokenized constraints (each token must appear in first OR last)
+    // Tokenized constraints (each token must appear in first OR last OR truck number)
     const andPerToken =
       tokens.length > 0
         ? tokens.map((tok) => {
             const rx = new RegExp(escapeRegex(tok), "i");
             return {
-              $or: [{ "page1.firstName": rx }, { "page1.lastName": rx }],
+              $or: [
+                { "page1.firstName": rx }, 
+                { "page1.lastName": rx },
+                { "page4.truckDetails.truckUnitNumber": rx }
+              ],
             };
           })
         : [];
 
-    // Compose the ApplicationForm name query (no $regexReplace needed)
+    // Compose the ApplicationForm name and truck number query (no $regexReplace needed)
     const appFormNameQuery: any = {
       $or: [
         ...(andPerToken.length ? [{ $and: andPerToken }] : []),
         { "page1.firstName": rxWhole },
         { "page1.lastName": rxWhole },
+        { "page4.truckDetails.truckUnitNumber": rxWhole },
         {
           // "johndoe" matches "john....doe" (any punctuation/spaces between chars)
           $expr: {
@@ -267,6 +272,7 @@ export async function GET(req: NextRequest) {
                   },
                 },
                 email: "$page1.email",
+                truckUnitNumber: "$page4.truckDetails.truckUnitNumber",
               },
             },
           ],
@@ -297,6 +303,7 @@ export async function GET(req: NextRequest) {
         $addFields: {
           driverName: { $ifNull: ["$driverAppObj.driverName", null] },
           driverEmail: { $ifNull: ["$driverAppObj.email", null] },
+          truckUnitNumber: { $ifNull: ["$driverAppObj.truckUnitNumber", null] },
           ceEmailSent: { $ifNull: [{ $first: "$ce.emailSent" }, false] },
           dtStatus: { $ifNull: [{ $first: "$dt.status" }, EDrugTestStatus.NOT_UPLOADED] },
           progressStepIndex: { $indexOfArray: [getOnboardingStepFlow({ needsFlatbedTraining: true }), "$status.currentStep"] },
@@ -335,6 +342,7 @@ export async function GET(req: NextRequest) {
           itemSummary: {
             driverName: "$driverName",
             driverEmail: "$driverEmail",
+            truckUnitNumber: "$truckUnitNumber",
             carriersEdgeTraining: { emailSent: "$ceEmailSent" },
             drugTest: { status: "$dtStatus" },
           },

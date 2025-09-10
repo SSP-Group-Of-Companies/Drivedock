@@ -106,7 +106,7 @@ export function getNeighborSteps(step: EStepPath, opts: FlowOpts): { prevStep: E
  *  - If the resulting status is completed, set completionDate to the existing one (if any) or now.
  *  - If the resulting status is not completed, omit completionDate (clears old value).
  */
-export function advanceProgress(doc: IOnboardingTrackerDoc, completedNow: EStepPath): IOnboardingStatus {
+export function advanceProgress(doc: IOnboardingTrackerDoc, completedNow: EStepPath, completionLocation?: IOnboardingStatus['completionLocation']): IOnboardingStatus {
   const opts = getFlowOpts(doc);
   const flow = getOnboardingStepFlow(opts);
   const maximalFlow = getOnboardingStepFlow({ needsFlatbedTraining: true });
@@ -149,8 +149,11 @@ export function advanceProgress(doc: IOnboardingTrackerDoc, completedNow: EStepP
     return {
       currentStep: (mappedCurrentStep ?? doc.status.currentStep) as EStepPath,
       completed: isCompleted,
-      // Preserve existing completionDate if still completed; otherwise omit (clears).
-      ...(isCompleted && { completionDate: doc.status.completionDate ?? new Date() }),
+      // Preserve existing completionDate and location if still completed; otherwise omit (clears).
+      ...(isCompleted && { 
+        completionDate: doc.status.completionDate ?? new Date(),
+        completionLocation: doc.status.completionLocation
+      }),
     };
   }
 
@@ -161,8 +164,11 @@ export function advanceProgress(doc: IOnboardingTrackerDoc, completedNow: EStepP
   return {
     currentStep: (next ?? completedNow) as EStepPath,
     completed: isNowCompleted,
-    // If we just became (or remain) completed, set/preserve completionDate
-    ...(isNowCompleted && { completionDate: doc.status.completionDate ?? new Date() }),
+    // If we just became (or remain) completed, set/preserve completionDate and location
+    ...(isNowCompleted && { 
+      completionDate: doc.status.completionDate ?? new Date(),
+      completionLocation: completionLocation || doc.status.completionLocation
+    }),
   };
 }
 

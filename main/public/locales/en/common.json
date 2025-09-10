@@ -86,8 +86,8 @@
         "applicationType": "I acknowledge my selected application type (contractor or employee) in this application.",
         "rulesTitle": "I understand and agree to the following company rules:",
         "drugPolicy": "Drug & Alcohol policies",
-        "dashCam": "Dash cam recording in vehicles",
-        "safetyRules": "Speed limits, incident reporting, and no phone use while driving",
+        "dashCam": "Dual facing dashcam",
+        "safetyRules": "Speed limits (105 km/h), incident reporting, and no phone use while driving",
         "seals": "Trailer seals and cross-border inspection requirements",
         "laws": "I am responsible for complying with Canadian and U.S. trucking laws."
       },
@@ -98,7 +98,7 @@
 
     "policiesModal": {
       "title": "Policies & Data Usage Notice",
-      "sub-title": "As part of your application to become a driver with [Company Name], we collect and use certain personal information to confirm your qualifications and comply with legal and safety requirements.",
+      "sub-title": "As part of your application to become a driver with One of our many companies, we collect and use certain personal information to confirm your qualifications and comply with legal and safety requirements.",
       "section": {
         "whatInfo": "What information we collect",
         "whatInfoItems": {
@@ -116,7 +116,7 @@
         },
         "whoInfo": "Who has access to this information",
         "whoInfoItems": {
-          "itemOne": "[Company Name] Human Resources and Compliance teams",
+          "itemOne": "Company's Human Resources and Compliance teams",
           "itemTwo": "Regulatory authorities (e.g., Transport Canada; FMCSA if cross-border)",
           "itemThree": "Authorized third parties (e.g., background check providers, insurers)"
         },
@@ -221,7 +221,7 @@
           "sinPhotoDesc": "Click to capture or select an image",
           "dob": "Date of Birth",
           "canProvideProof": "Can you provide proof of age?",
-          "phoneHome": "Phone (Home)",
+          "phoneHome": "Phone (Home) (Optional)",
           "email": "Email Address",
           "phoneCell": "Phone (Cell)",
           "emergencyContactName": "Emergency Contact Name",
@@ -271,7 +271,7 @@
           "employerName": "Employer Name",
           "supervisorName": "Supervisor Name",
           "address": "Street Address",
-          "city": "city",
+          "city": "City",
           "stateOrProvince": "Province or State",
           "postalCode": "Postal code",
           "phone1": "Phone 1",
@@ -281,6 +281,7 @@
           "from": "From Date",
           "to": "To Date",
           "salary": "Salary",
+          "salaryPlaceholder": "$0.50/mile or $25/hr",
           "reasonForLeaving": "Reason for Leaving...",
           "subjectToFMCSR": "Were you subject to FMCSR (Federal Motor Carrier Safety Regulations)?",
           "safetySensitiveFunction": "Was your job designated as a safety sensitive function in any DOT regulated mode subject to the drug and alcohol testing requirement of 49 CFR part 40.",
@@ -379,6 +380,11 @@
           "testedPositive": "Have you ever tested positive, or refused to test, on any pre-employment drug or alcohol test administered by an employer to which you applied for, but did not obtain, safety-sensitive transportation work covered by DOT agency drug and alcohol testing rules during the past two years?",
           "completedDOT": "If you answered YES, can you provide/obtain proof that you’ve successfully completed the DOT return-to-duty requirements?",
           "hasInsurance": "Do you have your own Accidental Benefit Insurance Coverage?",
+          "accidentalInsurancePopup": {
+            "title": "Company Insurance Registration",
+            "message": "For your safety and compliance, SSP Truck Line will register every driver under the company's Accident Benefit Insurance plan. This ensures you are fully covered while working, regardless of whether you already have your own personal accident benefit insurance. Your personal coverage, if any, remains unaffected — but company registration is mandatory to provide consistent protection for all drivers.",
+            "ok": "OK"
+          },
           "fastNumber": "FAST Card Number",
           "fastExpiry": "Expiry Date",
           "fastFront": "Photo Front",

@@ -86,8 +86,8 @@
         "applicationType": "Reconozco el tipo de solicitud seleccionado (contratista o empleado) en esta postulación.",
         "rulesTitle": "Entiendo y acepto las siguientes reglas de la empresa:",
         "drugPolicy": "Políticas de alcohol y drogas",
-        "dashCam": "Grabación con cámara de tablero en los vehículos",
-        "safetyRules": "Límites de velocidad, reporte de incidentes y prohibición de uso del teléfono al conducir",
+        "dashCam": "Cámara de tablero dual",
+        "safetyRules": "Límites de velocidad (105 km/h), reporte de incidentes y prohibición de uso del teléfono al conducir",
         "seals": "Sellos de remolque y requisitos de inspección transfronteriza",
         "laws": "Soy responsable de cumplir con las leyes de transporte de Canadá y EE. UU."
       },
@@ -98,7 +98,7 @@
 
     "policiesModal": {
       "title": "Políticas y aviso de uso de datos",
-      "sub-title": "Como parte de tu solicitud para convertirte en conductor en [Nombre de la empresa], recopilamos y utilizamos cierta información personal para confirmar tus calificaciones y cumplir con los requisitos legales y de seguridad.",
+      "sub-title": "Como parte de tu solicitud para convertirte en conductor en una de nuestras muchas empresas, recopilamos y utilizamos cierta información personal para confirmar tus calificaciones y cumplir con los requisitos legales y de seguridad.",
       "section": {
         "whatInfo": "Qué información recopilamos",
         "whatInfoItems": {
@@ -116,7 +116,7 @@
         },
         "whoInfo": "Quién tiene acceso a esta información",
         "whoInfoItems": {
-          "itemOne": "Equipos de Recursos Humanos y Cumplimiento de [Nombre de la empresa]",
+          "itemOne": "Equipos de Recursos Humanos y Cumplimiento de la empresa",
           "itemTwo": "Autoridades reguladoras (p. ej., Transport Canada; FMCSA si es transfronterizo)",
           "itemThree": "Terceros autorizados (p. ej., proveedores de verificación de antecedentes, aseguradoras)"
         },
@@ -221,7 +221,7 @@
           "sinPhotoDesc": "Haz clic para capturar o seleccionar una imagen",
           "dob": "Fecha de nacimiento",
           "canProvideProof": "¿Puedes proporcionar prueba de edad?",
-          "phoneHome": "Teléfono (casa)",
+          "phoneHome": "Teléfono (casa) (Opcional)",
           "email": "Correo electrónico",
           "phoneCell": "Teléfono (celular)",
           "emergencyContactName": "Nombre de contacto de emergencia",
@@ -274,6 +274,7 @@
           "from": "Desde (fecha)",
           "to": "Hasta (fecha)",
           "salary": "Salario",
+          "salaryPlaceholder": "$0.50/milla o $25/hr",
           "reasonForLeaving": "Motivo de salida...",
           "subjectToFMCSR": "¿Estuviste sujeto a las FMCSR (Federal Motor Carrier Safety Regulations)?",
           "safetySensitiveFunction": "¿Tu puesto estaba designado como función sensible a la seguridad en algún modo regulado por el DOT sujeto a los requisitos de pruebas de alcohol y drogas de 49 CFR parte 40?"
@@ -368,6 +369,11 @@
           "testedPositive": "¿Alguna vez diste positivo, o te negaste a realizar, alguna prueba de alcohol o drogas previa al empleo administrada por un empleador para el que postulaste, pero no obtuviste, trabajo de transporte sensible a la seguridad cubierto por las normas de pruebas de las agencias del DOT durante los últimos dos años?",
           "completedDOT": "Si respondiste SÍ, ¿puedes proporcionar/obtener prueba de que completaste con éxito los requisitos de reincorporación del DOT?",
           "hasInsurance": "¿Tienes tu propia cobertura de beneficios por accidentes?",
+          "accidentalInsurancePopup": {
+            "title": "Registro de Seguro de la Empresa",
+            "message": "Para su seguridad y cumplimiento, SSP Truck Line registrará a cada conductor bajo el plan de Seguro de Beneficios por Accidentes de la empresa. Esto garantiza que esté completamente cubierto mientras trabaja, independientemente de si ya tiene su propio seguro personal de beneficios por accidentes. Su cobertura personal, si la tiene, permanece sin afectar, pero el registro de la empresa es obligatorio para proporcionar protección consistente para todos los conductores.",
+            "ok": "OK"
+          },
           "fastNumber": "Número de tarjeta FAST",
           "fastExpiry": "Fecha de vencimiento",
           "fastFront": "Foto frontal",

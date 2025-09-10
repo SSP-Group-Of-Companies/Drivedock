@@ -10,6 +10,7 @@ import { IPhoto } from "@/types/shared.types";
 import { IPoliciesConsents } from "@/types/policiesConsents.types";
 import { parseJsonBody } from "@/lib/utils/reqParser";
 import { advanceProgress, buildTrackerContext, hasReachedStep, nextResumeExpiry, onboardingExpired } from "@/lib/utils/onboardingUtils";
+import { getUserLocation, extractIPFromRequest, formatLocationForDisplay } from "@/lib/utils/geolocationUtils";
 import { S3_SUBMISSIONS_FOLDER, S3_TEMP_FOLDER } from "@/constants/aws";
 import { ES3Folder } from "@/types/aws.types";
 
@@ -62,7 +63,32 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     onboardingDoc.forms.policiesConsents = updatedDoc.id;
-    onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.POLICIES_CONSENTS);
+    
+    // Capture user location for completion tracking
+    let completionLocation = null;
+    try {
+      const userIP = extractIPFromRequest(req);
+      const locationData = await getUserLocation(userIP);
+      
+      if (!('error' in locationData)) {
+        completionLocation = {
+          country: locationData.country,
+          region: locationData.region,
+          city: locationData.city,
+          timezone: locationData.timezone,
+          ip: locationData.ip
+        };
+        
+        console.log(`Location captured for completion: ${formatLocationForDisplay(locationData)}`);
+      } else {
+        console.warn('Failed to capture location:', locationData.message);
+      }
+    } catch (error) {
+      console.error('Error capturing location:', error);
+      // Continue without location data - don't fail the completion
+    }
+    
+    onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.POLICIES_CONSENTS, completionLocation || undefined);
 
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();
     await onboardingDoc.save();

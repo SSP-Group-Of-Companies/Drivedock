@@ -317,7 +317,7 @@ export default function AdminEmploymentQuestionsSection({
                               borderColor: "var(--color-outline)",
                               color: "var(--color-on-surface)",
                             }}
-                            placeholder="e.g., $25/hour, $50,000/year"
+                            placeholder="$0.50/mile or $25/hr"
                           />
                         </div>
                       ) : (
@@ -502,7 +502,7 @@ export default function AdminEmploymentQuestionsSection({
                       borderColor: "var(--color-outline)",
                       color: "var(--color-on-surface)",
                     }}
-                    placeholder="e.g., $25/hour, $50,000/year"
+                    placeholder="$0.50/mile or $25/hr"
                   />
                 </div>
               ) : (
