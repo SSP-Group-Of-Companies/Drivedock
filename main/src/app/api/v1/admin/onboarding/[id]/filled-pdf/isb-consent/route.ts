@@ -13,14 +13,14 @@ import ApplicationForm from "@/mongoose/models/ApplicationForm";
 import PoliciesConsents from "@/mongoose/models/PoliciesConsents";
 
 import { getCompanyById } from "@/constants/companies";
-import { ESafetyAdminId, getSafetyAdminById } from "@/constants/safetyAdmins";
+import { ESafetyAdminId } from "@/constants/safetyAdmins";
 
 import { EIsbConsentFillableFormFields as F } from "@/lib/pdf/isb-consent/mappers/isb-consent.types";
 import { buildIsbConsentPayload, applyIsbConsentPayloadToForm } from "@/lib/pdf/isb-consent/mappers/isb-consent.mapper";
 
 import { drawPdfImage } from "@/lib/pdf/utils/drawPdfImage";
 import { loadImageBytesFromPhoto } from "@/lib/utils/s3Upload";
-import { resolveFileUrl } from "@/lib/utils/resolveFileUrl.server";
+import { getSafetyAdminServerById } from "@/lib/assets/safetyAdmins/safetyAdmins.server";
 
 /* ------------------------------ helpers ------------------------------ */
 
@@ -51,7 +51,7 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     if (!safetyAdminId) return errorResponse(400, "safetyAdminId is required");
     if (!Object.values(ESafetyAdminId).includes(safetyAdminId)) return errorResponse(400, "Invalid safetyAdminId");
 
-    const safetyAdmin = getSafetyAdminById(safetyAdminId);
+    const safetyAdmin = getSafetyAdminServerById(safetyAdminId);
     if (!safetyAdmin) return errorResponse(400, "Safety admin not found");
 
     // Onboarding
@@ -175,8 +175,7 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
 
     // Witness signature (Consent page, Section D)
     try {
-      const adminAbsPath = resolveFileUrl(safetyAdmin.signature);
-      const adminBytes = new Uint8Array(await fs.readFile(adminAbsPath));
+      const adminBytes = new Uint8Array(await fs.readFile(safetyAdmin.signatureAbsPath));
       tasks.push(
         drawPdfImage({
           pdfDoc,
