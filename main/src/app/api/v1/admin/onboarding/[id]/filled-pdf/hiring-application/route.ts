@@ -24,7 +24,7 @@ import { EDriverApplicationFillableFormFields as F } from "@/lib/pdf/hiring-appl
 
 import { ESafetyAdminId } from "@/constants/safetyAdmins";
 import { ECompanyId } from "@/constants/companies";
-import { getSafetyAdminServerById } from "@/lib/assets/safetyAdmins/safetyAdmins.server";
+import { getSafetyAdminServerById } from "@/lib/assets/safetyAdminss/safetyAdmins.server";
 
 // ----------------------------------------------------------------------
 
