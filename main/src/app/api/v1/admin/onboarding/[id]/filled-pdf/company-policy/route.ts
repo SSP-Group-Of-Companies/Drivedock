@@ -103,7 +103,7 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
 
     let witnessSigBytes: Uint8Array;
     try {
-      const adminAbsPath = path.join(process.cwd(), "src", safetyAdmin.signature);
+      const adminAbsPath = path.join(process.cwd(), safetyAdmin.signature);
       const buf = await fs.readFile(adminAbsPath);
       witnessSigBytes = new Uint8Array(buf);
     } catch (e) {

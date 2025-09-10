@@ -174,7 +174,7 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
 
     // Witness signature (Consent page, Section D)
     try {
-      const adminAbsPath = path.join(process.cwd(), "src", safetyAdmin.signature);
+      const adminAbsPath = path.join(process.cwd(), safetyAdmin.signature);
       const adminBytes = new Uint8Array(await fs.readFile(adminAbsPath));
       tasks.push(
         drawPdfImage({

@@ -10,29 +10,29 @@ export enum ESafetyAdminId {
 export interface SafetyAdmin {
   id: ESafetyAdminId;
   name: string;
-  signature: string; // path to signature image in lib/assets/safetyAdmins/signatures
+  signature: string; // path to signature image in src/lib/assets/safetyAdmins/signatures
 }
 
 export const SAFETY_ADMINS: SafetyAdmin[] = [
   {
     id: ESafetyAdminId.AMAN_JOSUN,
     name: "Aman Josun",
-    signature: "lib/assets/safetyAdmins/signatures/signature-aman-josun.png",
+    signature: "src/lib/assets/safetyAdmins/signatures/signature-aman-josun.png",
   },
   {
     id: ESafetyAdminId.BALKARAN_DHILLON,
     name: "Balkaran Dhillon",
-    signature: "lib/assets/safetyAdmins/signatures/signature-balkaran-dhillon.png",
+    signature: "src/lib/assets/safetyAdmins/signatures/signature-balkaran-dhillon.png",
   },
   {
     id: ESafetyAdminId.GURINDER_MANN,
     name: "Gurinder Mann",
-    signature: "lib/assets/safetyAdmins/signatures/signature-gurinder-mann.png",
+    signature: "src/lib/assets/safetyAdmins/signatures/signature-gurinder-mann.png",
   },
   {
     id: ESafetyAdminId.KIRAN_SANDHU,
     name: "kiran Sandhu",
-    signature: "lib/assets/safetyAdmins/signatures/signature-kiran-sandhu.png",
+    signature: "src/lib/assets/safetyAdmins/signatures/signature-kiran-sandhu.png",
   },
 ];
 
