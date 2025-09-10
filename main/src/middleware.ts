@@ -45,7 +45,7 @@ export async function middleware(req: NextRequest) {
 
     if (!token) {
       const base = await resolveBaseUrl();
-      const callbackUrl = encodeURIComponent(base);
+      const callbackUrl = encodeURIComponent(`${base}/dashboard/home`);
       return NextResponse.redirect(`${NEXT_PUBLIC_PORTAL_BASE_URL}/login?callbackUrl=${callbackUrl}`);
     }
   }
