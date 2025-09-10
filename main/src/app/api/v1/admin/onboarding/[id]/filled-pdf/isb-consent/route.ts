@@ -20,6 +20,7 @@ import { buildIsbConsentPayload, applyIsbConsentPayloadToForm } from "@/lib/pdf/
 
 import { drawPdfImage } from "@/lib/pdf/utils/drawPdfImage";
 import { loadImageBytesFromPhoto } from "@/lib/utils/s3Upload";
+import { resolveFileUrl } from "@/lib/utils/resolveFileUrl.server";
 
 /* ------------------------------ helpers ------------------------------ */
 
@@ -174,7 +175,7 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
 
     // Witness signature (Consent page, Section D)
     try {
-      const adminAbsPath = path.join(process.cwd(), safetyAdmin.signature);
+      const adminAbsPath = resolveFileUrl(safetyAdmin.signature);
       const adminBytes = new Uint8Array(await fs.readFile(adminAbsPath));
       tasks.push(
         drawPdfImage({

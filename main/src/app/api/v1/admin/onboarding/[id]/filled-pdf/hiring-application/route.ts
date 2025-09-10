@@ -3,7 +3,6 @@
 // ======================================================================
 
 import { NextRequest, NextResponse } from "next/server";
-import path from "node:path";
 import fs from "node:fs/promises";
 import { isValidObjectId } from "mongoose";
 import { PDFDocument } from "pdf-lib";
@@ -25,6 +24,7 @@ import { EDriverApplicationFillableFormFields as F } from "@/lib/pdf/hiring-appl
 
 import { ESafetyAdminId, getSafetyAdminById } from "@/constants/safetyAdmins";
 import { ECompanyId } from "@/constants/companies";
+import { resolveFileUrl } from "@/lib/utils/resolveFileUrl.server";
 
 // ----------------------------------------------------------------------
 
@@ -91,7 +91,7 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
 
     let adminSignatureBytes: Uint8Array | undefined;
     try {
-      const adminSigAbsPath = path.join(process.cwd(), safetyAdmin.signature);
+      const adminSigAbsPath = resolveFileUrl(safetyAdmin.signature);
       const buf = await fs.readFile(adminSigAbsPath);
       adminSignatureBytes = new Uint8Array(buf);
     } catch (e) {
