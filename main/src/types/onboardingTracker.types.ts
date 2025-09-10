@@ -37,6 +37,13 @@ export interface IOnboardingStatus {
   currentStep: EStepPath;
   completed: boolean;
   completionDate?: Date;
+  completionLocation?: {
+    country?: string;
+    region?: string; // State/Province
+    city?: string;
+    timezone?: string;
+    ip?: string;
+  };
 }
 
 /**

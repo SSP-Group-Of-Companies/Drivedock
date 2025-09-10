@@ -3,14 +3,16 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useContract } from "@/hooks/dashboard/contract/useContract";
-import { useFlatbedTraining, useUpdateFlatbedTraining } from "@/hooks/dashboard/contract/useFlatbedTraining";
+import {
+  useFlatbedTraining,
+  useUpdateFlatbedTraining,
+} from "@/hooks/dashboard/contract/useFlatbedTraining";
 import { useDashboardPageLoading } from "@/hooks/useDashboardPageLoading";
 import { useDashboardLoading } from "@/store/useDashboardLoading";
 import DashboardFormWizard from "../../components/DashboardFormWizard";
 import { useEditMode } from "../../components/EditModeContext";
 import { FlatbedTrainingContent, UpdateSubmitBar } from "./components";
 import StepNotCompletedMessage from "../../components/StepNotCompletedMessage";
-
 
 export default function FlatbedTrainingClient({
   trackerId,
@@ -25,13 +27,13 @@ export default function FlatbedTrainingClient({
   const { isEditMode } = useEditMode();
 
   // React Query hooks
-  const { 
-    data: flatbedData, 
-    isLoading: isFlatbedLoading, 
+  const {
+    data: flatbedData,
+    isLoading: isFlatbedLoading,
     error,
-    isError 
+    isError,
   } = useFlatbedTraining(trackerId);
-  
+
   const updateMutation = useUpdateFlatbedTraining(trackerId);
 
   // Staged changes (page-level) - like other contract pages
@@ -40,7 +42,6 @@ export default function FlatbedTrainingClient({
   const hasUnsavedChanges = Object.keys(staged).length > 0;
 
   const clearStaged = () => setStaged({});
-
 
   // Handle rendering after contract data is loaded
   useEffect(() => {
@@ -79,7 +80,11 @@ export default function FlatbedTrainingClient({
   };
 
   // Handle 401/403 errors (step not reached)
-  if (isError && error && (error.message.includes("401") || error.message.includes("403"))) {
+  if (
+    isError &&
+    error &&
+    (error.message.includes("401") || error.message.includes("403"))
+  ) {
     return (
       <StepNotCompletedMessage
         stepName="Flatbed Training"
@@ -109,7 +114,10 @@ export default function FlatbedTrainingClient({
               borderWidth: "2px",
             }}
           />
-          <p className="text-sm" style={{ color: "var(--color-on-surface-variant)" }}>
+          <p
+            className="text-sm"
+            style={{ color: "var(--color-on-surface-variant)" }}
+          >
             Loading flatbed training...
           </p>
         </div>
@@ -128,11 +136,11 @@ export default function FlatbedTrainingClient({
       <DashboardFormWizard contractContext={contractData} />
 
       {/* Submit bar */}
-      <UpdateSubmitBar 
-        dirty={hasUnsavedChanges} 
-        busy={updateMutation.isPending} 
-        onSubmit={handleSave} 
-        onDiscard={handleDiscard} 
+      <UpdateSubmitBar
+        dirty={hasUnsavedChanges}
+        busy={updateMutation.isPending}
+        onSubmit={handleSave}
+        onDiscard={handleDiscard}
       />
 
       {/* Main Content */}

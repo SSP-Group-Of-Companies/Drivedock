@@ -119,6 +119,7 @@ export default function ContractSummaryBar({ trackerId }: Props) {
 
   const driverName = data?.itemSummary?.driverName || "—";
   const driverEmail = data?.itemSummary?.driverEmail || "—";
+  const truckUnitNumber = data?.itemSummary?.truckUnitNumber;
   const step = data?.status?.currentStep;
   const inProgress = !data?.status?.completed;
 
@@ -211,6 +212,14 @@ export default function ContractSummaryBar({ trackerId }: Props) {
           />
         </div>
         <div className="min-w-0">
+          {truckUnitNumber && (
+            <div
+              className="truncate text-sm font-medium opacity-50"
+              style={{ color: "var(--color-on-surface)" }}
+            >
+              TN#: {truckUnitNumber}
+            </div>
+          )}
           <div
             className="truncate text-base font-semibold"
             style={{ color: "var(--color-on-surface)" }}
@@ -241,7 +250,7 @@ export default function ContractSummaryBar({ trackerId }: Props) {
             }}
             aria-hidden
           />
-          {inProgress && (
+          {inProgress ? (
             <span
               className="min-w-0 truncate text-xs font-medium"
               style={{ color: "var(--color-on-surface)" }}
@@ -249,7 +258,7 @@ export default function ContractSummaryBar({ trackerId }: Props) {
             >
               {stepLabel(step)}
             </span>
-          )}
+          ) : null}
 
           {/* Percentage circle */}
           <div className="relative w-10 h-10 flex-shrink-0">
@@ -644,6 +653,14 @@ export default function ContractSummaryBar({ trackerId }: Props) {
           />
         </div>
         <div className="min-w-0 flex-1">
+          {truckUnitNumber && (
+            <div
+              className="truncate text-sm font-medium opacity-50"
+              style={{ color: "var(--color-on-surface)" }}
+            >
+              TN#: {truckUnitNumber}
+            </div>
+          )}
           <div
             className="truncate text-lg font-semibold"
             style={{ color: "var(--color-on-surface)" }}
@@ -677,7 +694,7 @@ export default function ContractSummaryBar({ trackerId }: Props) {
           >
             {inProgress ? "In Progress" : "Completed"}
           </span>
-          {inProgress && (
+          {inProgress ? (
             <span
               className="text-xs truncate max-w-[150px]"
               style={{ color: "var(--color-on-surface-variant)" }}
@@ -685,7 +702,7 @@ export default function ContractSummaryBar({ trackerId }: Props) {
             >
               {stepLabel(step)}
             </span>
-          )}
+          ) : null}
           <div className="ml-auto">
             <div className="relative h-3.5 w-5 overflow-hidden ring-1 ring-[var(--color-outline-variant)] opacity-[.5]">
               <Image

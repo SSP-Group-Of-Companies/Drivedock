@@ -163,10 +163,10 @@ export default function DataGrid({
         if (!action) {
           throw new Error("Termination type is required");
         }
-        await terminate.mutateAsync({ 
-          id: pending.id, 
+        await terminate.mutateAsync({
+          id: pending.id,
           terminationType: action,
-          signal: undefined
+          signal: undefined,
         });
       } else {
         // For restore, we don't need an action parameter
@@ -386,24 +386,24 @@ export default function DataGrid({
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3, delay: 0.1 }}
         >
-                     <colgroup>
-             {mode === "terminated" ? (
-               <>
-                 <col className="w-[30%] sm:w-[20%]" />
-                 <col className="w-[40%] sm:w-[30%]" />
-                 <col className="hidden sm:table-column sm:w-[20%]" />
-                 <col className="w-[15%] sm:w-[15%]" />
-                 <col className="w-[15%] sm:w-[15%]" />
-               </>
-             ) : (
-               <>
-                 <col className="w-[30%] sm:w-[30%]" />
-                 <col className="w-[40%] sm:w-[40%]" />
-                 <col className="hidden sm:table-column sm:w-[15%]" />
-                 <col className="w-[30%] sm:w-[15%]" />
-               </>
-             )}
-           </colgroup>
+          <colgroup>
+            {mode === "terminated" ? (
+              <>
+                <col className="w-[30%] sm:w-[20%]" />
+                <col className="w-[40%] sm:w-[30%]" />
+                <col className="hidden sm:table-column sm:w-[20%]" />
+                <col className="w-[15%] sm:w-[15%]" />
+                <col className="w-[15%] sm:w-[15%]" />
+              </>
+            ) : (
+              <>
+                <col className="w-[30%] sm:w-[30%]" />
+                <col className="w-[40%] sm:w-[40%]" />
+                <col className="hidden sm:table-column sm:w-[15%]" />
+                <col className="w-[30%] sm:w-[15%]" />
+              </>
+            )}
+          </colgroup>
 
           <thead
             className="sticky top-0 z-30"
@@ -425,26 +425,26 @@ export default function DataGrid({
               >
                 Status / Progress
               </th>
-                             <th
-                 className="hidden px-3 py-3 text-left font-medium sm:table-cell"
-                 style={{ borderBottom: "1px solid var(--color-outline)" }}
-               >
-                 Company
-               </th>
-               {mode === "terminated" && (
-                 <th
-                   className="px-2 py-3 text-center font-medium sm:px-3"
-                   style={{ borderBottom: "1px solid var(--color-outline)" }}
-                 >
-                   <span className="hidden sm:inline">Termination Type</span>
-                 </th>
-               )}
-               <th
-                 className="px-2 py-3 text-center font-medium sm:px-3"
-                 style={{ borderBottom: "1px solid var(--color-outline)" }}
-               >
-                 Actions
-               </th>
+              <th
+                className="hidden px-3 py-3 text-left font-medium sm:table-cell"
+                style={{ borderBottom: "1px solid var(--color-outline)" }}
+              >
+                Company
+              </th>
+              {mode === "terminated" && (
+                <th
+                  className="px-2 py-3 text-center font-medium sm:px-3"
+                  style={{ borderBottom: "1px solid var(--color-outline)" }}
+                >
+                  <span className="hidden sm:inline">Termination Type</span>
+                </th>
+              )}
+              <th
+                className="px-2 py-3 text-center font-medium sm:px-3"
+                style={{ borderBottom: "1px solid var(--color-outline)" }}
+              >
+                Actions
+              </th>
             </tr>
           </thead>
 
@@ -537,6 +537,14 @@ export default function DataGrid({
                               />
                             </div>
                             <div className="min-w-0 flex-1">
+                              {it.itemSummary?.truckUnitNumber && (
+                                <div
+                                  className="truncate text-sm font-medium opacity-50"
+                                  style={{ color: "var(--color-on-surface)" }}
+                                >
+                                  TN#: {it.itemSummary.truckUnitNumber}
+                                </div>
+                              )}
                               <div
                                 className="truncate text-sm font-medium sm:text-base"
                                 style={{ color: "var(--color-on-surface)" }}
@@ -676,7 +684,7 @@ export default function DataGrid({
                                 >
                                   {inProgress ? "In Progress" : "Completed"}
                                 </span>
-                                {inProgress && (
+                                {inProgress ? (
                                   <span
                                     className="text-xs"
                                     style={{
@@ -685,7 +693,7 @@ export default function DataGrid({
                                   >
                                     {step}
                                   </span>
-                                )}
+                                ) : null}
                                 <div className="ml-auto flex items-center">
                                   <CountryFlag
                                     companyId={it.companyId}
@@ -713,47 +721,49 @@ export default function DataGrid({
                           </div>
                         </td>
 
-                                                 {/* Company (desktop only) */}
-                         <td
-                           className="hidden px-3 py-4 sm:table-cell align-middle"
-                           style={{
-                             borderBottom: "1px solid var(--color-outline)",
-                           }}
-                         >
-                           <CompanyBadge companyId={it.companyId} size="xl" />
-                         </td>
+                        {/* Company (desktop only) */}
+                        <td
+                          className="hidden px-3 py-4 sm:table-cell align-middle"
+                          style={{
+                            borderBottom: "1px solid var(--color-outline)",
+                          }}
+                        >
+                          <CompanyBadge companyId={it.companyId} size="xl" />
+                        </td>
 
-                         {/* Termination Type (only shown on terminated page) */}
-                         {mode === "terminated" && (
-                           <td
-                             className="px-2 py-4 text-center sm:px-3 align-middle"
-                             style={{
-                               borderBottom: "1px solid var(--color-outline)",
-                             }}
-                           >
-                             {it.terminationType === "resigned" ? (
-                               <span
-                                 className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium"
-                                 style={{
-                                   backgroundColor: "var(--color-warning-container)",
-                                   color: "var(--color-warning-on-container)",
-                                 }}
-                               >
-                                 Resigned
-                               </span>
-                             ) : (
-                               <span
-                                 className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium"
-                                 style={{
-                                   backgroundColor: "var(--color-error-container)",
-                                   color: "var(--color-error-on-container)",
-                                 }}
-                               >
-                                 Terminated
-                               </span>
-                             )}
-                           </td>
-                         )}
+                        {/* Termination Type (only shown on terminated page) */}
+                        {mode === "terminated" && (
+                          <td
+                            className="px-2 py-4 text-center sm:px-3 align-middle"
+                            style={{
+                              borderBottom: "1px solid var(--color-outline)",
+                            }}
+                          >
+                            {it.terminationType === "resigned" ? (
+                              <span
+                                className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium"
+                                style={{
+                                  backgroundColor:
+                                    "var(--color-warning-container)",
+                                  color: "var(--color-warning-on-container)",
+                                }}
+                              >
+                                Resigned
+                              </span>
+                            ) : (
+                              <span
+                                className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium"
+                                style={{
+                                  backgroundColor:
+                                    "var(--color-error-container)",
+                                  color: "var(--color-error-on-container)",
+                                }}
+                              >
+                                Terminated
+                              </span>
+                            )}
+                          </td>
+                        )}
 
                         {/* Actions */}
                         <td

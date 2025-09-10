@@ -5,6 +5,7 @@ import { EDrugTestStatus } from "@/types/drugTest.types";
 export type DashboardOnboardingItemSummary = {
   driverName: string | null;
   driverEmail: string | null;
+  truckUnitNumber: string | null;
 
   carrierEdgeTraining?: { emailSent: boolean };
   drugTest?: { status?: EDrugTestStatus };

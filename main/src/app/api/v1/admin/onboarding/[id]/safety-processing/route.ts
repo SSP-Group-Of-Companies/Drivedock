@@ -65,6 +65,7 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
     let driverEmail: string | undefined;
     let driverLicenseExpiration: Date | undefined;
     let truckDetails: any | undefined;
+    let truckUnitNumber: string | undefined;
 
     const driverAppRef: any = onboardingDoc.forms?.driverApplication;
 
@@ -88,6 +89,7 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
       // Extract truck details from page 4
       if (doc?.page4?.truckDetails) {
         truckDetails = doc.page4.truckDetails;
+        truckUnitNumber = doc.page4.truckDetails.truckUnitNumber;
       }
     };
 
@@ -136,7 +138,7 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
       terminationType: onboardingDoc.terminationType,
       itemSummary: {
         ...(onboardingContext as any).itemSummary,
-        ...(driverName || driverEmail ? { driverName, driverEmail } : undefined),
+        ...(driverName || driverEmail || truckUnitNumber ? { driverName, driverEmail, truckUnitNumber } : undefined),
       },
     };
 
@@ -455,6 +457,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     let driverEmail: string | undefined;
     let driverLicenseExpiration: Date | undefined;
     let truckDetails: any | undefined;
+    let truckUnitNumber: string | undefined;
 
     const driverAppRef: any = onboardingDoc.forms?.driverApplication;
 
@@ -477,6 +480,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       // Extract truck details from page 4
       if (doc?.page4?.truckDetails) {
         truckDetails = doc.page4.truckDetails;
+        truckUnitNumber = doc.page4.truckDetails.truckUnitNumber;
       }
     };
 
@@ -514,7 +518,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       ...baseContext,
       itemSummary: {
         ...(baseContext as any).itemSummary,
-        ...(driverName || driverEmail ? { driverName, driverEmail } : undefined),
+        ...(driverName || driverEmail || truckUnitNumber ? { driverName, driverEmail, truckUnitNumber } : undefined),
       },
     };
 

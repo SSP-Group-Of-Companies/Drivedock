@@ -80,9 +80,10 @@ export default function CompanyCard({
       <h3 className="font-bold text-lg text-gray-900 mb-1">{company.name}</h3>
       <p className="text-gray-600 text-sm mb-2">{t(`company.descriptions.${company.id}`)}</p>
 
-      {/* Location */}
-      <div className="flex items-center text-xs text-gray-500 mb-4">
-        <span>{company.location}</span>
+      {/* Address */}
+      <div className="text-xs text-gray-500 mb-4">
+        <div className="font-semibold text-gray-600 mb-1">Address:</div>
+        <div className="text-gray-500">{company.location}</div>
       </div>
 
       {/* Apply button */}

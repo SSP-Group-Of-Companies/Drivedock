@@ -7,10 +7,21 @@ export type ContractContext = {
   applicationType?: string;
   needsFlatbedTraining?: boolean;
   resumeExpiresAt?: string;
-  status: { currentStep?: EStepPath; completed?: boolean };
+  status: { 
+    currentStep?: EStepPath; 
+    completed?: boolean; 
+    completionDate?: string;
+    completionLocation?: {
+      country?: string;
+      region?: string;
+      city?: string;
+      timezone?: string;
+      ip?: string;
+    };
+  };
   terminated?: boolean;
   terminationType?: string;
-  itemSummary?: { driverName?: string; driverEmail?: string };
+  itemSummary?: { driverName?: string; driverEmail?: string; truckUnitNumber?: string };
   forms?: {
     driveTest?: { completed?: boolean };
     carriersEdgeTraining?: { emailSent?: boolean };

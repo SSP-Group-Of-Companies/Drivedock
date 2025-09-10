@@ -383,7 +383,7 @@ export default function EmploymentCard({ index }: Props) {
                 {...register(field("salary"))}
                 data-field={field("salary")}
                 type="text"
-                placeholder="$50,000/year"
+                placeholder={t("form.step2.page2.fields.salaryPlaceholder")}
                 className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
               />
               {getError("salary") && (

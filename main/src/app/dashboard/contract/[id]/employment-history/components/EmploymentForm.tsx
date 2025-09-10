@@ -1064,7 +1064,7 @@ export default function EmploymentForm({
                               : "var(--color-outline)",
                           color: "var(--color-on-surface)",
                         }}
-                        placeholder="Enter salary"
+                        placeholder="$0.50/mile or $25/hr"
                       />
                       {getFieldErrors(index, "salary").map(
                         (error, errorIndex) => (

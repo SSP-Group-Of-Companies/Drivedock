@@ -13,6 +13,7 @@ import DriveTestCard from "./components/DriveTestCard";
 import NotesCard from "../components/NotesCard";
 import UpdateSubmitBar from "./components/UpdateSubmitBar";
 import DashboardFormWizard from "../components/DashboardFormWizard";
+import CompletionSummary from "../components/CompletionSummary";
 import { computeSafetyGates } from "@/lib/dashboard/utils/stepGating";
 
 import type { SafetyPatchBody, CarriersEdgeBlock, DrugTestBlock } from "@/lib/dashboard/api/safetyProcessing";
@@ -174,6 +175,9 @@ export default function SafetyProcessingClient({ trackerId }: { trackerId: strin
     >
       {/* Form Wizard Progress */}
       <DashboardFormWizard contractContext={ctx} />
+
+      {/* Completion Summary */}
+      <CompletionSummary contractContext={ctx} />
 
       {/* Submit bar */}
       <UpdateSubmitBar dirty={isDirty} busy={mutate.isPending} onSubmit={handleSubmit} onDiscard={clearStaged} />

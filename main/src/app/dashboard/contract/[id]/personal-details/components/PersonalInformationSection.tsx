@@ -363,7 +363,7 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <label className="text-sm font-medium" style={{ color: "var(--color-on-surface-variant)" }}>
-              Phone (Home)
+              Phone (Home) (Optional)
             </label>
             {isEditMode ? (
               <input
