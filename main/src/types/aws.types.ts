@@ -32,4 +32,5 @@ export interface IPresignResponse {
   url: string;
   publicUrl: string;
   expiresIn: number;
+  mimetype: EFileMimeType;
 }

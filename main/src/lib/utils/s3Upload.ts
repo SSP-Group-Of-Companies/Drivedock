@@ -133,8 +133,8 @@ export async function uploadToS3Presigned({
   allowedMimeTypes = ["image/jpeg", "image/png", "image/jpg"],
   maxSizeMB = 10,
 }: UploadToS3Options): Promise<UploadResult> {
-  const mimetype = file.type.toLowerCase();
-  if (!allowedMimeTypes.includes(mimetype)) {
+  const clientMime = file.type.toLowerCase();
+  if (!allowedMimeTypes.includes(clientMime)) {
     throw new Error(`Invalid file type. Allowed: ${allowedMimeTypes.join(", ")}`);
   }
   if (file.size > maxSizeMB * 1024 * 1024) {
@@ -146,7 +146,7 @@ export async function uploadToS3Presigned({
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       folder,
-      mimetype,
+      mimetype: clientMime, // request with client-reported MIME
       trackerId,
       filesize: file.size,
       filename: file.name,
@@ -160,9 +160,10 @@ export async function uploadToS3Presigned({
 
   const { data }: { data: IPresignResponse } = await res.json();
 
+  // PUT must use the exact Content-Type used in signature
   await fetch(data.url, {
     method: "PUT",
-    headers: { "Content-Type": mimetype },
+    headers: { "Content-Type": data.mimetype }, // use server-canonical
     body: file,
   });
 
@@ -170,7 +171,7 @@ export async function uploadToS3Presigned({
     s3Key: data.key,
     url: data.publicUrl,
     putUrl: data.url,
-    mimeType: mimetype,
+    mimeType: data.mimetype, // ← trust server-canonical MIME
     sizeBytes: file.size,
     originalName: file.name,
   };

@@ -11,7 +11,7 @@ import ApplicationForm from "@/mongoose/models/ApplicationForm";
 
 import { buildTrackerContext, advanceProgress, nextResumeExpiry, onboardingExpired, hasCompletedStep } from "@/lib/utils/onboardingUtils";
 
-import { deleteS3Objects, finalizePhoto, finalizeVector, buildFinalDest } from "@/lib/utils/s3Upload";
+import { deleteS3Objects, finalizeAsset, finalizeAssetVector, buildFinalDest } from "@/lib/utils/s3Upload";
 import { parseJsonBody } from "@/lib/utils/reqParser";
 
 import { COMPANIES } from "@/constants/companies";
@@ -19,7 +19,7 @@ import { S3_TEMP_FOLDER } from "@/constants/aws";
 
 import { ES3Folder } from "@/types/aws.types";
 import { EStepPath } from "@/types/onboardingTracker.types";
-import { ECountryCode, IPhoto } from "@/types/shared.types";
+import { ECountryCode, IFileAsset } from "@/types/shared.types";
 import type { ILicenseEntry, IApplicationFormDoc, IApplicationFormPage4 } from "@/types/applicationForm.types";
 
 /**
@@ -38,18 +38,18 @@ type PatchBody = {
   hstNumber?: string;
   businessName?: string;
 
-  incorporatePhotos?: IPhoto[];
-  hstPhotos?: IPhoto[];
-  bankingInfoPhotos?: IPhoto[];
+  incorporatePhotos?: IFileAsset[];
+  hstPhotos?: IFileAsset[];
+  bankingInfoPhotos?: IFileAsset[];
 
-  healthCardPhotos?: IPhoto[];
-  medicalCertificationPhotos?: IPhoto[];
-  passportPhotos?: IPhoto[];
-  prPermitCitizenshipPhotos?: IPhoto[];
-  usVisaPhotos?: IPhoto[];
+  healthCardPhotos?: IFileAsset[];
+  medicalCertificationPhotos?: IFileAsset[];
+  passportPhotos?: IFileAsset[];
+  prPermitCitizenshipPhotos?: IFileAsset[];
+  usVisaPhotos?: IFileAsset[];
 
   fastCard?: IApplicationFormPage4["fastCard"];
-  
+
   // Truck Details (Admin-only, all optional)
   truckDetails?: IApplicationFormPage4["truckDetails"];
 };
@@ -59,10 +59,10 @@ const hasKey = <T extends object, K extends PropertyKey>(o: T, k: K): k is K => 
 
 const isNonEmptyString = (v?: string | null) => !!v && v.trim().length > 0;
 
-const dedupeByS3Key = (arr?: IPhoto[]) => {
-  if (!Array.isArray(arr)) return [] as IPhoto[];
+const dedupeByS3Key = (arr?: IFileAsset[]) => {
+  if (!Array.isArray(arr)) return [] as IFileAsset[];
   const seen = new Set<string>();
-  const out: IPhoto[] = [];
+  const out: IFileAsset[] = [];
   for (const p of arr) {
     const k = p?.s3Key?.trim();
     if (k && !seen.has(k)) {
@@ -72,7 +72,7 @@ const dedupeByS3Key = (arr?: IPhoto[]) => {
   }
   return out;
 };
-const alen = (arr?: IPhoto[]) => (Array.isArray(arr) ? dedupeByS3Key(arr).length : 0);
+const alen = (arr?: IFileAsset[]) => (Array.isArray(arr) ? dedupeByS3Key(arr).length : 0);
 
 function requirePresence(b: PatchBody, key: keyof IApplicationFormPage4, label: string) {
   if (!hasKey(b, key)) throw new AppError(400, `${label} is required for this applicant.`);
@@ -205,16 +205,16 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     if (isUS) {
       const hasPassport = body.passportPhotos && body.passportPhotos.length === 2;
       const hasPRCitizenship = body.prPermitCitizenshipPhotos && body.prPermitCitizenshipPhotos.length >= 1 && body.prPermitCitizenshipPhotos.length <= 2;
-      
+
       if (!hasPassport && !hasPRCitizenship) {
         throw new AppError(400, "US drivers must provide either passport photos (2 photos) or PR/Permit/Citizenship photos (1-2 photos)");
       }
-      
+
       // If passport is provided, validate it has exactly 2 photos
       if (hasPassport) {
         expectCountExact(body, "passportPhotos", 2, "Passport photos");
       }
-      
+
       // If PR/citizenship is provided, validate it has 1-2 photos
       if (hasPRCitizenship) {
         expectCountRange(body, "prPermitCitizenshipPhotos", 1, 2, "PR/Permit/Citizenship photos");
@@ -290,7 +290,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
         ...(hasKey(body, "hstPhotos") ? { hstPhotos: body.hstPhotos ?? [] } : {}),
 
         // Required groups — conditionally present based on country
-        ...(isUS 
+        ...(isUS
           ? {
               // For US drivers: include only what was provided
               ...(body.passportPhotos ? { passportPhotos: body.passportPhotos } : {}),
@@ -300,8 +300,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
               // For Canadian drivers: both are always present
               passportPhotos: body.passportPhotos!,
               prPermitCitizenshipPhotos: body.prPermitCitizenshipPhotos!,
-            }
-        ),
+            }),
         ...(isCanadian
           ? {
               healthCardPhotos: body.healthCardPhotos!,
@@ -316,7 +315,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
         // Optional fast card
         ...(hasKey(body, "fastCard") ? { fastCard: body.fastCard } : {}),
-        
+
         // Optional truck details
         ...(hasKey(body, "truckDetails") ? { truckDetails: body.truckDetails } : {}),
       };
@@ -363,7 +362,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       (curP4.hstPhotos?.length ?? 0) === 0;
 
     const finalizedOnly = (ks: (string | undefined)[]) => ks.filter((k): k is string => !!k && !k.startsWith(`${S3_TEMP_FOLDER}/`));
-    const collect = (arr?: IPhoto[]) => (Array.isArray(arr) ? arr.map((p) => p.s3Key).filter(Boolean) : []);
+    const collect = (arr?: IFileAsset[]) => (Array.isArray(arr) ? arr.map((p) => p.s3Key).filter(Boolean) : []);
 
     if (prevHadBiz && nowBizEmpty) {
       keysToHardDelete.push(...finalizedOnly(collect(prevP4.incorporatePhotos)), ...finalizedOnly(collect(prevP4.bankingInfoPhotos)), ...finalizedOnly(collect(prevP4.hstPhotos)));
@@ -393,28 +392,28 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       p1FinalLicenses = JSON.parse(JSON.stringify(appFormDoc.page1.licenses)) as ILicenseEntry[];
       const dest = buildFinalDest(onboardingDoc.id, ES3Folder.LICENSES);
       for (const lic of p1FinalLicenses) {
-        if (lic.licenseFrontPhoto) lic.licenseFrontPhoto = await finalizePhoto(lic.licenseFrontPhoto, dest);
-        if (lic.licenseBackPhoto) lic.licenseBackPhoto = await finalizePhoto(lic.licenseBackPhoto, dest);
+        if (lic.licenseFrontPhoto) lic.licenseFrontPhoto = await finalizeAsset(lic.licenseFrontPhoto, dest);
+        if (lic.licenseBackPhoto) lic.licenseBackPhoto = await finalizeAsset(lic.licenseBackPhoto, dest);
       }
     }
 
-    // Page 4 (finalize; finalizeVector no-ops existing submissions)
+    // Page 4 (finalize; finalizeAssetVector no-ops existing submissions)
     const p4Final: IApplicationFormPage4 = JSON.parse(JSON.stringify(appFormDoc.page4)) as IApplicationFormPage4;
 
-    p4Final.hstPhotos = (await finalizeVector(p4Final.hstPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.HST_PHOTOS))) as IPhoto[];
-    p4Final.incorporatePhotos = (await finalizeVector(p4Final.incorporatePhotos, buildFinalDest(onboardingDoc.id, ES3Folder.INCORPORATION_PHOTOS))) as IPhoto[];
-    p4Final.bankingInfoPhotos = (await finalizeVector(p4Final.bankingInfoPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.BANKING_INFO_PHOTOS))) as IPhoto[];
-    p4Final.healthCardPhotos = (await finalizeVector(p4Final.healthCardPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.HEALTH_CARD_PHOTOS))) as IPhoto[];
-    p4Final.medicalCertificationPhotos = (await finalizeVector(p4Final.medicalCertificationPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.MEDICAL_CERT_PHOTOS))) as IPhoto[];
-    p4Final.passportPhotos = (await finalizeVector(p4Final.passportPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.PASSPORT_PHOTOS))) as IPhoto[];
-    p4Final.usVisaPhotos = (await finalizeVector(p4Final.usVisaPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.US_VISA_PHOTOS))) as IPhoto[];
-    p4Final.prPermitCitizenshipPhotos = (await finalizeVector(p4Final.prPermitCitizenshipPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.PR_CITIZENSHIP_PHOTOS))) as IPhoto[];
+    p4Final.hstPhotos = (await finalizeAssetVector(p4Final.hstPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.HST_PHOTOS))) as IFileAsset[];
+    p4Final.incorporatePhotos = (await finalizeAssetVector(p4Final.incorporatePhotos, buildFinalDest(onboardingDoc.id, ES3Folder.INCORPORATION_PHOTOS))) as IFileAsset[];
+    p4Final.bankingInfoPhotos = (await finalizeAssetVector(p4Final.bankingInfoPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.BANKING_INFO_PHOTOS))) as IFileAsset[];
+    p4Final.healthCardPhotos = (await finalizeAssetVector(p4Final.healthCardPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.HEALTH_CARD_PHOTOS))) as IFileAsset[];
+    p4Final.medicalCertificationPhotos = (await finalizeAssetVector(p4Final.medicalCertificationPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.MEDICAL_CERT_PHOTOS))) as IFileAsset[];
+    p4Final.passportPhotos = (await finalizeAssetVector(p4Final.passportPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.PASSPORT_PHOTOS))) as IFileAsset[];
+    p4Final.usVisaPhotos = (await finalizeAssetVector(p4Final.usVisaPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.US_VISA_PHOTOS))) as IFileAsset[];
+    p4Final.prPermitCitizenshipPhotos = (await finalizeAssetVector(p4Final.prPermitCitizenshipPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.PR_CITIZENSHIP_PHOTOS))) as IFileAsset[];
 
     if (p4Final.fastCard?.fastCardFrontPhoto) {
-      p4Final.fastCard.fastCardFrontPhoto = await finalizePhoto(p4Final.fastCard.fastCardFrontPhoto, buildFinalDest(onboardingDoc.id, ES3Folder.FAST_CARD_PHOTOS));
+      p4Final.fastCard.fastCardFrontPhoto = await finalizeAsset(p4Final.fastCard.fastCardFrontPhoto, buildFinalDest(onboardingDoc.id, ES3Folder.FAST_CARD_PHOTOS));
     }
     if (p4Final.fastCard?.fastCardBackPhoto) {
-      p4Final.fastCard.fastCardBackPhoto = await finalizePhoto(p4Final.fastCard.fastCardBackPhoto, buildFinalDest(onboardingDoc.id, ES3Folder.FAST_CARD_PHOTOS));
+      p4Final.fastCard.fastCardBackPhoto = await finalizeAsset(p4Final.fastCard.fastCardBackPhoto, buildFinalDest(onboardingDoc.id, ES3Folder.FAST_CARD_PHOTOS));
     }
 
     /* -------------------- Phase 2.5: delete removed finalized keys -------------------- */
@@ -430,7 +429,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     function collectP4Keys(p?: IApplicationFormPage4): string[] {
       if (!p) return [];
       const keys: string[] = [];
-      const pushArr = (arr?: IPhoto[]) => {
+      const pushArr = (arr?: IFileAsset[]) => {
         if (Array.isArray(arr)) for (const ph of arr) if (ph?.s3Key) keys.push(ph.s3Key);
       };
       pushArr(p.hstPhotos);

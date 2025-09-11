@@ -2,11 +2,11 @@ import { errorResponse, successResponse } from "@/lib/utils/apiResponse";
 import connectDB from "@/lib/utils/connectDB";
 import PoliciesConsents from "@/mongoose/models/PoliciesConsents";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
-import { deleteS3Objects, finalizePhoto } from "@/lib/utils/s3Upload";
+import { deleteS3Objects, finalizeAsset } from "@/lib/utils/s3Upload";
 import { EStepPath } from "@/types/onboardingTracker.types";
 import { isValidObjectId } from "mongoose";
 import { NextRequest } from "next/server";
-import { IPhoto } from "@/types/shared.types";
+import { IFileAsset } from "@/types/shared.types";
 import { IPoliciesConsents } from "@/types/policiesConsents.types";
 import { parseJsonBody } from "@/lib/utils/reqParser";
 import { advanceProgress, buildTrackerContext, hasReachedStep, nextResumeExpiry, onboardingExpired } from "@/lib/utils/onboardingUtils";
@@ -42,7 +42,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     // Finalize signature photo
-    const finalizedSignature: IPhoto = await finalizePhoto(tempSignature, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.SIGNATURES}/${onboardingDoc.id}`);
+    const finalizedSignature: IFileAsset = await finalizeAsset(tempSignature, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.SIGNATURES}/${onboardingDoc.id}`);
 
     const signedAt = new Date();
 
@@ -63,31 +63,31 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     onboardingDoc.forms.policiesConsents = updatedDoc.id;
-    
+
     // Capture user location for completion tracking
     let completionLocation = null;
     try {
       const userIP = extractIPFromRequest(req);
       const locationData = await getUserLocation(userIP);
-      
-      if (!('error' in locationData)) {
+
+      if (!("error" in locationData)) {
         completionLocation = {
           country: locationData.country,
           region: locationData.region,
           city: locationData.city,
           timezone: locationData.timezone,
-          ip: locationData.ip
+          ip: locationData.ip,
         };
-        
+
         console.log(`Location captured for completion: ${formatLocationForDisplay(locationData)}`);
       } else {
-        console.warn('Failed to capture location:', locationData.message);
+        console.warn("Failed to capture location:", locationData.message);
       }
     } catch (error) {
-      console.error('Error capturing location:', error);
+      console.error("Error capturing location:", error);
       // Continue without location data - don't fail the completion
     }
-    
+
     onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.POLICIES_CONSENTS, completionLocation || undefined);
 
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();

@@ -4,18 +4,18 @@ import { errorResponse, successResponse } from "@/lib/utils/apiResponse";
 import connectDB from "@/lib/utils/connectDB";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import DrugTest from "@/mongoose/models/DrugTest";
-import { IPhoto } from "@/types/shared.types";
+import { IFileAsset } from "@/types/shared.types";
 import { isValidObjectId } from "mongoose";
 import { parseJsonBody } from "@/lib/utils/reqParser";
-import { deleteS3Objects, finalizePhoto } from "@/lib/utils/s3Upload";
+import { deleteS3Objects, finalizeAsset } from "@/lib/utils/s3Upload";
 import { S3_SUBMISSIONS_FOLDER, S3_TEMP_FOLDER } from "@/constants/aws";
 import { ES3Folder } from "@/types/aws.types";
 import { buildTrackerContext, hasReachedStep, nextResumeExpiry, onboardingExpired } from "@/lib/utils/onboardingUtils";
 import { EStepPath } from "@/types/onboardingTracker.types";
 import { EDrugTestStatus } from "@/types/drugTest.types";
 
-/** Payload: { documents: IPhoto[] } */
-type PatchBody = { documents: IPhoto[] };
+/** Payload: { documents: IFileAsset[] } */
+type PatchBody = { documents: IFileAsset[] };
 
 export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
@@ -58,19 +58,19 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     const tempPrefix = `${S3_TEMP_FOLDER}/`;
     const finalFolder = `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.DRUG_TEST_DOCS}/${onboardingDoc.id}`;
 
-    const isTemp = (p: IPhoto | undefined) => !!p?.s3Key && p.s3Key.startsWith(tempPrefix);
+    const isTemp = (p: IFileAsset | undefined) => !!p?.s3Key && p.s3Key.startsWith(tempPrefix);
 
-    const finalizedDocs: IPhoto[] = [];
+    const finalizedDocs: IFileAsset[] = [];
     for (const p of body.documents ?? []) {
       if (isTemp(p)) {
-        finalizedDocs.push(await finalizePhoto(p, finalFolder));
+        finalizedDocs.push(await finalizeAsset(p, finalFolder));
       } else {
         finalizedDocs.push(p);
       }
     }
 
     // -------- Delete finalized objects removed by user --------
-    const collectKeys = (arr?: IPhoto[]) => (Array.isArray(arr) ? arr.map((p) => p?.s3Key).filter((k): k is string => !!k) : []);
+    const collectKeys = (arr?: IFileAsset[]) => (Array.isArray(arr) ? arr.map((p) => p?.s3Key).filter((k): k is string => !!k) : []);
 
     const prevKeys = new Set(collectKeys(prevDocs));
     const newKeys = new Set(collectKeys(finalizedDocs));

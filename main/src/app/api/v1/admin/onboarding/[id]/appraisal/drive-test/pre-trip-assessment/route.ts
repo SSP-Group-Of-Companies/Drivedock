@@ -7,7 +7,7 @@ import DriveTest from "@/mongoose/models/DriveTest";
 import { EStepPath, ETerminationType } from "@/types/onboardingTracker.types";
 import { buildTrackerContext, hasReachedStep, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
 import { isValidObjectId } from "mongoose";
-import { deleteS3Objects, finalizePhoto } from "@/lib/utils/s3Upload";
+import { deleteS3Objects, finalizeAsset } from "@/lib/utils/s3Upload";
 import { ES3Folder } from "@/types/aws.types";
 import { S3_SUBMISSIONS_FOLDER } from "@/constants/aws";
 import { IPreTripAssessment, IDriveTest, EDriveTestOverall } from "@/types/driveTest.types";
@@ -159,7 +159,7 @@ export const POST = async (req: NextRequest, { params }: { params: Promise<{ id:
     const sig = preTrip.supervisorSignature;
     if (!sig?.s3Key) return errorResponse(400, "preTrip.supervisorSignature.s3Key is required");
 
-    const finalizedSig = await finalizePhoto(sig, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.DRIVE_TEST}/${onboardingId}`);
+    const finalizedSig = await finalizeAsset(sig, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.DRIVE_TEST}/${onboardingId}`);
 
     const preTripToSave: IPreTripAssessment = {
       ...preTrip,

@@ -22,7 +22,7 @@ import { buildCompanyPolicyPayload, applyCompanyPolicyPayloadToForm, resolveComp
 import { ECompanyPolicyFillableFormFields as F } from "@/lib/pdf/company-policy/mappers/company-policy.types";
 
 import { drawPdfImage } from "@/lib/pdf/utils/drawPdfImage";
-import { loadImageBytesFromPhoto } from "@/lib/utils/s3Upload";
+import { loadImageBytesFromAsset } from "@/lib/utils/s3Upload";
 import PreQualifications from "@/mongoose/models/Prequalifications";
 import { EDriverType } from "@/types/preQualifications.types";
 import { getSafetyAdminServerById } from "@/lib/assets/safetyAdmins/safetyAdmins.server";
@@ -95,7 +95,7 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     // Load signatures (both REQUIRED)
     let driverSigBytes: Uint8Array;
     try {
-      driverSigBytes = await loadImageBytesFromPhoto(policies.signature);
+      driverSigBytes = await loadImageBytesFromAsset(policies.signature);
     } catch (e) {
       console.error("Error loading driver signature image:", e);
       return errorResponse(500, "Failed to load driver signature image");

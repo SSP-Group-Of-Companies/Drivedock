@@ -11,10 +11,10 @@ import { advanceProgress, buildTrackerContext, hasReachedStep, nextResumeExpiry 
 import { readMongooseRefField } from "@/lib/utils/mongooseRef";
 import { parseJsonBody } from "@/lib/utils/reqParser";
 
-import { deleteS3Objects, finalizePhoto } from "@/lib/utils/s3Upload";
+import { deleteS3Objects, finalizeAsset } from "@/lib/utils/s3Upload";
 import { S3_SUBMISSIONS_FOLDER, S3_TEMP_FOLDER } from "@/constants/aws";
 import { ES3Folder } from "@/types/aws.types";
-import { IPhoto } from "@/types/shared.types";
+import { IFileAsset } from "@/types/shared.types";
 import { EStepPath } from "@/types/onboardingTracker.types";
 import { EDrugTestStatus } from "@/types/drugTest.types";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
@@ -168,12 +168,12 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
 /* =====================================================================================
  * PATCH
  * - notes?: string                                    -> updates OnboardingTracker.notes
- * - drugTest?: { documents?: IPhoto[], status?: EDrugTestStatus }
+ * - drugTest?: { documents?: IFileAsset[], status?: EDrugTestStatus }
  *     - Step gate: must have reached DRUG_TEST
  *     - No-go-back: if current status === APPROVED, status cannot change
  *     - Docs: always updatable; if a docs array is provided, it must contain ≥1
  * - carriersEdgeTraining?: {
- *       certificates?: IPhoto[],
+ *       certificates?: IFileAsset[],
  *       emailSent?: boolean, emailSentBy?: string, emailSentAt?: string|Date,
  *       completed?: boolean
  *   }
@@ -187,13 +187,20 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
 
 const TEMP_PREFIX = `${S3_TEMP_FOLDER}/`;
 
-async function finalizePhotosIfNeeded(incoming: IPhoto[] | undefined, finalFolder: string): Promise<IPhoto[] | undefined> {
+async function finalizeAssetsIfNeeded(incoming: IFileAsset[] | undefined, finalFolder: string): Promise<IFileAsset[] | undefined> {
   if (!Array.isArray(incoming)) return undefined;
-  const out: IPhoto[] = [];
+
+  // Fail fast: require mimeType for each asset
+  for (const a of incoming) {
+    if (!a?.mimeType) throw new Error("Each file asset must include a mimeType.");
+    a.mimeType = String(a.mimeType).toLowerCase();
+  }
+
+  const out: IFileAsset[] = [];
   for (const p of incoming) {
     if (!p?.s3Key) continue;
     if (p.s3Key.startsWith(TEMP_PREFIX)) {
-      out.push(await finalizePhoto(p, finalFolder));
+      out.push(await finalizeAsset(p, finalFolder));
     } else {
       out.push(p);
     }
@@ -201,8 +208,8 @@ async function finalizePhotosIfNeeded(incoming: IPhoto[] | undefined, finalFolde
   return out;
 }
 
-async function deleteRemovedFinalized(prev: IPhoto[] | undefined, next: IPhoto[] | undefined) {
-  const collectKeys = (arr?: IPhoto[]) => (Array.isArray(arr) ? arr.map((p) => p?.s3Key).filter((k): k is string => !!k) : []);
+async function deleteRemovedFinalized(prev: IFileAsset[] | undefined, next: IFileAsset[] | undefined) {
+  const collectKeys = (arr?: IFileAsset[]) => (Array.isArray(arr) ? arr.map((p) => p?.s3Key).filter((k): k is string => !!k) : []);
   const prevKeys = new Set(collectKeys(prev));
   const newKeys = new Set(collectKeys(next));
   const removedFinalized = [...prevKeys].filter((k) => !newKeys.has(k) && !k.startsWith(TEMP_PREFIX));
@@ -230,9 +237,9 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
     const body = await parseJsonBody<{
       notes?: string;
-      drugTest?: { documents?: IPhoto[]; status?: EDrugTestStatus };
+      drugTest?: { documents?: IFileAsset[]; status?: EDrugTestStatus };
       carriersEdgeTraining?: {
-        certificates?: IPhoto[];
+        certificates?: IFileAsset[];
         emailSent?: boolean;
         emailSentBy?: string;
         emailSentAt?: string | Date;
@@ -280,7 +287,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       // Allow empty arrays (needed when rejecting). We'll only forbid empty when APPROVING.
       if (Array.isArray(incomingDocs)) {
         const finalFolder = `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.DRUG_TEST_DOCS}/${onboardingDoc.id}`;
-        const nextDocs = await finalizePhotosIfNeeded(incomingDocs, finalFolder);
+        const nextDocs = await finalizeAssetsIfNeeded(incomingDocs, finalFolder);
 
         await deleteRemovedFinalized(prevDocs, nextDocs ?? []);
         drugTestDoc.documents = nextDocs ?? [];
@@ -368,7 +375,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       if (Array.isArray(body.carriersEdgeTraining.certificates)) {
         const prev = Array.isArray(ceDoc.certificates) ? [...ceDoc.certificates] : [];
         const finalFolder = `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.CARRIERS_EDGE_CERTIFICATES}/${onboardingDoc.id}`;
-        const next = await finalizePhotosIfNeeded(body.carriersEdgeTraining.certificates, finalFolder);
+        const next = await finalizeAssetsIfNeeded(body.carriersEdgeTraining.certificates, finalFolder);
         await deleteRemovedFinalized(prev, next);
         ceDoc.certificates = next ?? [];
       }

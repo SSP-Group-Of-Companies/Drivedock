@@ -18,7 +18,7 @@ import { EPspAuthorizationFillableFormFields as F } from "@/lib/pdf/psp-authoriz
 import { buildPspAuthorizationPayload, applyPspAuthorizationPayloadToForm } from "@/lib/pdf/psp-authorization/mappers/psp-authorization.mapper";
 
 import { drawPdfImage } from "@/lib/pdf/utils/drawPdfImage";
-import { loadImageBytesFromPhoto } from "@/lib/utils/s3Upload";
+import { loadImageBytesFromAsset } from "@/lib/utils/s3Upload";
 
 export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
@@ -76,7 +76,7 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
 
     // ----- Draw Applicant Signature (footer)
     try {
-      const sigBytes = await loadImageBytesFromPhoto(signaturePhoto);
+      const sigBytes = await loadImageBytesFromAsset(signaturePhoto);
       await drawPdfImage({
         pdfDoc,
         form,

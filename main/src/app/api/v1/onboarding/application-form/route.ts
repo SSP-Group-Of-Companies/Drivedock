@@ -4,7 +4,7 @@ import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
 import connectDB from "@/lib/utils/connectDB";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import PreQualifications from "@/mongoose/models/Prequalifications";
-import { finalizePhoto } from "@/lib/utils/s3Upload";
+import { finalizeAsset } from "@/lib/utils/s3Upload";
 import { COMPANIES, ECompanyId, needsFlatbedTraining } from "@/constants/companies";
 import { EStepPath, ICreateOnboardingPayload, IOnboardingTrackerDoc } from "@/types/onboardingTracker.types";
 import { ECompanyApplicationType } from "@/constants/companies";
@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
     const movedKeys: string[] = [];
 
     // Finalize SIN photo
-    const finalizedSinPhoto = await finalizePhoto(page1.sinPhoto, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.SIN_PHOTOS}/${trackerId}`);
+    const finalizedSinPhoto = await finalizeAsset(page1.sinPhoto, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.SIN_PHOTOS}/${trackerId}`);
     movedKeys.push(finalizedSinPhoto.s3Key);
 
     const tempPrefix = `${S3_TEMP_FOLDER}/`;
@@ -119,12 +119,12 @@ export async function POST(req: NextRequest) {
         const updated: ILicenseEntry = { ...lic };
 
         if (lic.licenseFrontPhoto?.s3Key?.startsWith(tempPrefix)) {
-          updated.licenseFrontPhoto = await finalizePhoto(lic.licenseFrontPhoto, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.LICENSES}/${trackerId}`);
+          updated.licenseFrontPhoto = await finalizeAsset(lic.licenseFrontPhoto, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.LICENSES}/${trackerId}`);
           movedKeys.push(updated.licenseFrontPhoto.s3Key);
         }
 
         if (lic.licenseBackPhoto?.s3Key?.startsWith(tempPrefix)) {
-          updated.licenseBackPhoto = await finalizePhoto(lic.licenseBackPhoto, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.LICENSES}/${trackerId}`);
+          updated.licenseBackPhoto = await finalizeAsset(lic.licenseBackPhoto, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.LICENSES}/${trackerId}`);
           movedKeys.push(updated.licenseBackPhoto.s3Key);
         }
 
