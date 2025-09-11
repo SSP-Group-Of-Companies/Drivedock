@@ -84,8 +84,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       // Continue without location data - don't fail the completion
     }
     
-    // Update status with completion location (captured on every signing)
-    onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.POLICIES_CONSENTS, completionLocation || undefined);
+    // Update status (without location - we'll handle location separately)
+    onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.POLICIES_CONSENTS);
+    
+    // Handle completion location separately - only update if we have new location data
+    if (completionLocation) {
+      onboardingDoc.status.completionLocation = completionLocation;
+    }
 
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();
     await onboardingDoc.save();

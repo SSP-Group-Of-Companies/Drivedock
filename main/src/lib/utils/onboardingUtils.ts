@@ -106,7 +106,7 @@ export function getNeighborSteps(step: EStepPath, opts: FlowOpts): { prevStep: E
  *  - If the resulting status is completed, set completionDate to the existing one (if any) or now.
  *  - If the resulting status is not completed, omit completionDate (clears old value).
  */
-export function advanceProgress(doc: IOnboardingTrackerDoc, completedNow: EStepPath, completionLocation?: IOnboardingStatus['completionLocation']): IOnboardingStatus {
+export function advanceProgress(doc: IOnboardingTrackerDoc, completedNow: EStepPath): IOnboardingStatus {
   const opts = getFlowOpts(doc);
   const flow = getOnboardingStepFlow(opts);
   const maximalFlow = getOnboardingStepFlow({ needsFlatbedTraining: true });
@@ -149,8 +149,6 @@ export function advanceProgress(doc: IOnboardingTrackerDoc, completedNow: EStepP
     const result = {
       currentStep: (mappedCurrentStep ?? doc.status.currentStep) as EStepPath,
       completed: isCompleted,
-      // Always preserve existing completionLocation, or update with new one if provided
-      completionLocation: completionLocation || doc.status.completionLocation,
       // Set completionDate only when actually completed
       ...(isCompleted && { 
         completionDate: doc.status.completionDate ?? new Date()
@@ -167,8 +165,6 @@ export function advanceProgress(doc: IOnboardingTrackerDoc, completedNow: EStepP
   const result = {
     currentStep: (next ?? completedNow) as EStepPath,
     completed: isNowCompleted,
-    // Always preserve existing completionLocation, or update with new one if provided
-    completionLocation: completionLocation || doc.status.completionLocation,
     // Set completionDate only when actually completed
     ...(isNowCompleted && { 
       completionDate: doc.status.completionDate ?? new Date()
