@@ -69,15 +69,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     let completionLocation = null;
     try {
       const userIP = extractIPFromRequest(req);
-      console.log('🔍 Policies-consents location capture:', {
-        userIP,
-        hasIP: !!userIP,
-        ipType: typeof userIP,
-        ipLength: userIP?.length || 0
-      });
-      
       const locationData = await getUserLocation(userIP);
-      console.log('📍 Location data result:', locationData);
       
       if (!('error' in locationData)) {
         completionLocation = {
@@ -87,22 +79,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           timezone: locationData.timezone,
           ip: locationData.ip
         };
-        console.log('✅ Location captured successfully:', completionLocation);
-      } else {
-        console.log('❌ Location capture failed:', locationData.message);
       }
-    } catch (error) {
-      console.error('💥 Location capture error:', error);
+    } catch {
       // Continue without location data - don't fail the completion
     }
     
     // Update status with completion location (captured on every signing)
-    console.log('🚀 About to call advanceProgress:', {
-      hasCompletionLocation: !!completionLocation,
-      completionLocation,
-      willPassToAdvanceProgress: completionLocation || undefined
-    });
-    
     onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.POLICIES_CONSENTS, completionLocation || undefined);
 
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();

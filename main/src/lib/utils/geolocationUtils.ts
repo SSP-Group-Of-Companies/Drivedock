@@ -137,7 +137,27 @@ export function formatLocationForDisplay(geoData: GeolocationData): string {
     return 'Location Unknown';
   }
   
-  return `${geoData.region}, ${geoData.country}`;
+  // Convert country codes to full country names for better display
+  const countryMap: Record<string, string> = {
+    'CA': 'Canada',
+    'US': 'United States',
+    'MX': 'Mexico',
+    'GB': 'United Kingdom',
+    'AU': 'Australia',
+    'DE': 'Germany',
+    'FR': 'France',
+    'IT': 'Italy',
+    'ES': 'Spain',
+    'JP': 'Japan',
+    'CN': 'China',
+    'IN': 'India',
+    'BR': 'Brazil',
+    'RU': 'Russia'
+  };
+  
+  const countryName = countryMap[geoData.country] || geoData.country;
+  
+  return `${geoData.region}, ${countryName}`;
 }
 
 /**
