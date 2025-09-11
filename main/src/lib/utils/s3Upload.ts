@@ -176,7 +176,7 @@ export async function uploadToS3Presigned({ file, folder, trackerId = "unknown" 
   });
 
   if (!res.ok) {
-    const { message } = await res.json();
+    const { message } = await res.json().catch(() => ({ message: "" }));
     throw new Error(message || "Failed to get presigned URL.");
   }
 
@@ -194,6 +194,8 @@ export async function uploadToS3Presigned({ file, folder, trackerId = "unknown" 
     putUrl: data.url,
   };
 }
+
+/** ---------- Bytes helpers ---------- */
 
 /** Fetch a public/presigned URL into raw bytes */
 async function fetchBytesFromUrl(url: string): Promise<Uint8Array> {
@@ -236,4 +238,43 @@ export async function loadImageBytesFromPhoto(photo?: IPhoto): Promise<Uint8Arra
     return fetchBytesFromUrl(photo.url);
   }
   throw new Error("Photo is missing both s3Key and url");
+}
+
+/** ---------- NEW: Client-side helper to delete temp files ---------- */
+
+/**
+ * Delete temp S3 files via the API.
+ * - Filters non-temp keys automatically with `isTempKey`.
+ * - No-ops if the list is empty after filtering.
+ * - Throws with a friendly message on failure.
+ */
+export async function deleteTempFiles(keys: string[]): Promise<{ deleted?: string[]; failed?: string[] }> {
+  if (!Array.isArray(keys) || keys.length === 0) return { deleted: [] };
+  const tempKeys = keys.filter((k) => isTempKey(k));
+  if (tempKeys.length === 0) return { deleted: [] };
+
+  const res = await fetch("/api/v1/delete-temp-files", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ keys: tempKeys }),
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.message || "Failed to delete temp files");
+  }
+
+  // Pass through any structured response (deleted/failed) if your API returns it
+  const data = await res.json().catch(() => ({}));
+  return data;
+}
+
+/**
+ * Convenience helper: delete a single temp photo if applicable.
+ * Returns true if a delete call was made.
+ */
+export async function deleteTempPhoto(photo?: IPhoto): Promise<boolean> {
+  if (!photo?.s3Key || !isTempKey(photo.s3Key)) return false;
+  await deleteTempFiles([photo.s3Key]);
+  return true;
 }
