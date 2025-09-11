@@ -68,7 +68,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     let completionLocation = null;
     try {
       const userIP = extractIPFromRequest(req);
+      console.log('🎯 Completion Location Debug:', {
+        userIP,
+        hasIP: !!userIP,
+        ipType: typeof userIP,
+        ipLength: userIP?.length || 0
+      });
+      
       const locationData = await getUserLocation(userIP);
+      console.log('📍 Location Data Result:', locationData);
       
       if (!('error' in locationData)) {
         completionLocation = {
@@ -79,12 +87,15 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           ip: locationData.ip
         };
         
-        console.log(`Location captured for completion: ${formatLocationForDisplay(locationData)}`);
+        console.log('✅ Location captured for completion:', {
+          completionLocation,
+          displayString: formatLocationForDisplay(locationData)
+        });
       } else {
-        console.warn('Failed to capture location:', locationData.message);
+        console.warn('❌ Failed to capture location:', locationData.message);
       }
     } catch (error) {
-      console.error('Error capturing location:', error);
+      console.error('💥 Error capturing location:', error);
       // Continue without location data - don't fail the completion
     }
     

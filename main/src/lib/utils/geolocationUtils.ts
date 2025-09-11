@@ -31,6 +31,14 @@ export async function getLocationFromIP(ipAddress: string): Promise<GeolocationD
     // Free tier: 50,000 requests/month
     const token = process.env.IPINFO_TOKEN;
     
+    // Debug logging for production troubleshooting
+    console.log('🔍 Geolocation Debug:', {
+      ipAddress,
+      hasToken: !!token,
+      tokenLength: token?.length || 0,
+      environment: process.env.NODE_ENV
+    });
+    
     const response = await fetch(`https://ipinfo.io/${ipAddress}/json?token=${token}`, {
       method: 'GET',
       headers: {
@@ -41,12 +49,20 @@ export async function getLocationFromIP(ipAddress: string): Promise<GeolocationD
       next: { revalidate: 3600 }
     });
     
+    console.log('🌐 IPinfo API Response:', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok
+    });
+    
     if (!response.ok) {
       const errorText = await response.text();
+      console.error('❌ IPinfo API Error:', errorText);
       throw new Error(`IPinfo API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
+    console.log('📍 IPinfo Data:', data);
     
     // IPinfo returns: { ip, city, region, country, loc, timezone, ... }
     return {
