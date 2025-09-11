@@ -7,9 +7,9 @@ export type ContractContext = {
   applicationType?: string;
   needsFlatbedTraining?: boolean;
   resumeExpiresAt?: string;
-  status: { 
-    currentStep?: EStepPath; 
-    completed?: boolean; 
+  status: {
+    currentStep?: EStepPath;
+    completed?: boolean;
     completionDate?: string;
     completionLocation?: {
       country?: string;
@@ -26,7 +26,7 @@ export type ContractContext = {
     driveTest?: { completed?: boolean };
     carriersEdgeTraining?: { emailSent?: boolean };
     drugTest?: { status?: EDrugTestStatus; documentsUploaded?: boolean };
-    identifications?: { 
+    identifications?: {
       driverLicenseExpiration?: string;
       truckDetails?: {
         vin?: string;
@@ -44,10 +44,7 @@ export type ContractContext = {
 type ContractForms = NonNullable<ContractContext["forms"]>;
 
 // ---- READ (updated) ----
-export async function fetchContractContext(
-  trackerId: string,
-  signal?: AbortSignal
-): Promise<ContractContext> {
+export async function fetchContractContext(trackerId: string, signal?: AbortSignal): Promise<ContractContext> {
   async function get(path: string) {
     const res = await fetch(`/api/v1/admin/onboarding/${trackerId}${path}`, {
       method: "GET",
@@ -105,11 +102,7 @@ export async function fetchContractContext(
 /**
  * PATCH /api/v1/admin/onboarding/:id/change-company
  */
-export async function changeCompany(
-  trackerId: string,
-  companyId: string,
-  signal?: AbortSignal
-): Promise<ContractContext | null> {
+export async function changeCompany(trackerId: string, companyId: string, signal?: AbortSignal): Promise<ContractContext | null> {
   const res = await fetch(`/api/v1/admin/onboarding/${trackerId}/change-company`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },

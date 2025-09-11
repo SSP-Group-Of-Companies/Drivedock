@@ -22,7 +22,7 @@ export enum ES3Folder {
 export interface IPresignRequest {
   folder: ES3Folder;
   filename?: string;
-  mimetype: EFileMimeType;
+  mimeType: EFileMimeType;
   trackerId?: string;
   filesize?: number;
 }
@@ -32,5 +32,5 @@ export interface IPresignResponse {
   url: string;
   publicUrl: string;
   expiresIn: number;
-  mimetype: EFileMimeType;
+  mimeType: EFileMimeType;
 }

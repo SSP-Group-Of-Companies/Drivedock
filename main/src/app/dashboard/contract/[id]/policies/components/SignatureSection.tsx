@@ -2,26 +2,23 @@
 
 import React from "react";
 import { Calendar, CheckCircle, Mail, User } from "lucide-react";
-import { IPhoto } from "@/types/shared.types";
+import { IFileAsset } from "@/types/shared.types";
+import Image from "next/image";
 
 interface SignatureSectionProps {
-  signature: IPhoto;
+  signature: IFileAsset;
   signedAt: Date;
   sendPoliciesByEmail?: boolean;
 }
 
-export default function SignatureSection({ 
-  signature, 
-  signedAt, 
-  sendPoliciesByEmail 
-}: SignatureSectionProps) {
+export default function SignatureSection({ signature, signedAt, sendPoliciesByEmail }: SignatureSectionProps) {
   const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+    return new Intl.DateTimeFormat("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     }).format(new Date(date));
   };
 
@@ -33,34 +30,38 @@ export default function SignatureSection({
 
       {/* Signature Display */}
       <div className="space-y-4">
-        <div className="rounded-lg border p-4" style={{
-          background: "var(--color-surface-variant)",
-          borderColor: "var(--color-outline)",
-        }}>
+        <div
+          className="rounded-lg border p-4"
+          style={{
+            background: "var(--color-surface-variant)",
+            borderColor: "var(--color-outline)",
+          }}
+        >
           <div className="flex items-center gap-3 mb-3">
             <User className="h-5 w-5" style={{ color: "var(--color-primary)" }} />
             <span className="text-sm font-medium" style={{ color: "var(--color-on-surface)" }}>
               Digital Signature
             </span>
           </div>
-          
+
           {signature?.url ? (
-            <div className="flex items-center justify-center p-6 border-2 border-dashed rounded-lg" style={{
-              borderColor: "var(--color-outline)",
-              background: "var(--color-surface)",
-            }}>
-              <img
-                src={signature.url}
-                alt="Driver signature"
-                className="max-h-32 max-w-full object-contain"
-                style={{ filter: "invert(0.1)" }}
-              />
+            <div
+              className="flex items-center justify-center p-6 border-2 border-dashed rounded-lg"
+              style={{
+                borderColor: "var(--color-outline)",
+                background: "var(--color-surface)",
+              }}
+            >
+              <Image src={signature.url} alt="Driver signature" className="max-h-32 max-w-full object-contain" style={{ filter: "invert(0.1)" }} />
             </div>
           ) : (
-            <div className="flex items-center justify-center p-6 border-2 border-dashed rounded-lg" style={{
-              borderColor: "var(--color-outline)",
-              background: "var(--color-surface)",
-            }}>
+            <div
+              className="flex items-center justify-center p-6 border-2 border-dashed rounded-lg"
+              style={{
+                borderColor: "var(--color-outline)",
+                background: "var(--color-surface)",
+              }}
+            >
               <span className="text-sm" style={{ color: "var(--color-on-surface-variant)" }}>
                 No signature available
               </span>
@@ -71,9 +72,12 @@ export default function SignatureSection({
         {/* Signature Details */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Signed Date */}
-          <div className="flex items-center gap-3 p-3 rounded-lg" style={{
-            background: "var(--color-surface-variant)",
-          }}>
+          <div
+            className="flex items-center gap-3 p-3 rounded-lg"
+            style={{
+              background: "var(--color-surface-variant)",
+            }}
+          >
             <Calendar className="h-5 w-5" style={{ color: "var(--color-primary)" }} />
             <div>
               <div className="text-xs font-medium" style={{ color: "var(--color-on-surface-variant)" }}>
@@ -86,9 +90,12 @@ export default function SignatureSection({
           </div>
 
           {/* Email Consent */}
-          <div className="flex items-center gap-3 p-3 rounded-lg" style={{
-            background: "var(--color-surface-variant)",
-          }}>
+          <div
+            className="flex items-center gap-3 p-3 rounded-lg"
+            style={{
+              background: "var(--color-surface-variant)",
+            }}
+          >
             <Mail className="h-5 w-5" style={{ color: "var(--color-primary)" }} />
             <div>
               <div className="text-xs font-medium" style={{ color: "var(--color-on-surface-variant)" }}>
@@ -115,10 +122,13 @@ export default function SignatureSection({
       </div>
 
       {/* Signature Note */}
-      <div className="rounded-lg p-4" style={{
-        background: "var(--color-info-container)",
-        borderColor: "var(--color-info)",
-      }}>
+      <div
+        className="rounded-lg p-4"
+        style={{
+          background: "var(--color-info-container)",
+          borderColor: "var(--color-info)",
+        }}
+      >
         <div className="flex items-start gap-3">
           <CheckCircle className="h-5 w-5 mt-0.5 flex-shrink-0" style={{ color: "var(--color-info)" }} />
           <div>

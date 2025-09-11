@@ -14,6 +14,26 @@ const addressSchema = new Schema<Iaddress>({
   to: { type: Date, required: [true, "Address 'to' date is required."] },
 });
 
+/**
+ * Shared image validator:
+ * - Allows undefined/null (so "required" can handle presence separately where needed).
+ * - If object exists but mimeType is missing -> "mimeType is missing in <field>".
+ * - If mimeType exists but not an image -> "<field> must be an image."
+ */
+const imageFieldValidator = {
+  validator: function (v: any) {
+    if (!v) return true; // let "required" handle absence where applicable
+    if (!v.mimeType) return false; // triggers message → mimeType missing
+    return isImageMime(v.mimeType); // triggers message → must be an image
+  },
+  message: function (props: any) {
+    const v = props?.value;
+    const path = String(props?.path ?? "file");
+    if (v && !v.mimeType) return `mimeType is missing in ${path}.`;
+    return `${path} must be an image.`;
+  },
+};
+
 const licenseSchema = new Schema<ILicenseEntry>({
   licenseNumber: { type: String, required: [true, "License number is required."] },
   licenseStateOrProvince: { type: String, required: [true, "License issuing province/state is required."] },
@@ -31,24 +51,12 @@ const licenseSchema = new Schema<ILicenseEntry>({
   licenseFrontPhoto: {
     type: fileSchema,
     required: false,
-    validate: {
-      validator: function (v: any) {
-        if (!v) return true;
-        return isImageMime(v?.mimeType);
-      },
-      message: "licenseFrontPhoto must be an image.",
-    },
+    validate: imageFieldValidator,
   },
   licenseBackPhoto: {
     type: fileSchema,
     required: false,
-    validate: {
-      validator: function (v: any) {
-        if (!v) return true;
-        return isImageMime(v?.mimeType);
-      },
-      message: "licenseBackPhoto must be an image.",
-    },
+    validate: imageFieldValidator,
   },
 });
 
@@ -72,12 +80,7 @@ export const applicationFormPage1Schema = new Schema<IApplicationFormPage1>(
     sinPhoto: {
       type: fileSchema,
       required: [true, "Sin photo is required"],
-      validate: {
-        validator: function (v: any) {
-          return v && isImageMime(v?.mimeType);
-        },
-        message: "sinPhoto must be an image.",
-      },
+      validate: imageFieldValidator,
     },
 
     dob: { type: Date, required: [true, "Date of birth is required."] },

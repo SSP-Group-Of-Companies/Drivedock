@@ -16,7 +16,7 @@ type Page1Result = {
 
 /** Creates empty S3 photo object for form initialization */
 function emptyS3Photo() {
-  return { s3Key: "", url: "" };
+  return { s3Key: "", url: "", mimeType: "", sizeBytes: 0, originalName: "" };
 }
 
 /** Default blank address template for new applications */
@@ -60,11 +60,7 @@ const EMPTY_DEFAULTS: ApplicationFormPage1Schema = {
   addresses: [BLANK_ADDRESS],
 };
 
-export default async function Page1ServerWrapper({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function Page1ServerWrapper({ params }: { params: Promise<{ id: string }> }) {
   const { id: trackerId } = await params;
 
   // Build same-origin absolute URL (dev + Vercel preview safe)
@@ -75,9 +71,7 @@ export default async function Page1ServerWrapper({
   const { data, error } = await fetchServerPageData<Page1Result>(url);
 
   if (error) {
-    return (
-      <div className="p-6 text-center text-red-600 font-semibold">{error}</div>
-    );
+    return <div className="p-6 text-center text-red-600 font-semibold">{error}</div>;
   }
 
   const pageData = data?.page1;
@@ -87,10 +81,7 @@ export default async function Page1ServerWrapper({
     ? {
         firstName: pageData.firstName || "",
         lastName: pageData.lastName || "",
-        sin:
-          typeof pageData.sin === "string" && /^\d{9}$/.test(pageData.sin)
-            ? pageData.sin
-            : "",
+        sin: typeof pageData.sin === "string" && /^\d{9}$/.test(pageData.sin) ? pageData.sin : "",
         sinIssueDate: pageData.sinIssueDate ? formatInputDate(pageData.sinIssueDate) : "",
         gender: pageData.gender || ("" as "male" | "female"),
         sinPhoto: pageData.sinPhoto || emptyS3Photo(),
@@ -117,6 +108,9 @@ export default async function Page1ServerWrapper({
                     ? {
                         s3Key: l.licenseFrontPhoto?.s3Key || "",
                         url: l.licenseFrontPhoto?.url || "",
+                        mimeType: l.licenseFrontPhoto?.mimeType || "",
+                        sizeBytes: l.licenseFrontPhoto?.sizeBytes || 0,
+                        originalName: l.licenseFrontPhoto?.originalName || "",
                       }
                     : undefined,
                 licenseBackPhoto:
@@ -124,6 +118,9 @@ export default async function Page1ServerWrapper({
                     ? {
                         s3Key: l.licenseBackPhoto?.s3Key || "",
                         url: l.licenseBackPhoto?.url || "",
+                        mimeType: l.licenseFrontPhoto?.mimeType || "",
+                        sizeBytes: l.licenseFrontPhoto?.sizeBytes || 0,
+                        originalName: l.licenseFrontPhoto?.originalName || "",
                       }
                     : undefined,
               }))

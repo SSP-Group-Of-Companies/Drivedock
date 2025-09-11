@@ -41,10 +41,10 @@ const MIME_TO_EXT_MAP: Record<EFileMimeType, string> = {
 export async function POST(req: NextRequest) {
   try {
     const body = await parseJsonBody<IPresignRequest>(req);
-    const { folder, mimetype, trackerId, filesize } = body || {};
+    const { folder, mimeType, trackerId, filesize } = body || {};
 
-    if (!folder || !mimetype) {
-      return errorResponse(400, "Missing required fields: folder or mimetype");
+    if (!folder || !mimeType) {
+      return errorResponse(400, "Missing required fields: folder or mimeType");
     }
 
     if (!Object.values(ES3Folder).includes(folder)) {
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
     }
 
     const allowed = FOLDER_ALLOWED_MIME[folder] ?? IMAGE_ONLY;
-    const normalizedMime = (mimetype as string).toLowerCase() as EFileMimeType;
+    const normalizedMime = (mimeType as string).toLowerCase() as EFileMimeType;
 
     if (!allowed.includes(normalizedMime)) {
       return errorResponse(400, `Invalid file type for ${folder}. Allowed: ${allowed.join(", ")}`);
@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
 
     const extFromMime = MIME_TO_EXT_MAP[normalizedMime];
     if (!extFromMime) {
-      return errorResponse(400, `Unsupported mimetype: ${mimetype}`);
+      return errorResponse(400, `Unsupported mimeType: ${mimeType}`);
     }
 
     const maxMB = MAX_FILE_SIZES_MB[folder] ?? DEFAULT_FILE_SIZE_LIMIT_MB;
@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
       url,
       publicUrl,
       expiresIn: DEFAULT_PRESIGN_EXPIRY_SECONDS,
-      mimetype: normalizedMime, // ← include canonical mimetype
+      mimeType: normalizedMime, // ← include canonical mimeType
     };
 
     return successResponse(200, "Presigned URL generated", result);

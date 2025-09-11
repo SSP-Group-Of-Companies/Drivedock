@@ -56,7 +56,7 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
     try {
       const finalSig = await sigRef.current?.ensureUploaded();
 
-      if (!finalSig?.s3Key || !finalSig?.url) {
+      if (!finalSig?.s3Key || !finalSig?.url || !finalSig?.mimeType) {
         // SignatureBox shows its own error; nothing to do here
         setSubmitting(false);
         return;
@@ -66,7 +66,7 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          signature: { s3Key: finalSig.s3Key, url: finalSig.url },
+          signature: finalSig,
           sendPoliciesByEmail,
         }),
       });

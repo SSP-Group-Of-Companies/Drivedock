@@ -85,6 +85,7 @@ export const isFinalOrEmptyAsset = (asset?: IFileAsset) => !asset?.s3Key || !isT
 
 export async function finalizeAsset(asset: IFileAsset, finalFolder: string): Promise<IFileAsset> {
   if (!asset?.s3Key) throw new Error("Missing s3Key in file asset");
+  if (!asset.mimeType) throw new Error("Missing mimeType in file asset");
 
   if (!isTempKey(asset.s3Key)) return asset; // already finalized
 
@@ -146,7 +147,7 @@ export async function uploadToS3Presigned({
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       folder,
-      mimetype: clientMime, // request with client-reported MIME
+      mimeType: clientMime, // request with client-reported MIME
       trackerId,
       filesize: file.size,
       filename: file.name,
@@ -163,7 +164,7 @@ export async function uploadToS3Presigned({
   // PUT must use the exact Content-Type used in signature
   await fetch(data.url, {
     method: "PUT",
-    headers: { "Content-Type": data.mimetype }, // use server-canonical
+    headers: { "Content-Type": data.mimeType }, // use server-canonical
     body: file,
   });
 
@@ -171,7 +172,7 @@ export async function uploadToS3Presigned({
     s3Key: data.key,
     url: data.publicUrl,
     putUrl: data.url,
-    mimeType: data.mimetype, // ← trust server-canonical MIME
+    mimeType: data.mimeType, // ← trust server-canonical MIME
     sizeBytes: file.size,
     originalName: file.name,
   };

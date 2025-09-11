@@ -15,18 +15,17 @@ import SafetyAdminPickerModal from "./components/SafetyAdminPickerModal";
 // Helper function to check if truck details exist
 function hasTruckDetails(truckDetails?: any): boolean {
   if (!truckDetails) return false;
-  
+
   // Check if any truck detail field has meaningful data
-  const fields = ['vin', 'make', 'model', 'year', 'province', 'truckUnitNumber', 'plateNumber'];
-  return fields.some(field => {
+  const fields = ["vin", "make", "model", "year", "province", "truckUnitNumber", "plateNumber"];
+  return fields.some((field) => {
     const value = truckDetails[field];
-    return value && typeof value === 'string' && value.trim().length > 0;
+    return value && typeof value === "string" && value.trim().length > 0;
   });
 }
 
 export default function PrintClient({ trackerId }: { trackerId: string }) {
-  const { data: contractData, isLoading: isContractLoading } =
-    useContract(trackerId);
+  const { data: contractData, isLoading: isContractLoading } = useContract(trackerId);
   const { hideLoader } = useDashboardPageLoading();
   const { isVisible: isDashboardLoaderVisible } = useDashboardLoading();
   const [shouldRender, setShouldRender] = useState(false);
@@ -89,10 +88,7 @@ export default function PrintClient({ trackerId }: { trackerId: string }) {
               borderWidth: "2px",
             }}
           />
-          <span
-            className="text-xs font-medium"
-            style={{ color: "var(--color-on-surface-variant)" }}
-          >
+          <span className="text-xs font-medium" style={{ color: "var(--color-on-surface-variant)" }}>
             Loading Print Documents...
           </span>
         </div>
@@ -102,10 +98,7 @@ export default function PrintClient({ trackerId }: { trackerId: string }) {
 
   const ctx = contractData;
 
-  const handlePdfAction = (
-    item: { apiUrl: string; needsSafetyAdminId: boolean },
-    action: "preview" | "download"
-  ) => {
+  const handlePdfAction = (item: { apiUrl: string; needsSafetyAdminId: boolean }, action: "preview" | "download") => {
     if (!item.needsSafetyAdminId) {
       // Direct action - no safety admin required
       if (action === "preview") {
@@ -161,10 +154,7 @@ export default function PrintClient({ trackerId }: { trackerId: string }) {
       >
         <div className="flex justify-end mb-6">
           <div className="flex items-center gap-2">
-            <span
-              className="text-xs sm:text-sm"
-              style={{ color: "var(--color-on-surface-variant)" }}
-            >
+            <span className="text-xs sm:text-sm" style={{ color: "var(--color-on-surface-variant)" }}>
               Mode:
             </span>
             <span
@@ -180,18 +170,9 @@ export default function PrintClient({ trackerId }: { trackerId: string }) {
         </div>
 
         {/* Print Documents Section Header */}
-        <div
-          className="flex items-center gap-3 pb-4 border-b mb-6"
-          style={{ borderColor: "var(--color-outline)" }}
-        >
-          <div
-            className="w-1 h-8 rounded-full"
-            style={{ background: "var(--color-primary)" }}
-          />
-          <h2
-            className="text-xl font-bold"
-            style={{ color: "var(--color-on-surface)" }}
-          >
+        <div className="flex items-center gap-3 pb-4 border-b mb-6" style={{ borderColor: "var(--color-outline)" }}>
+          <div className="w-1 h-8 rounded-full" style={{ background: "var(--color-primary)" }} />
+          <h2 className="text-xl font-bold" style={{ color: "var(--color-on-surface)" }}>
             Print Documents
           </h2>
         </div>
@@ -217,134 +198,106 @@ export default function PrintClient({ trackerId }: { trackerId: string }) {
                   Missing Truck Details
                 </h4>
                 <p className="text-xs" style={{ color: "var(--color-on-warning-container)" }}>
-                  Truck details are missing. Company Policy PDF will have empty truck detail fields. 
-                  Please ensure truck details are completed in the Identifications section.
+                  Truck details are missing. Company Policy PDF will have empty truck detail fields. Please ensure truck details are completed in the Identifications section.
                 </p>
               </div>
             </div>
           </motion.div>
         )}
 
-
         {/* PDF List Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {pdfList.map((item, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              className="rounded-lg border p-4 hover:shadow-md transition-shadow"
-              style={{
-                background: "var(--color-surface)",
-                borderColor: "var(--color-outline-variant)",
-              }}
-            >
-              <div className="flex items-start gap-3 mb-4">
-                <div
-                  className="p-2 rounded-lg"
-                  style={{ background: "var(--color-primary-container)" }}
-                >
-                  <FileText
-                    className="h-5 w-5"
-                    style={{ color: "var(--color-on-primary-container)" }}
-                  />
+        {!contractData.status?.completed ? (
+          <div className="">Printing is available when onboarding is completed</div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {pdfList.map((item, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className="rounded-lg border p-4 hover:shadow-md transition-shadow"
+                style={{
+                  background: "var(--color-surface)",
+                  borderColor: "var(--color-outline-variant)",
+                }}
+              >
+                <div className="flex items-start gap-3 mb-4">
+                  <div className="p-2 rounded-lg" style={{ background: "var(--color-primary-container)" }}>
+                    <FileText className="h-5 w-5" style={{ color: "var(--color-on-primary-container)" }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium text-sm" style={{ color: "var(--color-on-surface)" }}>
+                      {item.label}
+                    </h3>
+                    {item.needsSafetyAdminId && (
+                      <div className="flex items-center gap-1 mt-1">
+                        <User className="h-3 w-3" style={{ color: "var(--color-on-surface-variant)" }} />
+                        <span className="text-xs" style={{ color: "var(--color-on-surface-variant)" }}>
+                          Requires Safety Admin
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3
-                    className="font-medium text-sm"
-                    style={{ color: "var(--color-on-surface)" }}
-                  >
-                    {item.label}
-                  </h3>
-                  {item.needsSafetyAdminId && (
-                    <div className="flex items-center gap-1 mt-1">
-                      <User
-                        className="h-3 w-3"
-                        style={{ color: "var(--color-on-surface-variant)" }}
-                      />
-                      <span
-                        className="text-xs"
-                        style={{ color: "var(--color-on-surface-variant)" }}
-                      >
-                        Requires Safety Admin
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
 
-              <div className="flex gap-2">
-                <button
-                  onClick={() => handlePdfAction(item, "preview")}
-                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
-                  style={{
-                    background: "var(--color-secondary-container)",
-                    color: "var(--color-on-secondary-container)",
-                  }}
-                >
-                  <Eye className="h-4 w-4" />
-                  Preview
-                </button>
-                <button
-                  onClick={() => handlePdfAction(item, "download")}
-                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
-                  style={{
-                    background: "var(--color-primary)",
-                    color: "var(--color-on-primary)",
-                  }}
-                >
-                  <Download className="h-4 w-4" />
-                  Download
-                </button>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handlePdfAction(item, "preview")}
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                    style={{
+                      background: "var(--color-secondary-container)",
+                      color: "var(--color-on-secondary-container)",
+                    }}
+                  >
+                    <Eye className="h-4 w-4" />
+                    Preview
+                  </button>
+                  <button
+                    onClick={() => handlePdfAction(item, "download")}
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                    style={{
+                      background: "var(--color-primary)",
+                      color: "var(--color-on-primary)",
+                    }}
+                  >
+                    <Download className="h-4 w-4" />
+                    Download
+                  </button>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
 
         {/* Info Section */}
-        <div
-          className="mt-6 rounded-lg p-4"
-          style={{
-            background: "var(--color-surface-variant)",
-            borderColor: "var(--color-outline)",
-          }}
-        >
-          <div className="flex items-start gap-3">
-            <div
-              className="p-1 rounded"
-              style={{ background: "var(--color-info-container)" }}
-            >
-              <FileText
-                className="h-4 w-4"
-                style={{ color: "var(--color-on-info-container)" }}
-              />
-            </div>
-            <div>
-              <h4
-                className="font-medium text-sm mb-1"
-                style={{ color: "var(--color-on-surface)" }}
-              >
-                Document Information
-              </h4>
-              <p
-                className="text-xs"
-                style={{ color: "var(--color-on-surface-variant)" }}
-              >
-                Some documents require a Safety Admin signature. When you select
-                these documents, you will be prompted to choose a Safety Admin
-                before previewing or downloading.
-              </p>
+        {contractData.status?.completed && (
+          <div
+            className="mt-6 rounded-lg p-4"
+            style={{
+              background: "var(--color-surface-variant)",
+              borderColor: "var(--color-outline)",
+            }}
+          >
+            <div className="flex items-start gap-3">
+              <div className="p-1 rounded" style={{ background: "var(--color-info-container)" }}>
+                <FileText className="h-4 w-4" style={{ color: "var(--color-on-info-container)" }} />
+              </div>
+              <div>
+                <h4 className="font-medium text-sm mb-1" style={{ color: "var(--color-on-surface)" }}>
+                  Document Information
+                </h4>
+                <p className="text-xs" style={{ color: "var(--color-on-surface-variant)" }}>
+                  Some documents require a Safety Admin signature. When you select these documents, you will be prompted to choose a Safety Admin before previewing or downloading.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* PDF Preview Modal */}
-      <PrintPdfViewerModal
-        modalUrl={previewModalUrl}
-        onClose={() => setPreviewModalUrl(null)}
-      />
+      <PrintPdfViewerModal modalUrl={previewModalUrl} onClose={() => setPreviewModalUrl(null)} />
 
       {/* Safety Admin Picker Modal */}
       <SafetyAdminPickerModal
