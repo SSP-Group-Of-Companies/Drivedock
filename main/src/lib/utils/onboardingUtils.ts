@@ -149,13 +149,11 @@ export function advanceProgress(doc: IOnboardingTrackerDoc, completedNow: EStepP
     const result = {
       currentStep: (mappedCurrentStep ?? doc.status.currentStep) as EStepPath,
       completed: isCompleted,
-      // Always update completionLocation if provided (for policies-consents re-signing)
+      // Always preserve existing completionLocation, or update with new one if provided
+      completionLocation: completionLocation || doc.status.completionLocation,
       // Set completionDate only when actually completed
-      ...(completionLocation && { completionLocation }),
       ...(isCompleted && { 
-        completionDate: doc.status.completionDate ?? new Date(),
-        // Preserve existing completionLocation if no new one provided
-        ...(!completionLocation && { completionLocation: doc.status.completionLocation })
+        completionDate: doc.status.completionDate ?? new Date()
       }),
     };
     
@@ -169,13 +167,11 @@ export function advanceProgress(doc: IOnboardingTrackerDoc, completedNow: EStepP
   const result = {
     currentStep: (next ?? completedNow) as EStepPath,
     completed: isNowCompleted,
-    // Always update completionLocation if provided (for policies-consents re-signing)
+    // Always preserve existing completionLocation, or update with new one if provided
+    completionLocation: completionLocation || doc.status.completionLocation,
     // Set completionDate only when actually completed
-    ...(completionLocation && { completionLocation }),
     ...(isNowCompleted && { 
-      completionDate: doc.status.completionDate ?? new Date(),
-      // Preserve existing completionLocation if no new one provided
-      ...(!completionLocation && { completionLocation: doc.status.completionLocation })
+      completionDate: doc.status.completionDate ?? new Date()
     }),
   };
   
