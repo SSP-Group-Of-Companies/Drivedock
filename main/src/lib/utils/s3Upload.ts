@@ -1,24 +1,21 @@
-// lib/utils/s3Upload.ts
+// src/lib/utils/s3Upload.ts
 import { AWS_ACCESS_KEY_ID, AWS_BUCKET_NAME, AWS_REGION, AWS_SECRET_ACCESS_KEY } from "@/config/env";
 import { S3Client, PutObjectCommand, DeleteObjectCommand, CopyObjectCommand, HeadObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { v4 as uuidv4 } from "uuid";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { DEFAULT_PRESIGN_EXPIRY_SECONDS, S3_SUBMISSIONS_FOLDER, S3_TEMP_FOLDER } from "@/constants/aws";
-import { EImageMimeType, IPhoto } from "@/types/shared.types";
 import { ES3Folder, IPresignResponse } from "@/types/aws.types";
+import type { IFileAsset } from "@/types/shared.types";
 
 const s3 = new S3Client({
   region: AWS_REGION,
-  credentials: {
-    accessKeyId: AWS_ACCESS_KEY_ID,
-    secretAccessKey: AWS_SECRET_ACCESS_KEY,
-  },
+  credentials: { accessKeyId: AWS_ACCESS_KEY_ID, secretAccessKey: AWS_SECRET_ACCESS_KEY },
 });
 
 /** ---------- Core upload/delete/move/presign ---------- */
 
-export async function uploadImageToS3({ fileBuffer, fileType, folder }: { fileBuffer: Buffer; fileType: string; folder: string }): Promise<{ url: string; key: string }> {
-  const extension = fileType.split("/")[1] || "jpg";
+export async function uploadBinaryToS3({ fileBuffer, fileType, folder }: { fileBuffer: Buffer; fileType: string; folder: string }): Promise<{ url: string; key: string }> {
+  const extension = (fileType.split("/")[1] || "bin").toLowerCase();
   const key = `${folder}/${uuidv4()}.${extension}`;
 
   const command = new PutObjectCommand({
@@ -37,29 +34,21 @@ export async function uploadImageToS3({ fileBuffer, fileType, folder }: { fileBu
 }
 
 export async function deleteS3Objects(keys: string[]): Promise<void> {
-  const deletePromises = keys.map(async (key) => {
-    const command = new DeleteObjectCommand({ Bucket: AWS_BUCKET_NAME, Key: key });
-    try {
-      await s3.send(command);
-    } catch (err) {
-      console.error(`Failed to delete S3 object: ${key}`, err);
-    }
-  });
-
-  await Promise.all(deletePromises);
+  await Promise.all(
+    keys.map(async (key) => {
+      try {
+        await s3.send(new DeleteObjectCommand({ Bucket: AWS_BUCKET_NAME, Key: key }));
+      } catch (err) {
+        console.error(`Failed to delete S3 object: ${key}`, err);
+      }
+    })
+  );
 }
 
 export async function moveS3Object({ fromKey, toKey }: { fromKey: string; toKey: string }): Promise<{ url: string; key: string }> {
   const Bucket = AWS_BUCKET_NAME;
 
-  await s3.send(
-    new CopyObjectCommand({
-      Bucket,
-      CopySource: `${Bucket}/${fromKey}`,
-      Key: toKey,
-    })
-  );
-
+  await s3.send(new CopyObjectCommand({ Bucket, CopySource: `${Bucket}/${fromKey}`, Key: toKey }));
   await s3.send(new DeleteObjectCommand({ Bucket, Key: fromKey }));
 
   return {
@@ -73,106 +62,95 @@ export async function s3ObjectExists(key: string): Promise<boolean> {
     await s3.send(new HeadObjectCommand({ Bucket: AWS_BUCKET_NAME, Key: key }));
     return true;
   } catch (err: any) {
-    if (err.name === "NotFound") return false;
+    if (err?.name === "NotFound") return false;
     console.error("S3 existence check failed:", err);
     return false;
   }
 }
 
 export async function getPresignedPutUrl({ key, fileType, expiresIn = DEFAULT_PRESIGN_EXPIRY_SECONDS }: { key: string; fileType: string; expiresIn?: number }): Promise<{ url: string }> {
-  const command = new PutObjectCommand({
-    Bucket: AWS_BUCKET_NAME,
-    Key: key,
-    ContentType: fileType,
-  });
-
+  const command = new PutObjectCommand({ Bucket: AWS_BUCKET_NAME, Key: key, ContentType: fileType });
   const url = await getSignedUrl(s3, command, { expiresIn });
   return { url };
 }
 
-/** ---------- Small helpers to de-duplicate route logic ---------- */
+/** ---------- Key helpers ---------- */
 
-/** True if a key points to the temp area. */
 export const isTempKey = (key?: string) => Boolean(key && key.startsWith(`${S3_TEMP_FOLDER}/`));
-
-/** True if a photo is either missing or already in final storage. */
-export const isFinalOrEmptyPhoto = (photo?: IPhoto) => !photo?.s3Key || !isTempKey(photo.s3Key);
-
-/** Build a standard final destination for a tracker's assets in a given folder bucket. */
 export const buildFinalDest = (trackerId: string, folder: ES3Folder) => `${S3_SUBMISSIONS_FOLDER}/${folder}/${trackerId}`;
 
-/**
- * Finalizes a photo by moving it from temp-files to the final folder.
- * If already finalized or empty, returns the photo unchanged.
- */
-export async function finalizePhoto(photo: IPhoto, finalFolder: string): Promise<IPhoto> {
-  if (!photo?.s3Key) throw new Error("Missing s3Key in photo");
+/** ---------- File-asset finalization (generic) ---------- */
 
-  if (!isTempKey(photo.s3Key)) {
-    // already finalized
-    return photo;
-  }
+export const isFinalOrEmptyAsset = (asset?: IFileAsset) => !asset?.s3Key || !isTempKey(asset.s3Key);
 
-  const filename = photo.s3Key.split("/").pop();
+export async function finalizeAsset(asset: IFileAsset, finalFolder: string): Promise<IFileAsset> {
+  if (!asset?.s3Key) throw new Error("Missing s3Key in file asset");
+
+  if (!isTempKey(asset.s3Key)) return asset; // already finalized
+
+  const filename = asset.s3Key.split("/").pop();
   const finalKey = `${finalFolder}/${filename}`;
 
-  const moved = await moveS3Object({ fromKey: photo.s3Key, toKey: finalKey });
-  return { s3Key: moved.key, url: moved.url };
+  const moved = await moveS3Object({ fromKey: asset.s3Key, toKey: finalKey });
+  return { ...asset, s3Key: moved.key, url: moved.url };
 }
 
-/**
- * A safe variant: if photo is undefined/null, just return it.
- * Useful when optional fields may be absent.
- */
-export async function finalizePhotoSafe(photo: IPhoto | undefined, finalFolder: string): Promise<IPhoto | undefined> {
-  if (!photo) return photo;
-  return finalizePhoto(photo, finalFolder);
+export async function finalizeAssetSafe(asset: IFileAsset | undefined, finalFolder: string): Promise<IFileAsset | undefined> {
+  if (!asset) return asset;
+  return finalizeAsset(asset, finalFolder);
 }
 
-/**
- * Finalize an array (vector) of photos. Returns a new array.
- * If the vector is undefined, returns undefined.
- */
-export async function finalizeVector(vec: IPhoto[] | undefined, dest: string): Promise<IPhoto[] | undefined> {
+export async function finalizeAssetVector(vec: IFileAsset[] | undefined, dest: string): Promise<IFileAsset[] | undefined> {
   if (!Array.isArray(vec)) return vec;
-  const out: IPhoto[] = [];
-  for (const p of vec) {
-    out.push(isTempKey(p?.s3Key) ? await finalizePhoto(p, dest) : p);
-  }
+  const out: IFileAsset[] = [];
+  for (const a of vec) out.push(isTempKey(a?.s3Key) ? await finalizeAsset(a, dest) : a);
   return out;
 }
 
-/** ---------- Client-side presigned upload helper ---------- */
+/** ---------- Client-side presigned upload helper (generic) ---------- */
 
 export interface UploadToS3Options {
   file: File;
   folder: ES3Folder;
   trackerId?: string;
+  allowedMimeTypes?: readonly string[];
+  maxSizeMB?: number;
 }
 
 export interface UploadResult {
   s3Key: string;
   url: string;
-  putUrl: string; // optional: useful for debugging
+  putUrl: string;
+  mimeType: string;
+  sizeBytes: number;
+  originalName: string;
 }
 
-export async function uploadToS3Presigned({ file, folder, trackerId = "unknown" }: UploadToS3Options): Promise<UploadResult> {
-  const allowedMimeTypes: EImageMimeType[] = [EImageMimeType.JPEG, EImageMimeType.PNG, EImageMimeType.JPG];
-
-  const mimetype = file.type.toLowerCase() as EImageMimeType;
+export async function uploadToS3Presigned({
+  file,
+  folder,
+  trackerId = "unknown",
+  allowedMimeTypes = ["image/jpeg", "image/png", "image/jpg"],
+  maxSizeMB = 10,
+}: UploadToS3Options): Promise<UploadResult> {
+  const mimetype = file.type.toLowerCase();
   if (!allowedMimeTypes.includes(mimetype)) {
-    throw new Error("Only JPEG or PNG images are allowed.");
+    throw new Error(`Invalid file type. Allowed: ${allowedMimeTypes.join(", ")}`);
   }
-
-  const MAX_SIZE_MB = 10;
-  if (file.size > MAX_SIZE_MB * 1024 * 1024) {
-    throw new Error(`File size exceeds ${MAX_SIZE_MB}MB.`);
+  if (file.size > maxSizeMB * 1024 * 1024) {
+    throw new Error(`File size exceeds ${maxSizeMB}MB.`);
   }
 
   const res = await fetch("/api/v1/presign", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ folder, mimetype, filesize: file.size, trackerId }),
+    body: JSON.stringify({
+      folder,
+      mimetype,
+      trackerId,
+      filesize: file.size,
+      filename: file.name,
+    }),
   });
 
   if (!res.ok) {
@@ -192,30 +170,27 @@ export async function uploadToS3Presigned({ file, folder, trackerId = "unknown" 
     s3Key: data.key,
     url: data.publicUrl,
     putUrl: data.url,
+    mimeType: mimetype,
+    sizeBytes: file.size,
+    originalName: file.name,
   };
 }
 
 /** ---------- Bytes helpers ---------- */
 
-/** Fetch a public/presigned URL into raw bytes */
 async function fetchBytesFromUrl(url: string): Promise<Uint8Array> {
   const res = await fetch(url);
-  if (!res.ok) throw new Error(`Failed to fetch image: ${res.status} ${res.statusText}`);
+  if (!res.ok) throw new Error(`Failed to fetch object: ${res.status} ${res.statusText}`);
   const buf = await res.arrayBuffer();
   return new Uint8Array(buf);
 }
 
-/** Get S3 object (by key) as raw bytes using AWS SDK v3 */
 async function getS3ObjectBytes(key: string): Promise<Uint8Array> {
   const out = await s3.send(new GetObjectCommand({ Bucket: AWS_BUCKET_NAME, Key: key }));
   const body: any = out.Body;
 
-  if (body?.transformToByteArray) {
-    // Node 18+ / modern SDK runtime
-    return await body.transformToByteArray();
-  }
+  if (body?.transformToByteArray) return await body.transformToByteArray();
 
-  // Fallback: stream to Buffer
   const chunks: Buffer[] = [];
   await new Promise<void>((resolve, reject) => {
     body.on("data", (d: Buffer) => chunks.push(d));
@@ -226,21 +201,15 @@ async function getS3ObjectBytes(key: string): Promise<Uint8Array> {
 }
 
 /**
- * Load image bytes from an IPhoto.
- * Prefers s3Key (private buckets) and falls back to url (public/presigned).
+ * Load image bytes from an asset (for PDF embedding, etc.).
+ * Keep this for image workflows only. If you need generic bytes, add another helper.
  */
-export async function loadImageBytesFromPhoto(photo?: IPhoto): Promise<Uint8Array> {
-  if (!photo) throw new Error("Photo is undefined");
-  if (photo.s3Key) {
-    return getS3ObjectBytes(photo.s3Key);
-  }
-  if (photo.url) {
-    return fetchBytesFromUrl(photo.url);
-  }
-  throw new Error("Photo is missing both s3Key and url");
+export async function loadImageBytesFromAsset(asset?: IFileAsset): Promise<Uint8Array> {
+  if (!asset) throw new Error("Asset is undefined");
+  if (asset.s3Key) return getS3ObjectBytes(asset.s3Key);
+  if (asset.url) return fetchBytesFromUrl(asset.url);
+  throw new Error("Asset is missing both s3Key and url");
 }
-
-/** ---------- NEW: Client-side helper to delete temp files ---------- */
 
 /**
  * Delete temp S3 files via the API.
@@ -270,11 +239,11 @@ export async function deleteTempFiles(keys: string[]): Promise<{ deleted?: strin
 }
 
 /**
- * Convenience helper: delete a single temp photo if applicable.
+ * Convenience helper: delete a single temp file if applicable.
  * Returns true if a delete call was made.
  */
-export async function deleteTempPhoto(photo?: IPhoto): Promise<boolean> {
-  if (!photo?.s3Key || !isTempKey(photo.s3Key)) return false;
-  await deleteTempFiles([photo.s3Key]);
+export async function deleteTempFile(file?: IFileAsset): Promise<boolean> {
+  if (!file?.s3Key || !isTempKey(file.s3Key)) return false;
+  await deleteTempFiles([file.s3Key]);
   return true;
 }

@@ -1,7 +1,8 @@
 // src/mongoose/schemas/driveTest.schema.ts
 import { Schema } from "mongoose";
 import { IDriveTestDoc, IOnRoadAssessment, IPreTripAssessment, EDriveTestOverall, EExpectedStandard, PreTripLabels, OnRoadLabels } from "@/types/driveTest.types";
-import { photoSchema } from "./sharedSchemas";
+import { fileSchema } from "./sharedSchemas";
+import { isImageMime } from "@/types/shared.types";
 
 /* ───────────────────────── Helpers ───────────────────────── */
 
@@ -129,8 +130,12 @@ const preTripSchema = new Schema<IPreTripAssessment>(
     },
     comments: { type: String },
     supervisorSignature: {
-      type: photoSchema,
+      type: fileSchema,
       required: [true, "supervisorSignature is required"],
+      validate: {
+        validator: (v: any) => v && isImageMime(v?.mimeType),
+        message: "supervisorSignature must be an image.",
+      },
     },
     assessedAt: { type: Date, default: Date.now },
   },
@@ -185,11 +190,19 @@ const onRoadSchema = new Schema<IOnRoadAssessment>(
       required: [true, "overallAssessment is required"],
     },
     needsFlatbedTraining: { type: Boolean, default: undefined },
-    milesKmsDriven: { type: Number, required: [true, "milesKmsDriven is required"], min: [0, "milesKmsDriven cannot be negative"] },
+    milesKmsDriven: {
+      type: Number,
+      required: [true, "milesKmsDriven is required"],
+      min: [0, "milesKmsDriven cannot be negative"],
+    },
     comments: { type: String },
     supervisorSignature: {
-      type: photoSchema,
+      type: fileSchema,
       required: [true, "supervisorSignature is required"],
+      validate: {
+        validator: (v: any) => v && isImageMime(v?.mimeType),
+        message: "supervisorSignature must be an image.",
+      },
     },
     assessedAt: { type: Date, default: Date.now },
   },

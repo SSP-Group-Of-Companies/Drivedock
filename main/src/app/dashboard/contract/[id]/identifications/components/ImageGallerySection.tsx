@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { useEditMode } from "../../components/EditModeContext";
 import { ILicenseEntry, IFastCard } from "@/types/applicationForm.types";
-import { IPhoto, ECountryCode } from "@/types/shared.types";
+import { IFileAsset, ECountryCode } from "@/types/shared.types";
 import { Image as ImageIcon, ChevronLeft, ChevronRight, Plus, Camera, Upload, Trash2, AlertCircle, Menu, X, CheckCircle, XCircle, Download } from "lucide-react";
 import { ES3Folder } from "@/types/aws.types";
 import { useParams } from "next/navigation";
@@ -12,14 +12,14 @@ import { uploadToS3Presigned, deleteTempFiles, isTempKey } from "@/lib/utils/s3U
 
 interface ImageGallerySectionProps {
   licenses: ILicenseEntry[];
-  incorporatePhotos: IPhoto[];
-  hstPhotos: IPhoto[];
-  bankingInfoPhotos: IPhoto[];
-  healthCardPhotos: IPhoto[];
-  medicalCertificationPhotos: IPhoto[];
-  passportPhotos: IPhoto[];
-  prPermitCitizenshipPhotos: IPhoto[];
-  usVisaPhotos: IPhoto[];
+  incorporatePhotos: IFileAsset[];
+  hstPhotos: IFileAsset[];
+  bankingInfoPhotos: IFileAsset[];
+  healthCardPhotos: IFileAsset[];
+  medicalCertificationPhotos: IFileAsset[];
+  passportPhotos: IFileAsset[];
+  prPermitCitizenshipPhotos: IFileAsset[];
+  usVisaPhotos: IFileAsset[];
   fastCard?: IFastCard;
   employeeNumber?: string;
   hstNumber?: string;
@@ -31,7 +31,7 @@ interface ImageGallerySectionProps {
 interface GalleryItem {
   id: string;
   title: string;
-  photos: IPhoto[];
+  photos: IFileAsset[];
   type: string;
   hasFrontBack: boolean;
   maxPhotos: number;
@@ -146,7 +146,7 @@ export default function ImageGallerySection({
           {
             id: "license-primary",
             title: "License 1 (Primary - AZ)",
-            photos: [licenses[0].licenseFrontPhoto, licenses[0].licenseBackPhoto].filter(Boolean) as IPhoto[],
+            photos: [licenses[0].licenseFrontPhoto, licenses[0].licenseBackPhoto].filter(Boolean) as IFileAsset[],
             type: "license",
             hasFrontBack: true,
             maxPhotos: PHOTO_LIMITS.license,
@@ -162,7 +162,7 @@ export default function ImageGallerySection({
           {
             id: "fastCard",
             title: "Fast Card",
-            photos: [fastCard.fastCardFrontPhoto, fastCard.fastCardBackPhoto].filter(Boolean) as IPhoto[],
+            photos: [fastCard.fastCardFrontPhoto, fastCard.fastCardBackPhoto].filter(Boolean) as IFileAsset[],
             type: "fastCard",
             hasFrontBack: true,
             maxPhotos: PHOTO_LIMITS.fastCard,
@@ -339,9 +339,10 @@ export default function ImageGallerySection({
         });
 
         // Create new photo object with actual S3 data
-        const newPhoto: IPhoto = {
+        const newPhoto: IFileAsset = {
           url: result.url, // S3 public URL
           s3Key: result.s3Key, // S3 key
+          mimeType: file.type,
         };
 
         // Handle Fast Card photos differently since they're object properties, not arrays
@@ -410,7 +411,7 @@ export default function ImageGallerySection({
         } else {
           // Regular array-based photos — derive from latest staged state to avoid stale closures
           onStage((prev: any) => {
-            const prevArr: IPhoto[] = Array.isArray(prev?.[item.fieldKey]) ? prev[item.fieldKey] : item.photos || [];
+            const prevArr: IFileAsset[] = Array.isArray(prev?.[item.fieldKey]) ? prev[item.fieldKey] : item.photos || [];
             const next = [...prevArr, newPhoto];
             return { ...prev, [item.fieldKey]: next };
           });
@@ -484,8 +485,8 @@ export default function ImageGallerySection({
 
     // Array-based collections
     onStage((prev: any) => {
-      const prevArr: IPhoto[] = Array.isArray(prev?.[item.fieldKey]) ? prev[item.fieldKey] : item.photos || [];
-      const next = prevArr.filter((_: IPhoto, idx: number) => idx !== photoIndex);
+      const prevArr: IFileAsset[] = Array.isArray(prev?.[item.fieldKey]) ? prev[item.fieldKey] : item.photos || [];
+      const next = prevArr.filter((_: IFileAsset, idx: number) => idx !== photoIndex);
       return { ...prev, [item.fieldKey]: next };
     });
 
@@ -549,9 +550,10 @@ export default function ImageGallerySection({
         });
 
         // Create new photo object with actual S3 data
-        const newPhoto: IPhoto = {
+        const newPhoto: IFileAsset = {
           url: result.url, // S3 public URL
           s3Key: result.s3Key, // S3 key
+          mimeType: file.type,
         };
 
         // Handle Fast Card photos differently since they're object properties, not arrays
@@ -596,7 +598,7 @@ export default function ImageGallerySection({
         } else {
           // Regular array-based photos — derive from latest staged state to avoid stale closures
           onStage((prev: any) => {
-            const prevArr: IPhoto[] = Array.isArray(prev?.[item.fieldKey]) ? prev[item.fieldKey] : item.photos || [];
+            const prevArr: IFileAsset[] = Array.isArray(prev?.[item.fieldKey]) ? prev[item.fieldKey] : item.photos || [];
             const next = [...prevArr];
             next[photoIndex] = newPhoto;
             return { ...prev, [item.fieldKey]: next };
@@ -613,7 +615,7 @@ export default function ImageGallerySection({
   };
 
   // Download image function
-  const handleDownloadImage = async (photo: IPhoto, itemTitle: string, photoLabel: string) => {
+  const handleDownloadImage = async (photo: IFileAsset, itemTitle: string, photoLabel: string) => {
     try {
       const response = await fetch(photo.url);
       const blob = await response.blob();

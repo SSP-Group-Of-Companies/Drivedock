@@ -1,13 +1,15 @@
+// src/mongoose/models/DrugTest.ts
 import { Schema } from "mongoose";
 import { IDrugTestDoc, EDrugTestStatus } from "@/types/drugTest.types";
-import { photoSchema } from "./sharedSchemas";
+import { fileSchema } from "./sharedSchemas";
 
 const allowedStatuses = Object.values(EDrugTestStatus);
 
 const drugTestSchema = new Schema<IDrugTestDoc>(
   {
+    // documents can be image/pdf/doc/docx
     documents: {
-      type: [photoSchema],
+      type: [fileSchema],
       default: [],
       required: [true, "documents is required"],
     },
@@ -15,12 +17,14 @@ const drugTestSchema = new Schema<IDrugTestDoc>(
       type: String,
       enum: {
         values: allowedStatuses,
-        message: `Invalid status . Allowed values are: ${allowedStatuses.join(", ")}`,
+        message: `Invalid status. Allowed values are: ${allowedStatuses.join(", ")}`,
       },
+      required: [true, "status is required"],
+      default: EDrugTestStatus.NOT_UPLOADED, // or your desired default
     },
   },
   {
-    timestamps: true, // adds createdAt and updatedAt
+    timestamps: true,
     toJSON: { virtuals: true },
     toObject: { virtuals: true },
   }

@@ -1,5 +1,4 @@
 // src/types/aws.types.ts
-
 import { EFileMimeType } from "./shared.types";
 
 export enum ES3Folder {
@@ -23,15 +22,14 @@ export enum ES3Folder {
 export interface IPresignRequest {
   folder: ES3Folder;
   filename?: string;
-  /** Widened: allows images now, and additional types later */
-  mimetype: EFileMimeType | string;
+  mimetype: EFileMimeType;
   trackerId?: string;
   filesize?: number;
 }
 
 export interface IPresignResponse {
-  key: string; // S3 object key
-  url: string; // Presigned PUT URL
-  publicUrl: string; // Derived GET URL
+  key: string;
+  url: string;
+  publicUrl: string;
   expiresIn: number;
 }

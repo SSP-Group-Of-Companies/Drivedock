@@ -1,9 +1,11 @@
 import { IApplicationFormPage4, ICriminalRecordEntry, IFastCard } from "@/types/applicationForm.types";
 import { Schema } from "mongoose";
-import { photoSchema } from "../sharedSchemas";
+import { fileSchema } from "../sharedSchemas";
+import { isImageMime } from "@/types/shared.types";
 
-// Small helper for array length validation
+// Helpers
 const maxArrayLen = (max: number) => (arr: unknown[]) => Array.isArray(arr) ? arr.length <= max : true;
+const imageArrayValidator = (arr: any[]) => (Array.isArray(arr) ? arr.every((f) => f && isImageMime(f?.mimeType)) : true);
 
 // Criminal Record Entry Schema with custom validation
 const criminalRecordEntrySchema = new Schema<ICriminalRecordEntry>({
@@ -12,25 +14,24 @@ const criminalRecordEntrySchema = new Schema<ICriminalRecordEntry>({
   courtLocation: { type: String, default: "" },
 });
 
-// Add custom validation for "all-or-nothing" per row
-criminalRecordEntrySchema.pre('validate', function() {
-  const hasAnyData = !!(this.offense?.trim()) || !!this.dateOfSentence || !!(this.courtLocation?.trim());
-  
+// All-or-nothing row validation
+criminalRecordEntrySchema.pre("validate", function () {
+  const hasAnyData = !!this.offense?.trim() || !!this.dateOfSentence || !!this.courtLocation?.trim();
+
   if (hasAnyData) {
-    // If any field has data, all fields become required
     if (!this.offense?.trim()) {
-      this.invalidate('offense', 'Offense is required when any field in this row has data.');
+      this.invalidate("offense", "Offense is required when any field in this row has data.");
     }
     if (!this.dateOfSentence) {
-      this.invalidate('dateOfSentence', 'Date of sentence is required when any field in this row has data.');
+      this.invalidate("dateOfSentence", "Date of sentence is required when any field in this row has data.");
     }
     if (!this.courtLocation?.trim()) {
-      this.invalidate('courtLocation', 'Court location is required when any field in this row has data.');
+      this.invalidate("courtLocation", "Court location is required when any field in this row has data.");
     }
   }
 });
 
-// FAST Card schema
+// FAST Card schema (images only)
 const fastCardSchema = new Schema<IFastCard>({
   fastCardNumber: {
     type: String,
@@ -41,16 +42,24 @@ const fastCardSchema = new Schema<IFastCard>({
     required: [true, "Fast card expiry is required"],
   },
   fastCardFrontPhoto: {
-    type: photoSchema,
-    required: [true, "fast card front photo is required"],
+    type: fileSchema,
+    required: [true, "Fast card front photo is required"],
+    validate: {
+      validator: (v: any) => v && isImageMime(v?.mimeType),
+      message: "fastCardFrontPhoto must be an image.",
+    },
   },
   fastCardBackPhoto: {
-    type: photoSchema,
-    required: [true, "fast card front photo is required"],
+    type: fileSchema,
+    required: [true, "Fast card back photo is required"],
+    validate: {
+      validator: (v: any) => v && isImageMime(v?.mimeType),
+      message: "fastCardBackPhoto must be an image.",
+    },
   },
 });
 
-// Page 4 Schema
+// Page 4 Schema (ALL asset arrays are images-only by business rule)
 export const applicationFormPage4Schema = new Schema<IApplicationFormPage4>(
   {
     // Criminal Records
@@ -65,68 +74,71 @@ export const applicationFormPage4Schema = new Schema<IApplicationFormPage4>(
     businessName: { type: String },
 
     hstPhotos: {
-      type: [photoSchema],
+      type: [fileSchema],
       default: [],
-      validate: {
-        validator: maxArrayLen(2),
-        message: "HST photos cannot exceed 2 items.",
-      },
+      validate: [
+        { validator: imageArrayValidator, message: "All HST photos must be images." },
+        { validator: maxArrayLen(2), message: "HST photos cannot exceed 2 items." },
+      ],
     },
     incorporatePhotos: {
-      type: [photoSchema],
+      type: [fileSchema],
       default: [],
-      validate: {
-        validator: maxArrayLen(10),
-        message: "Incorporate photos cannot exceed 10 items.",
-      },
+      validate: [
+        { validator: imageArrayValidator, message: "All incorporation photos must be images." },
+        { validator: maxArrayLen(10), message: "Incorporation photos cannot exceed 10 items." },
+      ],
     },
     bankingInfoPhotos: {
-      type: [photoSchema],
+      type: [fileSchema],
       default: [],
-      validate: {
-        validator: maxArrayLen(2),
-        message: "Banking info photos cannot exceed 2 items.",
-      },
+      validate: [
+        { validator: imageArrayValidator, message: "All banking info photos must be images." },
+        { validator: maxArrayLen(2), message: "Banking info photos cannot exceed 2 items." },
+      ],
     },
+
+    // Medical / Identity (country-specific)
     healthCardPhotos: {
-      type: [photoSchema],
+      type: [fileSchema],
       default: [],
-      validate: {
-        validator: maxArrayLen(2),
-        message: "Health card photos cannot exceed 2 items.",
-      },
+      validate: [
+        { validator: imageArrayValidator, message: "All health card photos must be images." },
+        { validator: maxArrayLen(2), message: "Health card photos cannot exceed 2 items." },
+      ],
     },
     medicalCertificationPhotos: {
-      type: [photoSchema],
+      type: [fileSchema],
       default: [],
-      validate: {
-        validator: maxArrayLen(2),
-        message: "Medical certification photos cannot exceed 2 items.",
-      },
+      validate: [
+        { validator: imageArrayValidator, message: "All medical certification photos must be images." },
+        { validator: maxArrayLen(2), message: "Medical certification photos cannot exceed 2 items." },
+      ],
     },
+
     passportPhotos: {
-      type: [photoSchema],
+      type: [fileSchema],
       default: [],
-      validate: {
-        validator: maxArrayLen(2),
-        message: "Passport photos cannot exceed 2 items.",
-      },
+      validate: [
+        { validator: imageArrayValidator, message: "All passport photos must be images." },
+        { validator: maxArrayLen(2), message: "Passport photos cannot exceed 2 items." },
+      ],
     },
     usVisaPhotos: {
-      type: [photoSchema],
+      type: [fileSchema],
       default: [],
-      validate: {
-        validator: maxArrayLen(2),
-        message: "US VISA photos cannot exceed 2 items.",
-      },
+      validate: [
+        { validator: imageArrayValidator, message: "All US VISA photos must be images." },
+        { validator: maxArrayLen(2), message: "US VISA photos cannot exceed 2 items." },
+      ],
     },
     prPermitCitizenshipPhotos: {
-      type: [photoSchema],
+      type: [fileSchema],
       default: [],
-      validate: {
-        validator: maxArrayLen(2),
-        message: "PR/Permit/Citizenship photos cannot exceed 2 items.",
-      },
+      validate: [
+        { validator: imageArrayValidator, message: "All PR/Permit/Citizenship photos must be images." },
+        { validator: maxArrayLen(2), message: "PR/Permit/Citizenship photos cannot exceed 2 items." },
+      ],
     },
 
     fastCard: {

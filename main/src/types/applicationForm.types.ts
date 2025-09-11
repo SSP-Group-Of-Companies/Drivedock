@@ -15,12 +15,12 @@
  *  - `sinEncrypted` is produced on the server. The client should send
  *    plain `sin` on Page 1 POST; the backend will compute and store
  *    `sinEncrypted` and strip `sin` prior to persistence.
- *  - `IPhoto` represents an uploaded image reference (S3 key, etc.).
+ *  - `IFileAsset` represents an uploaded image reference (S3 key, etc.).
  * ===============================================================
  */
 
 import { Document } from "mongoose";
-import { ELicenseType, IPhoto } from "./shared.types";
+import { ELicenseType, IFileAsset } from "./shared.types";
 
 /* =========================
  * Page 1
@@ -49,8 +49,8 @@ export interface ILicenseEntry {
   licenseStateOrProvince: string;
   licenseType: ELicenseType; // e.g., AZ, DZ, etc.
   licenseExpiry: string | Date; // YYYY-MM-DD (client) or Date (server)
-  licenseFrontPhoto?: IPhoto; // S3 temp ref on POST; finalized by server
-  licenseBackPhoto?: IPhoto; // S3 temp ref on POST; finalized by server
+  licenseFrontPhoto?: IFileAsset; // S3 temp ref on POST; finalized by server
+  licenseBackPhoto?: IFileAsset; // S3 temp ref on POST; finalized by server
 }
 
 /**
@@ -69,7 +69,7 @@ export enum EGender {
  * - Client sends `sin` (plain). Server computes `sinEncrypted` and removes `sin`
  *   before saving. `sinEncrypted` appears in server-side data.
  * - `sinPhoto` and license photos should be uploaded to TEMP S3 first; the
- *   returned `IPhoto` objects are included in the JSON payload. The server
+ *   returned `IFileAsset` objects are included in the JSON payload. The server
  *   will finalize/move them after a successful save.
  */
 export interface IApplicationFormPage1 {
@@ -80,7 +80,7 @@ export interface IApplicationFormPage1 {
   sinEncrypted: string; // Server-computed; client should omit
   sinIssueDate: string | Date; // YYYY-MM-DD (client) or Date (server)
   gender: EGender;
-  sinPhoto: IPhoto;
+  sinPhoto: IFileAsset;
   dob: string | Date; // YYYY-MM-DD (client) or Date (server)
   phoneHome?: string;
   phoneCell: string;
@@ -212,8 +212,8 @@ export interface ICriminalRecordEntry {
 export interface IFastCard {
   fastCardNumber: string;
   fastCardExpiry: string | Date; // YYYY-MM-DD or Date
-  fastCardFrontPhoto?: IPhoto;
-  fastCardBackPhoto?: IPhoto;
+  fastCardFrontPhoto?: IFileAsset;
+  fastCardBackPhoto?: IFileAsset;
 }
 
 /**
@@ -242,17 +242,17 @@ export interface IApplicationFormPage4 {
   employeeNumber?: string;
   hstNumber?: string;
   businessName?: string;
-  incorporatePhotos?: IPhoto[];
-  hstPhotos?: IPhoto[];
-  bankingInfoPhotos?: IPhoto[];
+  incorporatePhotos?: IFileAsset[];
+  hstPhotos?: IFileAsset[];
+  bankingInfoPhotos?: IFileAsset[];
 
   // Medical / Identity (country-specific)
-  healthCardPhotos?: IPhoto[]; // Canada
-  medicalCertificationPhotos?: IPhoto[]; // US
+  healthCardPhotos?: IFileAsset[]; // Canada
+  medicalCertificationPhotos?: IFileAsset[]; // US
 
-  passportPhotos?: IPhoto[]; // Optional for US
-  prPermitCitizenshipPhotos?: IPhoto[]; // Optional for US
-  usVisaPhotos?: IPhoto[]; // Not needed for US citizens
+  passportPhotos?: IFileAsset[]; // Optional for US
+  prPermitCitizenshipPhotos?: IFileAsset[]; // Optional for US
+  usVisaPhotos?: IFileAsset[]; // Not needed for US citizens
   fastCard?: IFastCard; // Optional; typically Canada
 
   // Additional Info

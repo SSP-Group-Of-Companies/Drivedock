@@ -1,5 +1,5 @@
 import { Document } from "mongoose";
-import { IPhoto } from "./shared.types";
+import { IFileAsset } from "./shared.types";
 
 export enum EDrugTestStatus {
   NOT_UPLOADED = "NOT_UPLOADED",
@@ -9,7 +9,7 @@ export enum EDrugTestStatus {
 }
 
 export interface IDrugTest {
-  documents: IPhoto[]; // uploaded drug test documents
+  documents: IFileAsset[]; // uploaded drug test documents
   status: EDrugTestStatus; // workflow status
 }
 

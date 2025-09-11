@@ -1,19 +1,17 @@
 "use client";
 
 import { useMemo, useState, useId, useEffect } from "react";
-import type { IPhoto } from "@/types/shared.types";
+import type { IFileAsset } from "@/types/shared.types";
 import { uploadToS3Presigned } from "@/lib/utils/s3Upload";
 import { ES3Folder } from "@/types/aws.types";
 import { useAuth } from "@/app/providers/authProvider";
-import ImageGalleryDialog, {
-  type GalleryItem,
-} from "@/app/dashboard/components/dialogs/ImageGalleryDialog";
+import ImageGalleryDialog, { type GalleryItem } from "@/app/dashboard/components/dialogs/ImageGalleryDialog";
 
 type CarriersEdgeView = {
   emailSent?: boolean;
   emailSentBy?: string;
   emailSentAt?: string; // ISO
-  certificates?: IPhoto[];
+  certificates?: IFileAsset[];
   completed?: boolean;
 };
 
@@ -26,14 +24,7 @@ type Props = {
   highlight?: boolean;
 };
 
-export default function CarriersEdgeCard({
-  trackerId,
-  driverEmail,
-  carriersEdge,
-  canEdit,
-  onChange,
-  highlight = false,
-}: Props) {
+export default function CarriersEdgeCard({ trackerId, driverEmail, carriersEdge, canEdit, onChange, highlight = false }: Props) {
   const user = useAuth();
   const [busy, setBusy] = useState(false); // uploading only
   const [err, setErr] = useState<string | null>(null);
@@ -59,26 +50,17 @@ export default function CarriersEdgeCard({
 
   const canToggleEmailSent = !emailSent && canEdit && !busy;
   const canUpload = emailSent && canEdit && !busy;
-  const canToggleCompleted =
-    !carriersEdge.completed &&
-    emailSent &&
-    certificatesCount >= 1 &&
-    canEdit &&
-    !busy;
+  const canToggleCompleted = !carriersEdge.completed && emailSent && certificatesCount >= 1 && canEdit && !busy;
 
   // Gallery
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
-  const galleryItems: GalleryItem[] = certificates
-    .filter((p) => !!p?.url)
-    .map((p) => ({ url: String(p.url), uploadedAt: (p as any).uploadedAt }));
+  const galleryItems: GalleryItem[] = certificates.filter((p) => !!p?.url).map((p) => ({ url: String(p.url), uploadedAt: (p as any).uploadedAt }));
 
   const sentLine = useMemo(() => {
     if (!emailSent) return "Not sent";
     const by = carriersEdge.emailSentBy?.trim() || "—";
-    const at = carriersEdge.emailSentAt
-      ? new Date(carriersEdge.emailSentAt).toLocaleString()
-      : "—";
+    const at = carriersEdge.emailSentAt ? new Date(carriersEdge.emailSentAt).toLocaleString() : "—";
     return `Sent by ${by} on ${at}`;
   }, [emailSent, carriersEdge.emailSentBy, carriersEdge.emailSentAt]);
 
@@ -105,7 +87,7 @@ export default function CarriersEdgeCard({
     setBusy(true);
     setErr(null);
     try {
-      const uploaded: IPhoto[] = [];
+      const uploaded: IFileAsset[] = [];
       for (const file of Array.from(files)) {
         const result = await uploadToS3Presigned({
           file,
@@ -126,13 +108,7 @@ export default function CarriersEdgeCard({
   /* -------------------------------- Render -------------------------------- */
 
   return (
-    <div
-      className={`relative ${
-        showHighlight
-          ? "ssp-ring-wrapper rounded-xl p-[6px] ssp-animated-ring"
-          : ""
-      }`}
-    >
+    <div className={`relative ${showHighlight ? "ssp-ring-wrapper rounded-xl p-[6px] ssp-animated-ring" : ""}`}>
       <section
         className="relative rounded-xl border p-3 sm:p-4 lg:max-h-[21rem] lg:overflow-y-auto"
         aria-labelledby={headingId}
@@ -149,10 +125,7 @@ export default function CarriersEdgeCard({
             <p id={descId} className="sr-only">
               Locked until step is reached. Controls are disabled.
             </p>
-            <div
-              className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 shadow-lg"
-              aria-hidden
-            >
+            <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 shadow-lg" aria-hidden>
               <div
                 className="rounded-lg px-3 py-1.5 text-xs font-medium backdrop-blur-sm"
                 style={{
@@ -185,54 +158,23 @@ export default function CarriersEdgeCard({
                 Carrier&apos;s Edge Complete
               </span>
             )}
-            <span className="text-xs opacity-70">
-              Certificates: {certificatesCount}
-            </span>
+            <span className="text-xs opacity-70">Certificates: {certificatesCount}</span>
           </div>
         </header>
 
         {/* Body */}
-        <div
-          className={`grid grid-cols-1 gap-3 md:grid-cols-2 ${
-            locked ? "pointer-events-none" : ""
-          }`}
-        >
+        <div className={`grid grid-cols-1 gap-3 md:grid-cols-2 ${locked ? "pointer-events-none" : ""}`}>
           {/* LEFT: email + gallery */}
-          <div
-            className="rounded-xl border"
-            style={{ borderColor: "var(--color-outline-variant)" }}
-          >
-            <div
-              className="flex flex-col gap-2 p-3 sm:p-4"
-              style={{ borderBottom: "1px solid var(--color-outline-variant)" }}
-            >
+          <div className="rounded-xl border" style={{ borderColor: "var(--color-outline-variant)" }}>
+            <div className="flex flex-col gap-2 p-3 sm:p-4" style={{ borderBottom: "1px solid var(--color-outline-variant)" }}>
               <label
                 className="inline-flex items-center gap-2 text-base sm:text-lg font-medium"
-                title={
-                  locked
-                    ? undefined
-                    : canToggleEmailSent
-                    ? "Mark when credentials were sent to the driver"
-                    : emailSent
-                    ? "Already marked as sent"
-                    : "Busy…"
-                }
+                title={locked ? undefined : canToggleEmailSent ? "Mark when credentials were sent to the driver" : emailSent ? "Already marked as sent" : "Busy…"}
               >
-                <input
-                  type="checkbox"
-                  className="h-4 w-4"
-                  disabled={!canToggleEmailSent}
-                  checked={emailSent}
-                  onChange={(e) =>
-                    handleEmailSentToggle(e.currentTarget.checked)
-                  }
-                />
+                <input type="checkbox" className="h-4 w-4" disabled={!canToggleEmailSent} checked={emailSent} onChange={(e) => handleEmailSentToggle(e.currentTarget.checked)} />
                 <span>Credentials email sent</span>
               </label>
-              <div
-                className="text-xs"
-                style={{ color: "var(--color-on-surface-variant)" }}
-              >
+              <div className="text-xs" style={{ color: "var(--color-on-surface-variant)" }}>
                 {sentLine} {driverEmail ? `(${driverEmail})` : ""}
               </div>
             </div>
@@ -251,13 +193,7 @@ export default function CarriersEdgeCard({
                   setGalleryOpen(true);
                 }}
                 disabled={locked || galleryItems.length === 0}
-                title={
-                  locked
-                    ? undefined
-                    : galleryItems.length === 0
-                    ? "No certificates yet"
-                    : "Open gallery"
-                }
+                title={locked ? undefined : galleryItems.length === 0 ? "No certificates yet" : "Open gallery"}
               >
                 See Certificates
               </button>
@@ -265,26 +201,15 @@ export default function CarriersEdgeCard({
           </div>
 
           {/* RIGHT: upload (no inner overlays; just disabled + tooltip) */}
-          <div
-            className="flex flex-col items-stretch justify-between rounded-xl border p-3 sm:p-4"
-            style={{ borderColor: "var(--color-outline-variant)" }}
-          >
+          <div className="flex flex-col items-stretch justify-between rounded-xl border p-3 sm:p-4" style={{ borderColor: "var(--color-outline-variant)" }}>
             <label
-              className={`relative flex flex-1 items-center justify-center rounded-xl border-2 border-dashed px-4 py-8 text-center ${
-                canUpload ? "cursor-pointer" : "cursor-not-allowed opacity-60"
-              }`}
+              className={`relative flex flex-1 items-center justify-center rounded-xl border-2 border-dashed px-4 py-8 text-center ${canUpload ? "cursor-pointer" : "cursor-not-allowed opacity-60"}`}
               style={{
                 borderColor: "var(--color-outline-variant)",
                 background: "var(--color-surface)",
                 color: "var(--color-on-surface-variant)",
               }}
-              title={
-                locked
-                  ? undefined
-                  : canUpload
-                  ? "Click to capture or select images"
-                  : "Send credentials to enable uploads"
-              }
+              title={locked ? undefined : canUpload ? "Click to capture or select images" : "Send credentials to enable uploads"}
             >
               <input
                 key={fileKey}
@@ -297,22 +222,15 @@ export default function CarriersEdgeCard({
                 aria-label="Upload Carrier’s Edge certificate images"
                 capture="environment"
               />
-              <div className="pointer-events-none select-none">
-                Click to capture or select an image
-              </div>
+              <div className="pointer-events-none select-none">Click to capture or select an image</div>
             </label>
           </div>
         </div>
 
         {/* Footer: completed */}
-        <div
-          className="mt-3 flex items-center justify-between rounded-xl border px-3 py-2"
-          style={{ borderColor: "var(--color-outline-variant)" }}
-        >
+        <div className="mt-3 flex items-center justify-between rounded-xl border px-3 py-2" style={{ borderColor: "var(--color-outline-variant)" }}>
           <label
-            className={`inline-flex items-center gap-2 text-sm ${
-              canToggleCompleted ? "" : "opacity-60"
-            }`}
+            className={`inline-flex items-center gap-2 text-sm ${canToggleCompleted ? "" : "opacity-60"}`}
             title={
               locked
                 ? undefined
@@ -325,20 +243,14 @@ export default function CarriersEdgeCard({
                 : "Already completed"
             }
           >
-            <input
-              type="checkbox"
-              className="h-4 w-4"
-              disabled={!canToggleCompleted}
-              checked={!!carriersEdge.completed}
-              onChange={(e) => handleCompleteToggle(e.currentTarget.checked)}
-            />
+            <input type="checkbox" className="h-4 w-4" disabled={!canToggleCompleted} checked={!!carriersEdge.completed} onChange={(e) => handleCompleteToggle(e.currentTarget.checked)} />
             <span>Mark as completed</span>
           </label>
 
           <div className="text-xs opacity-70">
             {emailSent
               ? certificatesCount >= 1
-                ? carriersEdge.completed 
+                ? carriersEdge.completed
                   ? "Completed. Certificates can be deleted, but at least one certificate must remain when completed."
                   : "Ready to submit changes."
                 : "Upload at least 1 certificate."
@@ -373,10 +285,8 @@ export default function CarriersEdgeCard({
               setGalleryError("At least one certificate must exist when completed.");
               return;
             }
-            
-            const idx = certificates.findIndex(
-              (p) => String(p?.url) === item.url
-            );
+
+            const idx = certificates.findIndex((p) => String(p?.url) === item.url);
             if (idx === -1) return;
             const next = certificates.filter((_, i) => i !== idx);
             if (carriersEdge.completed && next.length < 1) {

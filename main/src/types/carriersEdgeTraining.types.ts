@@ -1,5 +1,5 @@
 import { Document } from "mongoose";
-import { IPhoto } from "./shared.types";
+import { IFileAsset } from "./shared.types";
 
 export interface ICarriersEdgeTraining {
   emailSent: boolean;
@@ -10,7 +10,7 @@ export interface ICarriersEdgeTraining {
   // NEW: when the email was sent
   emailSentAt?: Date;
 
-  certificates: IPhoto[];
+  certificates: IFileAsset[];
   completed: boolean;
 }
 

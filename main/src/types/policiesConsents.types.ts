@@ -1,10 +1,10 @@
 import { Document } from "mongoose";
-import { IPhoto } from "./shared.types";
+import { IFileAsset } from "./shared.types";
 
 export interface IPoliciesConsents {
-  signature: IPhoto;
+  signature: IFileAsset;
   signedAt: Date;
   sendPoliciesByEmail?: boolean;
 }
 
-export interface IPoliciesConsentsDoc extends IPoliciesConsents, Document { };
+export interface IPoliciesConsentsDoc extends IPoliciesConsents, Document {}
