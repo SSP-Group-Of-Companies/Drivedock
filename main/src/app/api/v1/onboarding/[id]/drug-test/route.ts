@@ -56,7 +56,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
     // -------- Finalize new uploads (temp-files -> submissions/drug-test-docs/<id>) --------
     const tempPrefix = `${S3_TEMP_FOLDER}/`;
-    const finalFolder = `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.DRUG_TEST_PHOTOS}/${onboardingDoc.id}`;
+    const finalFolder = `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.DRUG_TEST_DOCS}/${onboardingDoc.id}`;
 
     const isTemp = (p: IPhoto | undefined) => !!p?.s3Key && p.s3Key.startsWith(tempPrefix);
 

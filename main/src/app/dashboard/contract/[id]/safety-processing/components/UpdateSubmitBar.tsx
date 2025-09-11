@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type Props = Readonly<{
   dirty: boolean;
@@ -13,30 +13,41 @@ type Props = Readonly<{
  * Small sticky footer bar that activates when there are staged changes.
  * Automatically reloads the page after successful submission to show live updates.
  */
-export default function UpdateSubmitBar({
-  dirty,
-  busy,
-  onSubmit,
-  onDiscard,
-}: Props) {
+export default function UpdateSubmitBar({ dirty, busy, onSubmit, onDiscard }: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Clear error when changes are no longer dirty
+  useEffect(() => {
+    if (!dirty) setErrorMsg(null);
+  }, [dirty]);
 
   const handleSubmit = async () => {
     if (isSubmitting) return;
-    
+
     try {
       setIsSubmitting(true);
+      setErrorMsg(null); // clear any previous error before a new attempt
       await onSubmit();
-      
+
       // Reload the page after successful submission to show live updates
       window.location.reload();
-    } catch (error) {
-      console.error("Submission failed:", error);
+    } catch (error: unknown) {
+      const msg = (error as { message?: string })?.message ?? (typeof error === "string" ? error : null) ?? "Something went wrong while submitting. Please try again.";
+      setErrorMsg(msg);
       // Don't reload on error, let the parent component handle the error
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const handleDiscard = () => {
+    setErrorMsg(null);
+    onDiscard?.();
+  };
+
+  const isDisabled = !dirty || !!busy || isSubmitting;
+
   return (
     <div className="sticky bottom-0 z-30 mt-2 -mx-2 sm:mx-0" aria-live="polite">
       <div
@@ -50,33 +61,24 @@ export default function UpdateSubmitBar({
       >
         <div
           className="text-sm"
-          style={{ color: "var(--color-on-surface-variant)" }}
+          // When there's an error, emphasize and use a danger color.
+          style={{
+            color: errorMsg ? "var(--color-error, #b00020)" : "var(--color-on-surface-variant)",
+            fontWeight: errorMsg ? 600 : 400,
+          }}
+          role={errorMsg ? "alert" : undefined}
         >
-          {dirty ? "You have unsaved changes." : "No changes to submit."}
+          {errorMsg ? errorMsg : dirty ? "You have unsaved changes." : "No changes to submit."}
         </div>
 
         <div className="mt-2 flex gap-2 sm:mt-0">
           {onDiscard ? (
-            <button
-              type="button"
-              className="rounded-lg border px-3 py-1.5 text-sm"
-              style={{ borderColor: "var(--color-outline)" }}
-              onClick={onDiscard}
-              disabled={!dirty || !!busy || isSubmitting}
-            >
+            <button type="button" className="rounded-lg border px-3 py-1.5 text-sm" style={{ borderColor: "var(--color-outline)" }} onClick={handleDiscard} disabled={isDisabled}>
               Discard
             </button>
           ) : null}
 
-          <button
-            type="button"
-            className="rounded-lg px-3 py-1.5 text-sm text-white disabled:opacity-50"
-            style={{
-              background: "var(--color-primary)",
-            }}
-            onClick={handleSubmit}
-            disabled={!dirty || !!busy || isSubmitting}
-          >
+          <button type="button" className="rounded-lg px-3 py-1.5 text-sm text-white disabled:opacity-50" style={{ background: "var(--color-primary)" }} onClick={handleSubmit} disabled={isDisabled}>
             {busy || isSubmitting ? "Submitting…" : "Submit changes"}
           </button>
         </div>

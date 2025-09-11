@@ -143,12 +143,13 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
     };
 
     // identifications block (license expiry and truck details for notifications)
-    const identifications = (driverLicenseExpiration != null || truckDetails != null) 
-      ? { 
-          ...(driverLicenseExpiration != null ? { driverLicenseExpiration } : {}),
-          ...(truckDetails != null ? { truckDetails } : {})
-        } 
-      : undefined;
+    const identifications =
+      driverLicenseExpiration != null || truckDetails != null
+        ? {
+            ...(driverLicenseExpiration != null ? { driverLicenseExpiration } : {}),
+            ...(truckDetails != null ? { truckDetails } : {}),
+          }
+        : undefined;
 
     const responseData = {
       onboardingContext: enrichedContext,
@@ -278,7 +279,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       // Handle documents replacement (if provided)
       // Allow empty arrays (needed when rejecting). We'll only forbid empty when APPROVING.
       if (Array.isArray(incomingDocs)) {
-        const finalFolder = `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.DRUG_TEST_PHOTOS}/${onboardingDoc.id}`;
+        const finalFolder = `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.DRUG_TEST_DOCS}/${onboardingDoc.id}`;
         const nextDocs = await finalizePhotosIfNeeded(incomingDocs, finalFolder);
 
         await deleteRemovedFinalized(prevDocs, nextDocs ?? []);
@@ -522,12 +523,13 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       },
     };
 
-    const identifications = (driverLicenseExpiration != null || truckDetails != null) 
-      ? { 
-          ...(driverLicenseExpiration != null ? { driverLicenseExpiration } : {}),
-          ...(truckDetails != null ? { truckDetails } : {})
-        } 
-      : undefined;
+    const identifications =
+      driverLicenseExpiration != null || truckDetails != null
+        ? {
+            ...(driverLicenseExpiration != null ? { driverLicenseExpiration } : {}),
+            ...(truckDetails != null ? { truckDetails } : {}),
+          }
+        : undefined;
 
     return successResponse(200, "Onboarding safety data updated", {
       onboardingContext: enrichedContext,
