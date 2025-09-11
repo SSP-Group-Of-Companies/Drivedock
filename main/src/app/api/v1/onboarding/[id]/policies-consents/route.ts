@@ -97,6 +97,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
     
     // Update status with completion location (captured on every signing)
+    console.log('🚀 About to call advanceProgress:', {
+      hasCompletionLocation: !!completionLocation,
+      completionLocation,
+      willPassToAdvanceProgress: completionLocation || undefined
+    });
+    
     onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.POLICIES_CONSENTS, completionLocation || undefined);
 
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();
