@@ -270,6 +270,7 @@ export function buildTrackerContext(tracker: IOnboardingTrackerDoc, defaultStep?
     applicationType: tracker.applicationType,
     needsFlatbedTraining: opts.needsFlatbedTraining,
     status: tracker.status,
+    completionLocation: tracker.completionLocation,
     prevStep,
     nextStep,
   };

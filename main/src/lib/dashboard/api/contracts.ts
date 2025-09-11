@@ -11,13 +11,13 @@ export type ContractContext = {
     currentStep?: EStepPath; 
     completed?: boolean; 
     completionDate?: string;
-    completionLocation?: {
-      country?: string;
-      region?: string;
-      city?: string;
-      timezone?: string;
-      ip?: string;
-    };
+  };
+  completionLocation?: {
+    country?: string;
+    region?: string;
+    city?: string;
+    timezone?: string;
+    ip?: string;
   };
   terminated?: boolean;
   terminationType?: string;

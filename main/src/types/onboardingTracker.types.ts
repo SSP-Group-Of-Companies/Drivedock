@@ -37,13 +37,6 @@ export interface IOnboardingStatus {
   currentStep: EStepPath;
   completed: boolean;
   completionDate?: Date;
-  completionLocation?: {
-    country?: string;
-    region?: string; // State/Province
-    city?: string;
-    timezone?: string;
-    ip?: string;
-  };
 }
 
 /**
@@ -66,6 +59,14 @@ export interface IOnboardingTracker {
   applicationType?: ECompanyApplicationType;
 
   status: IOnboardingStatus;
+
+  completionLocation?: {
+    country?: string;
+    region?: string; // State/Province
+    city?: string;
+    timezone?: string;
+    ip?: string;
+  };
 
   companyId: string;
 
@@ -107,6 +108,7 @@ type TrackerContextBase = Pick<IOnboardingTracker, "companyId" | "applicationTyp
 export interface IOnboardingTrackerContext extends TrackerContextBase {
   id: string;
   notes?: IOnboardingTracker["notes"];
+  completionLocation?: IOnboardingTracker["completionLocation"];
   prevStep: EStepPath | null;
   nextStep: EStepPath | null;
   itemSummary?: {

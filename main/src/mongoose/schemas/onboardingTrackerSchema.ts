@@ -52,23 +52,6 @@ const onboardingTrackerSchema = new Schema<IOnboardingTrackerDoc>(
       completionDate: {
         type: Date,
       },
-      completionLocation: {
-        country: {
-          type: String,
-        },
-        region: {
-          type: String, // State/Province
-        },
-        city: {
-          type: String,
-        },
-        timezone: {
-          type: String,
-        },
-        ip: {
-          type: String,
-        },
-      },
     },
     companyId: {
       type: String,
@@ -86,6 +69,23 @@ const onboardingTrackerSchema = new Schema<IOnboardingTrackerDoc>(
       driveTest: { type: Schema.Types.ObjectId, ref: DriveTest },
       drugTest: { type: Schema.Types.ObjectId, ref: DrugTest },
       flatbedTraining: { type: Schema.Types.ObjectId, ref: FlatbedTraining },
+    },
+    completionLocation: {
+      country: {
+        type: String,
+      },
+      region: {
+        type: String, // State/Province
+      },
+      city: {
+        type: String,
+      },
+      timezone: {
+        type: String,
+      },
+      ip: {
+        type: String,
+      },
     },
     needsFlatbedTraining: {
       type: Boolean,

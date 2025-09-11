@@ -11,8 +11,7 @@ export default function CompletionSummary({
 }: CompletionSummaryProps) {
   const isCompleted = contractContext.status?.completed;
   const completionDate = (contractContext.status as any)?.completionDate;
-  const completionLocation = (contractContext.status as any)
-    ?.completionLocation;
+  const completionLocation = contractContext.completionLocation;
 
   // Only show for completed applications
   if (!isCompleted || !completionDate) {
