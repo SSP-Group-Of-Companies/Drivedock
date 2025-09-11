@@ -1,4 +1,6 @@
-import { EImageMimeType } from "./shared.types";
+// src/types/aws.types.ts
+
+import { EFileMimeType } from "./shared.types";
 
 export enum ES3Folder {
   LICENSES = "licenses",
@@ -20,15 +22,16 @@ export enum ES3Folder {
 
 export interface IPresignRequest {
   folder: ES3Folder;
-  filename: string;
-  mimetype: EImageMimeType;
+  filename?: string;
+  /** Widened: allows images now, and additional types later */
+  mimetype: EFileMimeType | string;
   trackerId?: string;
   filesize?: number;
 }
 
 export interface IPresignResponse {
-  key: string; // The S3 object key
+  key: string; // S3 object key
   url: string; // Presigned PUT URL
-  publicUrl: string; // Public GET URL (derived from key)
+  publicUrl: string; // Derived GET URL
   expiresIn: number;
 }
