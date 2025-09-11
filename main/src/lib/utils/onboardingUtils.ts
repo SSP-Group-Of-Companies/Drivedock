@@ -149,14 +149,14 @@ export function advanceProgress(doc: IOnboardingTrackerDoc, completedNow: EStepP
     const result = {
       currentStep: (mappedCurrentStep ?? doc.status.currentStep) as EStepPath,
       completed: isCompleted,
-      // Preserve existing completionDate if still completed
-      ...(isCompleted && { 
-        completionDate: doc.status.completionDate ?? new Date()
-      }),
-      // Always preserve/update completionLocation when provided
+      // Always update completionLocation if provided (for policies-consents re-signing)
+      // Set completionDate only when actually completed
       ...(completionLocation && { completionLocation }),
-      // If no new completionLocation provided, preserve existing one
-      ...(!completionLocation && doc.status.completionLocation && { completionLocation: doc.status.completionLocation })
+      ...(isCompleted && { 
+        completionDate: doc.status.completionDate ?? new Date(),
+        // Preserve existing completionLocation if no new one provided
+        ...(!completionLocation && { completionLocation: doc.status.completionLocation })
+      }),
     };
     
     return result;
@@ -169,14 +169,14 @@ export function advanceProgress(doc: IOnboardingTrackerDoc, completedNow: EStepP
   const result = {
     currentStep: (next ?? completedNow) as EStepPath,
     completed: isNowCompleted,
-    // Always set completionDate and location when provided, regardless of completion status
-    ...(isNowCompleted && { 
-      completionDate: doc.status.completionDate ?? new Date()
-    }),
-    // Always preserve/update completionLocation when provided
+    // Always update completionLocation if provided (for policies-consents re-signing)
+    // Set completionDate only when actually completed
     ...(completionLocation && { completionLocation }),
-    // If no new completionLocation provided, preserve existing one
-    ...(!completionLocation && doc.status.completionLocation && { completionLocation: doc.status.completionLocation })
+    ...(isNowCompleted && { 
+      completionDate: doc.status.completionDate ?? new Date(),
+      // Preserve existing completionLocation if no new one provided
+      ...(!completionLocation && { completionLocation: doc.status.completionLocation })
+    }),
   };
   
   return result;
