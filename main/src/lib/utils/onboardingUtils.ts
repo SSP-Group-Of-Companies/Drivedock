@@ -107,6 +107,12 @@ export function getNeighborSteps(step: EStepPath, opts: FlowOpts): { prevStep: E
  *  - If the resulting status is not completed, omit completionDate (clears old value).
  */
 export function advanceProgress(doc: IOnboardingTrackerDoc, completedNow: EStepPath, completionLocation?: IOnboardingStatus['completionLocation']): IOnboardingStatus {
+  console.log('🔄 advanceProgress called:', {
+    completedNow,
+    hasCompletionLocation: !!completionLocation,
+    completionLocation,
+    currentCompleted: doc.status.completed
+  });
   const opts = getFlowOpts(doc);
   const flow = getOnboardingStepFlow(opts);
   const maximalFlow = getOnboardingStepFlow({ needsFlatbedTraining: true });
@@ -146,22 +152,33 @@ export function advanceProgress(doc: IOnboardingTrackerDoc, completedNow: EStepP
   // If already ahead of the completed step, keep the (mapped) current step.
   if (prevIdx > doneIdx) {
     const isCompleted = doc.status.completed;
-    return {
+    const result = {
       currentStep: (mappedCurrentStep ?? doc.status.currentStep) as EStepPath,
       completed: isCompleted,
       // Preserve existing completionDate and location if still completed; otherwise omit (clears).
+      // Always update completionLocation if provided (for re-signing scenarios)
       ...(isCompleted && { 
         completionDate: doc.status.completionDate ?? new Date(),
-        completionLocation: doc.status.completionLocation
+        completionLocation: completionLocation || doc.status.completionLocation
       }),
     };
+    
+    console.log('🔄 advanceProgress (already ahead):', {
+      currentStep: result.currentStep,
+      completed: result.completed,
+      hasCompletionDate: !!(result as any).completionDate,
+      hasCompletionLocation: !!(result as any).completionLocation,
+      completionLocation: (result as any).completionLocation
+    });
+    
+    return result;
   }
 
   // Otherwise move forward normally
   const next = getNextStep(completedNow, opts);
   const isNowCompleted = next == null;
 
-  return {
+  const result = {
     currentStep: (next ?? completedNow) as EStepPath,
     completed: isNowCompleted,
     // If we just became (or remain) completed, set/preserve completionDate and location
@@ -170,6 +187,16 @@ export function advanceProgress(doc: IOnboardingTrackerDoc, completedNow: EStepP
       completionLocation: completionLocation || doc.status.completionLocation
     }),
   };
+  
+  console.log('✅ advanceProgress result:', {
+    currentStep: result.currentStep,
+    completed: result.completed,
+    hasCompletionDate: !!(result as any).completionDate,
+    hasCompletionLocation: !!(result as any).completionLocation,
+    completionLocation: (result as any).completionLocation
+  });
+  
+  return result;
 }
 
 /* ----------------------------------------------------------------------
