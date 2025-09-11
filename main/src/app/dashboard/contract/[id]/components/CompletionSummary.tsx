@@ -26,7 +26,15 @@ export default function CompletionSummary({
     ) {
       return "Location Unknown";
     }
-    return `${completionLocation.region}, ${completionLocation.country}`;
+    
+    // Format as "City, State/Province, Country" (all in full names)
+    const city = completionLocation.city || '';
+    const region = completionLocation.region || '';
+    const country = completionLocation.country || '';
+    
+    // Filter out empty parts and join with commas
+    const parts = [city, region, country].filter(part => part.trim() !== '');
+    return parts.join(', ');
   };
 
   const formatDateTime = () => {

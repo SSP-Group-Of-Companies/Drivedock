@@ -6,9 +6,9 @@
  */
 
 export interface GeolocationData {
-  country: string;
-  region: string; // State/Province
-  city?: string;
+  country: string; // Full country name (e.g., "Canada", "United States")
+  region: string; // State/Province (e.g., "Ontario", "California")
+  city?: string; // City name (e.g., "Milton", "Los Angeles")e 
   timezone?: string;
   ip?: string;
 }
@@ -16,6 +16,21 @@ export interface GeolocationData {
 export interface GeolocationError {
   error: string;
   message: string;
+}
+
+/**
+ * Converts country code to full country name using built-in Intl API
+ * This is the most reliable and comprehensive approach
+ */
+function getCountryName(countryCode: string): string {
+  try {
+    // Use Intl.DisplayNames for proper country name conversion
+    const displayNames = new Intl.DisplayNames(['en'], { type: 'region' });
+    return displayNames.of(countryCode.toUpperCase()) || countryCode;
+  } catch {
+    // Fallback to the code if Intl API fails
+    return countryCode;
+  }
 }
 
 /**
@@ -50,7 +65,7 @@ export async function getLocationFromIP(ipAddress: string): Promise<GeolocationD
     
     // IPinfo returns: { ip, city, region, country, loc, timezone, ... }
     return {
-      country: data.country || 'Unknown',
+      country: getCountryName(data.country || 'Unknown'),
       region: data.region || 'Unknown', // State/Province
       city: data.city,
       timezone: data.timezone,

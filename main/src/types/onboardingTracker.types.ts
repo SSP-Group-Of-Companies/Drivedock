@@ -61,9 +61,9 @@ export interface IOnboardingTracker {
   status: IOnboardingStatus;
 
   completionLocation?: {
-    country?: string;
-    region?: string; // State/Province
-    city?: string;
+    country?: string; // Full country name (e.g., "Canada", "United States")
+    region?: string; // State/Province (e.g., "Ontario", "California")
+    city?: string; // City name (e.g., "Milton", "Los Angeles")
     timezone?: string;
     ip?: string;
   };
