@@ -31,14 +31,6 @@ export async function getLocationFromIP(ipAddress: string): Promise<GeolocationD
     // Free tier: 50,000 requests/month
     const token = process.env.IPINFO_TOKEN;
     
-    // Debug logging for production troubleshooting
-    console.log('🔍 Geolocation Debug:', {
-      ipAddress,
-      hasToken: !!token,
-      tokenLength: token?.length || 0,
-      environment: process.env.NODE_ENV
-    });
-    
     const response = await fetch(`https://ipinfo.io/${ipAddress}/json?token=${token}`, {
       method: 'GET',
       headers: {
@@ -49,20 +41,12 @@ export async function getLocationFromIP(ipAddress: string): Promise<GeolocationD
       next: { revalidate: 3600 }
     });
     
-    console.log('🌐 IPinfo API Response:', {
-      status: response.status,
-      statusText: response.statusText,
-      ok: response.ok
-    });
-    
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('❌ IPinfo API Error:', errorText);
       throw new Error(`IPinfo API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
-    console.log('📍 IPinfo Data:', data);
     
     // IPinfo returns: { ip, city, region, country, loc, timezone, ... }
     return {
@@ -73,7 +57,6 @@ export async function getLocationFromIP(ipAddress: string): Promise<GeolocationD
       ip: data.ip
     };
   } catch (error) {
-    console.error('Geolocation error:', error);
     return {
       error: 'GEOLOCATION_FAILED',
       message: error instanceof Error ? error.message : 'Failed to get location'
@@ -164,13 +147,14 @@ export function formatLocationForDisplay(geoData: GeolocationData): string {
 export function extractIPFromRequest(req: Request): string {
   // Check various headers for IP address (in order of preference)
   const headers = [
-    'cf-connecting-ip',     // Cloudflare
-    'x-forwarded-for',      // Standard proxy header
-    'x-real-ip',           // Nginx
-    'x-client-ip',         // Apache
-    'x-forwarded',         // General
-    'forwarded-for',       // General
-    'forwarded'            // RFC 7239
+    'x-vercel-forwarded-for', // Vercel
+    'cf-connecting-ip',       // Cloudflare
+    'x-forwarded-for',        // Standard proxy header
+    'x-real-ip',             // Nginx
+    'x-client-ip',           // Apache
+    'x-forwarded',           // General
+    'forwarded-for',         // General
+    'forwarded'              // RFC 7239
   ];
   
   for (const header of headers) {

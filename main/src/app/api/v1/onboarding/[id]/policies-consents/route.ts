@@ -10,7 +10,7 @@ import { IPhoto } from "@/types/shared.types";
 import { IPoliciesConsents } from "@/types/policiesConsents.types";
 import { parseJsonBody } from "@/lib/utils/reqParser";
 import { advanceProgress, buildTrackerContext, hasReachedStep, nextResumeExpiry, onboardingExpired } from "@/lib/utils/onboardingUtils";
-import { getUserLocation, extractIPFromRequest, formatLocationForDisplay } from "@/lib/utils/geolocationUtils";
+import { getUserLocation, extractIPFromRequest } from "@/lib/utils/geolocationUtils";
 import { S3_SUBMISSIONS_FOLDER, S3_TEMP_FOLDER } from "@/constants/aws";
 import { ES3Folder } from "@/types/aws.types";
 
@@ -64,19 +64,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     onboardingDoc.forms.policiesConsents = updatedDoc.id;
     
-    // Capture user location for completion tracking
+    // Always capture location on policies-consents submission
+    // This ensures we track where the driver was when they last signed
     let completionLocation = null;
     try {
       const userIP = extractIPFromRequest(req);
-      console.log('🎯 Completion Location Debug:', {
-        userIP,
-        hasIP: !!userIP,
-        ipType: typeof userIP,
-        ipLength: userIP?.length || 0
-      });
       
       const locationData = await getUserLocation(userIP);
-      console.log('📍 Location Data Result:', locationData);
       
       if (!('error' in locationData)) {
         completionLocation = {
@@ -86,19 +80,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           timezone: locationData.timezone,
           ip: locationData.ip
         };
-        
-        console.log('✅ Location captured for completion:', {
-          completionLocation,
-          displayString: formatLocationForDisplay(locationData)
-        });
-      } else {
-        console.warn('❌ Failed to capture location:', locationData.message);
       }
-    } catch (error) {
-      console.error('💥 Error capturing location:', error);
+    } catch {
       // Continue without location data - don't fail the completion
     }
     
+    // Update status with completion location (captured on every signing)
     onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.POLICIES_CONSENTS, completionLocation || undefined);
 
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();
