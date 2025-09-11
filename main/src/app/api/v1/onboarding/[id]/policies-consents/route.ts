@@ -10,7 +10,7 @@ import { IPhoto } from "@/types/shared.types";
 import { IPoliciesConsents } from "@/types/policiesConsents.types";
 import { parseJsonBody } from "@/lib/utils/reqParser";
 import { advanceProgress, buildTrackerContext, hasReachedStep, nextResumeExpiry, onboardingExpired } from "@/lib/utils/onboardingUtils";
-import { getUserLocation, extractIPFromRequest } from "@/lib/utils/geolocationUtils";
+import { getLocationFromCoordinates } from "@/lib/utils/geolocationUtils";
 import { S3_SUBMISSIONS_FOLDER, S3_TEMP_FOLDER } from "@/constants/aws";
 import { ES3Folder } from "@/types/aws.types";
 
@@ -27,7 +27,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     if (!hasReachedStep(onboardingDoc, EStepPath.POLICIES_CONSENTS)) return errorResponse(400, "Please complete previous steps first");
 
-    const { signature, sendPoliciesByEmail } = await parseJsonBody<IPoliciesConsents>(req);
+    const body = await parseJsonBody<IPoliciesConsents & { location?: { latitude: number; longitude: number } }>(req);
+    const { signature, sendPoliciesByEmail } = body;
     const tempSignature = signature;
 
     const existingId = onboardingDoc.forms?.policiesConsents;
@@ -64,24 +65,27 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     onboardingDoc.forms.policiesConsents = updatedDoc.id;
     
-    // Always capture location on policies-consents submission
-    // This ensures we track where the driver was when they last signed
+    // Get location data from frontend request body
+    const { location } = body;
     let completionLocation = null;
-    try {
-      const userIP = extractIPFromRequest(req);
-      const locationData = await getUserLocation(userIP);
-      
-      if (!('error' in locationData)) {
-        completionLocation = {
-          country: locationData.country,
-          region: locationData.region,
-          city: locationData.city,
-          timezone: locationData.timezone,
-          ip: locationData.ip
-        };
+    
+    if (location && location.latitude && location.longitude) {
+      // Convert GPS coordinates to location data using reverse geocoding
+      try {
+        const locationData = await getLocationFromCoordinates(location.latitude, location.longitude);
+        if (!('error' in locationData)) {
+          completionLocation = {
+            country: locationData.country,
+            region: locationData.region,
+            city: locationData.city,
+            timezone: locationData.timezone,
+            latitude: location.latitude,
+            longitude: location.longitude
+          };
+        }
+      } catch {
+        // Continue without location data - don't fail the completion
       }
-    } catch {
-      // Continue without location data - don't fail the completion
     }
     
     // Update status (location is handled separately at document root level)

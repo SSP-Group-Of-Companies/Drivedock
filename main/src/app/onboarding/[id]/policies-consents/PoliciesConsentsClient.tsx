@@ -36,6 +36,8 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
   const [modalUrl, setModalUrl] = useState<string | null>(null);
   const [sendPoliciesByEmail, setSendPoliciesByEmail] = useState<boolean>(policiesConsents.sendPoliciesByEmail || false);
   const [submitting, setSubmitting] = useState(false);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [locationBlocked, setLocationBlocked] = useState(false);
 
   // initial values
   const initialSignature = policiesConsents.signature as UploadResult | undefined;
@@ -44,20 +46,57 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
   // Signature ref
   const sigRef = useRef<SignatureBoxHandle>(null);
 
-  const handleSubmit = async () => {
-    // If neither signature nor email choice changed, jump forward
-    const sigDirty = sigRef.current?.isDirty() ?? false;
-    if (!sigDirty && sendPoliciesByEmail === initialSendByEmail) {
-      router.push(buildOnboardingNextStepPath(onboardingContext, EStepPath.POLICIES_CONSENTS));
+  // Location permission function
+  const requestLocationPermission = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by this browser.');
       return;
     }
 
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude
+        });
+        setLocationBlocked(false); // Reset blocked state if location is successfully obtained
+        // Continue with form submission
+        proceedWithSubmission();
+      },
+      (error) => {
+        // Handle different types of geolocation errors
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            setLocationBlocked(true);
+            break;
+          case error.POSITION_UNAVAILABLE:
+            // Location unavailable - could be temporary, don't block permanently
+            break;
+          case error.TIMEOUT:
+            // Timeout - could be temporary, don't block permanently
+            break;
+          default:
+            // Unknown error - don't block permanently
+            break;
+        }
+        
+        // Don't show alert or console.error - just set the blocked state and show visual feedback
+        // Don't proceed - user must grant permission
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 300000 // 5 minutes
+      }
+    );
+  };
+
+  const proceedWithSubmission = async () => {
     setSubmitting(true);
     try {
       const finalSig = await sigRef.current?.ensureUploaded();
 
       if (!finalSig?.s3Key || !finalSig?.url) {
-        // SignatureBox shows its own error; nothing to do here
         setSubmitting(false);
         return;
       }
@@ -68,6 +107,7 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
         body: JSON.stringify({
           signature: { s3Key: finalSig.s3Key, url: finalSig.url },
           sendPoliciesByEmail,
+          location: userLocation, // Include location data
         }),
       });
 
@@ -83,6 +123,35 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleSubmit = async () => {
+    // If location is blocked, don't proceed (button should be disabled anyway)
+    if (locationBlocked) {
+      return;
+    }
+
+    // If neither signature nor email choice changed, jump forward
+    const sigDirty = sigRef.current?.isDirty() ?? false;
+    if (!sigDirty && sendPoliciesByEmail === initialSendByEmail) {
+      // Still need location even if nothing changed
+      if (!userLocation) {
+        requestLocationPermission();
+        return;
+      }
+      // Proceed with existing location
+      proceedWithSubmission();
+      return;
+    }
+
+    // Check if we have location, if not request it
+    if (!userLocation) {
+      requestLocationPermission();
+      return;
+    }
+
+    // Proceed with submission
+    proceedWithSubmission();
   };
 
   if (!mounted || !company) return null;
@@ -128,7 +197,26 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
 
       <PoliciesConsentCheckbox checked={sendPoliciesByEmail} onChange={setSendPoliciesByEmail} />
 
-      <PoliciesSubmitSection onSubmit={handleSubmit} submitting={submitting} />
+      {locationBlocked && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+          <div className="flex items-start gap-3">
+            <svg className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+            <div>
+              <h4 className="font-medium text-red-900 mb-1">Location Access Required</h4>
+              <p className="text-sm text-red-700">
+                Location access has been denied. Please enable location permissions in your browser settings and refresh the page to continue with your application.
+              </p>
+              <p className="text-xs text-red-600 mt-2">
+                <strong>How to enable:</strong> Click the location icon in your browser&apos;s address bar, or go to Settings → Privacy → Location → Allow
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <PoliciesSubmitSection onSubmit={handleSubmit} submitting={submitting} disabled={locationBlocked} />
     </div>
   );
 }

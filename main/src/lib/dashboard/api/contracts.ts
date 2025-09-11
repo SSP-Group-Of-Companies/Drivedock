@@ -17,7 +17,8 @@ export type ContractContext = {
     region?: string; // State/Province (e.g., "Ontario", "California")
     city?: string; // City name (e.g., "Milton", "Los Angeles")
     timezone?: string;
-    ip?: string;
+    latitude?: number; // GPS latitude
+    longitude?: number; // GPS longitude
   };
   terminated?: boolean;
   terminationType?: string;

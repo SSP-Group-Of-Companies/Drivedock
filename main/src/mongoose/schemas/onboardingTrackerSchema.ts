@@ -83,8 +83,11 @@ const onboardingTrackerSchema = new Schema<IOnboardingTrackerDoc>(
       timezone: {
         type: String,
       },
-      ip: {
-        type: String,
+      latitude: {
+        type: Number,
+      },
+      longitude: {
+        type: Number,
       },
     },
     needsFlatbedTraining: {
