@@ -67,7 +67,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     
     // Get location data from frontend request body
     const { location } = body;
-    console.log("🔍 Location data received:", location);
     let completionLocation = null;
     
     if (location && location.latitude && location.longitude) {
@@ -99,10 +98,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     
     // Handle completion location at document root level - always update if we have new location data
     if (completionLocation) {
-      console.log("💾 Saving completion location:", completionLocation);
       onboardingDoc.completionLocation = completionLocation;
-    } else {
-      console.log("❌ No completion location to save");
     }
 
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();

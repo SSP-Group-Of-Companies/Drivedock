@@ -59,11 +59,10 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
           latitude: position.coords.latitude,
           longitude: position.coords.longitude
         };
-        console.log("📍 Location captured:", location);
         setUserLocation(location);
         setLocationBlocked(false); // Reset blocked state if location is successfully obtained
-        // Continue with form submission
-        proceedWithSubmission();
+        // Continue with form submission, passing the location directly
+        proceedWithSubmission(location);
       },
       (error) => {
         // Handle different types of geolocation errors
@@ -93,7 +92,7 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
     );
   };
 
-  const proceedWithSubmission = async () => {
+  const proceedWithSubmission = async (locationData?: { latitude: number; longitude: number }) => {
     setSubmitting(true);
     try {
       const finalSig = await sigRef.current?.ensureUploaded();
@@ -103,12 +102,14 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
         return;
       }
 
+      // Use the passed location data or fall back to userLocation state
+      const locationToSend = locationData || userLocation;
+
       const requestBody = {
         signature: { s3Key: finalSig.s3Key, url: finalSig.url },
         sendPoliciesByEmail,
-        location: userLocation, // Include location data
+        location: locationToSend, // Include location data
       };
-      console.log("📤 Sending request body:", requestBody);
       
       const response = await fetch(`/api/v1/onboarding/${id}/policies-consents`, {
         method: "PATCH",
