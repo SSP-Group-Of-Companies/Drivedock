@@ -86,8 +86,8 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
       },
       {
         enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 300000 // 5 minutes
+        timeout: 15000, // Increased timeout for better accuracy
+        maximumAge: 0 // Force fresh GPS reading, no cache
       }
     );
   };
