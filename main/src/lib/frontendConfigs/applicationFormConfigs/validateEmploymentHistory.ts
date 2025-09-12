@@ -77,13 +77,12 @@ export function calculateTimelineFromCurrent(employments: any[]) {
   }
 
   const totalMonths = Math.floor(totalDays / 30.44);
-  const twoYearsPlus30 = 760;
   const tenYears = 3650;
   const daysNeeded = Math.max(0, tenYears - totalDays);
   const monthsNeeded = Math.floor(daysNeeded / 30.44);
 
-  // “needsMore” means we’re past 2y+30d but shy of 10y → we must prompt for more rows
-  const needsMore = totalDays > twoYearsPlus30 && totalDays < tenYears;
+  // "needsMore" means we're shy of 10y → we must prompt for more rows
+  const needsMore = totalDays < tenYears;
 
   return { totalDays, totalMonths, needsMore, monthsNeeded, timeline };
 }

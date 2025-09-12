@@ -279,26 +279,15 @@ export function validateEmploymentCoverage(employments: IEmploymentEntry[]): Emp
     totalDays += daysInThisJob;
   }
 
-  const DAYS_2Y = 730;
-  const DAYS_2Y_PLUS_30 = 760;
   const DAYS_10Y = 3650;
 
-  if (totalDays >= DAYS_2Y && totalDays <= DAYS_2Y_PLUS_30) {
-    return null; // ✅ exactly 2y or up to +30d buffer
-  }
-
-  if (totalDays > DAYS_2Y_PLUS_30 && totalDays < DAYS_10Y) {
-    return {
-      type: 'coverage',
-      message: 'If experience is over 2 years + 30 days, a full 10 years of history must be entered.'
-    };
-  }
-
-  if (totalDays < DAYS_2Y) {
+  if (totalDays < DAYS_10Y) {
     const months = Math.round(totalDays / 30.44);
+    const years = Math.floor(months / 12);
+    const monthsOnly = months % 12;
     return {
       type: 'coverage',
-      message: `Employment duration of ${months} months (${totalDays} days) detected. You must provide 2 years of employment history.`
+      message: `Employment duration of ${years} years ${monthsOnly} months (${totalDays} days) detected. You must provide 10 years of employment history.`
     };
   }
 

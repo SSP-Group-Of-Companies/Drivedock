@@ -58,8 +58,7 @@ export default function EmploymentSection() {
   }, [fields.length]);
 
   const { timeline, totalDays, totalMonths } = calculateTimelineFromCurrent(employments);
-  const needsMoreThan2yrsButLessThan10 = totalDays > 760 && totalDays < 3650;
-  const lessThan2Years = totalDays < 730;
+  const lessThan10Years = totalDays < 3650;
 
   const gaps = getEmploymentGaps(timeline);
 
@@ -81,16 +80,9 @@ export default function EmploymentSection() {
         <div data-field="employments.totals.root" />
 
         {/* Top banner message */}
-        {lessThan2Years && (
+        {lessThan10Years && (
           <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-md p-3">
-            Employment history of 2 or more years is needed. Current duration: ~{totalMonths} months ({totalDays} days). Please add previous employment.
-          </p>
-        )}
-
-        {needsMoreThan2yrsButLessThan10 && (
-          <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-md p-3">
-            You have ~{Math.floor(totalMonths / 12)} years ({totalMonths} months,
-            {` ${totalDays} days`}). Please add previous employment until you reach 10 years.
+            Employment history of 10 years is required. Current duration: ~{Math.floor(totalMonths / 12)} years {totalMonths % 12} months ({totalDays} days). Please add previous employment until you reach 10 years.
           </p>
         )}
       </div>

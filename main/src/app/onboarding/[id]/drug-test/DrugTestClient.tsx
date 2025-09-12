@@ -116,7 +116,7 @@ export default function DrugTestClient({
     if (next) {
       router.push(buildOnboardingStepPath(ctx, next));
     } else {
-      router.push(`/onboarding/${trackerId}/finished`);
+      router.push(`/onboarding/${trackerId}/completed`);
     }
   }, [ctx, router, trackerId]);
 

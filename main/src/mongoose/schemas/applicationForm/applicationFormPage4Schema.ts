@@ -60,7 +60,6 @@ export const applicationFormPage4Schema = new Schema<IApplicationFormPage4>(
     },
 
     // Incorporate, HST & Banking
-    employeeNumber: { type: String },
     hstNumber: { type: String },
     businessName: { type: String },
 
@@ -169,6 +168,7 @@ export const applicationFormPage4Schema = new Schema<IApplicationFormPage4>(
       province: { type: String, default: "" },
       truckUnitNumber: { type: String, default: "" },
       plateNumber: { type: String, default: "" },
+      employeeNumber: { type: String, default: "" },
     },
   },
   {

@@ -92,19 +92,19 @@ function forbidPresence(b: PatchBody, key: keyof IApplicationFormPage4, label: s
   if (hasKey(b, key)) throw new AppError(400, `${label} must not be included for this applicant.`);
 }
 
-/** Business section presence in BODY (any of the 6 keys appears) */
+/** Business section presence in BODY (any of the 5 keys appears) */
 function businessKeysPresentInBody(b: PatchBody) {
-  return hasKey(b, "employeeNumber") || hasKey(b, "businessName") || hasKey(b, "hstNumber") || hasKey(b, "incorporatePhotos") || hasKey(b, "bankingInfoPhotos") || hasKey(b, "hstPhotos");
+  return hasKey(b, "businessName") || hasKey(b, "hstNumber") || hasKey(b, "incorporatePhotos") || hasKey(b, "bankingInfoPhotos") || hasKey(b, "hstPhotos");
 }
 
-/** Business clear intent: ALL six keys present and all empty */
+/** Business clear intent: ALL five keys present and all empty */
 function isBusinessClearIntent(b: PatchBody) {
   const allKeysPresent =
-    hasKey(b, "employeeNumber") && hasKey(b, "businessName") && hasKey(b, "hstNumber") && hasKey(b, "incorporatePhotos") && hasKey(b, "bankingInfoPhotos") && hasKey(b, "hstPhotos");
+    hasKey(b, "businessName") && hasKey(b, "hstNumber") && hasKey(b, "incorporatePhotos") && hasKey(b, "bankingInfoPhotos") && hasKey(b, "hstPhotos");
 
   if (!allKeysPresent) return false;
 
-  const emptyStrings = (!b.employeeNumber || b.employeeNumber.trim() === "") && (!b.businessName || b.businessName.trim() === "") && (!b.hstNumber || b.hstNumber.trim() === "");
+  const emptyStrings = (!b.businessName || b.businessName.trim() === "") && (!b.hstNumber || b.hstNumber.trim() === "");
 
   const emptyPhotos = alen(b.incorporatePhotos) === 0 && alen(b.bankingInfoPhotos) === 0 && alen(b.hstPhotos) === 0;
 
@@ -121,7 +121,6 @@ function validateBusinessAllOrNothingOnBody(b: PatchBody) {
   const req = (k: keyof IApplicationFormPage4) => {
     if (!hasKey(b, k)) missing.push(k as string);
   };
-  req("employeeNumber");
   req("businessName");
   req("hstNumber");
   req("incorporatePhotos");
@@ -132,7 +131,6 @@ function validateBusinessAllOrNothingOnBody(b: PatchBody) {
 
   if (!isNonEmptyString(b.businessName)) throw new AppError(400, "businessName is required in Business section.");
   if (!isNonEmptyString(b.hstNumber)) throw new AppError(400, "hstNumber is required in Business section.");
-  if (!isNonEmptyString(b.employeeNumber)) throw new AppError(400, "employeeNumber is required in Business section.");
 
   const inc = alen(b.incorporatePhotos);
   const bank = alen(b.bankingInfoPhotos);
@@ -282,7 +280,6 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
         ...prevP4,
 
         // Business (respect BODY if present)
-        ...(hasKey(body, "employeeNumber") ? { employeeNumber: body.employeeNumber ?? "" } : {}),
         ...(hasKey(body, "businessName") ? { businessName: body.businessName ?? "" } : {}),
         ...(hasKey(body, "hstNumber") ? { hstNumber: body.hstNumber ?? "" } : {}),
         ...(hasKey(body, "incorporatePhotos") ? { incorporatePhotos: body.incorporatePhotos ?? [] } : {}),
@@ -322,7 +319,6 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       };
 
       if (bizDecision.mode === "clear") {
-        nextP4.employeeNumber = "";
         nextP4.businessName = "";
         nextP4.hstNumber = "";
         nextP4.incorporatePhotos = [];
@@ -347,7 +343,6 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
     // Use prevP4 snapshot (no Mongoose internals)
     const prevHadBiz =
-      isNonEmptyString(prevP4.employeeNumber) ||
       isNonEmptyString(prevP4.businessName) ||
       isNonEmptyString(prevP4.hstNumber) ||
       (prevP4.incorporatePhotos?.length ?? 0) > 0 ||
@@ -355,7 +350,6 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       (prevP4.hstPhotos?.length ?? 0) > 0;
 
     const nowBizEmpty =
-      !isNonEmptyString(curP4.employeeNumber) &&
       !isNonEmptyString(curP4.businessName) &&
       !isNonEmptyString(curP4.hstNumber) &&
       (curP4.incorporatePhotos?.length ?? 0) === 0 &&
@@ -491,7 +485,6 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_4, true),
       licenses: appFormDoc.page1.licenses,
       // Page 4 subset echo
-      employeeNumber: appFormDoc.page4.employeeNumber,
       hstNumber: appFormDoc.page4.hstNumber,
       businessName: appFormDoc.page4.businessName,
       incorporatePhotos: appFormDoc.page4.incorporatePhotos,
@@ -540,7 +533,6 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
     return successResponse(200, "Identifications retrieved", {
       onboardingContext: buildTrackerContext(onboardingDoc, null, true),
       licenses: appFormDoc.page1.licenses,
-      employeeNumber: appFormDoc.page4.employeeNumber,
       hstNumber: appFormDoc.page4.hstNumber,
       businessName: appFormDoc.page4.businessName,
       incorporatePhotos: appFormDoc.page4.incorporatePhotos,

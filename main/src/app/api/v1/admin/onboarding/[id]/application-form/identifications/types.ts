@@ -8,7 +8,6 @@ export interface IdentificationsResponse {
   data: {
     onboardingContext: IOnboardingTrackerContext;
     licenses: ILicenseEntry[];
-    employeeNumber?: string;
     hstNumber?: string;
     businessName?: string;
     incorporatePhotos?: IPhoto[];

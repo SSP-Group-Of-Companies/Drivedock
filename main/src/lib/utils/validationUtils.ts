@@ -161,9 +161,7 @@ export function isValidGender(gender: string): boolean {
  * - No overlaps (current.from >= next.to when sorted by from desc)
  * - Gaps ≥ 30 days require a non-empty gapExplanationBefore on the later job
  * - Totals:
- *   - < 2y (730d): invalid (message includes months/days)
- *   - >= 2y and <= 2y + 30d (730–760d): valid
- *   - > 2y + 30d and < 10y (760–3649d): invalid → must provide full 10 years
+ *   - < 10y (3650d): invalid (message includes months/days)
  *   - >= 10y (3650d): valid
  *
  * Message strings align with applicationFormPage2.schema.ts mappings.
@@ -216,21 +214,13 @@ export function validateEmploymentHistory(employments: IEmploymentEntry[]): stri
     }
   }
 
-  const DAYS_2Y = 730;
-  const DAYS_2Y_PLUS_30 = 760;
   const DAYS_10Y = 3650;
 
-  if (totalDays >= DAYS_2Y && totalDays <= DAYS_2Y_PLUS_30) {
-    return null; // exactly 2y or up to +30d buffer
-  }
-
-  if (totalDays > DAYS_2Y_PLUS_30 && totalDays < DAYS_10Y) {
-    return "If experience is over 2 years + 30 days, a full 10 years of history must be entered.";
-  }
-
-  if (totalDays < DAYS_2Y) {
+  if (totalDays < DAYS_10Y) {
     const months = Math.round(totalDays / 30.44);
-    return `Employment duration of ${months} months (${totalDays} days) detected. You must provide 2 years of employment history.`;
+    const years = Math.floor(months / 12);
+    const monthsOnly = months % 12;
+    return `Employment duration of ${years} years ${monthsOnly} months (${totalDays} days) detected. You must provide 10 years of employment history.`;
   }
 
   if (totalDays >= DAYS_10Y) {

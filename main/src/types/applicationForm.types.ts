@@ -232,6 +232,7 @@ export interface ITruckDetails {
   province?: string;
   truckUnitNumber?: string;
   plateNumber?: string;
+  employeeNumber?: string;
 }
 
 export interface IApplicationFormPage4 {
@@ -239,7 +240,6 @@ export interface IApplicationFormPage4 {
   criminalRecords: ICriminalRecordEntry[];
 
   // Incorporation / Business Details (if any of these provided, enforce all)
-  employeeNumber?: string;
   hstNumber?: string;
   businessName?: string;
   incorporatePhotos?: IPhoto[];

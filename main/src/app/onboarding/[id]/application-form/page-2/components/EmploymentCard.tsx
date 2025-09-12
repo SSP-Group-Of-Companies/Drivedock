@@ -8,7 +8,6 @@ import { differenceInDays } from "date-fns";
 import useMounted from "@/hooks/useMounted";
 import { ApplicationFormPage2Schema } from "@/lib/zodSchemas/applicationFormPage2.schema";
 import QuestionGroup from "@/app/onboarding/components/QuestionGroup";
-import { calculateTimelineFromCurrent } from "@/lib/frontendConfigs/applicationFormConfigs/validateEmploymentHistory";
 
 interface Props {
   index: number;
@@ -83,53 +82,6 @@ export default function EmploymentCard({ index }: Props) {
     return { years, months, monthsOnly, days };
   })();
 
-  // big status banner logic for current row (kept concise)
-  const currentStatusBanner = (() => {
-    const all = watch("employments");
-    if (!fromDate || !toDate) return null;
-
-    const { totalDays } = calculateTimelineFromCurrent(all);
-    const twoYears = 730;
-    const twoPlus30 = 760;
-    const tenYears = 3650;
-
-    if (index === 0) {
-      if (totalDays < twoYears) {
-        return (
-          <div
-            className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg"
-            data-field="employments.0.banner"
-          >
-            <p className="text-sm font-medium text-red-800">
-              Employment History Requirement
-            </p>
-            <p className="text-xs text-red-700 mt-1">
-              Employment history of 2 or more years is needed. Current duration
-              so far is below 2 years. Please add previous employment once you
-              finish this section.
-            </p>
-          </div>
-        );
-      }
-      if (totalDays > twoPlus30 && totalDays < tenYears) {
-        return (
-          <div
-            className="mb-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg"
-            data-field="employments.0.banner"
-          >
-            <p className="text-sm font-medium text-yellow-800">
-              Extended Employment History Required
-            </p>
-            <p className="text-xs text-yellow-700 mt-1">
-              You have more than 2 years + 30 days of history. You must provide
-              10 years of employment history by adding previous employers.
-            </p>
-          </div>
-        );
-      }
-    }
-    return null;
-  })();
 
   if (!mounted) return null;
 
@@ -338,9 +290,6 @@ export default function EmploymentCard({ index }: Props) {
 
         {/* From / To / Salary */}
         <div className="md:col-span-2">
-          {/* Status banner for current row (2y rule / 10y requirement nudges) */}
-          {currentStatusBanner}
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* From */}
             <div>
@@ -396,7 +345,7 @@ export default function EmploymentCard({ index }: Props) {
 
           {/* Per-location duration line (always visible when dates valid) */}
           {perLocationDuration && (
-            <p className="mt-2 text-xs text-gray-600">
+            <p className="mt-2 text-xs text-blue-600">
               You have submitted a date range that accounts for{" "}
               <span className="font-medium">
                 {perLocationDuration.years} year

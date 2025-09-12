@@ -70,7 +70,6 @@ export default function IdentificationsContent({
 
         {/* Business Information Section */}
         <BusinessInformationSection
-          employeeNumber={getCurrentValue("employeeNumber") || ""}
           hstNumber={getCurrentValue("hstNumber") || ""}
           businessName={getCurrentValue("businessName") || ""}
           onStage={onStage}
@@ -109,7 +108,6 @@ export default function IdentificationsContent({
           }
           usVisaPhotos={getCurrentValue("usVisaPhotos") || []}
           fastCard={getCurrentValue("fastCard")}
-          employeeNumber={getCurrentValue("employeeNumber") || ""}
           hstNumber={getCurrentValue("hstNumber") || ""}
           businessName={getCurrentValue("businessName") || ""}
           onStage={onStage}

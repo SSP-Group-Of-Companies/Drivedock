@@ -99,7 +99,6 @@ function forbidNonEmpty(
 /** business section presence detectors (in body) */
 function businessKeysPresentInBody(b: Partial<IApplicationFormPage4>) {
   const keys: (keyof IApplicationFormPage4)[] = [
-    "employeeNumber",
     "businessName",
     "hstNumber",
     "incorporatePhotos",
@@ -111,7 +110,6 @@ function businessKeysPresentInBody(b: Partial<IApplicationFormPage4>) {
 
 function isBusinessClearIntent(b: Partial<IApplicationFormPage4>) {
   const emptyStrings =
-    (!hasKey(b, "employeeNumber") || !isNonEmptyString(b.employeeNumber)) &&
     (!hasKey(b, "businessName") || !isNonEmptyString(b.businessName)) &&
     (!hasKey(b, "hstNumber") || !isNonEmptyString(b.hstNumber));
 
@@ -122,7 +120,6 @@ function isBusinessClearIntent(b: Partial<IApplicationFormPage4>) {
 
   // Clear intent only if ALL keys are present AND all are empty
   const allKeysPresent =
-    hasKey(b, "employeeNumber") &&
     hasKey(b, "businessName") &&
     hasKey(b, "hstNumber") &&
     hasKey(b, "incorporatePhotos") &&
@@ -142,7 +139,6 @@ function validateBusinessAllOrNothing(b: Partial<IApplicationFormPage4>) {
   const requireKey = (k: keyof IApplicationFormPage4, label: string) => {
     if (!hasKey(b, k)) missing.push(label);
   };
-  requireKey("employeeNumber", "employeeNumber");
   requireKey("businessName", "businessName");
   requireKey("hstNumber", "hstNumber");
   requireKey("incorporatePhotos", "incorporatePhotos");
@@ -163,8 +159,6 @@ function validateBusinessAllOrNothing(b: Partial<IApplicationFormPage4>) {
     throw new AppError(400, "businessName is required in Business section.");
   if (!isNonEmptyString(b.hstNumber))
     throw new AppError(400, "hstNumber is required in Business section.");
-  if (!isNonEmptyString(b.employeeNumber))
-    throw new AppError(400, "employeeNumber is required in Business section.");
 
   // photos within limits
   const inc = len(b.incorporatePhotos);
@@ -334,7 +328,6 @@ export const PATCH = async (
         );
       }
       // overwrite to empty in DB (already set above by body), ensure saved
-      appFormDoc.set("page4.employeeNumber", "");
       appFormDoc.set("page4.businessName", "");
       appFormDoc.set("page4.hstNumber", "");
       appFormDoc.set("page4.incorporatePhotos", []);

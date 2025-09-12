@@ -41,7 +41,6 @@ function mapDefaults(page4: IApplicationFormPage4 | null): ApplicationFormPage4I
           }))
         : [{ offense: "", dateOfSentence: "", courtLocation: "" }], // Default empty row
 
-    employeeNumber: page4?.employeeNumber ?? "",
     hstNumber: page4?.hstNumber ?? "",
     businessName: page4?.businessName ?? "",
     hstPhotos: page4?.hstPhotos ?? [],

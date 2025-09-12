@@ -205,6 +205,19 @@ export default function TruckDetailsSection({
                 </p>
               </div>
             )}
+            {truckDetails?.employeeNumber && (
+              <div>
+                <label
+                  className="block text-sm font-medium mb-1"
+                  style={{ color: "var(--color-on-surface-variant)" }}
+                >
+                  Employee Number
+                </label>
+                <p style={{ color: "var(--color-on-surface)" }}>
+                  {truckDetails.employeeNumber}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -397,6 +410,27 @@ export default function TruckDetailsSection({
                 color: "var(--color-on-surface)",
               }}
               placeholder="Enter Plate No"
+            />
+          </div>
+
+          <div>
+            <label
+              className="block text-sm font-medium mb-1"
+              style={{ color: "var(--color-on-surface-variant)" }}
+            >
+              Employee Number
+            </label>
+            <input
+              type="text"
+              value={truckDetails?.employeeNumber}
+              onChange={(e) => handleFieldChange("employeeNumber", e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg text-sm transition-colors"
+              style={{
+                borderColor: "var(--color-outline)",
+                background: "var(--color-surface)",
+                color: "var(--color-on-surface)",
+              }}
+              placeholder="Enter Employee Number"
             />
           </div>
         </div>
