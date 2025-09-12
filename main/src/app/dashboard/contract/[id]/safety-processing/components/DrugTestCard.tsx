@@ -1,38 +1,27 @@
 "use client";
 
 import { useEffect, useId, useMemo, useState } from "react";
-import type { IPhoto } from "@/types/shared.types";
+import type { IFileAsset } from "@/types/shared.types";
 import { EDrugTestStatus } from "@/types/drugTest.types";
 import { uploadToS3Presigned } from "@/lib/utils/s3Upload";
 import { ES3Folder } from "@/types/aws.types";
-import ImageGalleryDialog, {
-  type GalleryItem,
-} from "@/app/dashboard/components/dialogs/ImageGalleryDialog";
+import ImageGalleryDialog, { type GalleryItem } from "@/app/dashboard/components/dialogs/ImageGalleryDialog";
 
 type Props = {
   trackerId: string;
-  drugTest: { documents?: IPhoto[]; status?: EDrugTestStatus };
+  drugTest: { documents?: IFileAsset[]; status?: EDrugTestStatus };
   /** Step gate */
   canEdit: boolean;
   /**
    * Stage-only change emitter (DO NOT PATCH HERE).
    * The parent page will aggregate and submit.
    */
-  onChange: (partial: {
-    documents?: IPhoto[];
-    status?: EDrugTestStatus;
-  }) => void;
+  onChange: (partial: { documents?: IFileAsset[]; status?: EDrugTestStatus }) => void;
   /** Optional glow when navigated from the grid ("highlight=drug-test") */
   highlight?: boolean;
 };
 
-export default function DrugTestCard({
-  trackerId,
-  drugTest,
-  canEdit,
-  onChange,
-  highlight = false,
-}: Props) {
+export default function DrugTestCard({ trackerId, drugTest, canEdit, onChange, highlight = false }: Props) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [galleryError, setGalleryError] = useState<string | null>(null);
@@ -57,25 +46,18 @@ export default function DrugTestCard({
   const busyOrLocked = busy || locked;
 
   // Base auto status from documents presence
-  const baseStatus =
-    count > 0 ? EDrugTestStatus.AWAITING_REVIEW : EDrugTestStatus.NOT_UPLOADED;
+  const baseStatus = count > 0 ? EDrugTestStatus.AWAITING_REVIEW : EDrugTestStatus.NOT_UPLOADED;
 
   // Show APPROVED/REJECTED if explicitly set; otherwise show auto status
   const derivedStatus = useMemo<EDrugTestStatus>(() => {
-    if (
-      drugTest.status === EDrugTestStatus.APPROVED ||
-      drugTest.status === EDrugTestStatus.REJECTED
-    ) {
+    if (drugTest.status === EDrugTestStatus.APPROVED || drugTest.status === EDrugTestStatus.REJECTED) {
       return drugTest.status;
     }
     return baseStatus;
   }, [drugTest.status, baseStatus]);
 
   // Can choose Approve/Reject only when there's something to review AND not already approved
-  const canDecide =
-    !busyOrLocked &&
-    derivedStatus !== EDrugTestStatus.NOT_UPLOADED &&
-    drugTest.status !== EDrugTestStatus.APPROVED;
+  const canDecide = !busyOrLocked && derivedStatus !== EDrugTestStatus.NOT_UPLOADED && drugTest.status !== EDrugTestStatus.APPROVED;
 
   // Gallery
   const [galleryOpen, setGalleryOpen] = useState(false);
@@ -96,11 +78,11 @@ export default function DrugTestCard({
     setBusy(true);
     setErr(null);
     try {
-      const uploaded: IPhoto[] = await Promise.all(
+      const uploaded: IFileAsset[] = await Promise.all(
         [...files].map(async (file) => {
           const result = await uploadToS3Presigned({
             file,
-            folder: ES3Folder.DRUG_TEST_PHOTOS,
+            folder: ES3Folder.DRUG_TEST_DOCS,
             trackerId,
           });
           return {
@@ -109,7 +91,7 @@ export default function DrugTestCard({
             mimeType: file.type,
             size: file.size,
             uploadedAt: new Date().toISOString(),
-          } as IPhoto;
+          } as IFileAsset;
         })
       );
 
@@ -122,10 +104,7 @@ export default function DrugTestCard({
       onChange({
         documents: nextDocs,
         ...(shouldAutoStatus && {
-          status:
-            nextDocs.length > 0
-              ? EDrugTestStatus.AWAITING_REVIEW
-              : EDrugTestStatus.NOT_UPLOADED,
+          status: nextDocs.length > 0 ? EDrugTestStatus.AWAITING_REVIEW : EDrugTestStatus.NOT_UPLOADED,
         }),
       });
 
@@ -171,19 +150,13 @@ export default function DrugTestCard({
   // Delete a single image from the staged list; adjust auto status if not APPROVED
   function handleDeleteFromGallery(index: number) {
     const next = docs.filter((_, i) => i !== index);
-    const partial: { documents: IPhoto[]; status?: EDrugTestStatus } = {
+    const partial: { documents: IFileAsset[]; status?: EDrugTestStatus } = {
       documents: next,
     };
 
     // If status isn't locked to APPROVED/REJECTED, keep auto status in sync
-    if (
-      drugTest.status !== EDrugTestStatus.APPROVED &&
-      drugTest.status !== EDrugTestStatus.REJECTED
-    ) {
-      partial.status =
-        next.length > 0
-          ? EDrugTestStatus.AWAITING_REVIEW
-          : EDrugTestStatus.NOT_UPLOADED;
+    if (drugTest.status !== EDrugTestStatus.APPROVED && drugTest.status !== EDrugTestStatus.REJECTED) {
+      partial.status = next.length > 0 ? EDrugTestStatus.AWAITING_REVIEW : EDrugTestStatus.NOT_UPLOADED;
     }
 
     onChange(partial);
@@ -207,13 +180,7 @@ export default function DrugTestCard({
   /* ----------------------------- Render ----------------------------- */
 
   return (
-    <div
-      className={
-        showHighlight
-          ? "ssp-ring-wrapper rounded-xl p-[6px] ssp-animated-ring"
-          : ""
-      }
-    >
+    <div className={showHighlight ? "ssp-ring-wrapper rounded-xl p-[6px] ssp-animated-ring" : ""}>
       <section
         className="relative rounded-xl border p-3 sm:p-4 lg:max-h-[20rem] lg:overflow-y-auto"
         style={{
@@ -229,10 +196,7 @@ export default function DrugTestCard({
             <p id={descId} className="sr-only">
               Locked until step is reached.
             </p>
-            <div
-              className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 shadow-lg pointer-events-none"
-              aria-hidden
-            >
+            <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 shadow-lg pointer-events-none" aria-hidden>
               <div
                 className="rounded-lg px-3 py-1.5 text-xs font-medium backdrop-blur-sm"
                 style={{
@@ -268,75 +232,36 @@ export default function DrugTestCard({
           </div>
         </header>
 
-        <div
-          className={`grid grid-cols-1 gap-3 md:grid-cols-2 ${
-            locked ? "pointer-events-none" : ""
-          }`}
-        >
+        <div className={`grid grid-cols-1 gap-3 md:grid-cols-2 ${locked ? "pointer-events-none" : ""}`}>
           {/* LEFT: instructions + actions + gallery button */}
-          <div
-            className="rounded-xl border"
-            style={{ borderColor: "var(--color-outline-variant)" }}
-          >
-            <div
-              className="p-3 sm:p-4 space-y-3"
-              style={{ borderBottom: "1px solid var(--color-outline-variant)" }}
-            >
-              <p
-                className="text-sm"
-                style={{ color: "var(--color-on-surface-variant)" }}
-              >
+          <div className="rounded-xl border" style={{ borderColor: "var(--color-outline-variant)" }}>
+            <div className="p-3 sm:p-4 space-y-3" style={{ borderBottom: "1px solid var(--color-outline-variant)" }}>
+              <p className="text-sm" style={{ color: "var(--color-on-surface-variant)" }}>
                 {info}
               </p>
 
               <div className="flex flex-wrap gap-1.5">
                 <button
                   type="button"
-                  className={`rounded-lg px-2.5 py-1.5 text-sm transition-colors disabled:opacity-50 ${
-                    drugTest.status === EDrugTestStatus.APPROVED
-                      ? "font-semibold"
-                      : ""
-                  }`}
+                  className={`rounded-lg px-2.5 py-1.5 text-sm transition-colors disabled:opacity-50 ${drugTest.status === EDrugTestStatus.APPROVED ? "font-semibold" : ""}`}
                   style={{
-                    background:
-                      drugTest.status === EDrugTestStatus.APPROVED
-                        ? "var(--color-primary)"
-                        : "var(--color-surface)",
-                    color:
-                      drugTest.status === EDrugTestStatus.APPROVED
-                        ? "white"
-                        : "var(--color-on-surface)",
+                    background: drugTest.status === EDrugTestStatus.APPROVED ? "var(--color-primary)" : "var(--color-surface)",
+                    color: drugTest.status === EDrugTestStatus.APPROVED ? "white" : "var(--color-on-surface)",
                     border: "1px solid var(--color-outline)",
                   }}
                   disabled={!canDecide}
                   onClick={handleApprove}
-                  title={
-                    drugTest.status === EDrugTestStatus.APPROVED
-                      ? "Cannot change status once approved"
-                      : canDecide
-                      ? "Approve"
-                      : "Upload a document first"
-                  }
+                  title={drugTest.status === EDrugTestStatus.APPROVED ? "Cannot change status once approved" : canDecide ? "Approve" : "Upload a document first"}
                 >
                   Approve
                 </button>
 
                 <button
                   type="button"
-                  className={`rounded-lg px-2.5 py-1.5 text-sm transition-colors disabled:opacity-50 ${
-                    drugTest.status === EDrugTestStatus.REJECTED
-                      ? "font-semibold"
-                      : ""
-                  }`}
+                  className={`rounded-lg px-2.5 py-1.5 text-sm transition-colors disabled:opacity-50 ${drugTest.status === EDrugTestStatus.REJECTED ? "font-semibold" : ""}`}
                   style={{
-                    background:
-                      drugTest.status === EDrugTestStatus.REJECTED
-                        ? "var(--color-primary)"
-                        : "var(--color-surface)",
-                    color:
-                      drugTest.status === EDrugTestStatus.REJECTED
-                        ? "white"
-                        : "var(--color-on-surface)",
+                    background: drugTest.status === EDrugTestStatus.REJECTED ? "var(--color-primary)" : "var(--color-surface)",
+                    color: drugTest.status === EDrugTestStatus.REJECTED ? "white" : "var(--color-on-surface)",
                     border: "1px solid var(--color-outline)",
                   }}
                   disabled={!canDecide}
@@ -370,9 +295,7 @@ export default function DrugTestCard({
                   setGalleryOpen(true);
                 }}
                 disabled={busyOrLocked || galleryItems.length === 0}
-                title={
-                  galleryItems.length ? "Open gallery" : "No documents yet"
-                }
+                title={galleryItems.length ? "Open gallery" : "No documents yet"}
               >
                 See Documents
               </button>
@@ -380,10 +303,7 @@ export default function DrugTestCard({
           </div>
 
           {/* RIGHT: upload */}
-          <div
-            className="flex flex-col items-stretch justify-between rounded-xl border p-3 sm:p-4"
-            style={{ borderColor: "var(--color-outline-variant)" }}
-          >
+          <div className="flex flex-col items-stretch justify-between rounded-xl border p-3 sm:p-4" style={{ borderColor: "var(--color-outline-variant)" }}>
             <label
               className="relative flex flex-1 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed px-4 py-8 text-center"
               style={{
@@ -391,9 +311,7 @@ export default function DrugTestCard({
                 background: "var(--color-surface)",
                 color: "var(--color-on-surface-variant)",
               }}
-              title={
-                busyOrLocked ? "Locked" : "Click to capture or select images"
-              }
+              title={busyOrLocked ? "Locked" : "Click to capture or select images"}
             >
               <input
                 key={fileKey}
@@ -405,18 +323,11 @@ export default function DrugTestCard({
                 disabled={busyOrLocked}
                 aria-label="Upload drug test result images"
               />
-              <div className="pointer-events-none select-none">
-                Click to capture or select an image
-              </div>
+              <div className="pointer-events-none select-none">Click to capture or select an image</div>
             </label>
 
-            <div
-              className="mt-3 text-xs"
-              style={{ color: "var(--color-on-surface-variant)" }}
-            >
-              {drugTest.status === EDrugTestStatus.APPROVED
-                ? "Documents can be deleted, but at least one document must remain when approved."
-                : "At least one document is required to approve."}
+            <div className="mt-3 text-xs" style={{ color: "var(--color-on-surface-variant)" }}>
+              {drugTest.status === EDrugTestStatus.APPROVED ? "Documents can be deleted, but at least one document must remain when approved." : "At least one document is required to approve."}
             </div>
           </div>
         </div>
@@ -437,14 +348,8 @@ export default function DrugTestCard({
 
         {/* Uploading overlay */}
         {busy && (
-          <div
-            className="pointer-events-none absolute inset-0 rounded-xl bg-black/5"
-            aria-hidden
-          >
-            <div
-              className="absolute right-3 top-3 h-4 w-4 animate-spin rounded-full border-2 border-transparent"
-              style={{ borderTopColor: "var(--color-primary)" }}
-            />
+          <div className="pointer-events-none absolute inset-0 rounded-xl bg-black/5" aria-hidden>
+            <div className="absolute right-3 top-3 h-4 w-4 animate-spin rounded-full border-2 border-transparent" style={{ borderTopColor: "var(--color-primary)" }} />
           </div>
         )}
 
@@ -457,14 +362,9 @@ export default function DrugTestCard({
           onClose={() => setGalleryOpen(false)}
           onDelete={(index, _item) => {
             // Allow deletion even when approved, but prevent if only 1 document remains
-            if (
-              drugTest.status === EDrugTestStatus.APPROVED &&
-              galleryItems.length <= 1
-            ) {
+            if (drugTest.status === EDrugTestStatus.APPROVED && galleryItems.length <= 1) {
               // Show error message in gallery
-              setGalleryError(
-                "At least one document must exist when approved."
-              );
+              setGalleryError("At least one document must exist when approved.");
               return;
             }
             handleDeleteFromGallery(index);

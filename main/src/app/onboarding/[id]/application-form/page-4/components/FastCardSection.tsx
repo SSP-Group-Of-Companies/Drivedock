@@ -8,7 +8,7 @@ import Image from "next/image";
 import { Camera, X } from "lucide-react"; // ✅ NEW
 import { uploadToS3Presigned } from "@/lib/utils/s3Upload";
 import { ES3Folder } from "@/types/aws.types";
-import type { IPhoto } from "@/types/shared.types";
+import type { IFileAsset } from "@/types/shared.types";
 import type { ApplicationFormPage4Input } from "@/lib/zodSchemas/applicationFormPage4.Schema";
 import { useEffect, useState } from "react"; // ✅ UPDATED
 
@@ -27,8 +27,8 @@ export default function FastCardSection({ isCanadian }: { isCanadian: boolean })
 
   const num = useWatch({ control, name: "fastCard.fastCardNumber" }) as string | undefined;
   const exp = useWatch({ control, name: "fastCard.fastCardExpiry" }) as string | undefined;
-  const front = useWatch({ control, name: "fastCard.fastCardFrontPhoto" }) as IPhoto | undefined;
-  const back = useWatch({ control, name: "fastCard.fastCardBackPhoto" }) as IPhoto | undefined;
+  const front = useWatch({ control, name: "fastCard.fastCardFrontPhoto" }) as IFileAsset | undefined;
+  const back = useWatch({ control, name: "fastCard.fastCardBackPhoto" }) as IFileAsset | undefined;
 
   const [frontStatus, setFrontStatus] = useState<"idle" | "uploading" | "deleting" | "error">("idle");
   const [backStatus, setBackStatus] = useState<"idle" | "uploading" | "deleting" | "error">("idle");

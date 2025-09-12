@@ -9,6 +9,9 @@ const dateYMD = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD");
 export const photoSchema = z.object({
   s3Key: z.string().min(1, "Photo is required"),
   url: z.string().min(1, "Photo URL is required"),
+  mimeType: z.string().min(1, "Photo mimeType is required"),
+  sizeBytes: z.number().optional(),
+  originalName: z.string().optional(),
 });
 
 // --- Atomic entries ---
@@ -36,13 +39,34 @@ export const fastCardSchema = z.object({
 
 // Truck details schema (all optional)
 export const truckDetailsSchema = z.object({
-  vin: z.string().optional().transform((v) => v?.trim() ?? ""),
-  make: z.string().optional().transform((v) => v?.trim() ?? ""),
-  model: z.string().optional().transform((v) => v?.trim() ?? ""),
-  year: z.string().optional().transform((v) => v?.trim() ?? ""),
-  province: z.string().optional().transform((v) => v?.trim() ?? ""),
-  truckUnitNumber: z.string().optional().transform((v) => v?.trim() ?? ""),
-  plateNumber: z.string().optional().transform((v) => v?.trim() ?? ""),
+  vin: z
+    .string()
+    .optional()
+    .transform((v) => v?.trim() ?? ""),
+  make: z
+    .string()
+    .optional()
+    .transform((v) => v?.trim() ?? ""),
+  model: z
+    .string()
+    .optional()
+    .transform((v) => v?.trim() ?? ""),
+  year: z
+    .string()
+    .optional()
+    .transform((v) => v?.trim() ?? ""),
+  province: z
+    .string()
+    .optional()
+    .transform((v) => v?.trim() ?? ""),
+  truckUnitNumber: z
+    .string()
+    .optional()
+    .transform((v) => v?.trim() ?? ""),
+  plateNumber: z
+    .string()
+    .optional()
+    .transform((v) => v?.trim() ?? ""),
 });
 
 // ---- Factory so we can consider existing values and country rules ----

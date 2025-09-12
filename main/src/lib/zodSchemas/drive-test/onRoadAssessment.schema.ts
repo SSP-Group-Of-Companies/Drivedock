@@ -41,6 +41,9 @@ const OnRoadAssessmentSchema = z.object({
   supervisorSignature: z.object({
     s3Key: z.string().min(1, { message: "Supervisor signature is required" }),
     url: z.string().url({ message: "A valid signature URL is required" }),
+    mimeType: z.string().min(1, { message: "MIME type is required" }),
+    sizeBytes: z.number().optional(),
+    originalName: z.string().optional(),
   }),
   assessedAt: z.coerce.date().optional(),
 });

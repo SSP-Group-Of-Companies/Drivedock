@@ -10,7 +10,7 @@ import { useParams } from "next/navigation";
 
 import { uploadToS3Presigned } from "@/lib/utils/s3Upload";
 import { ES3Folder } from "@/types/aws.types";
-import type { IPhoto } from "@/types/shared.types";
+import type { IFileAsset } from "@/types/shared.types";
 import type { ApplicationFormPage4Input } from "@/lib/zodSchemas/applicationFormPage4.Schema";
 
 type PhotoFieldName = "incorporatePhotos" | "hstPhotos" | "bankingInfoPhotos" | "healthCardPhotos" | "medicalCertificationPhotos" | "passportPhotos" | "usVisaPhotos" | "prPermitCitizenshipPhotos";
@@ -30,7 +30,7 @@ export default function OnboardingPhotoGroup({ name, label, folder, maxPhotos, c
     formState: { errors },
   } = useFormContext<ApplicationFormPage4Input>();
 
-  const photos = (useWatch({ control, name }) || []) as IPhoto[];
+  const photos = (useWatch({ control, name }) || []) as IFileAsset[];
   const fieldErr = (errors as any)?.[name];
   const errorMessage = typeof fieldErr?.message === "string" ? (fieldErr.message as string) : undefined;
 
@@ -57,7 +57,7 @@ function PreviewCard({
   errorMessage,
 }: {
   label: string;
-  photos: IPhoto[];
+  photos: IFileAsset[];
   onOpen: () => void;
   maxPhotos: number;
   hasError?: boolean;
@@ -155,7 +155,7 @@ function Manager({ name, folder, maxPhotos, description }: { name: PhotoFieldNam
     formState: { errors },
   } = useFormContext<ApplicationFormPage4Input>();
 
-  const photos = (useWatch({ control, name }) || []) as IPhoto[];
+  const photos = (useWatch({ control, name }) || []) as IFileAsset[];
   const err = (errors as any)?.[name];
 
   const [status, setStatus] = React.useState<"idle" | "uploading" | "deleting" | "error">("idle");
@@ -171,8 +171,8 @@ function Manager({ name, folder, maxPhotos, description }: { name: PhotoFieldNam
     setStatus("uploading");
     setMessage("");
     try {
-      const current = (getValues(name) || []) as IPhoto[];
-      const uploaded: IPhoto[] = [];
+      const current = (getValues(name) || []) as IFileAsset[];
+      const uploaded: IFileAsset[] = [];
       for (const file of take) {
         const res = await uploadToS3Presigned({ file, folder, trackerId: id });
         uploaded.push(res);

@@ -1,5 +1,5 @@
 import type { ILicenseEntry, IFastCard, ITruckDetails } from "@/types/applicationForm.types";
-import type { IPhoto } from "@/types/shared.types";
+import type { IFileAsset } from "@/types/shared.types";
 import type { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
 
 export interface IdentificationsResponse {
@@ -11,14 +11,14 @@ export interface IdentificationsResponse {
     employeeNumber?: string;
     hstNumber?: string;
     businessName?: string;
-    incorporatePhotos?: IPhoto[];
-    hstPhotos?: IPhoto[];
-    bankingInfoPhotos?: IPhoto[];
-    healthCardPhotos?: IPhoto[];
-    medicalCertificationPhotos?: IPhoto[];
-    passportPhotos?: IPhoto[];
-    prPermitCitizenshipPhotos?: IPhoto[];
-    usVisaPhotos?: IPhoto[];
+    incorporatePhotos?: IFileAsset[];
+    hstPhotos?: IFileAsset[];
+    bankingInfoPhotos?: IFileAsset[];
+    healthCardPhotos?: IFileAsset[];
+    medicalCertificationPhotos?: IFileAsset[];
+    passportPhotos?: IFileAsset[];
+    prPermitCitizenshipPhotos?: IFileAsset[];
+    usVisaPhotos?: IFileAsset[];
     fastCard?: IFastCard;
     truckDetails?: ITruckDetails;
   };
@@ -30,7 +30,7 @@ export type IdentificationsData = IdentificationsResponse["data"];
 export interface ImageGalleryItem {
   id: string;
   title: string;
-  photos: IPhoto[];
-  type: 'license' | 'fastCard' | 'incorporate' | 'hst' | 'banking' | 'healthCard' | 'medical' | 'passport' | 'prPermit' | 'usVisa';
+  photos: IFileAsset[];
+  type: "license" | "fastCard" | "incorporate" | "hst" | "banking" | "healthCard" | "medical" | "passport" | "prPermit" | "usVisa";
   hasFrontBack: boolean;
 }

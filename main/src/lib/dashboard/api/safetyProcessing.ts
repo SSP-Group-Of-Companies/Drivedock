@@ -1,9 +1,9 @@
-import type { IPhoto } from "@/types/shared.types";
+import type { IFileAsset } from "@/types/shared.types";
 import type { EDrugTestStatus } from "@/types/drugTest.types";
 import type { EStepPath } from "@/types/onboardingTracker.types";
 
 export interface DrugTestBlock {
-  documents?: IPhoto[];
+  documents?: IFileAsset[];
   status?: EDrugTestStatus;
 }
 
@@ -11,7 +11,7 @@ export interface CarriersEdgeBlock {
   emailSent?: boolean;
   emailSentBy?: string;
   emailSentAt?: string; // ISO
-  certificates?: IPhoto[];
+  certificates?: IFileAsset[];
   completed?: boolean;
 }
 
@@ -39,9 +39,9 @@ export interface SafetyGetResponse {
 
 export type SafetyPatchBody = {
   notes?: string;
-  drugTest?: { documents?: IPhoto[]; status?: EDrugTestStatus };
+  drugTest?: { documents?: IFileAsset[]; status?: EDrugTestStatus };
   carriersEdgeTraining?: {
-    certificates?: IPhoto[]; // <-- was IPhoto; correct to IPhoto[]
+    certificates?: IFileAsset[]; // <-- was IFileAsset; correct to IFileAsset[]
     emailSent?: boolean;
     emailSentBy?: string;
     emailSentAt?: string | Date;
@@ -49,47 +49,31 @@ export type SafetyPatchBody = {
   };
 };
 
-export async function fetchSafety(
-  trackerId: string,
-  signal?: AbortSignal
-): Promise<SafetyGetResponse> {
-  const res = await fetch(
-    `/api/v1/admin/onboarding/${trackerId}/safety-processing`,
-    {
-      method: "GET",
-      headers: { Accept: "application/json" },
-      signal,
-    }
-  );
+export async function fetchSafety(trackerId: string, signal?: AbortSignal): Promise<SafetyGetResponse> {
+  const res = await fetch(`/api/v1/admin/onboarding/${trackerId}/safety-processing`, {
+    method: "GET",
+    headers: { Accept: "application/json" },
+    signal,
+  });
   const json = await res.json();
   if (!res.ok || json?.success === false) {
-    throw new Error(
-      json?.message || `Failed to load safety data (${res.status})`
-    );
+    throw new Error(json?.message || `Failed to load safety data (${res.status})`);
   }
   return (json.data ?? json) as SafetyGetResponse;
 }
 
-export async function patchSafety(
-  trackerId: string,
-  body: SafetyPatchBody
-): Promise<SafetyGetResponse> {
-  const res = await fetch(
-    `/api/v1/admin/onboarding/${trackerId}/safety-processing`,
-    {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify(body),
-    }
-  );
+export async function patchSafety(trackerId: string, body: SafetyPatchBody): Promise<SafetyGetResponse> {
+  const res = await fetch(`/api/v1/admin/onboarding/${trackerId}/safety-processing`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(body),
+  });
   const json = await res.json();
   if (!res.ok || json?.success === false) {
-    throw new Error(
-      json?.message || `Failed to update safety data (${res.status})`
-    );
+    throw new Error(json?.message || `Failed to update safety data (${res.status})`);
   }
   return (json.data ?? json) as SafetyGetResponse;
 }

@@ -84,6 +84,9 @@ export default async function OnRoadAssessmentPage({ params }: { params: Promise
       supervisorSignature: {
         s3Key: onRoad?.supervisorSignature?.s3Key ?? "",
         url: onRoad?.supervisorSignature?.url ?? "",
+        mimeType: onRoad?.supervisorSignature?.mimeType ?? "",
+        sizeBytes: onRoad?.supervisorSignature?.sizeBytes ?? 0,
+        originalName: onRoad?.supervisorSignature?.originalName ?? "",
       },
       assessedAt: onRoad?.assessedAt ? new Date(onRoad.assessedAt) : new Date(),
     },

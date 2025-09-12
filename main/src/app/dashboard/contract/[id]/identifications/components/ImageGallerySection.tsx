@@ -339,11 +339,7 @@ export default function ImageGallerySection({
         });
 
         // Create new photo object with actual S3 data
-        const newPhoto: IFileAsset = {
-          url: result.url, // S3 public URL
-          s3Key: result.s3Key, // S3 key
-          mimeType: file.type,
-        };
+        const newPhoto: IFileAsset = result;
 
         // Handle Fast Card photos differently since they're object properties, not arrays
         if (item.type === "fastCard") {
@@ -550,11 +546,7 @@ export default function ImageGallerySection({
         });
 
         // Create new photo object with actual S3 data
-        const newPhoto: IFileAsset = {
-          url: result.url, // S3 public URL
-          s3Key: result.s3Key, // S3 key
-          mimeType: file.type,
-        };
+        const newPhoto: IFileAsset = result;
 
         // Handle Fast Card photos differently since they're object properties, not arrays
         if (item.type === "fastCard") {
