@@ -36,34 +36,39 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     // Check for deletion of previous finalized signature if being replaced
     const previousSigKey = existingDoc?.signature?.s3Key;
-    const isReplacingFinalized = previousSigKey && !previousSigKey.startsWith(S3_TEMP_FOLDER) && previousSigKey !== tempSignature.s3Key;
+    const isReplacingFinalized = previousSigKey && tempSignature && !previousSigKey.startsWith(S3_TEMP_FOLDER) && previousSigKey !== tempSignature.s3Key;
 
     if (isReplacingFinalized) {
       await deleteS3Objects([previousSigKey]);
     }
 
-    // Finalize signature photo
-    const finalizedSignature: IPhoto = await finalizePhoto(tempSignature, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.SIGNATURES}/${onboardingDoc.id}`);
+    let updatedDoc = existingDoc;
 
-    const signedAt = new Date();
+    // Only process signature if signature data is provided
+    if (tempSignature) {
+      // Finalize signature photo
+      const finalizedSignature: IPhoto = await finalizePhoto(tempSignature, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.SIGNATURES}/${onboardingDoc.id}`);
 
-    const updatedDoc = existingDoc
-      ? await PoliciesConsents.findByIdAndUpdate(existingDoc._id, { signature: finalizedSignature, signedAt, sendPoliciesByEmail }, { new: true })
-      : await PoliciesConsents.create({
-          signature: finalizedSignature,
-          signedAt,
-          sendPoliciesByEmail,
-        });
+      const signedAt = new Date();
 
-    if (!updatedDoc) {
-      return errorResponse(500, "Failed to save policies & consents");
-    }
+      updatedDoc = existingDoc
+        ? await PoliciesConsents.findByIdAndUpdate(existingDoc._id, { signature: finalizedSignature, signedAt, sendPoliciesByEmail }, { new: true })
+        : await PoliciesConsents.create({
+            signature: finalizedSignature,
+            signedAt,
+            sendPoliciesByEmail,
+          });
 
-    if (!existingId) {
+      if (!updatedDoc) {
+        return errorResponse(500, "Failed to save policies & consents");
+      }
+
+      if (!existingId) {
+        onboardingDoc.forms.policiesConsents = updatedDoc.id;
+      }
+
       onboardingDoc.forms.policiesConsents = updatedDoc.id;
     }
-
-    onboardingDoc.forms.policiesConsents = updatedDoc.id;
     
     // Get location data from frontend request body
     const { location } = body;
@@ -106,7 +111,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     return successResponse(200, "Policies & Consents updated", {
       onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.POLICIES_CONSENTS),
-      policiesConsents: updatedDoc.toObject(),
+      policiesConsents: updatedDoc?.toObject() || null,
     });
   } catch (error) {
     console.error("PATCH /policies-consents error:", error);

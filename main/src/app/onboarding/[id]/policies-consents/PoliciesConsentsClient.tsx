@@ -36,64 +36,74 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
   const [modalUrl, setModalUrl] = useState<string | null>(null);
   const [sendPoliciesByEmail, setSendPoliciesByEmail] = useState<boolean>(policiesConsents.sendPoliciesByEmail || false);
   const [submitting, setSubmitting] = useState(false);
-  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locationBlocked, setLocationBlocked] = useState(false);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [locationRequested, setLocationRequested] = useState(false);
+  const [locationToggleEnabled, setLocationToggleEnabled] = useState(false);
 
   // initial values
   const initialSignature = policiesConsents.signature as UploadResult | undefined;
-  const initialSendByEmail = policiesConsents.sendPoliciesByEmail || false;
 
   // Signature ref
   const sigRef = useRef<SignatureBoxHandle>(null);
 
-  // Location permission function
-  const requestLocationPermission = () => {
-    if (!navigator.geolocation) {
-      alert('Geolocation is not supported by this browser.');
-      return;
-    }
+  // Don't auto-request location - wait for user to click "Allow" button
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const location = {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude
-        };
-        setUserLocation(location);
-        setLocationBlocked(false); // Reset blocked state if location is successfully obtained
-        // Continue with form submission, passing the location directly
-        proceedWithSubmission(location);
-      },
-      (error) => {
-        // Handle different types of geolocation errors
-        switch (error.code) {
-          case error.PERMISSION_DENIED:
-            setLocationBlocked(true);
-            break;
-          case error.POSITION_UNAVAILABLE:
-            // Location unavailable - could be temporary, don't block permanently
-            break;
-          case error.TIMEOUT:
-            // Timeout - could be temporary, don't block permanently
-            break;
-          default:
-            // Unknown error - don't block permanently
-            break;
+  // Handle toggle change
+  const handleLocationToggle = (enabled: boolean) => {
+    setLocationToggleEnabled(enabled);
+    if (enabled) {
+      setLocationRequested(true);
+      requestLocationPermission().then((location) => {
+        if (location) {
+          setUserLocation(location);
         }
-        
-        // Don't show alert or console.error - just set the blocked state and show visual feedback
-        // Don't proceed - user must grant permission
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 15000, // Increased timeout for better accuracy
-        maximumAge: 0 // Force fresh GPS reading, no cache
-      }
-    );
+      });
+    }
   };
 
-  const proceedWithSubmission = async (locationData?: { latitude: number; longitude: number }) => {
-    setSubmitting(true);
+  // Location permission function - returns a promise
+  const requestLocationPermission = (): Promise<{ latitude: number; longitude: number } | null> => {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        setLocationBlocked(true);
+        resolve(null);
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const location = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          };
+          setLocationBlocked(false);
+          resolve(location);
+        },
+        (error) => {
+          // Handle different types of geolocation errors
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              setLocationBlocked(true);
+              break;
+            case error.POSITION_UNAVAILABLE:
+            case error.TIMEOUT:
+            default:
+              // Don't block permanently for temporary issues
+              break;
+          }
+          resolve(null);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 0
+        }
+      );
+    });
+  };
+
+  const proceedWithSubmission = async () => {
     try {
       const finalSig = await sigRef.current?.ensureUploaded();
 
@@ -102,13 +112,18 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
         return;
       }
 
-      // Use the passed location data or fall back to userLocation state
-      const locationToSend = locationData || userLocation;
+      // Always get fresh location at submission time for maximum accuracy
+      const locationToSend = await requestLocationPermission();
+      if (!locationToSend) {
+        setSubmitting(false);
+        return; // Can't proceed without location
+      }
 
+      // Send form data with location
       const requestBody = {
         signature: { s3Key: finalSig.s3Key, url: finalSig.url },
         sendPoliciesByEmail,
-        location: locationToSend, // Include location data
+        location: locationToSend,
       };
       
       const response = await fetch(`/api/v1/onboarding/${id}/policies-consents`, {
@@ -122,7 +137,9 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
         throw new Error(data?.message || "Failed to save signature.");
       }
 
+      // Success - navigate to next step
       router.push(buildOnboardingNextStepPath(onboardingContext, EStepPath.POLICIES_CONSENTS));
+
     } catch (error: any) {
       console.error("Submit failed", error);
       alert(error?.message || "Submission failed.");
@@ -137,26 +154,17 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
       return;
     }
 
-    // If neither signature nor email choice changed, jump forward
-    const sigDirty = sigRef.current?.isDirty() ?? false;
-    if (!sigDirty && sendPoliciesByEmail === initialSendByEmail) {
-      // Still need location even if nothing changed
-      if (!userLocation) {
-        requestLocationPermission();
-        return;
-      }
-      // Proceed with existing location
-      proceedWithSubmission();
+    // Check if location toggle is enabled
+    if (!locationToggleEnabled) {
+      // Scroll to top to show the location card
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
-    // Check if we have location, if not request it
-    if (!userLocation) {
-      requestLocationPermission();
-      return;
-    }
+    // Immediately set submitting state for responsive UI
+    setSubmitting(true);
 
-    // Proceed with submission
+    // Proceed with submission (location will be captured in background)
     proceedWithSubmission();
   };
 
@@ -167,6 +175,67 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
 
   return (
     <div className="space-y-6">
+      {/* Location verification cards at the top */}
+      {!locationRequested && !userLocation && !locationBlocked && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-center gap-3">
+            <svg className="h-5 w-5 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div className="flex-1">
+              <h4 className="font-medium text-blue-900 mb-1">Location Verification Required</h4>
+              <p className="text-sm text-blue-700">
+                We need to verify your location to complete your application. Toggle on to allow location access.
+              </p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={locationToggleEnabled}
+                onChange={(e) => handleLocationToggle(e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+            </label>
+          </div>
+        </div>
+      )}
+
+      {locationRequested && !userLocation && !locationBlocked && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <svg className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <div>
+              <h4 className="font-medium text-blue-900 mb-1">Confirming Page Access</h4>
+              <p className="text-sm text-blue-700">
+                Please allow location access when prompted to verify your location for application completion.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {locationBlocked && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-start gap-3">
+            <svg className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+            <div>
+              <h4 className="font-medium text-red-900 mb-1">Location Verification Required</h4>
+              <p className="text-sm text-red-700">
+                Location access is required to verify your location for application completion. Please enable location permissions in your browser settings and refresh the page.
+              </p>
+              <p className="text-xs text-red-600 mt-2">
+                <strong>How to enable:</strong> Click the location icon in your browser&apos;s address bar, or go to Settings → Privacy → Location → Allow
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <PoliciesPdfGrid pdfs={pdfs} onOpenModal={setModalUrl} />
 
       <div className="rounded-xl bg-gray-50/60 ring-1 ring-gray-100 p-4">
@@ -202,25 +271,6 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
       <PoliciesPdfViewerModal modalUrl={modalUrl} onClose={() => setModalUrl(null)} />
 
       <PoliciesConsentCheckbox checked={sendPoliciesByEmail} onChange={setSendPoliciesByEmail} />
-
-      {locationBlocked && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-          <div className="flex items-start gap-3">
-            <svg className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
-            <div>
-              <h4 className="font-medium text-red-900 mb-1">Location Access Required</h4>
-              <p className="text-sm text-red-700">
-                Location access has been denied. Please enable location permissions in your browser settings and refresh the page to continue with your application.
-              </p>
-              <p className="text-xs text-red-600 mt-2">
-                <strong>How to enable:</strong> Click the location icon in your browser&apos;s address bar, or go to Settings → Privacy → Location → Allow
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
 
       <PoliciesSubmitSection onSubmit={handleSubmit} submitting={submitting} disabled={locationBlocked} />
     </div>
