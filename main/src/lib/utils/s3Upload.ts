@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { DEFAULT_PRESIGN_EXPIRY_SECONDS, S3_SUBMISSIONS_FOLDER, S3_TEMP_FOLDER } from "@/constants/aws";
 import { ES3Folder, IPresignResponse } from "@/types/aws.types";
-import type { IFileAsset } from "@/types/shared.types";
+import { EFileMimeType, type IFileAsset } from "@/types/shared.types";
 
 const s3 = new S3Client({
   region: AWS_REGION,
@@ -131,7 +131,7 @@ export async function uploadToS3Presigned({
   file,
   folder,
   trackerId = "unknown",
-  allowedMimeTypes = ["image/jpeg", "image/png", "image/jpg"],
+  allowedMimeTypes = [EFileMimeType.JPEG, EFileMimeType.JPG, EFileMimeType.PNG, EFileMimeType.PDF, EFileMimeType.DOC, EFileMimeType.DOCX],
   maxSizeMB = 10,
 }: UploadToS3Options): Promise<UploadResult> {
   const clientMime = file.type.toLowerCase();

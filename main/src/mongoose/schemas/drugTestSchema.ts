@@ -8,7 +8,13 @@ const allowedStatuses = Object.values(EDrugTestStatus);
 const drugTestSchema = new Schema<IDrugTestDoc>(
   {
     // documents can be image/pdf/doc/docx
-    documents: {
+    adminDocuments: {
+      type: [fileSchema],
+      default: [],
+      required: [true, "documents is required"],
+      minlength: [1, "At least one admin document is required"],
+    },
+    driverDocuments: {
       type: [fileSchema],
       default: [],
       required: [true, "documents is required"],

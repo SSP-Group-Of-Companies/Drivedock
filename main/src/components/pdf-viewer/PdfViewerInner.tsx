@@ -11,7 +11,7 @@ export default function PdfViewerInner({ pdfUrl }: Props) {
   const { ZoomInButton, ZoomOutButton } = zoomPluginInstance;
 
   return (
-    <div className="w-full h-full relative" onContextMenu={(e) => e.preventDefault()}>
+    <div className="w-full h-full relative overflow-auto" onContextMenu={(e) => e.preventDefault()}>
       <div className="absolute bottom-2 left-2 z-10 flex gap-2 bg-white/80 backdrop-blur-md shadow-md rounded px-2 py-1">
         <ZoomOutButton />
         <ZoomInButton />
@@ -20,12 +20,14 @@ export default function PdfViewerInner({ pdfUrl }: Props) {
       <style jsx global>{`
         .rpv-core__viewer {
           padding: 0 !important;
+          height: 100% !important;
         }
         .rpv-core__page-layer {
           margin: 0 auto !important;
         }
         .rpv-core__inner-pages {
           padding-top: 0 !important;
+          height: 100% !important;
         }
       `}</style>
 

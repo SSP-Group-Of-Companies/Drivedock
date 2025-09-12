@@ -15,7 +15,7 @@ import { EStepPath } from "@/types/onboardingTracker.types";
 import { EDrugTestStatus } from "@/types/drugTest.types";
 
 /** Payload: { documents: IFileAsset[] } */
-type PatchBody = { documents: IFileAsset[] };
+type PatchBody = { driverDocuments: IFileAsset[] };
 
 export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
@@ -34,16 +34,20 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     }
 
     const body = await parseJsonBody<PatchBody>(req);
-    if (!body || !Array.isArray(body.documents)) {
-      return errorResponse(400, "Invalid payload: documents[] is required");
+    if (!body || !Array.isArray(body.driverDocuments)) {
+      return errorResponse(400, "Invalid payload: driverDocuments[] is required");
     }
 
     // Find or create DrugTest doc
     const existingId = onboardingDoc.forms?.drugTest as any | undefined;
     let drugTestDoc = existingId ? await DrugTest.findById(existingId) : null;
+
+    if (drugTestDoc && drugTestDoc.status === EDrugTestStatus.APPROVED) return errorResponse(400, "Drug test already approved; no further changes allowed");
+
     if (!drugTestDoc) {
       drugTestDoc = await DrugTest.create({
-        documents: [],
+        adminDocuments: [],
+        driverDocuments: [],
         documentsUploaded: false,
         completed: false,
       });
@@ -52,7 +56,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     }
 
     // Previous finalized state for deletion diff
-    const prevDocs = Array.isArray(drugTestDoc.documents) ? [...drugTestDoc.documents] : [];
+    const prevDocs = Array.isArray(drugTestDoc.driverDocuments) ? [...drugTestDoc.driverDocuments] : [];
 
     // -------- Finalize new uploads (temp-files -> submissions/drug-test-docs/<id>) --------
     const tempPrefix = `${S3_TEMP_FOLDER}/`;
@@ -61,7 +65,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     const isTemp = (p: IFileAsset | undefined) => !!p?.s3Key && p.s3Key.startsWith(tempPrefix);
 
     const finalizedDocs: IFileAsset[] = [];
-    for (const p of body.documents ?? []) {
+    for (const p of body.driverDocuments ?? []) {
       if (isTemp(p)) {
         finalizedDocs.push(await finalizeAsset(p, finalFolder));
       } else {
@@ -86,7 +90,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
     // -------- Persist (single save, validation ON) --------
     drugTestDoc.set({
-      documents: finalizedDocs,
+      driverDocuments: finalizedDocs,
       status: EDrugTestStatus.AWAITING_REVIEW,
     });
     await drugTestDoc.save(); // normal validation

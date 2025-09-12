@@ -2,10 +2,11 @@
 
 import { useMemo, useState, useId, useEffect } from "react";
 import type { IFileAsset } from "@/types/shared.types";
-import { uploadToS3Presigned } from "@/lib/utils/s3Upload";
+import { EFileMimeType } from "@/types/shared.types";
+import { uploadToS3Presigned, deleteTempFile } from "@/lib/utils/s3Upload";
 import { ES3Folder } from "@/types/aws.types";
 import { useAuth } from "@/app/providers/authProvider";
-import ImageGalleryDialog, { type GalleryItem } from "@/app/dashboard/components/dialogs/ImageGalleryDialog";
+import FileGalleryDialog, { GalleryItem } from "@/app/dashboard/components/dialogs/FileGalleryDialog";
 
 type CarriersEdgeView = {
   emailSent?: boolean;
@@ -24,9 +25,16 @@ type Props = {
   highlight?: boolean;
 };
 
+// Allowed MIME types aligned with API (images + pdf + doc + docx)
+const ALLOWED_MIME = new Set<string>([EFileMimeType.JPEG, EFileMimeType.JPG, EFileMimeType.PNG, EFileMimeType.PDF, EFileMimeType.DOC, EFileMimeType.DOCX]);
+
+const INPUT_ACCEPT = "image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+const MAX_CERTS = 5;
+
 export default function CarriersEdgeCard({ trackerId, driverEmail, carriersEdge, canEdit, onChange, highlight = false }: Props) {
   const user = useAuth();
-  const [busy, setBusy] = useState(false); // uploading only
+  const [busy, setBusy] = useState(false); // uploading/deleting
   const [err, setErr] = useState<string | null>(null);
   const [galleryError, setGalleryError] = useState<string | null>(null);
   const [fileKey, setFileKey] = useState(0); // reset <input type="file" />
@@ -55,7 +63,15 @@ export default function CarriersEdgeCard({ trackerId, driverEmail, carriersEdge,
   // Gallery
   const [galleryOpen, setGalleryOpen] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
-  const galleryItems: GalleryItem[] = certificates.filter((p) => !!p?.url).map((p) => ({ url: String(p.url), uploadedAt: (p as any).uploadedAt }));
+
+  const galleryItems: GalleryItem[] = certificates
+    .filter((p) => !!p?.url)
+    .map((p) => ({
+      url: String(p.url),
+      name: p.originalName,
+      mimeType: (p.mimeType || "").toLowerCase(),
+      uploadedAt: (p as any).uploadedAt,
+    }));
 
   const sentLine = useMemo(() => {
     if (!emailSent) return "Not sent";
@@ -84,11 +100,47 @@ export default function CarriersEdgeCard({ trackerId, driverEmail, carriersEdge,
 
   async function handleSelectFiles(files: FileList | null) {
     if (!files || files.length === 0 || !canUpload) return;
+
     setBusy(true);
     setErr(null);
     try {
+      // Front-end validation:
+      // - types
+      // - combined count cap (5)
+      const filesArr = Array.from(files);
+      const remainingSlots = Math.max(0, MAX_CERTS - certificatesCount);
+      if (remainingSlots <= 0) {
+        setErr(`You can upload at most ${MAX_CERTS} certificates.`);
+        setBusy(false);
+        return;
+      }
+
+      // Filter invalid types (keep valid; report invalid)
+      const valid: File[] = [];
+      const invalid: File[] = [];
+      for (const f of filesArr) {
+        const mt = (f.type || "").toLowerCase();
+        if (ALLOWED_MIME.has(mt) || mt.startsWith("image/")) {
+          // allow generic image/* that browsers sometimes report
+          valid.push(f);
+        } else {
+          invalid.push(f);
+        }
+      }
+
+      if (invalid.length) {
+        setErr(`Some files were skipped due to unsupported types. Allowed: JPG, PNG, PDF, DOC, DOCX.`);
+      }
+
+      const toUpload = valid.slice(0, remainingSlots);
+      if (toUpload.length === 0) {
+        if (!invalid.length) setErr("No files selected.");
+        setBusy(false);
+        return;
+      }
+
       const uploaded: IFileAsset[] = [];
-      for (const file of Array.from(files)) {
+      for (const file of toUpload) {
         const result = await uploadToS3Presigned({
           file,
           folder: ES3Folder.CARRIERS_EDGE_CERTIFICATES,
@@ -96,6 +148,7 @@ export default function CarriersEdgeCard({ trackerId, driverEmail, carriersEdge,
         });
         uploaded.push(result);
       }
+
       onChange({ certificates: [...certificates, ...uploaded] });
       setFileKey((k) => k + 1);
     } catch (e: any) {
@@ -104,6 +157,43 @@ export default function CarriersEdgeCard({ trackerId, driverEmail, carriersEdge,
       setBusy(false);
     }
   }
+
+  // Delete a certificate (also remove temp S3 object if applicable)
+  const handleDeleteFromGallery = async (_i: number, item: GalleryItem) => {
+    // Allow deletion even when completed, but prevent if only 1 certificate remains
+    if (carriersEdge.completed && galleryItems.length <= 1) {
+      setGalleryError("At least one certificate must exist when completed.");
+      return;
+    }
+
+    const idx = certificates.findIndex((p) => String(p?.url) === item.url);
+    if (idx === -1) return;
+
+    setGalleryError(null);
+    setErr(null);
+    setBusy(true);
+    try {
+      const target = certificates[idx];
+
+      // If this is a temp object, delete it from S3 via API
+      // (deleteTempFile no-ops if not a temp key)
+      await deleteTempFile(target);
+
+      // Now update staged state
+      const next = certificates.filter((_, i) => i !== idx);
+      if (carriersEdge.completed && next.length < 1) {
+        onChange({ certificates: next, completed: false });
+      } else {
+        onChange({ certificates: next });
+      }
+    } catch (e: any) {
+      // Keep the file in UI if delete failed; show error
+      setGalleryError(e?.message || "Failed to delete temp file from S3.");
+      return;
+    } finally {
+      setBusy(false);
+    }
+  };
 
   /* -------------------------------- Render -------------------------------- */
 
@@ -158,7 +248,9 @@ export default function CarriersEdgeCard({ trackerId, driverEmail, carriersEdge,
                 Carrier&apos;s Edge Complete
               </span>
             )}
-            <span className="text-xs opacity-70">Certificates: {certificatesCount}</span>
+            <span className="text-xs opacity-70">
+              Certificates: {certificatesCount}/{MAX_CERTS}
+            </span>
           </div>
         </header>
 
@@ -195,12 +287,12 @@ export default function CarriersEdgeCard({ trackerId, driverEmail, carriersEdge,
                 disabled={locked || galleryItems.length === 0}
                 title={locked ? undefined : galleryItems.length === 0 ? "No certificates yet" : "Open gallery"}
               >
-                See Certificates
+                View Certificates
               </button>
             </div>
           </div>
 
-          {/* RIGHT: upload (no inner overlays; just disabled + tooltip) */}
+          {/* RIGHT: upload */}
           <div className="flex flex-col items-stretch justify-between rounded-xl border p-3 sm:p-4" style={{ borderColor: "var(--color-outline-variant)" }}>
             <label
               className={`relative flex flex-1 items-center justify-center rounded-xl border-2 border-dashed px-4 py-8 text-center ${canUpload ? "cursor-pointer" : "cursor-not-allowed opacity-60"}`}
@@ -209,20 +301,22 @@ export default function CarriersEdgeCard({ trackerId, driverEmail, carriersEdge,
                 background: "var(--color-surface)",
                 color: "var(--color-on-surface-variant)",
               }}
-              title={locked ? undefined : canUpload ? "Click to capture or select images" : "Send credentials to enable uploads"}
+              title={locked ? undefined : canUpload ? "Click to select files" : "Send credentials to enable uploads"}
             >
               <input
                 key={fileKey}
                 type="file"
                 className="absolute inset-0 h-full w-full opacity-0"
-                accept="image/*"
+                accept={INPUT_ACCEPT}
                 multiple
                 onChange={(e) => handleSelectFiles(e.currentTarget.files)}
                 disabled={!canUpload}
-                aria-label="Upload Carrier’s Edge certificate images"
-                capture="environment"
+                aria-label="Upload Carrier’s Edge certificates"
               />
-              <div className="pointer-events-none select-none">Click to capture or select an image</div>
+              <div className="pointer-events-none select-none">
+                <div className="font-medium">Click to select files</div>
+                <div className="mt-1 text-xs opacity-80">Supported: JPG, PNG, PDF, DOC, DOCX • Max {MAX_CERTS} files</div>
+              </div>
             </label>
           </div>
         </div>
@@ -251,7 +345,7 @@ export default function CarriersEdgeCard({ trackerId, driverEmail, carriersEdge,
             {emailSent
               ? certificatesCount >= 1
                 ? carriersEdge.completed
-                  ? "Completed. Certificates can be deleted, but at least one certificate must remain when completed."
+                  ? "Completed. You may delete certificates, but at least one must remain while completed."
                   : "Ready to submit changes."
                 : "Upload at least 1 certificate."
               : "Send credentials to continue."}
@@ -271,31 +365,14 @@ export default function CarriersEdgeCard({ trackerId, driverEmail, carriersEdge,
           </div>
         )}
 
-        {/* Gallery with delete */}
-        <ImageGalleryDialog
+        {/* Gallery with delete (deletes temp S3 object first if applicable) */}
+        <FileGalleryDialog
           open={galleryOpen}
           items={galleryItems}
           initialIndex={galleryIndex}
           title="Carrier’s Edge Certificates"
           onClose={() => setGalleryOpen(false)}
-          onDelete={(_i, item) => {
-            // Allow deletion even when completed, but prevent if only 1 certificate remains
-            if (carriersEdge.completed && galleryItems.length <= 1) {
-              // Show error message in gallery
-              setGalleryError("At least one certificate must exist when completed.");
-              return;
-            }
-
-            const idx = certificates.findIndex((p) => String(p?.url) === item.url);
-            if (idx === -1) return;
-            const next = certificates.filter((_, i) => i !== idx);
-            if (carriersEdge.completed && next.length < 1) {
-              onChange({ certificates: next, completed: false });
-            } else {
-              onChange({ certificates: next });
-            }
-            setGalleryError(null); // Clear any previous error
-          }}
+          onDelete={handleDeleteFromGallery}
           errorMessage={galleryError}
         />
       </section>

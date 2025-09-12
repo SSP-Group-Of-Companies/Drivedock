@@ -3,7 +3,8 @@ import type { EDrugTestStatus } from "@/types/drugTest.types";
 import type { EStepPath } from "@/types/onboardingTracker.types";
 
 export interface DrugTestBlock {
-  documents?: IFileAsset[];
+  driverDocuments?: IFileAsset[];
+  adminDocuments?: IFileAsset[];
   status?: EDrugTestStatus;
 }
 
@@ -39,7 +40,7 @@ export interface SafetyGetResponse {
 
 export type SafetyPatchBody = {
   notes?: string;
-  drugTest?: { documents?: IFileAsset[]; status?: EDrugTestStatus };
+  drugTest?: { driverDocuments?: IFileAsset[]; adminDocuments?: IFileAsset[]; status?: EDrugTestStatus };
   carriersEdgeTraining?: {
     certificates?: IFileAsset[]; // <-- was IFileAsset; correct to IFileAsset[]
     emailSent?: boolean;

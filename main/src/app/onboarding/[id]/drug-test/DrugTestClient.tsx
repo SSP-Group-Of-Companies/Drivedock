@@ -36,8 +36,8 @@ export default function DrugTestClient({ drugTest, onboardingContext }: DrugTest
   // Drive UI from local status; initialize from server
   const [status, setStatus] = useState<EDrugTestStatus>(drugTest.status ?? EDrugTestStatus.NOT_UPLOADED);
 
-  // RULE: ignore any server-provided documents if NOT_UPLOADED
-  const initialPhotos: IFileAsset[] = (drugTest.status ?? EDrugTestStatus.NOT_UPLOADED) === EDrugTestStatus.NOT_UPLOADED ? [] : drugTest.documents ?? [];
+  // RULE: ignore any server-provided driverDocuments if NOT_UPLOADED
+  const initialPhotos: IFileAsset[] = (drugTest.status ?? EDrugTestStatus.NOT_UPLOADED) === EDrugTestStatus.NOT_UPLOADED ? [] : drugTest.driverDocuments ?? [];
 
   const [photos, setPhotos] = useState<IFileAsset[]>(initialPhotos);
   const [submitting, setSubmitting] = useState(false);
@@ -56,8 +56,16 @@ export default function DrugTestClient({ drugTest, onboardingContext }: DrugTest
     }
   }, [completed]);
 
-  // canUpload when nothing uploaded yet OR previously rejected
-  const canUpload = status === EDrugTestStatus.NOT_UPLOADED || isRejected;
+  /**
+   * Upload enablement:
+   * - NOT_UPLOADED  -> can upload
+   * - REJECTED      -> can re-upload
+   * - AWAITING_REVIEW:
+   *      - If driver has not uploaded anything yet (driverDocuments empty AND no staged photos), allow upload.
+   *      - Otherwise, block (normal pending state).
+   */
+  const hasNoDriverDocs = (drugTest.driverDocuments?.length ?? 0) === 0 && photos.length === 0;
+  const canUpload = status === EDrugTestStatus.NOT_UPLOADED || isRejected || (status === EDrugTestStatus.AWAITING_REVIEW && hasNoDriverDocs);
 
   const headerBlock = useMemo(() => {
     if (completed) {
@@ -68,7 +76,8 @@ export default function DrugTestClient({ drugTest, onboardingContext }: DrugTest
         </div>
       );
     }
-    if (isPending) {
+    // If pending but the driver hasn't uploaded anything yet (allowed to upload), show the neutral description instead of "pending"
+    if (isPending && !canUpload) {
       return (
         <div className="rounded-xl bg-amber-50 ring-1 ring-amber-100 p-4 flex items-center gap-2 justify-center">
           <Hourglass className="text-amber-600 w-5 h-5" />
@@ -80,7 +89,7 @@ export default function DrugTestClient({ drugTest, onboardingContext }: DrugTest
       return (
         <div className="rounded-xl bg-red-50 ring-1 ring-red-100 p-4 flex items-center gap-2">
           <XCircle className="text-red-600 w-5 h-5" />
-          <p className="text-sm text-red-800 font-medium">{t("form.step6.rejected", "Your drug test documents were rejected. Please re-upload and re-submit.")}</p>
+          <p className="text-sm text-red-800 font-medium">{t("form.step6.rejected", "Your drug test driverDocuments were rejected. Please re-upload and re-submit.")}</p>
         </div>
       );
     }
@@ -89,7 +98,7 @@ export default function DrugTestClient({ drugTest, onboardingContext }: DrugTest
         <p className="text-sm text-gray-700 text-center">{t("form.step6.description", { count: MAX_PHOTOS })}</p>
       </div>
     );
-  }, [completed, isPending, isRejected, t]);
+  }, [completed, isPending, isRejected, canUpload, t]);
 
   const handleContinue = useCallback(() => {
     const next = ctx.nextStep;
@@ -109,27 +118,34 @@ export default function DrugTestClient({ drugTest, onboardingContext }: DrugTest
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          documents: photos.map((p) => ({ s3Key: p.s3Key, url: p.url, mimeType: p.mimeType, sizeInBytes: p.sizeBytes, originalName: p.originalName } as IFileAsset)), // minimal IFileAsset info
+          driverDocuments: photos.map(
+            (p) =>
+              ({
+                s3Key: p.s3Key,
+                url: p.url,
+                mimeType: p.mimeType,
+                sizeInBytes: p.sizeBytes,
+                originalName: p.originalName,
+              } as IFileAsset)
+          ),
         }),
       });
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(data?.message || "Failed to submit documents.");
+        throw new Error(data?.message || "Failed to submit driverDocuments.");
       }
 
-      // Update local state from server response:
-      // - finalized docs (now in submissions folder)
-      // - status -> AWAITING_REVIEW
-      // - onboardingContext updated for future navigation
+      // Update local state from server response
       const updatedDrugTest: Partial<IDrugTestDoc> = data?.data?.drugTest ?? {};
       const updatedCtx: IOnboardingTrackerContext | undefined = data?.data?.onboardingContext;
 
       if (updatedCtx) setCtx(updatedCtx);
-      if (Array.isArray(updatedDrugTest.documents)) setPhotos(updatedDrugTest.documents as IFileAsset[]);
+      if (Array.isArray(updatedDrugTest.driverDocuments)) {
+        setPhotos(updatedDrugTest.driverDocuments as IFileAsset[]);
+      }
       setStatus(updatedDrugTest.status ?? EDrugTestStatus.AWAITING_REVIEW);
-
-      // Stay on the page; UI will now show "Pending review"
+      // Stay on page; UI will now show "Pending review" unless canUpload remains true (i.e., still no driver docs)
     } catch (e) {
       console.error(e);
       // Optional: toast error
@@ -183,7 +199,7 @@ export default function DrugTestClient({ drugTest, onboardingContext }: DrugTest
 
       {canUpload ? (
         <>
-          <OnboardingPhotoGroupControlled label={t("form.step6.labelDocuments")} folder={ES3Folder.DRUG_TEST_DOCS} maxPhotos={MAX_PHOTOS} photos={photos} setPhotos={setPhotos} />
+          <OnboardingPhotoGroupControlled label={t("form.step6.labeldriverDocuments")} folder={ES3Folder.DRUG_TEST_DOCS} maxPhotos={MAX_PHOTOS} photos={photos} setPhotos={setPhotos} />
 
           <div className="flex justify-center">
             <button
@@ -193,7 +209,7 @@ export default function DrugTestClient({ drugTest, onboardingContext }: DrugTest
               className={`px-8 py-2 mt-2 rounded-full font-semibold transition-colors shadow-md
                 ${photos.length === 0 || submitting ? "bg-gray-400 text-white cursor-not-allowed" : "bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 text-white hover:opacity-90"}`}
             >
-              {isRejected ? t("actions.resubmitDocuments", "Re-submit Documents") : submitting ? t("actions.submitting", "Submitting...") : t("actions.submitDocuments")}
+              {isRejected ? t("actions.resubmitdriverDocuments", "Re-submit driverDocuments") : submitting ? t("actions.submitting", "Submitting...") : t("actions.submitdriverDocuments")}
             </button>
           </div>
         </>
