@@ -150,6 +150,7 @@ export default function TrafficConvictionsSection() {
                   <input
                     type="text"
                     className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
+                    placeholder={index === 0 ? "Toronto, ON" : ""}
                     data-field={`trafficConvictions.${index}.location`}
                     {...register(`trafficConvictions.${index}.location` as const)}
                   />
@@ -159,6 +160,7 @@ export default function TrafficConvictionsSection() {
                   <input
                     type="text"
                     className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
+                    placeholder={index === 0 ? "Speeding" : ""}
                     data-field={`trafficConvictions.${index}.charge`}
                     {...register(`trafficConvictions.${index}.charge` as const)}
                   />
@@ -168,6 +170,7 @@ export default function TrafficConvictionsSection() {
                   <input
                     type="text"
                     className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
+                    placeholder={index === 0 ? "Fine $150" : ""}
                     data-field={`trafficConvictions.${index}.penalty`}
                     {...register(`trafficConvictions.${index}.penalty` as const)}
                   />
