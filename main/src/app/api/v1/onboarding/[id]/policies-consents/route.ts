@@ -70,29 +70,36 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     let completionLocation = null;
     
     if (location && location.latitude && location.longitude) {
-      // Convert GPS coordinates to location data using reverse geocoding
+      // Always save GPS coordinates first
+      completionLocation = {
+        latitude: location.latitude,
+        longitude: location.longitude
+      };
+      
+      // Try to get readable address via reverse geocoding (bonus feature)
       try {
         const locationData = await getLocationFromCoordinates(location.latitude, location.longitude);
         if (!('error' in locationData)) {
           completionLocation = {
+            ...completionLocation,
             country: locationData.country,
             region: locationData.region,
             city: locationData.city,
-            timezone: locationData.timezone,
-            latitude: location.latitude,
-            longitude: location.longitude
+            timezone: locationData.timezone
           };
         }
       } catch {
-        // Continue without location data - don't fail the completion
+        // Continue with just GPS coordinates if reverse geocoding fails
       }
     }
     
     // Update status (location is handled separately at document root level)
     onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.POLICIES_CONSENTS);
     
-    // Handle completion location at document root level - preserve existing or update with new one
-    onboardingDoc.completionLocation = completionLocation || onboardingDoc.completionLocation;
+    // Handle completion location at document root level - always update if we have new location data
+    if (completionLocation) {
+      onboardingDoc.completionLocation = completionLocation;
+    }
 
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();
     await onboardingDoc.save();
