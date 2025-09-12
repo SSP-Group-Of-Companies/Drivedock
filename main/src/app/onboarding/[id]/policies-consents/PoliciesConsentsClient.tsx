@@ -55,10 +55,12 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setUserLocation({
+        const location = {
           latitude: position.coords.latitude,
           longitude: position.coords.longitude
-        });
+        };
+        console.log("📍 Location captured:", location);
+        setUserLocation(location);
         setLocationBlocked(false); // Reset blocked state if location is successfully obtained
         // Continue with form submission
         proceedWithSubmission();
@@ -101,14 +103,17 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
         return;
       }
 
+      const requestBody = {
+        signature: { s3Key: finalSig.s3Key, url: finalSig.url },
+        sendPoliciesByEmail,
+        location: userLocation, // Include location data
+      };
+      console.log("📤 Sending request body:", requestBody);
+      
       const response = await fetch(`/api/v1/onboarding/${id}/policies-consents`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          signature: { s3Key: finalSig.s3Key, url: finalSig.url },
-          sendPoliciesByEmail,
-          location: userLocation, // Include location data
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
