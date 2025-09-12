@@ -71,11 +71,11 @@ export default function EmploymentSection() {
       {/* Employment Questions Section - NEW */}
       <EmploymentQuestionsSection />
 
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6 relative">
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 pt-6 mb-6 relative">
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-white px-3">
           <h2 className="text-sm font-bold text-gray-700">{t("form.step2.page2.sections.employment")}</h2>
         </div>
-        <p className="text-sm text-gray-600">{t("form.step2.page2.requirements")}</p>
+        <p className="text-sm text-gray-600 mt-2">{t("form.step2.page2.requirements")}</p>
         {/* Anchor for scrollToError: matches Zod error path */}
         <div data-field="employments.totals.root" />
 
