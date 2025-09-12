@@ -258,7 +258,7 @@ export default function DrugTestCard({ trackerId, drugTest, canEdit, onChange, h
       default:
         return "";
     }
-  }, [derivedStatus, approvedAtLoad]);
+  }, [derivedStatus, approvedAtLoad, rejectedAtLoad]);
 
   /* ----------------------------- Render ----------------------------- */
   return (
@@ -299,7 +299,7 @@ export default function DrugTestCard({ trackerId, drugTest, canEdit, onChange, h
               </span>
             )}
             {drugTest.status === EDrugTestStatus.REJECTED && (
-              <span className="rounded-full px-2 py-0.5 text-xs" style={{ background: "var(--color-error)", color: "var(--color-error)" }}>
+              <span className="rounded-full px-2 py-0.5 text-xs color-white" style={{ background: "var(--color-error)" }}>
                 Drug Test Rejected
               </span>
             )}
