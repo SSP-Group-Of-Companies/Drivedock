@@ -30,44 +30,51 @@ export async function middleware(req: NextRequest) {
     // If path doesn't actually include an :id (e.g., /onboarding), let it through
     if (!trackerId) return NextResponse.next();
 
-    // Only run session check when the second segment looks like a Mongo ObjectId
+    // Only run checks when the second segment looks like a Mongo ObjectId
     const looksLikeObjectId = /^[a-f\d]{24}$/i.test(trackerId);
     if (looksLikeObjectId) {
-      // 1) DB-backed session check (no page flash)
-      try {
-        const apiUrl = `${origin}/api/v1/onboarding/${trackerId}/session-check`;
-        const sessionRes = await fetch(apiUrl, {
-          cache: "no-store",
-          headers: { cookie: req.headers.get("cookie") ?? "" }, // forward cookies
-        });
-
-        if (!sessionRes.ok) {
-          const url = req.nextUrl.clone();
-          url.pathname = "/";
-          return NextResponse.redirect(url);
-        }
-      } catch {
-        // Fail closed to be strict; if you prefer fail-open, return NextResponse.next()
-        const url = req.nextUrl.clone();
-        url.pathname = "/";
-        return NextResponse.redirect(url);
-      }
-
-      // 2) Avoid flash: if already completed, hard redirect to the completed page
+      // --- IMPORTANT EDGE CASE ---
+      // If the application is already completed, we may have cleared the session.
+      // In that case, redirect to /completed instead of "/" even if session-check fails.
+      // So we check completion FIRST, and skip session check when targeting /completed.
       if (subPath !== "completed") {
         try {
-          const apiUrl = `${origin}/api/v1/onboarding/${trackerId}/completion-status`;
-          const res = await fetch(apiUrl, {
+          const completionUrl = `${origin}/api/v1/onboarding/${trackerId}/completion-status`;
+          const completionRes = await fetch(completionUrl, {
             cache: "no-store",
-            headers: { cookie: req.headers.get("cookie") ?? "" },
+            headers: { cookie: req.headers.get("cookie") ?? "" }, // forward cookies
           });
 
           // Convention: completion-status returns 200 OK when completed
-          if (res.ok) {
+          if (completionRes.ok) {
             return NextResponse.redirect(new URL(`/onboarding/${trackerId}/completed`, req.url));
           }
         } catch {
-          // Fail open — let the page render if the check fails for any reason
+          // Fail open — let the route continue if this check fails for any reason
+        }
+      }
+
+      // Do NOT require a session for the completed page itself
+      if (subPath !== "completed") {
+        // DB-backed session check to avoid page flash
+        try {
+          const apiUrl = `${origin}/api/v1/onboarding/${trackerId}/session-check`;
+          const sessionRes = await fetch(apiUrl, {
+            cache: "no-store",
+            headers: { cookie: req.headers.get("cookie") ?? "" }, // forward cookies
+          });
+
+          if (!sessionRes.ok) {
+            // If session is invalid AND not completed (handled above), send home
+            const url = req.nextUrl.clone();
+            url.pathname = "/";
+            return NextResponse.redirect(url);
+          }
+        } catch {
+          // Fail closed to be strict; if you prefer fail-open, return NextResponse.next()
+          const url = req.nextUrl.clone();
+          url.pathname = "/";
+          return NextResponse.redirect(url);
         }
       }
     }
