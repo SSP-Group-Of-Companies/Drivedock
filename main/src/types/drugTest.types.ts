@@ -1,5 +1,7 @@
+// main/src/types/drugTest.types.ts
+
 import { Document } from "mongoose";
-import { IPhoto } from "./shared.types";
+import { IFileAsset } from "./shared.types";
 
 export enum EDrugTestStatus {
   NOT_UPLOADED = "NOT_UPLOADED",
@@ -9,7 +11,8 @@ export enum EDrugTestStatus {
 }
 
 export interface IDrugTest {
-  documents: IPhoto[]; // uploaded drug test documents
+  adminDocuments: IFileAsset[]; // admin uploaded drug test documents (e.g. from 3rd party)
+  driverDocuments: IFileAsset[]; // driver uploaded drug test documents
   status: EDrugTestStatus; // workflow status
 }
 

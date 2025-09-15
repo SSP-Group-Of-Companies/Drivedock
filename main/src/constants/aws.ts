@@ -1,3 +1,4 @@
+// src/constants/aws.ts
 export const DEFAULT_PRESIGN_EXPIRY_SECONDS = 300;
 export const DEFAULT_FILE_SIZE_LIMIT_MB = 10;
 

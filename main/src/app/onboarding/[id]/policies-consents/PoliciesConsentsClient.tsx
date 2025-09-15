@@ -75,7 +75,7 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
         (position) => {
           const location = {
             latitude: position.coords.latitude,
-            longitude: position.coords.longitude
+            longitude: position.coords.longitude,
           };
           setLocationBlocked(false);
           resolve(location);
@@ -97,7 +97,7 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
         {
           enableHighAccuracy: true,
           timeout: 15000,
-          maximumAge: 0
+          maximumAge: 0,
         }
       );
     });
@@ -107,7 +107,8 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
     try {
       const finalSig = await sigRef.current?.ensureUploaded();
 
-      if (!finalSig?.s3Key || !finalSig?.url) {
+      if (!finalSig?.s3Key || !finalSig?.url || !finalSig?.mimeType) {
+        // SignatureBox shows its own error; nothing to do here
         setSubmitting(false);
         return;
       }
@@ -121,11 +122,11 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
 
       // Send form data with location
       const requestBody = {
-        signature: { s3Key: finalSig.s3Key, url: finalSig.url },
+        signature: finalSig,
         sendPoliciesByEmail,
         location: locationToSend,
       };
-      
+
       const response = await fetch(`/api/v1/onboarding/${id}/policies-consents`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -139,7 +140,6 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
 
       // Success - navigate to next step
       router.push(buildOnboardingNextStepPath(onboardingContext, EStepPath.POLICIES_CONSENTS));
-
     } catch (error: any) {
       console.error("Submit failed", error);
       alert(error?.message || "Submission failed.");
@@ -157,7 +157,7 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
     // Check if location toggle is enabled
     if (!locationToggleEnabled) {
       // Scroll to top to show the location card
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
 
@@ -184,17 +184,10 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
             </svg>
             <div className="flex-1">
               <h4 className="font-medium text-blue-900 mb-1">Location Verification Required</h4>
-              <p className="text-sm text-blue-700">
-                We need to verify your location to complete your application. Toggle on to allow location access.
-              </p>
+              <p className="text-sm text-blue-700">We need to verify your location to complete your application. Toggle on to allow location access.</p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={locationToggleEnabled}
-                onChange={(e) => handleLocationToggle(e.target.checked)}
-                className="sr-only peer"
-              />
+              <input type="checkbox" checked={locationToggleEnabled} onChange={(e) => handleLocationToggle(e.target.checked)} className="sr-only peer" />
               <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
             </label>
           </div>
@@ -209,9 +202,7 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
             </svg>
             <div>
               <h4 className="font-medium text-blue-900 mb-1">Confirming Page Access</h4>
-              <p className="text-sm text-blue-700">
-                Please allow location access when prompted to verify your location for application completion.
-              </p>
+              <p className="text-sm text-blue-700">Please allow location access when prompted to verify your location for application completion.</p>
             </div>
           </div>
         </div>
@@ -221,7 +212,12 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <div className="flex items-start gap-3">
             <svg className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+              />
             </svg>
             <div>
               <h4 className="font-medium text-red-900 mb-1">Location Verification Required</h4>

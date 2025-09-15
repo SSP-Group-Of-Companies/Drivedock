@@ -16,12 +16,12 @@ function daysUntil(dateIso?: string): number | null {
 
 function hasTruckDetails(truckDetails?: any): boolean {
   if (!truckDetails) return false;
-  
+
   // Check if any truck detail field has meaningful data
-  const fields = ['vin', 'make', 'model', 'year', 'province', 'truckUnitNumber', 'plateNumber'];
-  return fields.some(field => {
+  const fields = ["vin", "make", "model", "year", "province", "truckUnitNumber", "plateNumber"];
+  return fields.some((field) => {
     const value = truckDetails[field];
-    return value && typeof value === 'string' && value.trim().length > 0;
+    return value && typeof value === "string" && value.trim().length > 0;
   });
 }
 
@@ -39,25 +39,16 @@ function computeNotifications(ctx: ContractContext | null) {
 
   const step = ctx.status?.currentStep;
 
-  if (
-    step === EStepPath.DRIVE_TEST &&
-    ctx.forms?.driveTest?.completed !== true
-  ) {
+  if (step === EStepPath.DRIVE_TEST && ctx.forms?.driveTest?.completed !== true) {
     notes.push({ id: "dt", text: "Driver is waiting for drive test" });
   }
-  if (
-    step === EStepPath.CARRIERS_EDGE_TRAINING &&
-    ctx.forms?.carriersEdgeTraining?.emailSent !== true
-  ) {
+  if (step === EStepPath.CARRIERS_EDGE_TRAINING && ctx.forms?.carriersEdgeTraining?.emailSent !== true) {
     notes.push({
       id: "ce",
       text: "Driver is waiting for Carrier’s Edge test credentials",
     });
   }
-  if (
-    step === EStepPath.DRUG_TEST &&
-    ctx.forms?.drugTest?.status === EDrugTestStatus.AWAITING_REVIEW
-  ) {
+  if (step === EStepPath.DRUG_TEST && ctx.forms?.drugTest?.status === EDrugTestStatus.AWAITING_REVIEW) {
     notes.push({
       id: "drug",
       text: "Driver is awaiting drug test result verification",
@@ -67,12 +58,12 @@ function computeNotifications(ctx: ContractContext | null) {
   // Truck details notification - show when driver has completed page 4 or beyond and truck details are missing
   if (
     (step === EStepPath.APPLICATION_PAGE_4 ||
-     step === EStepPath.APPLICATION_PAGE_5 ||
-     step === EStepPath.POLICIES_CONSENTS ||
-     step === EStepPath.DRIVE_TEST ||
-     step === EStepPath.CARRIERS_EDGE_TRAINING ||
-     step === EStepPath.DRUG_TEST ||
-     step === EStepPath.FLATBED_TRAINING) &&
+      step === EStepPath.APPLICATION_PAGE_5 ||
+      step === EStepPath.POLICIES_CONSENTS ||
+      step === EStepPath.DRIVE_TEST ||
+      step === EStepPath.CARRIERS_EDGE_TRAINING ||
+      step === EStepPath.DRUG_TEST ||
+      step === EStepPath.FLATBED_TRAINING) &&
     (!ctx.forms?.identifications?.truckDetails || !hasTruckDetails(ctx.forms.identifications.truckDetails))
   ) {
     notes.push({
@@ -84,17 +75,7 @@ function computeNotifications(ctx: ContractContext | null) {
   return notes;
 }
 
-export default function NotificationsMenu({
-  onClose,
-  context,
-  trackerId,
-  id,
-}: {
-  onClose: () => void;
-  context: ContractContext | null;
-  trackerId: string;
-  id?: string;
-}) {
+export default function NotificationsMenu({ onClose, context, trackerId, id }: { onClose: () => void; context: ContractContext | null; trackerId: string; id?: string }) {
   const router = useRouter();
   const items = useMemo(() => computeNotifications(context), [context]);
 
@@ -105,7 +86,7 @@ export default function NotificationsMenu({
     }
 
     let targetUrl: string;
-    
+
     switch (notificationId) {
       case "truck-details":
         targetUrl = `/dashboard/contract/${trackerId}/identifications?highlight=truck-details`;
@@ -126,8 +107,7 @@ export default function NotificationsMenu({
         console.warn("Unknown notification ID:", notificationId);
         return;
     }
-    
-    console.log("Navigating to:", targetUrl);
+
     router.push(targetUrl);
     onClose();
   };
@@ -147,10 +127,7 @@ export default function NotificationsMenu({
         if (e.key === "Escape") onClose();
       }}
     >
-      <div
-        className="flex items-center justify-between px-2 pb-2 text-xs"
-        style={{ color: "var(--color-on-surface-variant)" }}
-      >
+      <div className="flex items-center justify-between px-2 pb-2 text-xs" style={{ color: "var(--color-on-surface-variant)" }}>
         <span>Safety notifications</span>
         <span
           className="ml-2 inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-2 py-0.5 text-[10px] font-semibold"
@@ -164,10 +141,7 @@ export default function NotificationsMenu({
       </div>
 
       {items.length === 0 ? (
-        <div
-          className="px-2 py-3 text-sm"
-          style={{ color: "var(--color-on-surface-variant)" }}
-        >
+        <div className="px-2 py-3 text-sm" style={{ color: "var(--color-on-surface-variant)" }}>
           No pending notifications.
         </div>
       ) : (
@@ -178,19 +152,21 @@ export default function NotificationsMenu({
               <li
                 key={n.id}
                 className={`rounded-lg px-2 py-2 text-sm transition-colors ${
-                  isClickable 
-                    ? "cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 active:scale-95" 
-                    : "hover:bg-black/5 dark:hover:bg-white/5"
+                  isClickable ? "cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 active:scale-95" : "hover:bg-black/5 dark:hover:bg-white/5"
                 }`}
                 style={{ color: "var(--color-on-surface)" }}
                 role="menuitem"
                 onClick={isClickable ? () => handleNotificationClick(n.id) : undefined}
-                onKeyDown={isClickable ? (e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    handleNotificationClick(n.id);
-                  }
-                } : undefined}
+                onKeyDown={
+                  isClickable
+                    ? (e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          handleNotificationClick(n.id);
+                        }
+                      }
+                    : undefined
+                }
                 tabIndex={isClickable ? 0 : -1}
                 aria-label={isClickable ? `${n.text} - Click to navigate` : n.text}
               >

@@ -14,7 +14,7 @@
  * ===============================================================
  */
 
-import { IPhoto } from "@/types/shared.types";
+import { IFileAsset } from "@/types/shared.types";
 import { Document } from "mongoose";
 
 /* ───────────────────────── Enums ──────────────────────────── */
@@ -129,7 +129,7 @@ export interface IPreTripAssessment {
   expectedStandard: EExpectedStandard;
   overallAssessment: EDriveTestOverall;
   comments?: string;
-  supervisorSignature: IPhoto;
+  supervisorSignature: IFileAsset;
   assessedAt: Date;
 }
 
@@ -220,7 +220,7 @@ export interface IOnRoadAssessment {
   needsFlatbedTraining?: boolean;
   milesKmsDriven: number;
   comments?: string;
-  supervisorSignature: IPhoto;
+  supervisorSignature: IFileAsset;
   assessedAt: Date;
 }
 

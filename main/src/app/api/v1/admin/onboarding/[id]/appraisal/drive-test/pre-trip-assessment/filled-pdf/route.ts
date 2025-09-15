@@ -16,7 +16,7 @@ import { hasReachedStep } from "@/lib/utils/onboardingUtils";
 
 import { buildPreTripFillablePayload, applyPreTripPayloadToForm } from "@/lib/pdf/drive-test/mappers/pre-trip.mapper";
 import { drawPdfImage } from "@/lib/pdf/utils/drawPdfImage";
-import { loadImageBytesFromPhoto } from "@/lib/utils/s3Upload";
+import { loadImageBytesFromAsset } from "@/lib/utils/s3Upload";
 
 import { EPreTripFillableFormFields as F } from "@/lib/pdf/drive-test/mappers/pre-trip.types";
 import type { IDriveTest } from "@/types/driveTest.types";
@@ -75,7 +75,7 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
       const policiesDoc = await PoliciesConsents.findById(policiesId).lean();
       if (policiesDoc?.signature) {
         try {
-          driverSignatureBytes = await loadImageBytesFromPhoto(policiesDoc.signature);
+          driverSignatureBytes = await loadImageBytesFromAsset(policiesDoc.signature);
         } catch (e) {
           console.warn("Failed to load driver signature from Policies & Consents:", e);
         }
@@ -108,7 +108,7 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
     // Draw EXAMINER signature from preTrip.supervisorSignature
     try {
       if (driveTestDoc.preTrip.supervisorSignature) {
-        const examinerSigBytes = await loadImageBytesFromPhoto(driveTestDoc.preTrip.supervisorSignature);
+        const examinerSigBytes = await loadImageBytesFromAsset(driveTestDoc.preTrip.supervisorSignature);
         await drawPdfImage({
           pdfDoc,
           form,

@@ -6,7 +6,7 @@ import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import { isValidSIN, isValidPhoneNumber, isValidEmail, isValidDOB, isValidSINIssueDate, isValidGender } from "@/lib/utils/validationUtils";
 import { hasRecentAddressCoverage } from "@/lib/utils/hasMinimumAddressDuration";
 import { advanceProgress, buildTrackerContext, hasCompletedStep, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
-import { deleteS3Objects, finalizePhoto } from "@/lib/utils/s3Upload";
+import { deleteS3Objects, finalizeAsset } from "@/lib/utils/s3Upload";
 import { ES3Folder } from "@/types/aws.types";
 import { S3_SUBMISSIONS_FOLDER, S3_TEMP_FOLDER } from "@/constants/aws";
 import { IApplicationFormPage1, ILicenseEntry } from "@/types/applicationForm.types";
@@ -120,7 +120,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     if (workingSinPhoto?.s3Key?.startsWith(tempPrefix)) {
       finalizeTasks.push(async () => {
-        const finalized = await finalizePhoto(workingSinPhoto!, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.SIN_PHOTOS}/${trackerId}`);
+        const finalized = await finalizeAsset(workingSinPhoto!, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.SIN_PHOTOS}/${trackerId}`);
         workingSinPhoto = finalized;
       });
     }
@@ -130,13 +130,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
       if (lic.licenseFrontPhoto?.s3Key?.startsWith(tempPrefix)) {
         finalizeTasks.push(async () => {
-          lic.licenseFrontPhoto = await finalizePhoto(lic.licenseFrontPhoto!, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.LICENSES}/${trackerId}`);
+          lic.licenseFrontPhoto = await finalizeAsset(lic.licenseFrontPhoto!, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.LICENSES}/${trackerId}`);
         });
       }
 
       if (lic.licenseBackPhoto?.s3Key?.startsWith(tempPrefix)) {
         finalizeTasks.push(async () => {
-          lic.licenseBackPhoto = await finalizePhoto(lic.licenseBackPhoto!, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.LICENSES}/${trackerId}`);
+          lic.licenseBackPhoto = await finalizeAsset(lic.licenseBackPhoto!, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.LICENSES}/${trackerId}`);
         });
       }
 

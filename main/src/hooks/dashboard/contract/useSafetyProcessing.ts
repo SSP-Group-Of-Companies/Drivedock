@@ -1,12 +1,7 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  fetchSafety,
-  patchSafety,
-  type SafetyGetResponse,
-  type SafetyPatchBody,
-} from "@/lib/dashboard/api/safetyProcessing";
+import { fetchSafety, patchSafety, type SafetyGetResponse, type SafetyPatchBody } from "@/lib/dashboard/api/safetyProcessing";
 
 export function useSafetyProcessing(trackerId: string) {
   const qc = useQueryClient();
@@ -26,10 +21,7 @@ export function useSafetyProcessing(trackerId: string) {
     // ⭐ Optimistic update so the checkbox/cert count don't vanish during refetch
     onMutate: async (body) => {
       await qc.cancelQueries({ queryKey: ["safety-processing", trackerId] });
-      const prev = qc.getQueryData<SafetyGetResponse>([
-        "safety-processing",
-        trackerId,
-      ]);
+      const prev = qc.getQueryData<SafetyGetResponse>(["safety-processing", trackerId]);
 
       if (prev) {
         const next: SafetyGetResponse = structuredClone(prev);
@@ -50,12 +42,7 @@ export function useSafetyProcessing(trackerId: string) {
           if (inc.emailSent === true) {
             ce.emailSent = true;
             ce.emailSentBy = inc.emailSentBy || ce.emailSentBy || "Admin";
-            ce.emailSentAt =
-              (typeof inc.emailSentAt === "string"
-                ? inc.emailSentAt
-                : inc.emailSentAt?.toISOString()) ||
-              ce.emailSentAt ||
-              new Date().toISOString();
+            ce.emailSentAt = (typeof inc.emailSentAt === "string" ? inc.emailSentAt : inc.emailSentAt?.toISOString()) || ce.emailSentAt || new Date().toISOString();
           }
           if (inc.completed === true) {
             ce.completed = true;
@@ -65,10 +52,9 @@ export function useSafetyProcessing(trackerId: string) {
         // Drug Test (optional; keeps UI steady when approving/uploading)
         if (body.drugTest) {
           const dt = (next.drugTest ??= {});
-          if (Array.isArray(body.drugTest.documents))
-            dt.documents = body.drugTest.documents;
-          if (typeof body.drugTest.status === "string")
-            dt.status = body.drugTest.status;
+          if (Array.isArray(body.drugTest.driverDocuments)) dt.driverDocuments = body.drugTest.driverDocuments;
+          if (Array.isArray(body.drugTest.adminDocuments)) dt.adminDocuments = body.drugTest.adminDocuments;
+          if (typeof body.drugTest.status === "string") dt.status = body.drugTest.status;
         }
 
         qc.setQueryData(["safety-processing", trackerId], next);
@@ -78,15 +64,12 @@ export function useSafetyProcessing(trackerId: string) {
     },
 
     onError: (_e, _body, ctx) => {
-      if (ctx?.prev)
-        qc.setQueryData(["safety-processing", trackerId], ctx.prev);
+      if (ctx?.prev) qc.setQueryData(["safety-processing", trackerId], ctx.prev);
     },
 
     onSuccess: (server) => {
       // Write server truth, but don't drop CE if the server momentarily omits it
-      const current =
-        qc.getQueryData<SafetyGetResponse>(["safety-processing", trackerId]) ??
-        server;
+      const current = qc.getQueryData<SafetyGetResponse>(["safety-processing", trackerId]) ?? server;
 
       qc.setQueryData<SafetyGetResponse>(["safety-processing", trackerId], {
         ...server,
@@ -95,10 +78,7 @@ export function useSafetyProcessing(trackerId: string) {
       });
 
       // keep header/wizard in sync
-      qc.setQueryData(
-        ["contract-context", trackerId],
-        server.onboardingContext
-      );
+      qc.setQueryData(["contract-context", trackerId], server.onboardingContext);
     },
 
     onSettled: () => {

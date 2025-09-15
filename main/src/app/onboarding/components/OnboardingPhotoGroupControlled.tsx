@@ -9,7 +9,7 @@ import { useParams } from "next/navigation";
 
 import { uploadToS3Presigned } from "@/lib/utils/s3Upload";
 import { ES3Folder } from "@/types/aws.types";
-import type { IPhoto } from "@/types/shared.types";
+import type { IFileAsset } from "@/types/shared.types";
 
 type Props = {
   /** Display label (e.g. "Drug Test Documents") */
@@ -19,9 +19,9 @@ type Props = {
   /** Max number of photos a user can upload */
   maxPhotos: number;
   /** Current photos (controlled) */
-  photos: IPhoto[];
+  photos: IFileAsset[];
   /** Update photos (controlled) */
-  setPhotos: (next: IPhoto[]) => void;
+  setPhotos: (next: IFileAsset[]) => void;
   /** Optional wrapper className */
   className?: string;
   /** Disable upload/remove interactions entirely (e.g. when pending verification) */
@@ -44,7 +44,7 @@ export default function OnboardingPhotoGroupControlled({ label, folder, maxPhoto
 
 /* ---------------- internal pieces ---------------- */
 
-function PreviewCard({ label, photos, onOpen, maxPhotos, disabled }: { label: string; photos: IPhoto[]; onOpen: () => void; maxPhotos: number; disabled?: boolean }) {
+function PreviewCard({ label, photos, onOpen, maxPhotos, disabled }: { label: string; photos: IFileAsset[]; onOpen: () => void; maxPhotos: number; disabled?: boolean }) {
   const first = photos[0];
   const extra = Math.max(0, photos.length - 1);
   const hasFirst = !!first;
@@ -132,8 +132,8 @@ function ManagerControlled({
   label: string;
   folder: ES3Folder;
   maxPhotos: number;
-  photos: IPhoto[];
-  setPhotos: (next: IPhoto[]) => void;
+  photos: IFileAsset[];
+  setPhotos: (next: IFileAsset[]) => void;
   disabled: boolean;
 }) {
   const { id } = useParams<{ id: string }>();
@@ -151,7 +151,7 @@ function ManagerControlled({
     setStatus("uploading");
     setMessage("");
     try {
-      const uploaded: IPhoto[] = [];
+      const uploaded: IFileAsset[] = [];
       for (const file of take) {
         const res = await uploadToS3Presigned({
           file,

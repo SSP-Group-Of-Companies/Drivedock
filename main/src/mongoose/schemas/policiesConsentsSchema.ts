@@ -1,16 +1,21 @@
 import { Schema } from "mongoose";
-import { photoSchema } from "./sharedSchemas";
+import { fileSchema } from "./sharedSchemas";
 import { IPoliciesConsentsDoc } from "@/types/policiesConsents.types";
+import { isImageMime } from "@/types/shared.types";
 
 const policiesConsentsSchema = new Schema<IPoliciesConsentsDoc>(
   {
     signature: {
-      type: photoSchema,
-      required: true,
+      type: fileSchema,
+      required: [true, "Signature is required"],
+      validate: {
+        validator: (v: any) => v && isImageMime(v?.mimeType),
+        message: "Signature must be an image.",
+      },
     },
     signedAt: {
       type: Date,
-      required: true,
+      required: [true, "SignedAt timestamp is required"],
     },
     sendPoliciesByEmail: {
       type: Boolean,

@@ -163,7 +163,7 @@ export default function PreTripClient({ driverName, driverLicense, defaultValues
       return;
     }
 
-    methods.setValue("preTrip.supervisorSignature", { s3Key: finalSig.s3Key, url: finalSig.url }, { shouldDirty: true, shouldValidate: false });
+    methods.setValue("preTrip.supervisorSignature", finalSig, { shouldDirty: true, shouldValidate: false });
 
     await methods.handleSubmit(
       async (values) => {
@@ -171,7 +171,7 @@ export default function PreTripClient({ driverName, driverLicense, defaultValues
           ...values,
           preTrip: {
             ...values.preTrip,
-            supervisorSignature: { s3Key: finalSig.s3Key, url: finalSig.url },
+            supervisorSignature: finalSig,
           },
         };
 

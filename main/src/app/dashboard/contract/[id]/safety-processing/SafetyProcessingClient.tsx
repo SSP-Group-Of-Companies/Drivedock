@@ -65,7 +65,8 @@ export default function SafetyProcessingClient({ trackerId }: { trackerId: strin
   function mergeDTView(server: DrugTestBlock | undefined, stagedDT?: SafetyPatchBody["drugTest"]): DrugTestBlock {
     return {
       status: stagedDT?.status ?? server?.status,
-      documents: stagedDT?.documents ?? server?.documents,
+      driverDocuments: stagedDT?.driverDocuments ?? server?.driverDocuments,
+      adminDocuments: stagedDT?.adminDocuments ?? server?.adminDocuments,
     };
   }
 
@@ -97,9 +98,9 @@ export default function SafetyProcessingClient({ trackerId }: { trackerId: strin
         <div className="flex flex-col items-center gap-2">
           <div
             className="h-6 w-6 animate-spin rounded-full border-2 border-transparent"
-            style={{ 
+            style={{
               borderTopColor: "var(--color-primary)",
-              borderWidth: "2px"
+              borderWidth: "2px",
             }}
           />
           <span className="text-xs font-medium" style={{ color: "var(--color-on-surface-variant)" }}>
@@ -126,7 +127,7 @@ export default function SafetyProcessingClient({ trackerId }: { trackerId: strin
 
   // Check if we should highlight the Carrier's Edge card
   const shouldHighlightCarriersEdge = searchParams.get("highlight") === "carriers-edge";
-  
+
   // Check if we should highlight the Drug Test card
   const shouldHighlightDrugTest = searchParams.get("highlight") === "drug-test";
 
@@ -166,10 +167,10 @@ export default function SafetyProcessingClient({ trackerId }: { trackerId: strin
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ 
+      transition={{
         duration: 0.5,
         ease: "easeOut",
-        delay: 0.1 // Small delay to ensure smooth transition after loader hides
+        delay: 0.1, // Small delay to ensure smooth transition after loader hides
       }}
       className="space-y-4"
     >
@@ -200,13 +201,7 @@ export default function SafetyProcessingClient({ trackerId }: { trackerId: strin
           highlight={shouldHighlightCarriersEdge}
         />
 
-        <DrugTestCard 
-          trackerId={trackerId} 
-          drugTest={dtView} 
-          canEdit={gates.canEditDrugTest} 
-          onChange={(partial) => stageDT(partial)}
-          highlight={shouldHighlightDrugTest}
-        />
+        <DrugTestCard trackerId={trackerId} drugTest={dtView} canEdit={gates.canEditDrugTest} onChange={(partial) => stageDT(partial)} highlight={shouldHighlightDrugTest} />
 
         <NotesCard
           notes={staged.notes ?? ctx.notes ?? ""}

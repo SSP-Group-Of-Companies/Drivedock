@@ -70,6 +70,9 @@ export default async function PreTripAssessmentPage({ params }: { params: Promis
       supervisorSignature: {
         s3Key: preTrip?.supervisorSignature?.s3Key ?? "",
         url: preTrip?.supervisorSignature?.url ?? "",
+        mimeType: preTrip?.supervisorSignature?.mimeType ?? "",
+        sizeBytes: preTrip?.supervisorSignature?.sizeBytes ?? 0,
+        originalName: preTrip?.supervisorSignature?.originalName ?? "",
       },
       assessedAt: preTrip?.assessedAt ? new Date(preTrip.assessedAt) : new Date(),
     },

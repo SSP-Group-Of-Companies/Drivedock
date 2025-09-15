@@ -276,7 +276,7 @@ export default memo(
         return await uploadCanvasIfNeeded();
       }
 
-      if (!sigData?.s3Key || !sigData?.url) {
+      if (!sigData?.s3Key || !sigData?.url || !sigData.mimeType) {
         setStatus("error");
         setMessage(L.mustSignOrUpload);
         onError?.(L.mustSignOrUpload);

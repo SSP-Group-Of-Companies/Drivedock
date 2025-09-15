@@ -21,7 +21,7 @@ import LicenseSection from "../../[id]/application-form/page-1/components/Licens
 import AddressSection from "../../[id]/application-form/page-1/components/AddressSection";
 import ContinueButton from "../../[id]/ContinueButton";
 
-const EMPTY_PHOTO = { s3Key: "", url: "" };
+const EMPTY_PHOTO = { s3Key: "", url: "", mimeType: "", sizeBytes: 0, originalName: "" };
 
 // Seed one blank address so only "Current Address" shows on first render
 const BLANK_ADDRESS = {

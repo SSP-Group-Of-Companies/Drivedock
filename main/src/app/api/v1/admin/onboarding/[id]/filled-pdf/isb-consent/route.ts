@@ -19,7 +19,7 @@ import { EIsbConsentFillableFormFields as F } from "@/lib/pdf/isb-consent/mapper
 import { buildIsbConsentPayload, applyIsbConsentPayloadToForm } from "@/lib/pdf/isb-consent/mappers/isb-consent.mapper";
 
 import { drawPdfImage } from "@/lib/pdf/utils/drawPdfImage";
-import { loadImageBytesFromPhoto } from "@/lib/utils/s3Upload";
+import { loadImageBytesFromAsset } from "@/lib/utils/s3Upload";
 import { getSafetyAdminServerById } from "@/lib/assets/safetyAdmins/safetyAdmins.server";
 
 /* ------------------------------ helpers ------------------------------ */
@@ -142,7 +142,7 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
 
     // Applicant signature (Consent page)
     try {
-      const sigBytes = await loadImageBytesFromPhoto(policies.signature);
+      const sigBytes = await loadImageBytesFromAsset(policies.signature);
       tasks.push(
         drawPdfImage({
           pdfDoc,

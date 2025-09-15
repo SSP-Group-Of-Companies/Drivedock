@@ -54,11 +54,11 @@ function OnRoadSignatureField({ sigRef, trackerId, s3Folder, isLocked, initialSi
           }}
           onDirtyChange={(dirty) => onSignatureDirtyChange?.(dirty)}
           onUploaded={(result: UploadResult) => {
-            setValue("onRoad.supervisorSignature", { s3Key: result.s3Key, url: result.url }, { shouldDirty: true, shouldValidate: true });
+            setValue("onRoad.supervisorSignature", result, { shouldDirty: true, shouldValidate: true });
             clearErrors(["onRoad.supervisorSignature.s3Key", "onRoad.supervisorSignature.url"]);
           }}
           onCleared={() => {
-            setValue("onRoad.supervisorSignature", { s3Key: "", url: "" }, { shouldDirty: true, shouldValidate: true });
+            setValue("onRoad.supervisorSignature", { s3Key: "", url: "", mimeType: "", sizeBytes: 0, originalName: "" }, { shouldDirty: true, shouldValidate: true });
           }}
           onError={(msg) => console.warn("Signature error:", msg)}
         />

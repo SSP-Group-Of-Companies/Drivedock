@@ -56,11 +56,11 @@ function PreTripSignatureField({ sigRef, trackerId, s3Folder, isLocked, initialS
           }}
           onDirtyChange={(dirty) => onSignatureDirtyChange?.(dirty)}
           onUploaded={(result: UploadResult) => {
-            setValue("preTrip.supervisorSignature", { s3Key: result.s3Key, url: result.url }, { shouldDirty: true, shouldValidate: true });
+            setValue("preTrip.supervisorSignature", result, { shouldDirty: true, shouldValidate: true });
             clearErrors(["preTrip.supervisorSignature.s3Key", "preTrip.supervisorSignature.url"]);
           }}
           onCleared={() => {
-            setValue("preTrip.supervisorSignature", { s3Key: "", url: "" }, { shouldDirty: true, shouldValidate: true });
+            setValue("preTrip.supervisorSignature", { s3Key: "", url: "", mimeType: "", sizeBytes: 0, originalName: "" }, { shouldDirty: true, shouldValidate: true });
           }}
           onError={(msg) => {
             console.warn("Signature error:", msg);

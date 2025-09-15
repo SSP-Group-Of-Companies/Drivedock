@@ -17,7 +17,7 @@ import { hasReachedStep } from "@/lib/utils/onboardingUtils";
 
 import { buildOnRoadFillablePayload, applyOnRoadPayloadToForm } from "@/lib/pdf/drive-test/mappers/on-road.mapper";
 import { drawPdfImage } from "@/lib/pdf/utils/drawPdfImage";
-import { loadImageBytesFromPhoto } from "@/lib/utils/s3Upload";
+import { loadImageBytesFromAsset } from "@/lib/utils/s3Upload";
 
 import { EOnRoadFillableFormFields as F } from "@/lib/pdf/drive-test/mappers/on-road.types";
 import type { IDriveTest } from "@/types/driveTest.types";
@@ -75,7 +75,7 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
       const policiesDoc = await PoliciesConsents.findById(policiesId).lean();
       if (policiesDoc?.signature) {
         try {
-          driverSignatureBytes = await loadImageBytesFromPhoto(policiesDoc.signature);
+          driverSignatureBytes = await loadImageBytesFromAsset(policiesDoc.signature);
         } catch (e) {
           console.warn("Failed to load driver signature:", e);
         }
@@ -114,7 +114,7 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
     // Examiner: onRoad.supervisorSignature
     try {
       if (driveTestDoc.onRoad.supervisorSignature) {
-        const examinerSig = await loadImageBytesFromPhoto(driveTestDoc.onRoad.supervisorSignature);
+        const examinerSig = await loadImageBytesFromAsset(driveTestDoc.onRoad.supervisorSignature);
         await drawPdfImage({
           pdfDoc,
           form,

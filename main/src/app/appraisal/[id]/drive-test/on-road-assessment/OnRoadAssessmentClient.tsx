@@ -123,12 +123,12 @@ export default function OnRoadClient({ onboardingContext, driverName, driverLice
     setNotice(null);
 
     const finalSig = await sigRef.current?.ensureUploaded();
-    if (!finalSig?.s3Key || !finalSig?.url) {
+    if (!finalSig?.s3Key || !finalSig?.url || !finalSig.mimeType) {
       setIsSubmitting(false);
       methods.setError("onRoad.supervisorSignature.s3Key", { type: "manual", message: "Please draw or upload a signature before submitting." });
       return;
     }
-    methods.setValue("onRoad.supervisorSignature", { s3Key: finalSig.s3Key, url: finalSig.url }, { shouldDirty: true, shouldValidate: false });
+    methods.setValue("onRoad.supervisorSignature", finalSig, { shouldDirty: true, shouldValidate: false });
 
     // phase 2: run zod validation & branch on overall result
     await methods.handleSubmit(
@@ -137,7 +137,7 @@ export default function OnRoadClient({ onboardingContext, driverName, driverLice
           ...values,
           onRoad: {
             ...values.onRoad,
-            supervisorSignature: { s3Key: finalSig.s3Key, url: finalSig.url },
+            supervisorSignature: finalSig,
           },
         };
 

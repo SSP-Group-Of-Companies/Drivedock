@@ -17,6 +17,9 @@ const phoneLoose = z
 export const photoSchema = z.object({
   s3Key: z.string().min(1, "Photo is required"),
   url: z.string().min(1, "Photo URL is required"),
+  mimeType: z.string().min(1, "Photo mimeType is required"),
+  sizeBytes: z.number().optional(),
+  originalName: z.string().optional(),
 });
 
 // License Entry — photos optional here; first license requirement enforced below
@@ -47,8 +50,7 @@ export const licenseEntrySchema = z.object({
       return true;
     },
     {
-      message:
-        "License expiry date cannot be a past, current date, or within 30 days",
+      message: "License expiry date cannot be a past, current date, or within 30 days",
     }
   ),
   licenseFrontPhoto: z.union([photoSchema, z.undefined()]).optional(),
@@ -96,16 +98,16 @@ export const applicationFormPage1Schema = z.object({
       const issueDate = new Date(date);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      
+
       // Issue date cannot be in the future
       if (issueDate > today) {
         return false;
       }
-      
+
       // Issue date cannot be more than 100 years ago (reasonable limit)
       const hundredYearsAgo = new Date();
       hundredYearsAgo.setFullYear(today.getFullYear() - 100);
-      
+
       return issueDate >= hundredYearsAgo;
     },
     {
@@ -145,9 +147,7 @@ export const applicationFormPage1Schema = z.object({
 
   birthCity: z.string().min(1, "City of birth is required"),
   birthCountry: z.string().min(1, "Country of birth is required"),
-  birthStateOrProvince: z
-    .string()
-    .min(1, "Province/State of birth is required"),
+  birthStateOrProvince: z.string().min(1, "Province/State of birth is required"),
 
   licenses: z
     .array(licenseEntrySchema)
@@ -160,9 +160,7 @@ export const applicationFormPage1Schema = z.object({
     .refine(
       (licenses) => {
         const first = licenses[0];
-        return Boolean(
-          first?.licenseFrontPhoto?.s3Key && first?.licenseFrontPhoto?.url
-        );
+        return Boolean(first?.licenseFrontPhoto?.s3Key && first?.licenseFrontPhoto?.url);
       },
       {
         message: "Front license photo is required for the first license",
@@ -172,9 +170,7 @@ export const applicationFormPage1Schema = z.object({
     .refine(
       (licenses) => {
         const first = licenses[0];
-        return Boolean(
-          first?.licenseBackPhoto?.s3Key && first?.licenseBackPhoto?.url
-        );
+        return Boolean(first?.licenseBackPhoto?.s3Key && first?.licenseBackPhoto?.url);
       },
       {
         message: "Back license photo is required for the first license",
@@ -188,29 +184,24 @@ export const applicationFormPage1Schema = z.object({
 
     // ✅ Server requires 5-year coverage — keep this to match backend
     .refine((addresses) => hasRecentAddressCoverage(addresses, 5), {
-      message:
-        "You must provide at least 5 years of address history. If you haven't lived in one place for 5 years, please add additional addresses.",
+      message: "You must provide at least 5 years of address history. If you haven't lived in one place for 5 years, please add additional addresses.",
       path: [],
     })
 
     .refine(
       (addresses) => {
         // No overlaps & no > 2yr gaps
-        const sorted = [...addresses].sort(
-          (a, b) => new Date(a.from).getTime() - new Date(b.from).getTime()
-        );
+        const sorted = [...addresses].sort((a, b) => new Date(a.from).getTime() - new Date(b.from).getTime());
         for (let i = 0; i < sorted.length - 1; i++) {
           const currEnd = new Date(sorted[i].to);
           const nextStart = new Date(sorted[i + 1].from);
-          const gapDays =
-            (nextStart.getTime() - currEnd.getTime()) / (1000 * 60 * 60 * 24);
+          const gapDays = (nextStart.getTime() - currEnd.getTime()) / (1000 * 60 * 60 * 24);
           if (currEnd > nextStart || gapDays > 730) return false;
         }
         return true;
       },
       {
-        message:
-          "Addresses cannot overlap and gaps between addresses cannot exceed 2 years",
+        message: "Addresses cannot overlap and gaps between addresses cannot exceed 2 years",
         path: [],
       }
     )
@@ -219,23 +210,16 @@ export const applicationFormPage1Schema = z.object({
         // Most recent address ends within last 6 months
         const valid = addresses.filter((a) => a.to?.trim());
         if (!valid.length) return false;
-        const lastEnd = new Date(
-          valid
-            .sort((a, b) => new Date(a.to).getTime() - new Date(b.to).getTime())
-            .at(-1)!.to
-        );
+        const lastEnd = new Date(valid.sort((a, b) => new Date(a.to).getTime() - new Date(b.to).getTime()).at(-1)!.to);
         const sixMonthsAgo = new Date();
         sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
         return lastEnd >= sixMonthsAgo;
       },
       {
-        message:
-          "Your most recent address must extend to within the last 6 months",
+        message: "Your most recent address must extend to within the last 6 months",
         path: [],
       }
     ),
 });
 
-export type ApplicationFormPage1Schema = z.infer<
-  typeof applicationFormPage1Schema
->;
+export type ApplicationFormPage1Schema = z.infer<typeof applicationFormPage1Schema>;

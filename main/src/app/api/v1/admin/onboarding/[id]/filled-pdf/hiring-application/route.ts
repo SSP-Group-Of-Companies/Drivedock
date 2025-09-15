@@ -17,7 +17,7 @@ import PoliciesConsents from "@/mongoose/models/PoliciesConsents";
 import PreQualifications from "@/mongoose/models/Prequalifications";
 
 import { drawPdfImage } from "@/lib/pdf/utils/drawPdfImage";
-import { loadImageBytesFromPhoto } from "@/lib/utils/s3Upload";
+import { loadImageBytesFromAsset } from "@/lib/utils/s3Upload";
 
 import { buildHiringApplicationFieldMap, resolveHiringTemplate } from "@/lib/pdf/hiring-application/mappers/hiring-application.mapper";
 import { EDriverApplicationFillableFormFields as F } from "@/lib/pdf/hiring-application/mappers/hiring-application.types";
@@ -83,7 +83,7 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     let driverSignatureBytes: Uint8Array | undefined;
     if (policies?.signature) {
       try {
-        driverSignatureBytes = await loadImageBytesFromPhoto(policies.signature);
+        driverSignatureBytes = await loadImageBytesFromAsset(policies.signature);
       } catch (e) {
         console.warn("Driver signature load failed:", e);
       }

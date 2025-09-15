@@ -108,7 +108,7 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
 
     // If no key/url in state, just clear
     if (!key && !formData?.sinPhoto?.url) {
-      updateField("sinPhoto", { s3Key: "", url: "" });
+      updateField("sinPhoto", { s3Key: "", url: "", mimeType: "", sizeBytes: 0, originalName: "" });
       return;
     }
 
@@ -120,7 +120,7 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
       try {
         await deleteTempFiles([key]);
         // Clear from state after deletion
-        updateField("sinPhoto", { s3Key: "", url: "" });
+        updateField("sinPhoto", { s3Key: "", url: "", mimeType: "", sizeBytes: 0, originalName: "" });
         setSinPhotoStatus("idle");
         setSinPhotoMessage("Photo removed");
       } catch (err) {
@@ -132,7 +132,7 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
     }
 
     // Final/Non-temp photo: remove immediately from state
-    updateField("sinPhoto", { s3Key: "", url: "" });
+    updateField("sinPhoto", { s3Key: "", url: "", mimeType: "", sizeBytes: 0, originalName: "" });
     setSinPhotoStatus("idle");
     setSinPhotoMessage("");
   };

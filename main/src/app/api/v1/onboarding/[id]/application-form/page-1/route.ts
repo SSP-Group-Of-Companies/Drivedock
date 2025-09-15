@@ -7,7 +7,7 @@ import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import { isValidSIN, isValidPhoneNumber, isValidEmail, isValidDOB, isValidSINIssueDate, isValidGender } from "@/lib/utils/validationUtils";
 import { hasRecentAddressCoverage } from "@/lib/utils/hasMinimumAddressDuration";
 import { advanceProgress, buildTrackerContext, nextResumeExpiry, onboardingExpired } from "@/lib/utils/onboardingUtils";
-import { deleteS3Objects, finalizePhoto, buildFinalDest } from "@/lib/utils/s3Upload";
+import { deleteS3Objects, finalizeAsset, buildFinalDest } from "@/lib/utils/s3Upload";
 import { ES3Folder } from "@/types/aws.types";
 import { S3_TEMP_FOLDER } from "@/constants/aws";
 import { IApplicationFormPage1, ILicenseEntry } from "@/types/applicationForm.types";
@@ -101,23 +101,23 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     await appFormDoc.save({ validateBeforeSave: false });
 
     // ----------------------------------------------------------------
-    // Phase 2 — Finalize S3 files for page1 (no temp checks; finalizePhoto no-ops if already final)
+    // Phase 2 — Finalize S3 files for page1 (no temp checks; finalizeAsset no-ops if already final)
     // ----------------------------------------------------------------
     const destSin = buildFinalDest(trackerId, ES3Folder.SIN_PHOTOS);
     const destLic = buildFinalDest(trackerId, ES3Folder.LICENSES);
 
     // finalize sin photo
     if (page1.sinPhoto) {
-      page1.sinPhoto = await finalizePhoto(page1.sinPhoto, destSin);
+      page1.sinPhoto = await finalizeAsset(page1.sinPhoto, destSin);
     }
 
     // finalize license photos
     for (const lic of tempLicenses) {
       if (lic.licenseFrontPhoto) {
-        lic.licenseFrontPhoto = await finalizePhoto(lic.licenseFrontPhoto, destLic);
+        lic.licenseFrontPhoto = await finalizeAsset(lic.licenseFrontPhoto, destLic);
       }
       if (lic.licenseBackPhoto) {
-        lic.licenseBackPhoto = await finalizePhoto(lic.licenseBackPhoto, destLic);
+        lic.licenseBackPhoto = await finalizeAsset(lic.licenseBackPhoto, destLic);
       }
     }
 

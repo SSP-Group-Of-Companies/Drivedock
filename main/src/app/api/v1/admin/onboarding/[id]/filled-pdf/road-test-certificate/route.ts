@@ -16,7 +16,7 @@ import { buildRoadTestCertificatePayload, applyRoadTestCertificatePayloadToForm,
 import { ERoadTestCertificateFillableFormFields as F } from "@/lib/pdf/road-test-certificate/mappers/road-test-certificate.types";
 
 import { drawPdfImage } from "@/lib/pdf/utils/drawPdfImage";
-import { loadImageBytesFromPhoto } from "@/lib/utils/s3Upload";
+import { loadImageBytesFromAsset } from "@/lib/utils/s3Upload";
 import { ECompanyId } from "@/constants/companies";
 
 export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
@@ -100,7 +100,7 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
     try {
       const sigPhoto = (driveTest.onRoad as any).supervisorSignature;
       if (sigPhoto) {
-        const bytes = await loadImageBytesFromPhoto(sigPhoto);
+        const bytes = await loadImageBytesFromAsset(sigPhoto);
         await drawPdfImage({
           pdfDoc,
           form,

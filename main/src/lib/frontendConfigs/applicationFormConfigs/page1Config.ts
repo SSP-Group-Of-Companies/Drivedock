@@ -6,17 +6,11 @@
  * - Returns a fully-resolved config (no [id] tokens)
  */
 
-import {
-  BuildPayloadCtx,
-  FormPageConfig,
-  FormPageConfigFactory,
-} from "@/lib/frontendConfigs/formPageConfig.types";
+import { BuildPayloadCtx, FormPageConfig, FormPageConfigFactory } from "@/lib/frontendConfigs/formPageConfig.types";
 import { ApplicationFormPage1Schema } from "@/lib/zodSchemas/applicationFormPage1.schema";
 import { ECompanyId } from "@/constants/companies";
 
-export const page1ConfigFactory: FormPageConfigFactory<
-  ApplicationFormPage1Schema
-> = (ctx: BuildPayloadCtx): FormPageConfig<ApplicationFormPage1Schema> => {
+export const page1ConfigFactory: FormPageConfigFactory<ApplicationFormPage1Schema> = (ctx: BuildPayloadCtx): FormPageConfig<ApplicationFormPage1Schema> => {
   const id = ctx.effectiveTrackerId; // undefined on true fresh POST (first submit)
 
   return {
@@ -31,6 +25,9 @@ export const page1ConfigFactory: FormPageConfigFactory<
         // include nested photo keys so RHF can surface specific errors
         "sinPhoto.s3Key",
         "sinPhoto.url",
+        "sinPhoto.mimeType",
+        "sinPhoto.sizeBytes",
+        "sinPhoto.originalName",
         "dob",
         "phoneCell",
         "canProvideProofOfAge",
@@ -50,32 +47,26 @@ export const page1ConfigFactory: FormPageConfigFactory<
 
       // Validate each visible license row (ensure first has photos)
       values.licenses?.forEach((_lic, index) => {
-        fields.push(
-          `licenses.${index}.licenseNumber`,
-          `licenses.${index}.licenseStateOrProvince`,
-          `licenses.${index}.licenseExpiry`,
-          `licenses.${index}.licenseType`
-        );
+        fields.push(`licenses.${index}.licenseNumber`, `licenses.${index}.licenseStateOrProvince`, `licenses.${index}.licenseExpiry`, `licenses.${index}.licenseType`);
         if (index === 0) {
           fields.push(
             `licenses.0.licenseFrontPhoto.s3Key`,
             `licenses.0.licenseFrontPhoto.url`,
+            `licenses.0.licenseBackPhoto.mimeType`,
+            `licenses.0.licenseFrontPhoto.sizeBytes`,
+            `licenses.0.licenseFrontPhoto.originalName`,
             `licenses.0.licenseBackPhoto.s3Key`,
-            `licenses.0.licenseBackPhoto.url`
+            `licenses.0.licenseBackPhoto.url`,
+            `licenses.0.licenseBackPhoto.mimeType`,
+            `licenses.0.licenseBackPhoto.sizeBytes`,
+            `licenses.0.licenseBackPhoto.originalName`
           );
         }
       });
 
       // Validate each visible address row
       values.addresses?.forEach((_addr, index) => {
-        fields.push(
-          `addresses.${index}.address`,
-          `addresses.${index}.city`,
-          `addresses.${index}.stateOrProvince`,
-          `addresses.${index}.postalCode`,
-          `addresses.${index}.from`,
-          `addresses.${index}.to`
-        );
+        fields.push(`addresses.${index}.address`, `addresses.${index}.city`, `addresses.${index}.stateOrProvince`, `addresses.${index}.postalCode`, `addresses.${index}.from`, `addresses.${index}.to`);
       });
 
       return fields;
@@ -94,9 +85,7 @@ export const page1ConfigFactory: FormPageConfigFactory<
           applicationFormPage1: cleaned,
           prequalifications: ctx2.prequalifications,
           companyId: ctx2.companyId,
-          ...(ctx2.companyId === ECompanyId.SSP_CA && ctx2.applicationType
-            ? { applicationType: ctx2.applicationType }
-            : {}),
+          ...(ctx2.companyId === ECompanyId.SSP_CA && ctx2.applicationType ? { applicationType: ctx2.applicationType } : {}),
         };
       }
 

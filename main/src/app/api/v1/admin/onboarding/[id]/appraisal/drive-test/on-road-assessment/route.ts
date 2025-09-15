@@ -7,7 +7,7 @@ import DriveTest from "@/mongoose/models/DriveTest";
 import { EStepPath, ETerminationType } from "@/types/onboardingTracker.types";
 import { buildTrackerContext, hasReachedStep, advanceProgress, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
 import { isValidObjectId } from "mongoose";
-import { deleteS3Objects, finalizePhoto } from "@/lib/utils/s3Upload";
+import { deleteS3Objects, finalizeAsset } from "@/lib/utils/s3Upload";
 import { ES3Folder } from "@/types/aws.types";
 import { S3_SUBMISSIONS_FOLDER } from "@/constants/aws";
 import { IOnRoadAssessment, IDriveTest, EDriveTestOverall } from "@/types/driveTest.types";
@@ -110,7 +110,7 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
  *
  * Photo Handling (S3):
  * - Finalize onRoad.supervisorSignature BEFORE any DB write:
- *     - finalizePhoto() moves from temp-files/ → final folder: submissions/drive-test/{onboardingId}
+ *     - finalizeAsset() moves from temp-files/ → final folder: submissions/drive-test/{onboardingId}
  *     - If finalize fails, abort with error (no DB writes performed).
  * - If later DB save fails after finalize → best-effort compensating delete of the finalized S3 key.
  *
@@ -219,7 +219,7 @@ export const POST = async (req: NextRequest, { params }: { params: Promise<{ id:
     const sig = onRoad.supervisorSignature;
     if (!sig?.s3Key) return errorResponse(400, "onRoad.supervisorSignature.s3Key is required");
 
-    const finalizedSig = await finalizePhoto(sig, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.DRIVE_TEST}/${onboardingId}`);
+    const finalizedSig = await finalizeAsset(sig, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.DRIVE_TEST}/${onboardingId}`);
 
     const onRoadToSave: IOnRoadAssessment = {
       ...onRoad,
