@@ -396,7 +396,16 @@ export default function PersonalDetails({ onboardingContext }: PersonalDetailsPr
               <span className="font-medium text-gray-400 text-xs">{t("form.step2.page1.fields.sinPhotoDesc")}</span>
             </label>
           )}
-          <input id="sinPhoto" type="file" accept="image/*" {...register("sinPhoto")} onChange={(e) => handleSinPhotoUpload(e.target.files?.[0] || null)} data-field="sinPhoto" className="hidden" />
+          <input
+            id="sinPhoto"
+            type="file"
+            accept="image/*"
+            capture="environment"
+            {...register("sinPhoto")}
+            onChange={(e) => handleSinPhotoUpload(e.target.files?.[0] || null)}
+            data-field="sinPhoto"
+            className="hidden"
+          />
           {sinPhotoStatus !== "uploading" && errors.sinPhoto && <p className="text-red-500 text-sm mt-1">{errors.sinPhoto.message?.toString()}</p>}
           {sinPhotoStatus === "uploading" && (
             <div className="text-yellow-600 text-sm mt-1 flex items-center">
