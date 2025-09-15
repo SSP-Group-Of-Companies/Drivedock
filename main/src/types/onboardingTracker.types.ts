@@ -37,13 +37,6 @@ export interface IOnboardingStatus {
   currentStep: EStepPath;
   completed: boolean;
   completionDate?: Date;
-  completionLocation?: {
-    country?: string;
-    region?: string; // State/Province
-    city?: string;
-    timezone?: string;
-    ip?: string;
-  };
 }
 
 /**
@@ -66,6 +59,15 @@ export interface IOnboardingTracker {
   applicationType?: ECompanyApplicationType;
 
   status: IOnboardingStatus;
+
+  completionLocation?: {
+    country?: string; // Full country name (e.g., "Canada", "United States")
+    region?: string; // State/Province (e.g., "Ontario", "California")
+    city?: string; // City name (e.g., "Milton", "Los Angeles")
+    timezone?: string;
+    latitude?: number; // GPS latitude
+    longitude?: number; // GPS longitude
+  };
 
   companyId: string;
 
@@ -107,6 +109,7 @@ type TrackerContextBase = Pick<IOnboardingTracker, "companyId" | "applicationTyp
 export interface IOnboardingTrackerContext extends TrackerContextBase {
   id: string;
   notes?: IOnboardingTracker["notes"];
+  completionLocation?: IOnboardingTracker["completionLocation"];
   prevStep: EStepPath | null;
   nextStep: EStepPath | null;
   itemSummary?: {

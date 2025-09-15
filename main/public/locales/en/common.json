@@ -255,7 +255,7 @@
         "sections": {
           "employment": "Employment History"
         },
-        "requirements": "The Federal Motor Carrier Safety Regulations (49CFR391.21) require that all applicants wishing to drive a commercial vehicle list all employment for the last two (2) years. In addition, if you have driven a commercial vehicle previously, you must provide employment history for an additional eight (8) years for a total of ten (10) years. Any 1 month or more gaps in employment must be explained.",
+        "requirements": "The Federal Motor Carrier Safety Regulations (49CFR391.21) require that all applicants wishing to drive a commercial vehicle must provide employment history for the last ten (10) years. Any 1 month or more gaps in employment must be explained.",
         "questions": {
           "workedWithCompanyBefore": "Have you ever worked (Under Sub-contractor) with this company previously?",
           "reasonForLeavingCompany": "What was the reason for leaving the company?",
@@ -296,7 +296,7 @@
         },
         "modal": {
           "title": "Additional Employment History Required",
-          "message": "You have more than 2 years of experience. Please add your previous employment history to complete the required information."
+          "message": "You must provide 10 years of employment history. Please add your previous employment history to complete the required information."
         },
         "gapDetected": "Gap of {days} days detected between employments. Please explain:"
       },
@@ -368,7 +368,6 @@
           "dateOfSentence": "Date of Sentence",
           "offense": "Offense",
           "courtLocation": "Court Location",
-          "employeeNumber": "Employee Number",
           "hstNumber": "HST Number",
           "businessName": "Business Name",
           "incorporatePhotos": "Incorporate Photos",

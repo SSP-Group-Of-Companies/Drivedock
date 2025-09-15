@@ -17,7 +17,6 @@ export default function BusinessSection() {
   } = useFormContext<ApplicationFormPage4Input>();
 
   // Watch all fields that participate in the all-or-nothing logic
-  const employeeNumber = useWatch({ control, name: "employeeNumber" });
   const hstNumber = useWatch({ control, name: "hstNumber" });
   const businessName = useWatch({ control, name: "businessName" });
 
@@ -30,12 +29,12 @@ export default function BusinessSection() {
     const isEmptyStr = (v?: string | null) => !v || v.trim().length === 0;
     const isEmptyArr = (v?: unknown[] | null) => !v || v.length === 0;
 
-    const allEmpty = isEmptyStr(employeeNumber) && isEmptyStr(hstNumber) && isEmptyStr(businessName) && isEmptyArr(incorporatePhotos) && isEmptyArr(hstPhotos) && isEmptyArr(bankingInfoPhotos);
+    const allEmpty = isEmptyStr(hstNumber) && isEmptyStr(businessName) && isEmptyArr(incorporatePhotos) && isEmptyArr(hstPhotos) && isEmptyArr(bankingInfoPhotos);
 
     if (allEmpty) {
-      clearErrors(["employeeNumber", "hstNumber", "businessName", "incorporatePhotos", "hstPhotos", "bankingInfoPhotos"]);
+      clearErrors(["hstNumber", "businessName", "incorporatePhotos", "hstPhotos", "bankingInfoPhotos"]);
     }
-  }, [employeeNumber, hstNumber, businessName, incorporatePhotos, hstPhotos, bankingInfoPhotos, clearErrors]);
+  }, [hstNumber, businessName, incorporatePhotos, hstPhotos, bankingInfoPhotos, clearErrors]);
 
   const rootMessage = (errors as any)?.root?.message as string | undefined;
 
@@ -59,7 +58,7 @@ export default function BusinessSection() {
       </div>
 
       <div className="space-y-6">
-        {/* Row 1: Business Name */}
+        {/* Row 1: Business Name and HST Number */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700">{t("form.step2.page4.fields.businessName", "Business Name")}</label>
@@ -71,10 +70,7 @@ export default function BusinessSection() {
             />
             {errors.businessName && <p className="text-red-500 text-xs mt-1">{errors.businessName.message?.toString()}</p>}
           </div>
-        </div>
 
-        {/* Row 2: HST Number and Employee Number */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-sm font-medium text-gray-700">{t("form.step2.page4.fields.hstNumber", "HST Number")}</label>
             <input
@@ -85,18 +81,6 @@ export default function BusinessSection() {
             />
             {errors.hstNumber && <p className="text-red-500 text-xs mt-1">{errors.hstNumber.message?.toString()}</p>}
           </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">{t("form.step2.page4.fields.employeeNumber", "Employee Number")}</label>
-            <input
-              {...register("employeeNumber")}
-              data-field="employeeNumber"
-              className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
-              aria-invalid={!!errors.employeeNumber || !!rootMessage}
-            />
-            {errors.employeeNumber && <p className="text-red-500 text-xs mt-1">{errors.employeeNumber.message?.toString()}</p>}
-          </div>
-
         </div>
       </div>
 

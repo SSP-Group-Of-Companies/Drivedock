@@ -11,8 +11,7 @@ export default function CompletionSummary({
 }: CompletionSummaryProps) {
   const isCompleted = contractContext.status?.completed;
   const completionDate = (contractContext.status as any)?.completionDate;
-  const completionLocation = (contractContext.status as any)
-    ?.completionLocation;
+  const completionLocation = contractContext.completionLocation;
 
   // Only show for completed applications
   if (!isCompleted || !completionDate) {
@@ -27,7 +26,15 @@ export default function CompletionSummary({
     ) {
       return "Location Unknown";
     }
-    return `${completionLocation.region}, ${completionLocation.country}`;
+    
+    // Format as "City, State/Province, Country" (all in full names)
+    const city = completionLocation.city || '';
+    const region = completionLocation.region || '';
+    const country = completionLocation.country || '';
+    
+    // Filter out empty parts and join with commas
+    const parts = [city, region, country].filter(part => part.trim() !== '');
+    return parts.join(', ');
   };
 
   const formatDateTime = () => {

@@ -55,22 +55,18 @@ function forbidNonEmpty(body: any, key: keyof IApplicationFormPage4, label: stri
 
 /** business section presence detectors (in body) */
 function businessKeysPresentInBody(b: Partial<IApplicationFormPage4>) {
-  const keys: (keyof IApplicationFormPage4)[] = ["employeeNumber", "businessName", "hstNumber", "incorporatePhotos", "bankingInfoPhotos", "hstPhotos"];
+  const keys: (keyof IApplicationFormPage4)[] = ["businessName", "hstNumber", "incorporatePhotos", "bankingInfoPhotos", "hstPhotos"];
   return keys.some((k) => hasKey(b, k));
 }
 
 function isBusinessClearIntent(b: Partial<IApplicationFormPage4>) {
-  const emptyStrings =
-    (!hasKey(b, "employeeNumber") || !isNonEmptyString(b.employeeNumber)) &&
-    (!hasKey(b, "businessName") || !isNonEmptyString(b.businessName)) &&
-    (!hasKey(b, "hstNumber") || !isNonEmptyString(b.hstNumber));
+  const emptyStrings = (!hasKey(b, "businessName") || !isNonEmptyString(b.businessName)) && (!hasKey(b, "hstNumber") || !isNonEmptyString(b.hstNumber));
 
   const emptyPhotos =
     (!hasKey(b, "incorporatePhotos") || len(b.incorporatePhotos) === 0) && (!hasKey(b, "bankingInfoPhotos") || len(b.bankingInfoPhotos) === 0) && (!hasKey(b, "hstPhotos") || len(b.hstPhotos) === 0);
 
   // Clear intent only if ALL keys are present AND all are empty
-  const allKeysPresent =
-    hasKey(b, "employeeNumber") && hasKey(b, "businessName") && hasKey(b, "hstNumber") && hasKey(b, "incorporatePhotos") && hasKey(b, "bankingInfoPhotos") && hasKey(b, "hstPhotos");
+  const allKeysPresent = hasKey(b, "businessName") && hasKey(b, "hstNumber") && hasKey(b, "incorporatePhotos") && hasKey(b, "bankingInfoPhotos") && hasKey(b, "hstPhotos");
 
   return allKeysPresent && emptyStrings && emptyPhotos;
 }
@@ -85,7 +81,6 @@ function validateBusinessAllOrNothing(b: Partial<IApplicationFormPage4>) {
   const requireKey = (k: keyof IApplicationFormPage4, label: string) => {
     if (!hasKey(b, k)) missing.push(label);
   };
-  requireKey("employeeNumber", "employeeNumber");
   requireKey("businessName", "businessName");
   requireKey("hstNumber", "hstNumber");
   requireKey("incorporatePhotos", "incorporatePhotos");
@@ -99,7 +94,6 @@ function validateBusinessAllOrNothing(b: Partial<IApplicationFormPage4>) {
   // strings non-empty
   if (!isNonEmptyString(b.businessName)) throw new AppError(400, "businessName is required in Business section.");
   if (!isNonEmptyString(b.hstNumber)) throw new AppError(400, "hstNumber is required in Business section.");
-  if (!isNonEmptyString(b.employeeNumber)) throw new AppError(400, "employeeNumber is required in Business section.");
 
   // photos within limits
   const inc = len(b.incorporatePhotos);
@@ -225,7 +219,6 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
         keysToHardDelete.push(...finalizedOnly(collect(prev.incorporatePhotos)), ...finalizedOnly(collect(prev.bankingInfoPhotos)), ...finalizedOnly(collect(prev.hstPhotos)));
       }
       // overwrite to empty in DB (already set above by body), ensure saved
-      appFormDoc.set("page4.employeeNumber", "");
       appFormDoc.set("page4.businessName", "");
       appFormDoc.set("page4.hstNumber", "");
       appFormDoc.set("page4.incorporatePhotos", []);

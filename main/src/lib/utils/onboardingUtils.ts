@@ -106,7 +106,7 @@ export function getNeighborSteps(step: EStepPath, opts: FlowOpts): { prevStep: E
  *  - If the resulting status is completed, set completionDate to the existing one (if any) or now.
  *  - If the resulting status is not completed, omit completionDate (clears old value).
  */
-export function advanceProgress(doc: IOnboardingTrackerDoc, completedNow: EStepPath, completionLocation?: IOnboardingStatus['completionLocation']): IOnboardingStatus {
+export function advanceProgress(doc: IOnboardingTrackerDoc, completedNow: EStepPath): IOnboardingStatus {
   const opts = getFlowOpts(doc);
   const flow = getOnboardingStepFlow(opts);
   const maximalFlow = getOnboardingStepFlow({ needsFlatbedTraining: true });
@@ -146,30 +146,32 @@ export function advanceProgress(doc: IOnboardingTrackerDoc, completedNow: EStepP
   // If already ahead of the completed step, keep the (mapped) current step.
   if (prevIdx > doneIdx) {
     const isCompleted = doc.status.completed;
-    return {
+    const result = {
       currentStep: (mappedCurrentStep ?? doc.status.currentStep) as EStepPath,
       completed: isCompleted,
-      // Preserve existing completionDate and location if still completed; otherwise omit (clears).
+      // Set completionDate only when actually completed
       ...(isCompleted && { 
-        completionDate: doc.status.completionDate ?? new Date(),
-        completionLocation: doc.status.completionLocation
+        completionDate: doc.status.completionDate ?? new Date()
       }),
     };
+    
+    return result;
   }
 
   // Otherwise move forward normally
   const next = getNextStep(completedNow, opts);
   const isNowCompleted = next == null;
 
-  return {
+  const result = {
     currentStep: (next ?? completedNow) as EStepPath,
     completed: isNowCompleted,
-    // If we just became (or remain) completed, set/preserve completionDate and location
+    // Set completionDate only when actually completed
     ...(isNowCompleted && { 
-      completionDate: doc.status.completionDate ?? new Date(),
-      completionLocation: completionLocation || doc.status.completionLocation
+      completionDate: doc.status.completionDate ?? new Date()
     }),
   };
+  
+  return result;
 }
 
 /* ----------------------------------------------------------------------
@@ -268,6 +270,7 @@ export function buildTrackerContext(tracker: IOnboardingTrackerDoc, defaultStep?
     applicationType: tracker.applicationType,
     needsFlatbedTraining: opts.needsFlatbedTraining,
     status: tracker.status,
+    completionLocation: tracker.completionLocation,
     prevStep,
     nextStep,
   };

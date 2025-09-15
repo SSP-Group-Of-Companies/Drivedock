@@ -1,16 +1,17 @@
 /**
  * Geolocation Utilities
- * 
- * Industry-standard IP-based geolocation service for capturing user location
- * during onboarding completion without requiring user permission.
+ *
+ * GPS-based location services for capturing user location
+ * during onboarding completion with user permission.
  */
 
 export interface GeolocationData {
-  country: string;
-  region: string; // State/Province
-  city?: string;
+  country: string; // Full country name (e.g., "Canada", "United States")
+  region: string; // State/Province (e.g., "Ontario", "California")
+  city?: string; // City name (e.g., "Milton", "Los Angeles")
   timezone?: string;
-  ip?: string;
+  latitude: number; // GPS latitude
+  longitude: number; // GPS longitude
 }
 
 export interface GeolocationError {
@@ -19,168 +20,72 @@ export interface GeolocationError {
 }
 
 /**
- * Get user location from IP address using IPinfo.io service
- * This is the most accurate and reliable IP geolocation service
- * 
- * @param ipAddress - The user's IP address
+ * Converts country code to full country name using built-in Intl API
+ * This is the most reliable and comprehensive approach
+ */
+
+function getCountryName(countryCode: string): string {
+  try {
+    // Use Intl.DisplayNames for proper country name conversion
+    const displayNames = new Intl.DisplayNames(["en"], { type: "region" });
+    return displayNames.of(countryCode.toUpperCase()) || countryCode;
+  } catch {
+    // Fallback to the code if Intl API fails
+    return countryCode;
+  }
+}
+
+/**
+ * Get location data from GPS coordinates using reverse geocoding
+ * Uses OpenStreetMap Nominatim API (free, no API key required)
+ *
+ * @param latitude - GPS latitude
+ * @param longitude - GPS longitude
  * @returns Promise<GeolocationData | GeolocationError>
  */
-export async function getLocationFromIP(ipAddress: string): Promise<GeolocationData | GeolocationError> {
+export async function getLocationFromCoordinates(
+  latitude: number,
+  longitude: number
+): Promise<GeolocationData | GeolocationError> {
   try {
-    // Use IPinfo.io - industry standard, most accurate
-    // Free tier: 50,000 requests/month
-    const token = process.env.IPINFO_TOKEN;
-    
-    const response = await fetch(`https://ipinfo.io/${ipAddress}/json?token=${token}`, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'DriveDock/1.0'
-      },
-      // Cache for 1 hour to reduce API calls
-      next: { revalidate: 3600 }
-    });
-    
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&addressdetails=1`,
+      {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "User-Agent": "DriveDock/1.0",
+        },
+      }
+    );
+
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`IPinfo API error: ${response.status} - ${errorText}`);
+      throw new Error(`Reverse geocoding API error: ${response.status}`);
     }
 
     const data = await response.json();
-    
-    // IPinfo returns: { ip, city, region, country, loc, timezone, ... }
-    return {
-      country: data.country || 'Unknown',
-      region: data.region || 'Unknown', // State/Province
-      city: data.city,
-      timezone: data.timezone,
-      ip: data.ip
-    };
-  } catch (error) {
-    console.error('Geolocation error:', error);
-    return {
-      error: 'GEOLOCATION_FAILED',
-      message: error instanceof Error ? error.message : 'Failed to get location'
-    };
-  }
-}
 
-/**
- * Fallback geolocation service using ipapi.co
- * Used if primary service fails
- */
-export async function getLocationFromIPFallback(ipAddress: string): Promise<GeolocationData | GeolocationError> {
-  try {
-    const response = await fetch(`https://ipapi.co/${ipAddress}/json/`, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'DriveDock/1.0'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`ipapi.co API error: ${response.status}`);
+    if (!data || !data.address) {
+      throw new Error("No address data found");
     }
 
-    const data = await response.json();
-    
+    const address = data.address;
+
     return {
-      country: data.country_name || 'Unknown',
-      region: data.region || 'Unknown',
-      city: data.city,
+      country: getCountryName(address.country_code || "Unknown"),
+      region: address.state || address.province || address.region || "Unknown",
+      city: address.city || address.town || address.village || address.hamlet,
       timezone: data.timezone,
-      ip: data.ip
+      latitude,
+      longitude,
     };
   } catch (error) {
-    console.error('Fallback geolocation error:', error);
     return {
-      error: 'GEOLOCATION_FALLBACK_FAILED',
-      message: error instanceof Error ? error.message : 'Failed to get location from fallback service'
+      error: "REVERSE_GEOCODING_FAILED",
+      message:
+        error instanceof Error
+          ? error.message
+          : "Failed to get location from coordinates",
     };
   }
-}
-
-/**
- * Get user location with fallback strategy
- * Tries primary service first, then fallback if needed
- */
-export async function getUserLocation(ipAddress: string): Promise<GeolocationData | GeolocationError> {
-  // Try primary service first
-  const primaryResult = await getLocationFromIP(ipAddress);
-  
-  // If primary succeeds, return it
-  if (!('error' in primaryResult)) {
-    return primaryResult;
-  }
-  
-  // If primary fails, try fallback
-  const fallbackResult = await getLocationFromIPFallback(ipAddress);
-  
-  // If fallback also fails, return a default location
-  if ('error' in fallbackResult) {
-    return {
-      country: 'Unknown',
-      region: 'Unknown',
-      ip: ipAddress
-    };
-  }
-  
-  return fallbackResult;
-}
-
-/**
- * Format location for display
- * Returns "State/Province, Country" format
- */
-export function formatLocationForDisplay(geoData: GeolocationData): string {
-  if (geoData.region === 'Unknown' && geoData.country === 'Unknown') {
-    return 'Location Unknown';
-  }
-  
-  return `${geoData.region}, ${geoData.country}`;
-}
-
-/**
- * Extract IP address from NextRequest
- * Handles various proxy scenarios (Cloudflare, AWS, etc.)
- */
-export function extractIPFromRequest(req: Request): string {
-  // Check various headers for IP address (in order of preference)
-  const headers = [
-    'cf-connecting-ip',     // Cloudflare
-    'x-forwarded-for',      // Standard proxy header
-    'x-real-ip',           // Nginx
-    'x-client-ip',         // Apache
-    'x-forwarded',         // General
-    'forwarded-for',       // General
-    'forwarded'            // RFC 7239
-  ];
-  
-  for (const header of headers) {
-    const value = req.headers.get(header);
-    if (value) {
-      // x-forwarded-for can contain multiple IPs, take the first one
-      const ip = value.split(',')[0].trim();
-      if (isValidIP(ip)) {
-        return ip;
-      }
-    }
-  }
-  
-  // Fallback to connection remote address (if available)
-  return '127.0.0.1'; // Default fallback
-}
-
-/**
- * Basic IP address validation
- */
-function isValidIP(ip: string): boolean {
-  // IPv4 regex
-  const ipv4Regex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
-  
-  // IPv6 regex (simplified)
-  const ipv6Regex = /^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
-  
-  return ipv4Regex.test(ip) || ipv6Regex.test(ip);
 }

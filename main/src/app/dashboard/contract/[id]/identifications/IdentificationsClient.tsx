@@ -166,7 +166,6 @@ export default function IdentificationsClient({
     // Filter data based on country requirements
     const filteredData: any = {
       licenses: baseData.licenses,
-      employeeNumber: baseData.employeeNumber,
       hstNumber: baseData.hstNumber,
       businessName: baseData.businessName,
       incorporatePhotos: baseData.incorporatePhotos,

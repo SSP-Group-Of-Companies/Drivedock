@@ -43,7 +43,6 @@ export function makePage4Config(trackerId: string): FormPageConfig<ApplicationFo
         "completedDOTRequirements",
         "hasAccidentalInsurance",
 
-        "employeeNumber",
         "hstNumber",
         "businessName",
         "hstPhotos",

@@ -21,7 +21,6 @@ interface ImageGallerySectionProps {
   prPermitCitizenshipPhotos: IFileAsset[];
   usVisaPhotos: IFileAsset[];
   fastCard?: IFastCard;
-  employeeNumber?: string;
   hstNumber?: string;
   businessName?: string;
   onStage: (changes: any) => void;
@@ -51,7 +50,6 @@ export default function ImageGallerySection({
   prPermitCitizenshipPhotos,
   usVisaPhotos,
   fastCard,
-  employeeNumber,
   hstNumber,
   businessName,
   onStage,
@@ -641,7 +639,6 @@ export default function ImageGallerySection({
     const hasBusinessData =
       (businessName && businessName.trim()) ||
       (hstNumber && hstNumber.trim()) ||
-      (employeeNumber && employeeNumber.trim()) ||
       (incorporatePhotos && incorporatePhotos.length > 0) ||
       (hstPhotos && hstPhotos.length > 0) ||
       (bankingInfoPhotos && bankingInfoPhotos.length > 0);
@@ -654,8 +651,6 @@ export default function ImageGallerySection({
       businessName.trim() &&
       hstNumber &&
       hstNumber.trim() &&
-      employeeNumber &&
-      employeeNumber.trim() &&
       incorporatePhotos &&
       incorporatePhotos.length > 0 &&
       hstPhotos &&

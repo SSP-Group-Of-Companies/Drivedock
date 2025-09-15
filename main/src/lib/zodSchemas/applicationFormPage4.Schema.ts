@@ -67,6 +67,10 @@ export const truckDetailsSchema = z.object({
     .string()
     .optional()
     .transform((v) => v?.trim() ?? ""),
+  employeeNumber: z
+    .string()
+    .optional()
+    .transform((v) => v?.trim() ?? ""),
 });
 
 // ---- Factory so we can consider existing values and country rules ----
@@ -83,10 +87,6 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
   const base = z.object({
     criminalRecords: z.array(criminalRecordEntrySchema).default([]),
 
-    employeeNumber: z
-      .string()
-      .optional()
-      .transform((v) => v?.trim() ?? ""),
     hstNumber: z
       .string()
       .optional()
@@ -140,7 +140,7 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
   const schema = base
     // Business all-or-nothing (unchanged)
     .superRefine((data: Out, ctx) => {
-      const textProvided = !!data.businessName?.trim() || !!data.hstNumber?.trim() || !!data.employeeNumber?.trim();
+      const textProvided = !!data.businessName?.trim() || !!data.hstNumber?.trim();
       const photosProvided = data.hstPhotos.length > 0 || data.incorporatePhotos.length > 0 || data.bankingInfoPhotos.length > 0;
       if (!textProvided && !photosProvided) return;
 
@@ -151,10 +151,6 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
       }
       if (!data.hstNumber?.trim()) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["hstNumber"], message: "HST number is required when any business detail is provided." });
-        hadError = true;
-      }
-      if (!data.employeeNumber?.trim()) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["employeeNumber"], message: "Employee number is required when any business detail is provided." });
         hadError = true;
       }
       if (data.incorporatePhotos.length === 0) {

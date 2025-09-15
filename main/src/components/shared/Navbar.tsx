@@ -80,7 +80,7 @@ export default function Navbar({
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2 sm:px-6 lg:px-8">
         {/* Logo linking to landing page */}
         <div className="flex items-center">
-          <Link href="/" aria-label="navbar image">
+          <Link href="/" aria-label="navbar image" prefetch={false}>
             {mounted && (
               <Image
                 src="/assets/logos/SSP-Truck-LineFullLogo.png"

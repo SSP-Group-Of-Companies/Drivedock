@@ -228,6 +228,7 @@ export default function AccidentHistorySection() {
                   <input
                     type="text"
                     className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
+                    placeholder={index === 0 ? "Rear-end collision on highway" : ""}
                     data-field={`accidentHistory.${index}.natureOfAccident`}
                     {...register(
                       `accidentHistory.${index}.natureOfAccident` as const
