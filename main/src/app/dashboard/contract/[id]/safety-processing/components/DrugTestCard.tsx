@@ -329,7 +329,7 @@ export default function DrugTestCard({ trackerId, drugTest, canEdit, onChange, h
                 onClick={handleApprove}
                 title={
                   approvedAtLoad
-                    ? "Already approved on server; cannot change"
+                    ? "Already approved; cannot change"
                     : drugTest.status === EDrugTestStatus.APPROVED
                     ? "Click to undo approval (staged)"
                     : adminCount < 1
@@ -352,7 +352,7 @@ export default function DrugTestCard({ trackerId, drugTest, canEdit, onChange, h
                 onClick={handleReject}
                 title={
                   approvedAtLoad
-                    ? "Already approved on server; cannot change"
+                    ? "Already approved; cannot change"
                     : rejectedAtLoad && drugTest.status === EDrugTestStatus.REJECTED
                     ? "Already rejected; wait for driver to re-upload to continue"
                     : driverCount < 1
