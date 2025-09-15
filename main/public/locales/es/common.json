@@ -700,6 +700,7 @@
       "pending": "Documentos subidos. Verificación pendiente. Las subidas están deshabilitadas.",
       "rejected": "Tus documentos de prueba de drogas fueron rechazados. Por favor vuelve a subir y reenviar.",
       "labelDocuments": "Documentos del test de drogas",
+      "labeldriverDocuments": "Documentos del test de drogas",
       "success": {
         "title": "¡Felicidades! 🎉",
         "message": "¡Has completado con éxito tu Test de drogas! Tus documentos han sido verificados y aprobados. Ahora puedes continuar con el siguiente paso de tu incorporación.",
@@ -814,7 +815,9 @@
     "submitAnswers": "Enviar respuestas",
     "continue": "Continuar",
     "submitDocuments": "Enviar documentos",
+    "submitdriverDocuments": "Enviar documentos",
     "resubmitDocuments": "Reenviar documentos",
+    "resubmitdriverDocuments": "Reenviar documentos",
     "pendingVerification": "Verificación pendiente"
   },
 

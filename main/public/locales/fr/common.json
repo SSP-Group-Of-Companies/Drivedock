@@ -695,14 +695,15 @@
 
     "step6": {
       "title": "Test de dépistage",
-      "description": "Veuillez téléverser des photos claires de vos documents de dépistage. Vous pouvez ajouter jusqu’à {{count}} photos. Une fois téléversés, les documents seront vérifiés avant que vous puissiez continuer.",
+      "description": "Veuillez téléverser des photos claires de vos documents de dépistage. Vous pouvez ajouter jusqu'à {{count}} photos. Une fois téléversés, les documents seront vérifiés avant que vous puissiez continuer.",
       "verified": "Documents vérifiés.",
       "pending": "Documents téléversés. Vérification en attente. Les téléversements sont désactivés.",
       "rejected": "Vos documents de test de dépistage ont été rejetés. Veuillez les téléverser à nouveau et les soumettre.",
       "labelDocuments": "Documents de test de dépistage",
+      "labeldriverDocuments": "Documents de test de dépistage",
       "success": {
         "title": "Félicitations ! 🎉",
-        "message": "Vous avez terminé avec succès votre test de dépistage ! Vos documents ont été vérifiés et approuvés. Vous pouvez maintenant passer à l’étape suivante de votre intégration.",
+        "message": "Vous avez terminé avec succès votre test de dépistage ! Vos documents ont été vérifiés et approuvés. Vous pouvez maintenant passer à l'étape suivante de votre intégration.",
         "continueButton": "Suivant"
       }
     },
@@ -815,7 +816,9 @@
     "submitAnswers": "Soumettre les réponses",
     "continue": "Continuer",
     "submitDocuments": "Soumettre les documents",
+    "submitdriverDocuments": "Soumettre les documents",
     "resubmitDocuments": "Resoumettre les documents",
+    "resubmitdriverDocuments": "Resoumettre les documents",
     "pendingVerification": "Vérification en attente"
   },
 

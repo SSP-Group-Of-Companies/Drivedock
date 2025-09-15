@@ -43,18 +43,18 @@ export default function TermsModal({ onAgree, onCancel }: TermsModalProps) {
     <>
       <Dialog.Title
         id="terms-title"
-        className="text-center font-semibold mb-3 text-gray-900 text-lg"
+        className="text-center font-semibold mb-2 sm:mb-3 text-gray-900 text-base sm:text-lg"
       >
         {t("start.termsModal.title")}
       </Dialog.Title>
 
-      <p id="terms-intro" className="text-sm text-gray-700 pb-3">
+      <p id="terms-intro" className="text-xs sm:text-sm text-gray-700 pb-2 sm:pb-3">
         {t("start.termsModal.intro")}
       </p>
 
       {/* Unified checklist - all 6 statements together */}
-      <div className="mb-4">
-        <ul className="space-y-2">
+      <div className="mb-3 sm:mb-4">
+        <ul className="space-y-1.5 sm:space-y-2">
           {[
             "points.selfApplication",
             "points.accurateInfo", 
@@ -63,13 +63,13 @@ export default function TermsModal({ onAgree, onCancel }: TermsModalProps) {
             "points.truthfulInfo",
             "points.applicationType"
           ].map((key) => (
-            <li key={key} className="flex items-start gap-3">
+            <li key={key} className="flex items-start gap-2 sm:gap-3">
               <CheckCircle
                 aria-hidden="true"
-                className="text-blue-500 mt-1 flex-shrink-0"
-                size={16}
+                className="text-blue-500 mt-0.5 sm:mt-1 flex-shrink-0"
+                size={14}
               />
-              <span className={`text-sm text-gray-700 ${
+              <span className={`text-xs sm:text-sm text-gray-700 ${
                 key === "points.selfApplication" ? "font-bold" : 
                 key === "points.truthfulInfo" || key === "points.applicationType" ? "font-medium" : ""
               }`}>
@@ -81,11 +81,11 @@ export default function TermsModal({ onAgree, onCancel }: TermsModalProps) {
       </div>
 
       {/* Rules section */}
-      <div className="mb-4">
-        <p className="font-medium mb-2 text-sm text-gray-900">
+      <div className="mb-3 sm:mb-4">
+        <p className="font-medium mb-1.5 sm:mb-2 text-xs sm:text-sm text-gray-900">
           {t("start.termsModal.points.rulesTitle")}
         </p>
-        <ul className="list-disc list-inside space-y-1 text-sm text-gray-800">
+        <ul className="list-disc list-inside space-y-0.5 sm:space-y-1 text-xs sm:text-sm text-gray-800 pl-2 sm:pl-0">
           <li>{t("start.termsModal.points.drugPolicy")}</li>
           <li>{t("start.termsModal.points.dashCam")}</li>
           <li>{t("start.termsModal.points.safetyRules")}</li>
@@ -94,7 +94,7 @@ export default function TermsModal({ onAgree, onCancel }: TermsModalProps) {
       </div>
 
       {/* Consent checkbox */}
-      <label className="flex items-start gap-2 mt-4">
+      <label className="flex items-start gap-2 mt-3 sm:mt-4">
         <input
           type="checkbox"
           className="mt-0.5"
@@ -103,23 +103,23 @@ export default function TermsModal({ onAgree, onCancel }: TermsModalProps) {
           onChange={(e) => setMasterChecked(e.target.checked)}
           required
         />
-        <span className="text-sm text-gray-800">
+        <span className="text-xs sm:text-sm text-gray-800">
           {t("start.termsModal.masterConsent")}
         </span>
       </label>
 
       {/* Actions */}
-      <div className="mt-5 flex justify-between gap-2 pb-6">
+      <div className="mt-4 sm:mt-5 flex flex-col sm:flex-row justify-between gap-2 sm:gap-2 pb-4 sm:pb-6">
         <button
           onClick={handleCancel}
-          className="px-4 py-2 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 cursor-pointer"
+          className="w-full sm:w-auto px-4 py-2 text-xs sm:text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 cursor-pointer transition-colors"
         >
           {t("start.termsModal.cancel")}
         </button>
         <button
           onClick={handleNext}
           disabled={!masterChecked}
-          className="px-4 py-2 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 cursor-pointer"
+          className="w-full sm:w-auto px-4 py-2 text-xs sm:text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 cursor-pointer transition-colors"
           aria-disabled={!masterChecked}
         >
           {t("start.termsModal.next")}
@@ -132,64 +132,64 @@ export default function TermsModal({ onAgree, onCancel }: TermsModalProps) {
     <>
       <Dialog.Title
         id="policies-title"
-        className="text-center font-semibold mb-3 text-gray-900 text-lg"
+        className="text-center font-semibold mb-2 sm:mb-3 text-gray-900 text-base sm:text-lg"
       >
         {t("start.policiesModal.title")}
       </Dialog.Title>
 
-      <p id="policies-sub" className="text-sm text-gray-700 pb-4">
+      <p id="policies-sub" className="text-xs sm:text-sm text-gray-700 pb-3 sm:pb-4">
         {t("start.policiesModal.sub-title")}
       </p>
 
       <div
-        className="text-sm text-gray-800 space-y-3"
+        className="text-xs sm:text-sm text-gray-800 space-y-2 sm:space-y-3"
         aria-describedby="policies-sub"
       >
         <p className="font-semibold">
           {t("start.policiesModal.section.whatInfo")}
         </p>
-        <ul className="list-disc list-inside space-y-1">
+        <ul className="list-disc list-inside space-y-0.5 sm:space-y-1 pl-2 sm:pl-0">
           <li>{t("start.policiesModal.section.whatInfoItems.itemOne")}</li>
           <li>{t("start.policiesModal.section.whatInfoItems.itemTwo")}</li>
           <li>{t("start.policiesModal.section.whatInfoItems.itemThree")}</li>
           <li>{t("start.policiesModal.section.whatInfoItems.itemFour")}</li>
         </ul>
 
-        <p className="font-semibold mt-2">
+        <p className="font-semibold mt-1.5 sm:mt-2">
           {t("start.policiesModal.section.whyInfo")}
         </p>
-        <ul className="list-disc list-inside space-y-1">
+        <ul className="list-disc list-inside space-y-0.5 sm:space-y-1 pl-2 sm:pl-0">
           <li>{t("start.policiesModal.section.whyInfoItems.itemOne")}</li>
           <li>{t("start.policiesModal.section.whyInfoItems.itemTwo")}</li>
           <li>{t("start.policiesModal.section.whyInfoItems.itemThree")}</li>
           <li>{t("start.policiesModal.section.whyInfoItems.itemFour")}</li>
         </ul>
 
-        <p className="font-semibold mt-2">
+        <p className="font-semibold mt-1.5 sm:mt-2">
           {t("start.policiesModal.section.whoInfo")}
         </p>
-        <ul className="list-disc list-inside space-y-1">
+        <ul className="list-disc list-inside space-y-0.5 sm:space-y-1 pl-2 sm:pl-0">
           <li>{t("start.policiesModal.section.whoInfoItems.itemOne")}</li>
           <li>{t("start.policiesModal.section.whoInfoItems.itemTwo")}</li>
           <li>{t("start.policiesModal.section.whoInfoItems.itemThree")}</li>
         </ul>
 
-        <p className="font-semibold mt-2">
+        <p className="font-semibold mt-1.5 sm:mt-2">
           {t("start.policiesModal.section.howLong")}
         </p>
-        <p className="mt-1">{t("start.policiesModal.section.duration")}</p>
+        <p className="mt-0.5 sm:mt-1">{t("start.policiesModal.section.duration")}</p>
       </div>
 
-      <div className="mt-5 flex justify-between gap-2 pb-6">
+      <div className="mt-4 sm:mt-5 flex flex-col sm:flex-row justify-between gap-2 sm:gap-2 pb-4 sm:pb-6">
         <button
           onClick={handleBack}
-          className="px-4 py-2 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 cursor-pointer"
+          className="w-full sm:w-auto px-4 py-2 text-xs sm:text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200 cursor-pointer transition-colors"
         >
           {t("start.policiesModal.back")}
         </button>
         <button
           onClick={handleAgree}
-          className="px-4 py-2 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700 cursor-pointer"
+          className="w-full sm:w-auto px-4 py-2 text-xs sm:text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700 cursor-pointer transition-colors"
         >
           {t("start.policiesModal.agree")}
         </button>
@@ -221,10 +221,10 @@ export default function TermsModal({ onAgree, onCancel }: TermsModalProps) {
         </Transition.Child>
 
         {/* Panel */}
-        <div className="fixed inset-0 overflow-y-auto flex items-center justify-center px-4 py-4">
-          <Dialog.Panel className="w-full max-w-2xl transform overflow-hidden rounded-xl bg-white shadow-xl transition-all flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 overflow-y-auto flex items-center justify-center px-2 sm:px-4 py-2 sm:py-4">
+          <Dialog.Panel className="w-[min(98vw,768px)] transform overflow-hidden rounded-xl bg-white shadow-xl transition-all flex flex-col max-h-[95vh] sm:max-h-[90vh]">
             {/* Step indicator */}
-            <div className="flex items-center justify-center p-6 pb-4 flex-shrink-0">
+            <div className="flex items-center justify-center p-4 sm:p-6 pb-2 sm:pb-4 flex-shrink-0">
               <div className="flex items-center space-x-2">
                 <div
                   className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
@@ -257,7 +257,7 @@ export default function TermsModal({ onAgree, onCancel }: TermsModalProps) {
             </div>
 
             {/* Scrollable content area */}
-            <div className="flex-1 overflow-y-auto px-6">
+            <div className="flex-1 overflow-y-auto px-4 sm:px-6">
               {currentStep === "terms"
                 ? renderTermsStep()
                 : renderPoliciesStep()}

@@ -711,6 +711,7 @@
       "pending": "Documents uploaded. Pending verification. Uploads are disabled.",
       "rejected": "Your drug test documents were rejected. Please re-upload and re-submit.",
       "labelDocuments": "Drug Test Documents",
+      "labeldriverDocuments": "Drug Test Documents",
       "success": {
         "title": "Congratulations! 🎉",
         "message": "You have successfully completed your Drug Test! Your documents have been verified and approved. You can now proceed to the next step of your onboarding process.",
@@ -825,7 +826,9 @@
     "submitAnswers": "Submit Answers",
     "continue": "Continue",
     "submitDocuments": "Submit Documents",
+    "submitdriverDocuments": "Submit Documents",
     "resubmitDocuments": "Re-submit Documents",
+    "resubmitdriverDocuments": "Re-submit Documents",
     "pendingVerification": "Pending Verification"
   },
 
