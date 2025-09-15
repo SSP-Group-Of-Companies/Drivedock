@@ -1,4 +1,4 @@
-import type { ILicenseEntry, IFastCard, ITruckDetails } from "@/types/applicationForm.types";
+import type { ILicenseEntry, IFastCard, ITruckDetails, EPassportType, EWorkAuthorizationType } from "@/types/applicationForm.types";
 import type { IFileAsset } from "@/types/shared.types";
 import type { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
 
@@ -15,6 +15,11 @@ export interface IdentificationsResponse {
     bankingInfoPhotos?: IFileAsset[];
     healthCardPhotos?: IFileAsset[];
     medicalCertificationPhotos?: IFileAsset[];
+    
+    // Passport type selection (Canadian companies only)
+    passportType?: EPassportType;
+    workAuthorizationType?: EWorkAuthorizationType;
+    
     passportPhotos?: IFileAsset[];
     prPermitCitizenshipPhotos?: IFileAsset[];
     usVisaPhotos?: IFileAsset[];

@@ -69,6 +69,8 @@ export interface IOnboardingTracker {
     longitude?: number; // GPS longitude
   };
 
+  locationPermissionGranted?: boolean; // Tracks if user has granted location permission
+
   companyId: string;
 
   forms: {
@@ -110,6 +112,7 @@ export interface IOnboardingTrackerContext extends TrackerContextBase {
   id: string;
   notes?: IOnboardingTracker["notes"];
   completionLocation?: IOnboardingTracker["completionLocation"];
+  locationPermissionGranted?: IOnboardingTracker["locationPermissionGranted"];
   prevStep: EStepPath | null;
   nextStep: EStepPath | null;
   itemSummary?: {

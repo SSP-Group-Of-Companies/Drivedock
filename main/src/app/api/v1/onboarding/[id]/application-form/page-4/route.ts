@@ -158,9 +158,14 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
         expectCountRange(body, "prPermitCitizenshipPhotos", 1, 2, "PR/Permit/Citizenship photos");
       }
     } else {
-      // Canadian drivers: both are required
+      // Canadian drivers: passport type determines requirements
       expectCountExact(body, "passportPhotos", 2, "Passport photos");
-      expectCountRange(body, "prPermitCitizenshipPhotos", 1, 2, "PR/Permit/Citizenship photos");
+      
+      // Only require PR/Permit/Citizenship for non-Canadian passports
+      if (body.passportType === "others") {
+        expectCountRange(body, "prPermitCitizenshipPhotos", 1, 2, "PR/Permit/Citizenship photos");
+      }
+      // For Canadian passports, PR/Permit/Citizenship is not required
     }
 
     // =========================
@@ -168,7 +173,11 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     // =========================
     if (isCanadian) {
       expectCountExact(body, "healthCardPhotos", 2, "Health card photos");
-      expectCountRange(body, "usVisaPhotos", 1, 2, "US visa photos");
+      
+      // US Visa only required for cross-border work authorization
+      if (body.passportType === "others" && body.workAuthorizationType === "cross_border") {
+        expectCountRange(body, "usVisaPhotos", 1, 2, "US visa photos");
+      }
 
       // Forbidden for CA
       forbidNonEmpty(body, "medicalCertificationPhotos", "Medical certification photos");

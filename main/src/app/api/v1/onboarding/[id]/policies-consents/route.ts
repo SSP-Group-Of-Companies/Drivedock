@@ -17,6 +17,7 @@ import { attachCookies } from "@/lib/utils/auth/attachCookie";
 
 type PatchBody = IPoliciesConsents & {
   location?: { latitude: number; longitude: number } | null;
+  locationPermissionGranted?: boolean;
 };
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -30,7 +31,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!hasReachedStep(onboardingDoc, EStepPath.POLICIES_CONSENTS)) return errorResponse(400, "Please complete previous steps first");
 
     const body = await parseJsonBody<PatchBody>(req);
-    const { signature: incomingSignature, sendPoliciesByEmail, location } = body ?? {};
+    const { signature: incomingSignature, sendPoliciesByEmail, location, locationPermissionGranted } = body ?? {};
 
     // (1) Always expect signature
     if (!incomingSignature || !incomingSignature.s3Key || !incomingSignature.url || !incomingSignature.mimeType) {
@@ -87,7 +88,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     // In case we created/updated, ensure the form linkage is set
     onboardingDoc.forms.policiesConsents = updatedDoc.id;
 
-    // (2) Keep incoming GPS-based location capture logic
+    // (2) Handle location permission and location capture
+    if (typeof locationPermissionGranted === "boolean") {
+      onboardingDoc.locationPermissionGranted = locationPermissionGranted;
+    }
+
     let completionLocation: any = null;
 
     if (location?.latitude && location?.longitude) {

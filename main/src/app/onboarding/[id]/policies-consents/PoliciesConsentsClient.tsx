@@ -6,7 +6,7 @@ import { IPoliciesConsents } from "@/types/policiesConsents.types";
 import { EStepPath, IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
 import { ES3Folder } from "@/types/aws.types";
 import { UploadResult } from "@/lib/utils/s3Upload";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
 
@@ -40,6 +40,7 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locationRequested, setLocationRequested] = useState(false);
   const [locationToggleEnabled, setLocationToggleEnabled] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
 
   // initial values
   const initialSignature = policiesConsents.signature as UploadResult | undefined;
@@ -47,11 +48,35 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
   // Signature ref
   const sigRef = useRef<SignatureBoxHandle>(null);
 
+  // Initialize location permission state based on onboarding context
+  useEffect(() => {
+    if (onboardingContext.locationPermissionGranted) {
+      setLocationToggleEnabled(true);
+      setLocationRequested(true);
+      // If we already have permission, get the current location without asking
+      requestLocationPermission().then((location) => {
+        if (location) {
+          setUserLocation(location);
+        }
+      });
+    }
+  }, [onboardingContext.locationPermissionGranted]);
+
+  // Track if form is dirty (signature changed or email preference changed)
+  useEffect(() => {
+    const initialEmail = policiesConsents.sendPoliciesByEmail || false;
+    const currentEmail = sendPoliciesByEmail;
+    const signatureChanged = sigRef.current?.isDirty?.() || false;
+    
+    setIsDirty(signatureChanged || currentEmail !== initialEmail);
+  }, [sendPoliciesByEmail, policiesConsents.sendPoliciesByEmail]);
+
   // Don't auto-request location - wait for user to click "Allow" button
 
   // Handle toggle change
   const handleLocationToggle = (enabled: boolean) => {
     setLocationToggleEnabled(enabled);
+    setIsDirty(true); // Mark as dirty when user changes location permission
     if (enabled) {
       setLocationRequested(true);
       requestLocationPermission().then((location) => {
@@ -113,18 +138,22 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
         return;
       }
 
-      // Always get fresh location at submission time for maximum accuracy
-      const locationToSend = await requestLocationPermission();
-      if (!locationToSend) {
-        setSubmitting(false);
-        return; // Can't proceed without location
+      // Only get fresh location if form is dirty or we don't have permission yet
+      let locationToSend = null;
+      if (isDirty || !onboardingContext.locationPermissionGranted) {
+        locationToSend = await requestLocationPermission();
+        if (!locationToSend) {
+          setSubmitting(false);
+          return; // Can't proceed without location
+        }
       }
 
-      // Send form data with location
+      // Send form data with location (only if we have it)
       const requestBody = {
         signature: finalSig,
         sendPoliciesByEmail,
-        location: locationToSend,
+        ...(locationToSend && { location: locationToSend }),
+        locationPermissionGranted: locationToggleEnabled,
       };
 
       const response = await fetch(`/api/v1/onboarding/${id}/policies-consents`, {
@@ -176,15 +205,33 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
   return (
     <div className="space-y-6">
       {/* Location verification cards at the top */}
-      {!locationRequested && !userLocation && !locationBlocked && (
+      {!locationBlocked && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="flex items-center gap-3">
-            <svg className="h-5 w-5 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg className={`h-5 w-5 text-blue-600 flex-shrink-0 ${locationRequested && !userLocation ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              {locationRequested && !userLocation ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              )}
             </svg>
             <div className="flex-1">
-              <h4 className="font-medium text-blue-900 mb-1">Location Verification Required</h4>
-              <p className="text-sm text-blue-700">We need to verify your location to complete your application. Toggle on to allow location access.</p>
+              <h4 className="font-medium text-blue-900 mb-1">
+                {locationRequested && !userLocation 
+                  ? "Confirming Location Access" 
+                  : locationToggleEnabled 
+                    ? "Location Verification Enabled" 
+                    : "Location Verification Required"
+                }
+              </h4>
+              <p className="text-sm text-blue-700">
+                {locationRequested && !userLocation
+                  ? "Please allow location access when prompted to verify your location for application completion."
+                  : locationToggleEnabled 
+                    ? "Location access is enabled. Your location will be verified when you submit the form."
+                    : "We need to verify your location to complete your application. Toggle on to allow location access."
+                }
+              </p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" checked={locationToggleEnabled} onChange={(e) => handleLocationToggle(e.target.checked)} className="sr-only peer" />
@@ -194,19 +241,6 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
         </div>
       )}
 
-      {locationRequested && !userLocation && !locationBlocked && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="flex items-start gap-3">
-            <svg className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            <div>
-              <h4 className="font-medium text-blue-900 mb-1">Confirming Page Access</h4>
-              <p className="text-sm text-blue-700">Please allow location access when prompted to verify your location for application completion.</p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {locationBlocked && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -266,7 +300,10 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
 
       <PoliciesPdfViewerModal modalUrl={modalUrl} onClose={() => setModalUrl(null)} />
 
-      <PoliciesConsentCheckbox checked={sendPoliciesByEmail} onChange={setSendPoliciesByEmail} />
+      <PoliciesConsentCheckbox checked={sendPoliciesByEmail} onChange={(value) => {
+        setSendPoliciesByEmail(value);
+        setIsDirty(true);
+      }} />
 
       <PoliciesSubmitSection onSubmit={handleSubmit} submitting={submitting} disabled={locationBlocked} />
     </div>

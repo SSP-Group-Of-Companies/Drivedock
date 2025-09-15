@@ -51,6 +51,11 @@ export function makePage4Config(trackerId: string): FormPageConfig<ApplicationFo
 
         "healthCardPhotos",
         "medicalCertificationPhotos",
+        
+        // Passport type selection (Canadian companies only)
+        "passportType",
+        "workAuthorizationType",
+        
         "passportPhotos",
         "usVisaPhotos",
         "prPermitCitizenshipPhotos",

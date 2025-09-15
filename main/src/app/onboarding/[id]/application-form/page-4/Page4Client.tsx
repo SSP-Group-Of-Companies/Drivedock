@@ -49,6 +49,11 @@ function mapDefaults(page4: IApplicationFormPage4 | null): ApplicationFormPage4I
 
     healthCardPhotos: page4?.healthCardPhotos ?? [],
     medicalCertificationPhotos: page4?.medicalCertificationPhotos ?? [],
+    
+    // Passport type selection (Canadian companies only)
+    passportType: page4?.passportType ?? undefined,
+    workAuthorizationType: page4?.workAuthorizationType ?? undefined,
+    
     passportPhotos: page4?.passportPhotos ?? [],
     usVisaPhotos: page4?.usVisaPhotos ?? [],
     prPermitCitizenshipPhotos: page4?.prPermitCitizenshipPhotos ?? [],

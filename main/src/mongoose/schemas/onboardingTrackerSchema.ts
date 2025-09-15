@@ -90,6 +90,10 @@ const onboardingTrackerSchema = new Schema<IOnboardingTrackerDoc>(
         type: Number,
       },
     },
+    locationPermissionGranted: {
+      type: Boolean,
+      default: false,
+    },
     needsFlatbedTraining: {
       type: Boolean,
       default: false,

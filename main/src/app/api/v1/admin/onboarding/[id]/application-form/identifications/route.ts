@@ -44,6 +44,11 @@ type PatchBody = {
 
   healthCardPhotos?: IFileAsset[];
   medicalCertificationPhotos?: IFileAsset[];
+  
+  // Passport type selection (Canadian companies only)
+  passportType?: IApplicationFormPage4["passportType"];
+  workAuthorizationType?: IApplicationFormPage4["workAuthorizationType"];
+  
   passportPhotos?: IFileAsset[];
   prPermitCitizenshipPhotos?: IFileAsset[];
   usVisaPhotos?: IFileAsset[];
@@ -217,18 +222,28 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
         expectCountRange(body, "prPermitCitizenshipPhotos", 1, 2, "PR/Permit/Citizenship photos");
       }
     } else {
-      // Canadian drivers: both are required
+      // Canadian drivers: passport type determines requirements
       requirePresence(body, "passportPhotos", "Passport photos");
-      requirePresence(body, "prPermitCitizenshipPhotos", "PR/Permit/Citizenship photos");
       expectCountExact(body, "passportPhotos", 2, "Passport photos");
-      expectCountRange(body, "prPermitCitizenshipPhotos", 1, 2, "PR/Permit/Citizenship photos");
+      
+      // Only require PR/Permit/Citizenship for non-Canadian passports
+      if (body.passportType === "others") {
+        requirePresence(body, "prPermitCitizenshipPhotos", "PR/Permit/Citizenship photos");
+        expectCountRange(body, "prPermitCitizenshipPhotos", 1, 2, "PR/Permit/Citizenship photos");
+      }
+      // For Canadian passports, PR/Permit/Citizenship is not required
     }
 
     if (isCanadian) {
       requirePresence(body, "healthCardPhotos", "Health card photos");
-      requirePresence(body, "usVisaPhotos", "US visa photos");
       expectCountExact(body, "healthCardPhotos", 2, "Health card photos");
-      expectCountRange(body, "usVisaPhotos", 1, 2, "US visa photos");
+      
+      // US Visa only required for cross-border work authorization
+      if (body.passportType === "others" && body.workAuthorizationType === "cross_border") {
+        requirePresence(body, "usVisaPhotos", "US visa photos");
+        expectCountRange(body, "usVisaPhotos", 1, 2, "US visa photos");
+      }
+      
       // STRICT: even an empty medicalCertificationPhotos key is disallowed
       forbidPresence(body, "medicalCertificationPhotos", "Medical certification photos");
     } else if (isUS) {
@@ -490,6 +505,11 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       bankingInfoPhotos: appFormDoc.page4.bankingInfoPhotos,
       healthCardPhotos: appFormDoc.page4.healthCardPhotos,
       medicalCertificationPhotos: appFormDoc.page4.medicalCertificationPhotos,
+      
+      // Passport type selection (Canadian companies only)
+      passportType: appFormDoc.page4.passportType,
+      workAuthorizationType: appFormDoc.page4.workAuthorizationType,
+      
       passportPhotos: appFormDoc.page4.passportPhotos,
       prPermitCitizenshipPhotos: appFormDoc.page4.prPermitCitizenshipPhotos,
       usVisaPhotos: appFormDoc.page4.usVisaPhotos,
@@ -538,6 +558,11 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
       bankingInfoPhotos: appFormDoc.page4.bankingInfoPhotos,
       healthCardPhotos: appFormDoc.page4.healthCardPhotos,
       medicalCertificationPhotos: appFormDoc.page4.medicalCertificationPhotos,
+      
+      // Passport type selection (Canadian companies only)
+      passportType: appFormDoc.page4.passportType,
+      workAuthorizationType: appFormDoc.page4.workAuthorizationType,
+      
       passportPhotos: appFormDoc.page4.passportPhotos,
       prPermitCitizenshipPhotos: appFormDoc.page4.prPermitCitizenshipPhotos,
       usVisaPhotos: appFormDoc.page4.usVisaPhotos,

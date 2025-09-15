@@ -62,6 +62,22 @@ export enum EGender {
 }
 
 /**
+ * Passport Type Enums for Canadian companies
+ */
+export enum EPassportType {
+  CANADIAN = "canadian",
+  OTHERS = "others",
+}
+
+/**
+ * Work Authorization Type for non-Canadian passports
+ */
+export enum EWorkAuthorizationType {
+  LOCAL = "local", // within Canada
+  CROSS_BORDER = "cross_border", // Canada-US
+}
+
+/**
  * Application - Page 1
  * Personal details, place of birth, license(s), and address history.
  *
@@ -249,6 +265,10 @@ export interface IApplicationFormPage4 {
   // Medical / Identity (country-specific)
   healthCardPhotos?: IFileAsset[]; // Canada
   medicalCertificationPhotos?: IFileAsset[]; // US
+
+  // Passport type selection (Canadian companies only)
+  passportType?: EPassportType; // Canadian companies only
+  workAuthorizationType?: EWorkAuthorizationType; // For non-Canadian passports
 
   passportPhotos?: IFileAsset[]; // Optional for US
   prPermitCitizenshipPhotos?: IFileAsset[]; // Optional for US
