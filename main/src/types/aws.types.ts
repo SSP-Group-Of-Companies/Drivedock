@@ -13,7 +13,7 @@ export enum ES3Folder {
   SIGNATURES = "signatures",
   MEDICAL_CERT_PHOTOS = "medical-cert-photos",
   FAST_CARD_PHOTOS = "fast-card-photos",
-  DRUG_TEST_PHOTOS = "drug-test-photos",
+  DRUG_TEST_DOCS = "drug-test-docs",
   CARRIERS_EDGE_CERTIFICATES = "carriers-edge-certificates",
   DRIVE_TEST = "drive-test",
 }

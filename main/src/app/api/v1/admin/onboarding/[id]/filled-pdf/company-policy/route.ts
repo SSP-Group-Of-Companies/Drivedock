@@ -3,7 +3,6 @@
 // ======================================================================
 
 import { NextRequest, NextResponse } from "next/server";
-import path from "node:path";
 import fs from "node:fs/promises";
 import { isValidObjectId } from "mongoose";
 import { PDFDocument } from "pdf-lib";
@@ -16,7 +15,7 @@ import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
 import PoliciesConsents from "@/mongoose/models/PoliciesConsents";
 
-import { ESafetyAdminId, getSafetyAdminById } from "@/constants/safetyAdmins";
+import { ESafetyAdminId } from "@/constants/safetyAdmins";
 import { ECompanyId } from "@/constants/companies";
 
 import { buildCompanyPolicyPayload, applyCompanyPolicyPayloadToForm, resolveCompanyPolicyTemplate } from "@/lib/pdf/company-policy/mappers/company-policy.mapper";
@@ -26,6 +25,7 @@ import { drawPdfImage } from "@/lib/pdf/utils/drawPdfImage";
 import { loadImageBytesFromPhoto } from "@/lib/utils/s3Upload";
 import PreQualifications from "@/mongoose/models/Prequalifications";
 import { EDriverType } from "@/types/preQualifications.types";
+import { getSafetyAdminServerById } from "@/lib/assets/safetyAdmins/safetyAdmins.server";
 
 export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
@@ -42,7 +42,7 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     if (!Object.values(ESafetyAdminId).includes(safetyAdminId)) {
       return errorResponse(400, "Invalid safetyAdminId");
     }
-    const safetyAdmin = getSafetyAdminById(safetyAdminId);
+    const safetyAdmin = getSafetyAdminServerById(safetyAdminId);
     if (!safetyAdmin) return errorResponse(400, "Safety admin not found");
 
     // Onboarding
@@ -103,9 +103,7 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
 
     let witnessSigBytes: Uint8Array;
     try {
-      const adminAbsPath = path.join(process.cwd(), "src", safetyAdmin.signature);
-      const buf = await fs.readFile(adminAbsPath);
-      witnessSigBytes = new Uint8Array(buf);
+      witnessSigBytes = new Uint8Array(await fs.readFile(safetyAdmin.signatureAbsPath));
     } catch (e) {
       console.error("Error loading safety admin signature image:", e);
       return errorResponse(500, "Safety admin signature image not found or unreadable");

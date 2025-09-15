@@ -107,8 +107,9 @@ export function resolveHiringTemplate(companyId: string) {
   const base = path.join(process.cwd(), "src/lib/pdf/hiring-application/templates");
   switch (companyId as ECompanyId) {
     case ECompanyId.SSP_CA:
+      return path.join(base, "ssp-hiring-application-ca-fillable.pdf");
     case ECompanyId.SSP_US:
-      return path.join(base, "ssp-hiring-application-fillable.pdf");
+      return path.join(base, "ssp-hiring-application-us-fillable.pdf");
     case ECompanyId.FELLOW_TRANS:
       return path.join(base, "fellows-hiring-application-fillable.pdf");
     case ECompanyId.WEB_FREIGHT:
@@ -116,7 +117,7 @@ export function resolveHiringTemplate(companyId: string) {
     case ECompanyId.NESH:
       return path.join(base, "new-england-hiring-application-fillable.pdf");
     default:
-      return path.join(base, "ssp-hiring-application-fillable.pdf");
+      return path.join(base, "ssp-hiring-application-ca-fillable.pdf");
   }
 }
 

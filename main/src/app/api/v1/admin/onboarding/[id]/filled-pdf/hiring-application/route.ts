@@ -3,7 +3,6 @@
 // ======================================================================
 
 import { NextRequest, NextResponse } from "next/server";
-import path from "node:path";
 import fs from "node:fs/promises";
 import { isValidObjectId } from "mongoose";
 import { PDFDocument } from "pdf-lib";
@@ -23,8 +22,9 @@ import { loadImageBytesFromPhoto } from "@/lib/utils/s3Upload";
 import { buildHiringApplicationFieldMap, resolveHiringTemplate } from "@/lib/pdf/hiring-application/mappers/hiring-application.mapper";
 import { EDriverApplicationFillableFormFields as F } from "@/lib/pdf/hiring-application/mappers/hiring-application.types";
 
-import { ESafetyAdminId, getSafetyAdminById } from "@/constants/safetyAdmins";
+import { ESafetyAdminId } from "@/constants/safetyAdmins";
 import { ECompanyId } from "@/constants/companies";
+import { getSafetyAdminServerById } from "@/lib/assets/safetyAdmins/safetyAdmins.server";
 
 // ----------------------------------------------------------------------
 
@@ -46,7 +46,7 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
       return errorResponse(400, "Invalid safetyAdminId");
     }
 
-    const safetyAdmin = getSafetyAdminById(safetyAdminId);
+    const safetyAdmin = getSafetyAdminServerById(safetyAdminId);
     if (!safetyAdmin) return errorResponse(400, "Safety admin not found");
 
     // ------- Load Onboarding (fail fast if missing)
@@ -91,9 +91,7 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
 
     let adminSignatureBytes: Uint8Array | undefined;
     try {
-      const adminSigAbsPath = path.join(process.cwd(), "src", safetyAdmin.signature);
-      const buf = await fs.readFile(adminSigAbsPath);
-      adminSignatureBytes = new Uint8Array(buf);
+      adminSignatureBytes = new Uint8Array(await fs.readFile(safetyAdmin.signatureAbsPath));
     } catch (e) {
       console.warn("Safety admin signature load failed:", e);
     }

@@ -5,24 +5,10 @@ import Image from "next/image";
 import { useEditMode } from "../../components/EditModeContext";
 import { ILicenseEntry, IFastCard } from "@/types/applicationForm.types";
 import { IPhoto, ECountryCode } from "@/types/shared.types";
-import {
-  Image as ImageIcon,
-  ChevronLeft,
-  ChevronRight,
-  Plus,
-  Camera,
-  Upload,
-  Trash2,
-  AlertCircle,
-  Menu,
-  X,
-  CheckCircle,
-  XCircle,
-  Download,
-} from "lucide-react";
-import { uploadToS3Presigned } from "@/lib/utils/s3Upload";
+import { Image as ImageIcon, ChevronLeft, ChevronRight, Plus, Camera, Upload, Trash2, AlertCircle, Menu, X, CheckCircle, XCircle, Download } from "lucide-react";
 import { ES3Folder } from "@/types/aws.types";
 import { useParams } from "next/navigation";
+import { uploadToS3Presigned, deleteTempFiles, isTempKey } from "@/lib/utils/s3Upload";
 
 interface ImageGallerySectionProps {
   licenses: ILicenseEntry[];
@@ -75,6 +61,9 @@ export default function ImageGallerySection({
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string>("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string>("");
+  const [deleteMessage, setDeleteMessage] = useState<string>("");
   const [isMounted, setIsMounted] = useState(false);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
@@ -155,10 +144,7 @@ export default function ImageGallerySection({
           {
             id: "license-primary",
             title: "License 1 (Primary - AZ)",
-            photos: [
-              licenses[0].licenseFrontPhoto,
-              licenses[0].licenseBackPhoto,
-            ].filter(Boolean) as IPhoto[],
+            photos: [licenses[0].licenseFrontPhoto, licenses[0].licenseBackPhoto].filter(Boolean) as IPhoto[],
             type: "license",
             hasFrontBack: true,
             maxPhotos: PHOTO_LIMITS.license,
@@ -174,10 +160,7 @@ export default function ImageGallerySection({
           {
             id: "fastCard",
             title: "Fast Card",
-            photos: [
-              fastCard.fastCardFrontPhoto,
-              fastCard.fastCardBackPhoto,
-            ].filter(Boolean) as IPhoto[],
+            photos: [fastCard.fastCardFrontPhoto, fastCard.fastCardBackPhoto].filter(Boolean) as IPhoto[],
             type: "fastCard",
             hasFrontBack: true,
             maxPhotos: PHOTO_LIMITS.fastCard,
@@ -288,9 +271,7 @@ export default function ImageGallerySection({
     },
   ];
 
-  const selectedItemData = galleryItems.find(
-    (item) => item.id === selectedItem
-  );
+  const selectedItemData = galleryItems.find((item) => item.id === selectedItem);
   const currentPhoto = selectedItemData?.photos[currentPhotoIndex];
 
   const handleItemSelect = (itemId: string) => {
@@ -303,13 +284,9 @@ export default function ImageGallerySection({
     if (!selectedItemData) return;
 
     if (direction === "prev") {
-      setCurrentPhotoIndex((prev) =>
-        prev === 0 ? selectedItemData.photos.length - 1 : prev - 1
-      );
+      setCurrentPhotoIndex((prev) => (prev === 0 ? selectedItemData.photos.length - 1 : prev - 1));
     } else {
-      setCurrentPhotoIndex((prev) =>
-        prev === selectedItemData.photos.length - 1 ? 0 : prev + 1
-      );
+      setCurrentPhotoIndex((prev) => (prev === selectedItemData.photos.length - 1 ? 0 : prev + 1));
     }
   };
 
@@ -335,9 +312,7 @@ export default function ImageGallerySection({
 
   const handleAddPhoto = async (item: GalleryItem) => {
     if (!canAddPhoto(item)) {
-      setUploadError(
-        `Cannot add more photos. Maximum ${item.maxPhotos} allowed.`
-      );
+      setUploadError(`Cannot add more photos. Maximum ${item.maxPhotos} allowed.`);
       return;
     }
 
@@ -415,8 +390,7 @@ export default function ImageGallerySection({
             // One photo exists, add as back photo
             const updatedLicenses = [...licenses];
             const existingPhoto = currentPhotos[0];
-            const isFrontPhoto =
-              existingPhoto === licenses[0]?.licenseFrontPhoto;
+            const isFrontPhoto = existingPhoto === licenses[0]?.licenseFrontPhoto;
 
             if (isFrontPhoto) {
               updatedLicenses[0] = {
@@ -434,9 +408,7 @@ export default function ImageGallerySection({
         } else {
           // Regular array-based photos — derive from latest staged state to avoid stale closures
           onStage((prev: any) => {
-            const prevArr: IPhoto[] = Array.isArray(prev?.[item.fieldKey])
-              ? prev[item.fieldKey]
-              : (item.photos || []);
+            const prevArr: IPhoto[] = Array.isArray(prev?.[item.fieldKey]) ? prev[item.fieldKey] : item.photos || [];
             const next = [...prevArr, newPhoto];
             return { ...prev, [item.fieldKey]: next };
           });
@@ -445,21 +417,18 @@ export default function ImageGallerySection({
         setIsUploading(false);
       } catch (error: any) {
         setIsUploading(false);
-        setUploadError(
-          error?.message || "Failed to upload photo. Please try again."
-        );
+        setUploadError(error?.message || "Failed to upload photo. Please try again.");
       }
     };
     input.click();
   };
 
-  const handleDeletePhoto = (item: GalleryItem, photoIndex: number) => {
-    // Handle Fast Card photos differently since they're object properties, not arrays
+  // Removes a photo from staged state for any gallery item shape
+  const _removePhotoFromState = (item: GalleryItem, photoIndex: number) => {
     if (item.type === "fastCard") {
       const currentPhotos = item.photos;
       const photoToDelete = currentPhotos[photoIndex];
 
-      // Determine which photo to delete and update accordingly
       if (photoToDelete === fastCard?.fastCardFrontPhoto) {
         onStage({
           fastCard: {
@@ -476,17 +445,16 @@ export default function ImageGallerySection({
         });
       }
 
-      // Adjust current photo index if needed
-      if (
-        currentPhotoIndex >= currentPhotos.length - 1 &&
-        currentPhotos.length > 1
-      ) {
+      // index adjustments
+      if (currentPhotoIndex >= currentPhotos.length - 1 && currentPhotos.length > 1) {
         setCurrentPhotoIndex(currentPhotos.length - 2);
       } else if (currentPhotos.length === 1) {
         setCurrentPhotoIndex(0);
       }
-    } else if (item.type === "license") {
-      // Handle license photos - they're stored as properties on the license object
+      return;
+    }
+
+    if (item.type === "license") {
       const currentPhotos = item.photos;
       const photoToDelete = currentPhotos[photoIndex];
 
@@ -504,28 +472,57 @@ export default function ImageGallerySection({
       }
       onStage({ licenses: updatedLicenses });
 
-      // Adjust current photo index if needed
-      if (
-        currentPhotoIndex >= currentPhotos.length - 1 &&
-        currentPhotos.length > 1
-      ) {
+      if (currentPhotoIndex >= currentPhotos.length - 1 && currentPhotos.length > 1) {
         setCurrentPhotoIndex(currentPhotos.length - 2);
       } else if (currentPhotos.length === 1) {
         setCurrentPhotoIndex(0);
       }
-    } else {
-      // Regular array-based photos — derive from latest staged state to avoid stale closures
-      onStage((prev: any) => {
-        const prevArr: IPhoto[] = Array.isArray(prev?.[item.fieldKey])
-          ? prev[item.fieldKey]
-          : (item.photos || []);
-        const next = prevArr.filter((_: IPhoto, index: number) => index !== photoIndex);
-        return { ...prev, [item.fieldKey]: next };
-      });
-
-      // Adjust current photo index conservatively after deletion
-      setCurrentPhotoIndex((prev) => (prev > 0 ? prev - 1 : 0));
+      return;
     }
+
+    // Array-based collections
+    onStage((prev: any) => {
+      const prevArr: IPhoto[] = Array.isArray(prev?.[item.fieldKey]) ? prev[item.fieldKey] : item.photos || [];
+      const next = prevArr.filter((_: IPhoto, idx: number) => idx !== photoIndex);
+      return { ...prev, [item.fieldKey]: next };
+    });
+
+    setCurrentPhotoIndex((prev) => (prev > 0 ? prev - 1 : 0));
+  };
+
+  const handleDeletePhoto = async (item: GalleryItem, photoIndex: number) => {
+    const photo = item.photos[photoIndex];
+    const key = photo?.s3Key;
+
+    setDeleteError("");
+    setDeleteMessage("");
+
+    // Nothing to delete? Just clear from state.
+    if (!key && !photo?.url) {
+      _removePhotoFromState(item, photoIndex);
+      return;
+    }
+
+    // If temp (s3Key starts with temp-files/): call API to delete BEFORE clearing UI
+    if (key && isTempKey(key)) {
+      try {
+        setIsDeleting(true);
+        setDeleteMessage("Deleting...");
+        await deleteTempFiles([key]);
+        _removePhotoFromState(item, photoIndex);
+        setDeleteMessage("Photo removed");
+      } catch (err: any) {
+        console.error("Temp photo deletion failed:", err);
+        setDeleteError(err?.message || "Delete failed");
+      } finally {
+        setIsDeleting(false);
+      }
+      return;
+    }
+
+    // Final / non-temp: remove from state immediately (no server call)
+    _removePhotoFromState(item, photoIndex);
+    setDeleteMessage("");
   };
 
   const handleEditPhoto = async (item: GalleryItem, photoIndex: number) => {
@@ -597,9 +594,7 @@ export default function ImageGallerySection({
         } else {
           // Regular array-based photos — derive from latest staged state to avoid stale closures
           onStage((prev: any) => {
-            const prevArr: IPhoto[] = Array.isArray(prev?.[item.fieldKey])
-              ? prev[item.fieldKey]
-              : (item.photos || []);
+            const prevArr: IPhoto[] = Array.isArray(prev?.[item.fieldKey]) ? prev[item.fieldKey] : item.photos || [];
             const next = [...prevArr];
             next[photoIndex] = newPhoto;
             return { ...prev, [item.fieldKey]: next };
@@ -609,9 +604,7 @@ export default function ImageGallerySection({
         setIsUploading(false);
       } catch (error: any) {
         setIsUploading(false);
-        setUploadError(
-          error?.message || "Failed to replace photo. Please try again."
-        );
+        setUploadError(error?.message || "Failed to replace photo. Please try again.");
       }
     };
     input.click();
@@ -622,28 +615,28 @@ export default function ImageGallerySection({
     try {
       const response = await fetch(photo.url);
       const blob = await response.blob();
-      
+
       // Create a temporary URL for the blob
       const url = window.URL.createObjectURL(blob);
-      
+
       // Create a temporary anchor element to trigger download
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
-      
+
       // Generate filename from item title and photo label
-      const filename = `${itemTitle.replace(/\s+/g, '_')}_${photoLabel.replace(/\s+/g, '_')}.jpg`;
+      const filename = `${itemTitle.replace(/\s+/g, "_")}_${photoLabel.replace(/\s+/g, "_")}.jpg`;
       link.download = filename;
-      
+
       // Append to body, click, and remove
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      
+
       // Clean up the temporary URL
       window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Failed to download image:', error);
-      setUploadError('Failed to download image. Please try again.');
+      console.error("Failed to download image:", error);
+      setUploadError("Failed to download image. Please try again.");
     }
   };
 
@@ -674,8 +667,7 @@ export default function ImageGallerySection({
     if (!allFieldsFilled) {
       return {
         type: "error" as const,
-        message:
-          "If you provide any business information, all fields must be completed",
+        message: "If you provide any business information, all fields must be completed",
       };
     }
 
@@ -751,10 +743,7 @@ export default function ImageGallerySection({
                 borderWidth: "2px",
               }}
             />
-            <p
-              className="text-sm"
-              style={{ color: "var(--color-on-surface-variant)" }}
-            >
+            <p className="text-sm" style={{ color: "var(--color-on-surface-variant)" }}>
               Loading gallery...
             </p>
           </div>
@@ -772,10 +761,7 @@ export default function ImageGallerySection({
       }}
     >
       {/* Navigation Header - Desktop */}
-      <div
-        className="hidden lg:block border-b"
-        style={{ borderColor: "var(--color-outline)" }}
-      >
+      <div className="hidden lg:block border-b" style={{ borderColor: "var(--color-outline)" }}>
         <div className="p-4">
           <div className="flex flex-wrap gap-2">
             {galleryItems.map((item) => {
@@ -785,19 +771,11 @@ export default function ImageGallerySection({
                   key={item.id}
                   onClick={() => handleItemSelect(item.id)}
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-all duration-200 ${
-                    selectedItem === item.id
-                      ? "border-primary shadow-sm"
-                      : "border-outline hover:border-primary/50 hover:shadow-sm"
+                    selectedItem === item.id ? "border-primary shadow-sm" : "border-outline hover:border-primary/50 hover:shadow-sm"
                   }`}
                   style={{
-                    background:
-                      selectedItem === item.id
-                        ? "var(--color-primary-container)"
-                        : "var(--color-surface-variant)",
-                    borderColor:
-                      selectedItem === item.id
-                        ? "var(--color-primary)"
-                        : "var(--color-outline)",
+                    background: selectedItem === item.id ? "var(--color-primary-container)" : "var(--color-surface-variant)",
+                    borderColor: selectedItem === item.id ? "var(--color-primary)" : "var(--color-outline)",
                     color: "var(--color-on-surface)",
                   }}
                 >
@@ -813,15 +791,9 @@ export default function ImageGallerySection({
                   </span>
                   {validation &&
                     (validation.type === "success" ? (
-                      <CheckCircle
-                        className="h-4 w-4"
-                        style={{ color: "var(--color-success)" }}
-                      />
+                      <CheckCircle className="h-4 w-4" style={{ color: "var(--color-success)" }} />
                     ) : (
-                      <XCircle
-                        className="h-4 w-4"
-                        style={{ color: "var(--color-error)" }}
-                      />
+                      <XCircle className="h-4 w-4" style={{ color: "var(--color-error)" }} />
                     ))}
                 </button>
               );
@@ -831,10 +803,7 @@ export default function ImageGallerySection({
       </div>
 
       {/* Mobile Navigation Toggle */}
-      <div
-        className="lg:hidden border-b"
-        style={{ borderColor: "var(--color-outline)" }}
-      >
+      <div className="lg:hidden border-b" style={{ borderColor: "var(--color-outline)" }}>
         <div className="p-4">
           <button
             onClick={() => setIsMobileNavOpen(!isMobileNavOpen)}
@@ -845,40 +814,19 @@ export default function ImageGallerySection({
               color: "var(--color-on-surface)",
             }}
           >
-            <span className="font-medium">
-              {selectedItemData
-                ? selectedItemData.title
-                : "Select Document Type"}
-            </span>
-            {isMobileNavOpen ? (
-              <X className="h-5 w-5" />
-            ) : (
-              <Menu className="h-5 w-5" />
-            )}
+            <span className="font-medium">{selectedItemData ? selectedItemData.title : "Select Document Type"}</span>
+            {isMobileNavOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
       </div>
 
       {/* Mobile Navigation Drawer - Sidebar Style */}
-      <div
-        className={[
-          "fixed inset-0 z-[2000] lg:hidden",
-          isMobileNavOpen ? "pointer-events-auto" : "pointer-events-none",
-        ].join(" ")}
-        role="dialog"
-        aria-modal="true"
-        aria-hidden={!isMobileNavOpen}
-      >
+      <div className={["fixed inset-0 z-[2000] lg:hidden", isMobileNavOpen ? "pointer-events-auto" : "pointer-events-none"].join(" ")} role="dialog" aria-modal="true" aria-hidden={!isMobileNavOpen}>
         {/* Scrim (fades in/out) */}
         <button
           aria-label="Close navigation"
           onClick={() => setIsMobileNavOpen(false)}
-          className={[
-            "absolute inset-0 transition-opacity duration-500 ease-in-out",
-            isMobileNavOpen
-              ? "opacity-100 pointer-events-auto"
-              : "opacity-0 pointer-events-none",
-          ].join(" ")}
+          className={["absolute inset-0 transition-opacity duration-500 ease-in-out", isMobileNavOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"].join(" ")}
           style={{ backgroundColor: "var(--color-shadow-high)" }}
         />
 
@@ -888,26 +836,17 @@ export default function ImageGallerySection({
             "absolute inset-y-0 left-0 z-10 w-72 sm:w-80",
             "flex flex-col",
             "transform transition-all duration-500 ease-in-out will-change-transform",
-            isMobileNavOpen
-              ? "translate-x-0 opacity-100 scale-100 pointer-events-auto"
-              : "-translate-x-full opacity-0 scale-[0.98] pointer-events-none",
+            isMobileNavOpen ? "translate-x-0 opacity-100 scale-100 pointer-events-auto" : "-translate-x-full opacity-0 scale-[0.98] pointer-events-none",
           ].join(" ")}
           style={{
             backgroundColor: "var(--color-card)",
             borderRight: "1px solid var(--color-outline)",
-            boxShadow:
-              "var(--color-shadow-elevated) 0 10px 15px -3px, var(--color-shadow-elevated) 0 4px 6px -2px",
+            boxShadow: "var(--color-shadow-elevated) 0 10px 15px -3px, var(--color-shadow-elevated) 0 4px 6px -2px",
           }}
         >
           {/* Header */}
-          <div
-            className="h-14 flex items-center justify-between px-4 border-b"
-            style={{ borderColor: "var(--color-outline)" }}
-          >
-            <h3
-              className="text-lg font-semibold"
-              style={{ color: "var(--color-on-surface)" }}
-            >
+          <div className="h-14 flex items-center justify-between px-4 border-b" style={{ borderColor: "var(--color-outline)" }}>
+            <h3 className="text-lg font-semibold" style={{ color: "var(--color-on-surface)" }}>
               Document Types
             </h3>
             <button
@@ -933,19 +872,11 @@ export default function ImageGallerySection({
                       setIsMobileNavOpen(false);
                     }}
                     className={`w-full flex items-center justify-between p-3 rounded-lg border transition-colors ${
-                      selectedItem === item.id
-                        ? "border-primary"
-                        : "border-outline hover:border-primary/50"
+                      selectedItem === item.id ? "border-primary" : "border-outline hover:border-primary/50"
                     }`}
                     style={{
-                      background:
-                        selectedItem === item.id
-                          ? "var(--color-primary-container)"
-                          : "var(--color-surface-variant)",
-                      borderColor:
-                        selectedItem === item.id
-                          ? "var(--color-primary)"
-                          : "var(--color-outline)",
+                      background: selectedItem === item.id ? "var(--color-primary-container)" : "var(--color-surface-variant)",
+                      borderColor: selectedItem === item.id ? "var(--color-primary)" : "var(--color-outline)",
                       color: "var(--color-on-surface)",
                     }}
                   >
@@ -962,15 +893,9 @@ export default function ImageGallerySection({
                       </span>
                       {validation &&
                         (validation.type === "success" ? (
-                          <CheckCircle
-                            className="h-4 w-4"
-                            style={{ color: "var(--color-success)" }}
-                          />
+                          <CheckCircle className="h-4 w-4" style={{ color: "var(--color-success)" }} />
                         ) : (
-                          <XCircle
-                            className="h-4 w-4"
-                            style={{ color: "var(--color-error)" }}
-                          />
+                          <XCircle className="h-4 w-4" style={{ color: "var(--color-error)" }} />
                         ))}
                     </div>
                   </button>
@@ -983,16 +908,10 @@ export default function ImageGallerySection({
 
       {/* Information Section */}
       {selectedItemData && (
-        <div
-          className="p-4 border-b"
-          style={{ borderColor: "var(--color-outline)" }}
-        >
+        <div className="p-4 border-b" style={{ borderColor: "var(--color-outline)" }}>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex-1">
-              <h3
-                className="text-lg font-semibold mb-2"
-                style={{ color: "var(--color-on-surface)" }}
-              >
+              <h3 className="text-lg font-semibold mb-2" style={{ color: "var(--color-on-surface)" }}>
                 {selectedItemData.title}
               </h3>
 
@@ -1001,18 +920,8 @@ export default function ImageGallerySection({
                 const validation = getValidationStatus(selectedItemData);
                 if (validation) {
                   return (
-                    <div
-                      className={`flex items-center gap-2 text-sm ${
-                        validation.type === "error"
-                          ? "text-red-600"
-                          : "text-green-600"
-                      }`}
-                    >
-                      {validation.type === "error" ? (
-                        <XCircle className="h-4 w-4" />
-                      ) : (
-                        <CheckCircle className="h-4 w-4" />
-                      )}
+                    <div className={`flex items-center gap-2 text-sm ${validation.type === "error" ? "text-red-600" : "text-green-600"}`}>
+                      {validation.type === "error" ? <XCircle className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
                       {validation.message}
                     </div>
                   );
@@ -1024,21 +933,15 @@ export default function ImageGallerySection({
             {isEditMode && (
               <button
                 onClick={() => handleAddPhoto(selectedItemData)}
-                disabled={!canAddPhoto(selectedItemData) || isUploading}
+                disabled={!canAddPhoto(selectedItemData) || isUploading || isDeleting}
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
                 style={{
-                  background: canAddPhoto(selectedItemData)
-                    ? "var(--color-primary)"
-                    : "var(--color-surface-variant)",
-                  color: canAddPhoto(selectedItemData)
-                    ? "var(--color-on-primary)"
-                    : "var(--color-on-surface-variant)",
+                  background: canAddPhoto(selectedItemData) ? "var(--color-primary)" : "var(--color-surface-variant)",
+                  color: canAddPhoto(selectedItemData) ? "var(--color-on-primary)" : "var(--color-on-surface-variant)",
                 }}
               >
                 <Plus className="h-4 w-4" />
-                {canAddPhoto(selectedItemData)
-                  ? "Add Photo"
-                  : `Max ${selectedItemData.maxPhotos} Photos`}
+                {canAddPhoto(selectedItemData) ? "Add Photo" : `Max ${selectedItemData.maxPhotos} Photos`}
               </button>
             )}
           </div>
@@ -1057,6 +960,14 @@ export default function ImageGallerySection({
               </div>
             )}
 
+            {/* Delete Status / Errors */}
+            {deleteMessage && (
+              <div className="p-3 rounded-lg border text-sm" style={{ background: "var(--color-surface-variant)", borderColor: "var(--color-outline)", color: "var(--color-on-surface)" }}>
+                {deleteMessage}
+              </div>
+            )}
+            {deleteError && <div className="p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">{deleteError}</div>}
+
             {/* Photo Display */}
             {selectedItemData.photos.length > 0 ? (
               <div className="space-y-4">
@@ -1072,30 +983,18 @@ export default function ImageGallerySection({
                     {currentPhoto?.url ? (
                       <Image
                         src={currentPhoto.url}
-                        alt={`${selectedItemData.title} - ${getPhotoLabel(
-                          selectedItemData,
-                          currentPhotoIndex
-                        )}`}
+                        alt={`${selectedItemData.title} - ${getPhotoLabel(selectedItemData, currentPhotoIndex)}`}
                         fill
                         className="object-contain cursor-pointer transition-transform hover:scale-105"
-                        onClick={() =>
-                          isEditMode &&
-                          handleEditPhoto(selectedItemData, currentPhotoIndex)
-                        }
+                        onClick={() => isEditMode && handleEditPhoto(selectedItemData, currentPhotoIndex)}
                         title={isEditMode ? "Click to replace photo" : ""}
                         onError={() => {
-                          console.error(
-                            "Image failed to load:",
-                            currentPhoto.url
-                          );
+                          console.error("Image failed to load:", currentPhoto.url);
                         }}
                       />
                     ) : (
                       <div className="flex items-center justify-center h-full">
-                        <Camera
-                          className="h-16 w-16"
-                          style={{ color: "var(--color-on-surface-variant)" }}
-                        />
+                        <Camera className="h-16 w-16" style={{ color: "var(--color-on-surface-variant)" }} />
                       </div>
                     )}
                   </div>
@@ -1103,13 +1002,7 @@ export default function ImageGallerySection({
                   {/* Download Button */}
                   {currentPhoto?.url && (
                     <button
-                      onClick={() =>
-                        handleDownloadImage(
-                          currentPhoto,
-                          selectedItemData.title,
-                          getPhotoLabel(selectedItemData, currentPhotoIndex)
-                        )
-                      }
+                      onClick={() => handleDownloadImage(currentPhoto, selectedItemData.title, getPhotoLabel(selectedItemData, currentPhotoIndex))}
                       className="absolute top-4 right-4 p-2 rounded-full shadow-lg transition-all hover:scale-110"
                       style={{
                         background: "var(--color-primary)",
@@ -1158,28 +1051,19 @@ export default function ImageGallerySection({
                   }}
                 >
                   <div>
-                    <span
-                      className="text-sm font-medium"
-                      style={{ color: "var(--color-on-surface)" }}
-                    >
+                    <span className="text-sm font-medium" style={{ color: "var(--color-on-surface)" }}>
                       {getPhotoLabel(selectedItemData, currentPhotoIndex)}
                     </span>
-                    <span
-                      className="text-xs ml-2"
-                      style={{ color: "var(--color-on-surface-variant)" }}
-                    >
-                      {currentPhotoIndex + 1} of{" "}
-                      {selectedItemData.photos.length}
+                    <span className="text-xs ml-2" style={{ color: "var(--color-on-surface-variant)" }}>
+                      {currentPhotoIndex + 1} of {selectedItemData.photos.length}
                     </span>
                   </div>
 
                   {isEditMode && (
                     <div className="flex gap-2">
                       <button
-                        onClick={() =>
-                          handleEditPhoto(selectedItemData, currentPhotoIndex)
-                        }
-                        disabled={isUploading}
+                        onClick={() => handleEditPhoto(selectedItemData, currentPhotoIndex)}
+                        disabled={isUploading || isDeleting}
                         className="p-2 rounded-lg transition-colors hover:bg-blue-50"
                         style={{ color: "var(--color-primary)" }}
                         title="Replace photo"
@@ -1187,11 +1071,9 @@ export default function ImageGallerySection({
                         <Upload className="h-4 w-4" />
                       </button>
                       <button
-                        onClick={() =>
-                          handleDeletePhoto(selectedItemData, currentPhotoIndex)
-                        }
-                        disabled={isUploading}
-                        className="p-2 rounded-lg transition-colors hover:bg-red-50"
+                        onClick={() => handleDeletePhoto(selectedItemData, currentPhotoIndex)}
+                        disabled={isUploading || isDeleting}
+                        className="p-2 rounded-lg transition-colors hover:bg-red-50 disabled:opacity-50"
                         style={{ color: "var(--color-error)" }}
                         title="Delete photo"
                       >
@@ -1209,24 +1091,16 @@ export default function ImageGallerySection({
                         key={`${selectedItemData.id}-photo-${index}`}
                         onClick={() => setCurrentPhotoIndex(index)}
                         className={`relative flex-shrink-0 w-20 h-20 rounded-lg border-2 transition-all cursor-pointer hover:scale-105 ${
-                          currentPhotoIndex === index
-                            ? "border-primary shadow-md"
-                            : "border-outline hover:border-primary/50"
+                          currentPhotoIndex === index ? "border-primary shadow-md" : "border-outline hover:border-primary/50"
                         }`}
                         style={{
-                          borderColor:
-                            currentPhotoIndex === index
-                              ? "var(--color-primary)"
-                              : "var(--color-outline)",
+                          borderColor: currentPhotoIndex === index ? "var(--color-primary)" : "var(--color-outline)",
                         }}
                       >
                         {photo?.url ? (
                           <Image
                             src={photo.url}
-                            alt={`${selectedItemData.title} - ${getPhotoLabel(
-                              selectedItemData,
-                              index
-                            )}`}
+                            alt={`${selectedItemData.title} - ${getPhotoLabel(selectedItemData, index)}`}
                             fill
                             className="object-cover rounded-lg"
                             onError={() => {
@@ -1262,21 +1136,12 @@ export default function ImageGallerySection({
                 }}
               >
                 <div className="text-center">
-                  <Camera
-                    className="h-16 w-16 mx-auto mb-4"
-                    style={{ color: "var(--color-on-surface-variant)" }}
-                  />
-                  <p
-                    className="text-lg font-medium mb-2"
-                    style={{ color: "var(--color-on-surface)" }}
-                  >
+                  <Camera className="h-16 w-16 mx-auto mb-4" style={{ color: "var(--color-on-surface-variant)" }} />
+                  <p className="text-lg font-medium mb-2" style={{ color: "var(--color-on-surface)" }}>
                     No photos uploaded yet
                   </p>
                   {isEditMode && (
-                    <p
-                      className="text-sm"
-                      style={{ color: "var(--color-on-surface-variant)" }}
-                    >
+                    <p className="text-sm" style={{ color: "var(--color-on-surface-variant)" }}>
                       Click &quot;Add Photo&quot; to upload your first image
                     </p>
                   )}
@@ -1287,20 +1152,11 @@ export default function ImageGallerySection({
         ) : (
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
-              <ImageIcon
-                className="h-16 w-16 mx-auto mb-4"
-                style={{ color: "var(--color-on-surface-variant)" }}
-              />
-              <p
-                className="text-lg font-medium mb-2"
-                style={{ color: "var(--color-on-surface)" }}
-              >
+              <ImageIcon className="h-16 w-16 mx-auto mb-4" style={{ color: "var(--color-on-surface-variant)" }} />
+              <p className="text-lg font-medium mb-2" style={{ color: "var(--color-on-surface)" }}>
                 Select a document type
               </p>
-              <p
-                className="text-sm"
-                style={{ color: "var(--color-on-surface-variant)" }}
-              >
+              <p className="text-sm" style={{ color: "var(--color-on-surface-variant)" }}>
                 Choose from the navigation above to view and manage photos
               </p>
             </div>

@@ -233,7 +233,6 @@ export function applyIsbConsentPayloadToForm(form: PDFForm, payload: IsbConsentP
         // Checkbox handling
         try {
           const cb = form.getCheckBox(name);
-          console.log("Checking box", name, "to", value);
           if (value) cb.check();
           else cb.uncheck();
           cb.updateAppearances();

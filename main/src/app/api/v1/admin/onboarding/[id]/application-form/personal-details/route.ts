@@ -16,8 +16,6 @@ import { parseJsonBody } from "@/lib/utils/reqParser";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
 import { guard } from "@/lib/auth/authUtils";
 
-
-
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
@@ -38,7 +36,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     // unwrap the payload
     const body = await parseJsonBody<any>(req);
     const page1 = body?.personalDetails as IApplicationFormPage1 | undefined;
-    if (!page1) return errorResponse(400, "Missing 'presonalDetails' in request body");
+    if (!page1) return errorResponse(400, "Missing 'personalDetails' in request body");
 
     // Sanitize + basic validations (business rules for page1 only)
     const newSin = String(page1.sin ?? "").replace(/\D/g, "");
@@ -81,72 +79,54 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     // check if there's already an application with the same sin
     if (sinChanged) {
-      const existingOnboarding = await OnboardingTracker.findOne({ sinHash: sinHash });
+      const existingOnboarding = await OnboardingTracker.findOne({ sinHash });
       if (existingOnboarding) return errorResponse(400, "application with this sin already exists");
     }
 
     // ----------------------------------------------------------------
-    // Phase 1 — Write *only page1* subtree, validate *only page1*
+    // Capture ORIGINALS before we touch page1 (this was the bug)
     // ----------------------------------------------------------------
-    const tempLicenses: ILicenseEntry[] = page1.licenses.map((lic) => ({
-      ...lic,
-    }));
+    const originalSinPhoto = appFormDoc.page1?.sinPhoto;
+    const originalLicenses = appFormDoc.page1?.licenses ?? [];
+
+    // Prepare temp copies from incoming payload
+    const tempPrefix = `${S3_TEMP_FOLDER}/`;
+    const tempLicenses: ILicenseEntry[] = page1.licenses.map((lic) => ({ ...lic }));
     const tempSinPhoto = page1.sinPhoto;
 
-    const page1ToSave: Omit<IApplicationFormPage1, "sin"> = {
+    // ----------------------------------------------------------------
+    // Phase 1 — Write *only page1* subtree with TEMP (to validate shape)
+    // ----------------------------------------------------------------
+    const page1TempToSave: Omit<IApplicationFormPage1, "sin"> = {
       ...page1,
       sinEncrypted,
       sinPhoto: tempSinPhoto,
       licenses: tempLicenses,
     };
 
-    appFormDoc.set("page1", page1ToSave as any);
-    // validate only page1
+    appFormDoc.set("page1", page1TempToSave as any);
     await appFormDoc.validate(["page1"]);
-    // Save without triggering full-document validation
-    await appFormDoc.save({ validateBeforeSave: false });
+    await appFormDoc.save({ validateBeforeSave: false }); // page1 holds TEMP keys right now
 
     // ----------------------------------------------------------------
     // Phase 2 — Finalize S3 files for page1 only
     // ----------------------------------------------------------------
-    const tempPrefix = `${S3_TEMP_FOLDER}/`;
-    const previousSinPhoto = appFormDoc.page1?.sinPhoto;
-    const previousLicensePhotos = appFormDoc.page1?.licenses || [];
-
-    const s3KeysToDelete: string[] = [];
-
-    // Collect old keys to delete (only if *replaced* by a new temp key)
-    if (previousSinPhoto?.s3Key && tempSinPhoto?.s3Key?.startsWith(tempPrefix) && previousSinPhoto.s3Key !== tempSinPhoto.s3Key) {
-      s3KeysToDelete.push(previousSinPhoto.s3Key);
-    }
-
-    for (let i = 0; i < tempLicenses.length; i++) {
-      const tempLic = tempLicenses[i];
-      const prevLic = previousLicensePhotos[i];
-
-      if (prevLic) {
-        if (prevLic.licenseFrontPhoto?.s3Key && tempLic.licenseFrontPhoto?.s3Key?.startsWith(tempPrefix) && prevLic.licenseFrontPhoto.s3Key !== tempLic.licenseFrontPhoto.s3Key) {
-          s3KeysToDelete.push(prevLic.licenseFrontPhoto.s3Key);
-        }
-
-        if (prevLic.licenseBackPhoto?.s3Key && tempLic.licenseBackPhoto?.s3Key?.startsWith(tempPrefix) && prevLic.licenseBackPhoto.s3Key !== tempLic.licenseBackPhoto.s3Key) {
-          s3KeysToDelete.push(prevLic.licenseBackPhoto.s3Key);
-        }
-      }
-    }
-
-    // Finalize page1 photos only
     const finalizeTasks: (() => Promise<void>)[] = [];
 
-    if (tempSinPhoto?.s3Key?.startsWith(tempPrefix)) {
+    // After finalization completes, we will compare finalized vs originals to delete originals if replaced
+    // Keep local working references to mutate
+    const workingLicenses = tempLicenses;
+    let workingSinPhoto = tempSinPhoto;
+
+    if (workingSinPhoto?.s3Key?.startsWith(tempPrefix)) {
       finalizeTasks.push(async () => {
-        const finalized = await finalizePhoto(tempSinPhoto, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.SIN_PHOTOS}/${trackerId}`);
-        page1.sinPhoto = finalized;
+        const finalized = await finalizePhoto(workingSinPhoto!, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.SIN_PHOTOS}/${trackerId}`);
+        workingSinPhoto = finalized;
       });
     }
 
-    for (let i = 0; i < tempLicenses.length; i++) {
-      const lic = tempLicenses[i];
+    for (let i = 0; i < workingLicenses.length; i++) {
+      const lic = workingLicenses[i];
 
       if (lic.licenseFrontPhoto?.s3Key?.startsWith(tempPrefix)) {
         finalizeTasks.push(async () => {
@@ -165,30 +145,61 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       }
     }
 
-    const finalizeResults = await Promise.allSettled(finalizeTasks.map((task) => task()));
+    const finalizeResults = await Promise.allSettled(finalizeTasks.map((t) => t()));
     const failed = finalizeResults.find((r) => r.status === "rejected");
     if (failed) return errorResponse(500, "Failed to finalize uploaded photos");
 
     // ----------------------------------------------------------------
-    // Phase 3 — Persist finalized page1 only (re-validate page1 only)
+    // Phase 3 — Persist FINALIZED page1 only (re-validate page1 only)
     // ----------------------------------------------------------------
-    appFormDoc.set("page1.sinPhoto", page1.sinPhoto as any);
-    appFormDoc.set("page1.licenses", tempLicenses as any);
+    appFormDoc.set("page1.sinPhoto", workingSinPhoto as any);
+    appFormDoc.set("page1.licenses", workingLicenses as any);
 
     await appFormDoc.validate(["page1"]);
     await appFormDoc.save({ validateBeforeSave: false });
 
-    // Best-effort delete of old temp keys
+    // ----------------------------------------------------------------
+    // Phase 4 — Collect and delete truly old keys (captured BEFORE overwrite)
+    // ----------------------------------------------------------------
+    const s3KeysToDelete: string[] = [];
+
+    // SIN photo: if we had an original and it differs from the finalized one, delete original
+    if (originalSinPhoto?.s3Key && workingSinPhoto?.s3Key && originalSinPhoto.s3Key !== workingSinPhoto.s3Key) {
+      s3KeysToDelete.push(originalSinPhoto.s3Key);
+    }
+
+    // Licenses: compare per index & per side (front/back). If replaced, delete old key.
+    const maxLen = Math.max(originalLicenses.length, workingLicenses.length);
+    for (let i = 0; i < maxLen; i++) {
+      const prevLic = originalLicenses[i];
+      const newLic = workingLicenses[i];
+
+      if (!prevLic || !newLic) continue;
+
+      const prevFront = prevLic.licenseFrontPhoto?.s3Key;
+      const newFront = newLic.licenseFrontPhoto?.s3Key;
+      if (prevFront && newFront && prevFront !== newFront) {
+        s3KeysToDelete.push(prevFront);
+      }
+
+      const prevBack = prevLic.licenseBackPhoto?.s3Key;
+      const newBack = newLic.licenseBackPhoto?.s3Key;
+      if (prevBack && newBack && prevBack !== newBack) {
+        s3KeysToDelete.push(prevBack);
+      }
+    }
+
     if (s3KeysToDelete.length > 0) {
       try {
         await deleteS3Objects(s3KeysToDelete);
       } catch (err) {
         console.error("Failed to delete old S3 keys:", err);
+        // non-fatal
       }
     }
 
     // ----------------------------------------------------------------
-    // Phase 4 — Tracker updates (no cross-page validation)
+    // Phase 5 — Tracker updates (no cross-page validation)
     // ----------------------------------------------------------------
     if (sinChanged) {
       onboardingDoc.sinHash = sinHash;
@@ -207,8 +218,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return errorResponse(error);
   }
 }
-
-
 
 export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
