@@ -115,6 +115,24 @@ export const applicationFormPage4Schema = new Schema<IApplicationFormPage4>(
       ],
     },
 
+    // Passport type selection (Canadian companies only)
+    passportType: {
+      type: String,
+      enum: {
+        values: ["canadian", "others"],
+        message: "Passport type must be either 'canadian' or 'others'.",
+      },
+      default: undefined,
+    },
+    workAuthorizationType: {
+      type: String,
+      enum: {
+        values: ["local", "cross_border"],
+        message: "Work authorization type must be either 'local' or 'cross_border'.",
+      },
+      default: undefined,
+    },
+
     passportPhotos: {
       type: [fileSchema],
       default: [],

@@ -1,7 +1,7 @@
 // src/lib/zodSchemas/applicationFormPage4.Schema.ts
 import { z } from "zod";
 import { ECountryCode } from "@/types/shared.types";
-import { IApplicationFormPage4 } from "@/types/applicationForm.types";
+import { IApplicationFormPage4, EPassportType, EWorkAuthorizationType } from "@/types/applicationForm.types";
 
 // Reuse your common helpers
 const dateYMD = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD");
@@ -101,6 +101,11 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
 
     healthCardPhotos: z.array(photoSchema).default([]),
     medicalCertificationPhotos: z.array(photoSchema).default([]),
+    
+    // Passport type selection (Canadian companies only)
+    passportType: z.nativeEnum(EPassportType).optional().or(z.literal("")),
+    workAuthorizationType: z.nativeEnum(EWorkAuthorizationType).optional().or(z.literal("")),
+    
     passportPhotos: z.array(photoSchema).default([]),
     usVisaPhotos: z.array(photoSchema).default([]),
     prPermitCitizenshipPhotos: z.array(photoSchema).default([]),
@@ -170,15 +175,77 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
       }
     })
 
-    // Country-specific docs (unchanged logic, still use leaf paths and the eligibility section anchor)
+    // Country-specific docs with passport type logic
     .superRefine((data: Out, ctx) => {
       if (isCanadian) {
-        if (data.healthCardPhotos.length !== 2)
-          ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["healthCardPhotos"], message: "Health card front and back photos required for Canadian applicants." });
-        if (data.passportPhotos.length !== 2) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["passportPhotos"], message: "Passport bio and back photos required for Canadian applicants." });
-        if (data.usVisaPhotos.length === 0) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["usVisaPhotos"], message: "US visa photo required for Canadian applicants." });
-        if (data.prPermitCitizenshipPhotos.length === 0)
-          ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["prPermitCitizenshipPhotos"], message: "PR/Citizenship photo required for Canadian applicants." });
+        // Health card required for Canadians - check this first for natural flow
+        if (data.healthCardPhotos.length !== 2) {
+          ctx.addIssue({ 
+            code: z.ZodIssueCode.custom, 
+            path: ["healthCardPhotos"], 
+            message: "Health card front and back photos required for Canadian applicants." 
+          });
+        }
+
+        // Passport type selection required for Canadians - only check if health card is provided
+        if (data.healthCardPhotos.length === 2 && (!data.passportType || (data.passportType as string) === "")) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["passportType"],
+            message: "Please select your passport type.",
+          });
+          // Don't check other requirements if passport type is not selected
+          return;
+        }
+
+        // Passport always required for Canadians (only check if passport type is selected)
+        if (data.passportType && data.passportPhotos.length !== 2) {
+          ctx.addIssue({ 
+            code: z.ZodIssueCode.custom, 
+            path: ["passportPhotos"], 
+            message: "Passport bio and back photos required for Canadian applicants." 
+          });
+        }
+
+        // For Canadian passport: only passport is required
+        if (data.passportType === EPassportType.CANADIAN) {
+          // No additional requirements for Canadian passport holders
+        }
+        // For other passports: work authorization type and additional docs required
+        else if (data.passportType === EPassportType.OTHERS) {
+          // Work authorization type required for non-Canadian passports
+          if (!data.workAuthorizationType || (data.workAuthorizationType as string) === "") {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["workAuthorizationType"],
+              message: "Please select your work authorization type.",
+            });
+            // Don't check other requirements if work authorization type is not selected
+            return;
+          }
+
+          // PR/Permit/Citizenship always required for non-Canadian passports
+          if (data.prPermitCitizenshipPhotos.length === 0) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["prPermitCitizenshipPhotos"],
+              message: "PR/Citizenship photo required for non-Canadian passport holders.",
+            });
+          }
+
+          // US Visa requirements based on work authorization type
+          if (data.workAuthorizationType === EWorkAuthorizationType.CROSS_BORDER) {
+            // US Visa required for cross-border work
+            if (data.usVisaPhotos.length === 0) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["usVisaPhotos"],
+                message: "US visa photo required for cross-border work authorization.",
+              });
+            }
+          }
+          // For local work, US Visa is optional (not required)
+        }
       }
 
       if (isUS) {

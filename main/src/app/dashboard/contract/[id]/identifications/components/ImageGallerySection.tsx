@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { useEditMode } from "../../components/EditModeContext";
-import { ILicenseEntry, IFastCard } from "@/types/applicationForm.types";
+import { ILicenseEntry, IFastCard, EPassportType, EWorkAuthorizationType } from "@/types/applicationForm.types";
 import { IFileAsset, ECountryCode } from "@/types/shared.types";
 import { Image as ImageIcon, ChevronLeft, ChevronRight, Plus, Camera, Upload, Trash2, AlertCircle, Menu, X, CheckCircle, XCircle, Download } from "lucide-react";
 import { ES3Folder } from "@/types/aws.types";
@@ -23,6 +23,8 @@ interface ImageGallerySectionProps {
   fastCard?: IFastCard;
   hstNumber?: string;
   businessName?: string;
+  passportType?: EPassportType;
+  workAuthorizationType?: EWorkAuthorizationType;
   onStage: (changes: any) => void;
   countryCode: ECountryCode;
 }
@@ -52,6 +54,8 @@ export default function ImageGallerySection({
   fastCard,
   hstNumber,
   businessName,
+  passportType,
+  workAuthorizationType,
   onStage,
   countryCode,
 }: ImageGallerySectionProps) {
@@ -219,16 +223,21 @@ export default function ImageGallerySection({
             required: true,
             fieldKey: "healthCardPhotos",
           },
-          {
-            id: "usVisa",
-            title: "US Visa",
-            photos: usVisaPhotos || [],
-            type: "usVisa",
-            hasFrontBack: false,
-            maxPhotos: PHOTO_LIMITS.usVisa,
-            required: true, // Can be 1-2 photos, but required
-            fieldKey: "usVisaPhotos",
-          },
+          // US Visa - show for Others passport, required only for cross-border work authorization
+          ...(passportType === EPassportType.OTHERS
+            ? [
+                {
+                  id: "usVisa",
+                  title: "US Visa",
+                  photos: usVisaPhotos || [],
+                  type: "usVisa",
+                  hasFrontBack: false,
+                  maxPhotos: PHOTO_LIMITS.usVisa,
+                  required: workAuthorizationType === EWorkAuthorizationType.CROSS_BORDER,
+                  fieldKey: "usVisaPhotos",
+                },
+              ]
+            : []),
         ]
       : []),
 
@@ -259,16 +268,21 @@ export default function ImageGallerySection({
       required: true,
       fieldKey: "passportPhotos",
     },
-    {
-      id: "prPermit",
-      title: "PR Permit/Citizenship",
-      photos: prPermitCitizenshipPhotos || [],
-      type: "prPermit",
-      hasFrontBack: false,
-      maxPhotos: PHOTO_LIMITS.prPermit,
-      required: true, // Can be 1-2 photos, but required
-      fieldKey: "prPermitCitizenshipPhotos",
-    },
+    // PR/Permit/Citizenship - only required for non-Canadian passports or US companies
+    ...(isUS || (isCanadian && passportType === EPassportType.OTHERS)
+      ? [
+          {
+            id: "prPermit",
+            title: "PR Permit/Citizenship",
+            photos: prPermitCitizenshipPhotos || [],
+            type: "prPermit",
+            hasFrontBack: false,
+            maxPhotos: PHOTO_LIMITS.prPermit,
+            required: true,
+            fieldKey: "prPermitCitizenshipPhotos",
+          },
+        ]
+      : []),
   ];
 
   const selectedItemData = galleryItems.find((item) => item.id === selectedItem);

@@ -174,6 +174,8 @@ export default function IdentificationsClient({
       passportPhotos: baseData.passportPhotos,
       prPermitCitizenshipPhotos: baseData.prPermitCitizenshipPhotos,
       fastCard: baseData.fastCard,
+      passportType: baseData.passportType,
+      workAuthorizationType: baseData.workAuthorizationType,
     };
 
     // Add country-specific fields

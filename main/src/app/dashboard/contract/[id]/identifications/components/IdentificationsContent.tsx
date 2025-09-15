@@ -110,6 +110,8 @@ export default function IdentificationsContent({
           fastCard={getCurrentValue("fastCard")}
           hstNumber={getCurrentValue("hstNumber") || ""}
           businessName={getCurrentValue("businessName") || ""}
+          passportType={getCurrentValue("passportType")}
+          workAuthorizationType={getCurrentValue("workAuthorizationType")}
           onStage={onStage}
           countryCode={countryCode}
         />
