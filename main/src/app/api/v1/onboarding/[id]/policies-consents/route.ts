@@ -14,6 +14,10 @@ import { getLocationFromCoordinates } from "@/lib/utils/geolocationUtils";
 import { S3_SUBMISSIONS_FOLDER, S3_TEMP_FOLDER } from "@/constants/aws";
 import { ES3Folder } from "@/types/aws.types";
 
+type PatchBody = IPoliciesConsents & {
+  location?: { latitude: number; longitude: number } | null;
+};
+
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await connectDB();
@@ -27,87 +31,105 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     if (!hasReachedStep(onboardingDoc, EStepPath.POLICIES_CONSENTS)) return errorResponse(400, "Please complete previous steps first");
 
-    const body = await parseJsonBody<IPoliciesConsents & { location?: { latitude: number; longitude: number } }>(req);
-    const { signature, sendPoliciesByEmail } = body;
-    const tempSignature = signature;
+    const body = await parseJsonBody<PatchBody>(req);
+    const { signature: incomingSignature, sendPoliciesByEmail, location } = body ?? {};
+
+    // (1) Always expect signature
+    if (!incomingSignature || !incomingSignature.s3Key || !incomingSignature.url || !incomingSignature.mimeType) {
+      return errorResponse(400, "Signature is required");
+    }
 
     const existingId = onboardingDoc.forms?.policiesConsents;
     const existingDoc = existingId ? await PoliciesConsents.findById(existingId) : null;
 
-    // Check for deletion of previous finalized signature if being replaced
     const previousSigKey = existingDoc?.signature?.s3Key;
-    const isReplacingFinalized = previousSigKey && tempSignature && !previousSigKey.startsWith(S3_TEMP_FOLDER) && previousSigKey !== tempSignature.s3Key;
+    const sameSignatureAsBefore = previousSigKey && previousSigKey === incomingSignature.s3Key;
 
-    if (isReplacingFinalized) {
-      await deleteS3Objects([previousSigKey]);
-    }
+    let updatedDoc = existingDoc;
 
-    // Finalize signature photo
-    const finalizedSignature: IFileAsset = await finalizeAsset(tempSignature, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.SIGNATURES}/${onboardingDoc.id}`);
+    if (existingDoc) {
+      if (sameSignatureAsBefore) {
+        // Same signature: do NOT replace or re-finalize; optionally update sendPoliciesByEmail only
+        if (typeof sendPoliciesByEmail === "boolean") {
+          updatedDoc = await PoliciesConsents.findByIdAndUpdate(existingDoc._id, { sendPoliciesByEmail }, { new: true });
+        }
+      } else {
+        // Different signature: cleanup previous finalized (if needed), finalize new, update doc
+        const isReplacingFinalized = !!previousSigKey && !previousSigKey.startsWith(S3_TEMP_FOLDER) && previousSigKey !== incomingSignature.s3Key;
+
+        if (isReplacingFinalized) {
+          await deleteS3Objects([previousSigKey]);
+        }
+
+        const finalizedSignature: IFileAsset = await finalizeAsset(incomingSignature, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.SIGNATURES}/${onboardingDoc.id}`);
+
+        const signedAt = new Date();
+
+        updatedDoc = await PoliciesConsents.findByIdAndUpdate(existingDoc._id, { signature: finalizedSignature, signedAt, sendPoliciesByEmail }, { new: true });
+      }
+    } else {
+      // No existing doc: finalize and create new
+      const finalizedSignature: IFileAsset = await finalizeAsset(incomingSignature, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.SIGNATURES}/${onboardingDoc.id}`);
 
       const signedAt = new Date();
 
-      updatedDoc = existingDoc
-        ? await PoliciesConsents.findByIdAndUpdate(existingDoc._id, { signature: finalizedSignature, signedAt, sendPoliciesByEmail }, { new: true })
-        : await PoliciesConsents.create({
-            signature: finalizedSignature,
-            signedAt,
-            sendPoliciesByEmail,
-          });
-
-      if (!updatedDoc) {
-        return errorResponse(500, "Failed to save policies & consents");
-      }
-
-      if (!existingId) {
-        onboardingDoc.forms.policiesConsents = updatedDoc.id;
-      }
+      updatedDoc = await PoliciesConsents.create({
+        signature: finalizedSignature,
+        signedAt,
+        sendPoliciesByEmail,
+      });
 
       onboardingDoc.forms.policiesConsents = updatedDoc.id;
     }
-    
-    // Get location data from frontend request body
-    const { location } = body;
-    let completionLocation = null;
-    
-    if (location && location.latitude && location.longitude) {
-      // Always save GPS coordinates first
+
+    if (!updatedDoc) {
+      return errorResponse(500, "Failed to save policies & consents");
+    }
+
+    // In case we created/updated, ensure the form linkage is set
+    onboardingDoc.forms.policiesConsents = updatedDoc.id;
+
+    // (2) Keep incoming GPS-based location capture logic
+    let completionLocation: any = null;
+
+    if (location?.latitude && location?.longitude) {
+      // Always store coords
       completionLocation = {
         latitude: location.latitude,
-        longitude: location.longitude
+        longitude: location.longitude,
       };
-      
-      // Try to get readable address via reverse geocoding (bonus feature)
+
+      // Best-effort reverse geocoding enrichment
       try {
-        const locationData = await getLocationFromCoordinates(location.latitude, location.longitude);
-        if (!('error' in locationData)) {
+        const locData = await getLocationFromCoordinates(location.latitude, location.longitude);
+        if (!("error" in locData)) {
           completionLocation = {
             ...completionLocation,
-            country: locationData.country,
-            region: locationData.region,
-            city: locationData.city,
-            timezone: locationData.timezone
+            country: locData.country,
+            region: locData.region,
+            city: locData.city,
+            timezone: locData.timezone,
           };
         }
       } catch {
-        // Continue with just GPS coordinates if reverse geocoding fails
+        // ignore reverse-geocoding failures; coords are kept
       }
     }
-    
-    // Update status (location is handled separately at document root level)
-    onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.POLICIES_CONSENTS);
-    
-    // Handle completion location at document root level - always update if we have new location data
+
+    // Persist completionLocation on the root doc (incoming behavior)
     if (completionLocation) {
       onboardingDoc.completionLocation = completionLocation;
     }
+
+    // (Do not pass location to advanceProgress — match incoming behavior)
+    onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.POLICIES_CONSENTS);
 
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();
     await onboardingDoc.save();
 
     return successResponse(200, "Policies & Consents updated", {
       onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.POLICIES_CONSENTS),
-      policiesConsents: updatedDoc?.toObject() || null,
+      policiesConsents: updatedDoc.toObject(),
     });
   } catch (error) {
     console.error("PATCH /policies-consents error:", error);
@@ -124,13 +146,11 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
       return errorResponse(400, "not a valid id");
     }
 
-    // Step 1: Find onboarding tracker
     const onboardingDoc = await OnboardingTracker.findById(id);
     if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
     if (onboardingDoc.status.completed === true) return errorResponse(401, "onboarding process already completed");
     if (onboardingExpired(onboardingDoc)) return errorResponse(400, "Onboarding session expired");
 
-    // Step 2: Get linked Policies & Consents doc
     const policiesId = onboardingDoc.forms?.policiesConsents;
     let policiesDoc = null;
     if (policiesId) {
