@@ -5,9 +5,7 @@ import connectDB from "@/lib/utils/connectDB";
 import { buildTrackerContext } from "@/lib/utils/onboardingUtils";
 import { isValidObjectId } from "mongoose";
 import { NextRequest } from "next/server";
-import { guard } from "@/lib/auth/authUtils";
-
-
+import { guard } from "@/lib/utils/auth/authUtils";
 
 export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
@@ -39,6 +37,4 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
   } catch (error) {
     return errorResponse(error);
   }
-}
-
-
+};

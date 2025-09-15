@@ -1,12 +1,13 @@
 import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
 import PreQualifications from "@/mongoose/models/Prequalifications";
-import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import connectDB from "@/lib/utils/connectDB";
 import { COMPANIES, ECompanyId, needsFlatbedTraining } from "@/constants/companies";
-import { advanceProgress, buildTrackerContext, nextResumeExpiry, onboardingExpired } from "@/lib/utils/onboardingUtils";
+import { advanceProgress, buildTrackerContext, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
 import { EStepPath } from "@/types/onboardingTracker.types";
 import { isValidObjectId } from "mongoose";
 import { NextRequest } from "next/server";
+import { requireOnboardingSession } from "@/lib/utils/auth/onboardingSession";
+import { attachCookies } from "@/lib/utils/auth/attachCookie";
 
 export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
@@ -18,14 +19,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
     const body = await req.json();
 
-    // Step 1: Find onboarding tracker
-    const onboardingDoc = await OnboardingTracker.findById(id);
-    if (!onboardingDoc || onboardingDoc.terminated) {
-      return errorResponse(404, "Onboarding document not found");
-    }
-
-    if (onboardingDoc.status.completed === true) return errorResponse(401, "onboarding process already completed");
-    if (onboardingExpired(onboardingDoc)) return errorResponse(400, "Onboarding session expired");
+    const { tracker: onboardingDoc, refreshCookie } = await requireOnboardingSession(id);
 
     const preQualId = onboardingDoc.forms?.preQualification;
     if (!preQualId) {
@@ -66,10 +60,12 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();
     await onboardingDoc.save();
 
-    return successResponse(200, "PreQualifications and onboarding tracker updated", {
+    const res = successResponse(200, "PreQualifications and onboarding tracker updated", {
       onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.PRE_QUALIFICATIONS),
       preQualifications: preQualDoc,
     });
+
+    return attachCookies(res, refreshCookie);
   } catch (error) {
     return errorResponse(error);
   }
@@ -82,11 +78,7 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
     const { id } = await params;
     if (!isValidObjectId(id)) return errorResponse(400, "not a valid id");
 
-    // Step 1: Find onboarding tracker
-    const onboardingDoc = await OnboardingTracker.findById(id);
-    if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
-    if (onboardingDoc.status.completed === true) return errorResponse(401, "onboarding process already completed");
-    if (onboardingExpired(onboardingDoc)) return errorResponse(400, "Onboarding session expired");
+    const { tracker: onboardingDoc, refreshCookie } = await requireOnboardingSession(id);
 
     // Step 2: Fetch pre-qualifications form using linked ID
     const preQualId = onboardingDoc.forms?.preQualification;
@@ -95,10 +87,12 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
       preQualDoc = await PreQualifications.findById(preQualId);
     }
 
-    return successResponse(200, "PreQualifications data retrieved", {
+    const res = successResponse(200, "PreQualifications data retrieved", {
       onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.PRE_QUALIFICATIONS),
       preQualifications: preQualDoc?.toObject() ?? {},
     });
+
+    return attachCookies(res, refreshCookie);
   } catch (error) {
     return errorResponse(error);
   }

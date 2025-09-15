@@ -6,7 +6,7 @@ import { isValidObjectId } from "mongoose";
 import { PDFDocument } from "pdf-lib";
 
 import connectDB from "@/lib/utils/connectDB";
-import { guard } from "@/lib/auth/authUtils";
+import { guard } from "@/lib/utils/auth/authUtils";
 import { errorResponse } from "@/lib/utils/apiResponse";
 
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";

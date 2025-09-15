@@ -2,11 +2,12 @@
 import { NextRequest } from "next/server";
 import { errorResponse, successResponse } from "@/lib/utils/apiResponse";
 import connectDB from "@/lib/utils/connectDB";
-import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import FlatbedTraining from "@/mongoose/models/FlatbedTraining";
 import { isValidObjectId } from "mongoose";
-import { buildTrackerContext, hasReachedStep, onboardingExpired } from "@/lib/utils/onboardingUtils";
+import { buildTrackerContext, hasReachedStep } from "@/lib/utils/onboardingUtils";
 import { EStepPath } from "@/types/onboardingTracker.types";
+import { requireOnboardingSession } from "@/lib/utils/auth/onboardingSession";
+import { attachCookies } from "@/lib/utils/auth/attachCookie";
 
 export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
@@ -15,10 +16,7 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
     const { id: onboardingId } = await params;
     if (!isValidObjectId(onboardingId)) return errorResponse(400, "Not a valid onboarding tracker ID");
 
-    const onboardingDoc = await OnboardingTracker.findById(onboardingId);
-    if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
-    if (onboardingDoc.status.completed === true) return errorResponse(401, "onboarding process already completed");
-    if (onboardingExpired(onboardingDoc)) return errorResponse(400, "Onboarding session expired");
+    const { tracker: onboardingDoc, refreshCookie } = await requireOnboardingSession(onboardingId);
 
     if (!hasReachedStep(onboardingDoc, EStepPath.FLATBED_TRAINING)) {
       return errorResponse(403, "Please complete previous steps first");
@@ -37,10 +35,12 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
       },
     };
 
-    return successResponse(200, "Flatbed training data retrieved", {
+    const res = successResponse(200, "Flatbed training data retrieved", {
       onboardingContext: enrichedContext,
       flatbedTraining: flatbedTrainingDoc?.toObject() ?? {},
     });
+
+    return attachCookies(res, refreshCookie);
   } catch (error) {
     return errorResponse(error);
   }

@@ -1,9 +1,8 @@
 import { NextRequest } from "next/server";
 import { AppError, errorResponse, successResponse } from "@/lib/utils/apiResponse";
 import connectDB from "@/lib/utils/connectDB";
-import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import { IApplicationFormPage4 } from "@/types/applicationForm.types";
-import { advanceProgress, buildTrackerContext, hasReachedStep, nextResumeExpiry, onboardingExpired } from "@/lib/utils/onboardingUtils";
+import { advanceProgress, buildTrackerContext, hasReachedStep, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
 import { deleteS3Objects, finalizeAsset, finalizeAssetVector, buildFinalDest } from "@/lib/utils/s3Upload";
 import { COMPANIES } from "@/constants/companies";
 import { EStepPath } from "@/types/onboardingTracker.types";
@@ -13,6 +12,8 @@ import { S3_TEMP_FOLDER } from "@/constants/aws";
 import { parseJsonBody } from "@/lib/utils/reqParser";
 import { ES3Folder } from "@/types/aws.types";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
+import { requireOnboardingSession } from "@/lib/utils/auth/onboardingSession";
+import { attachCookies } from "@/lib/utils/auth/attachCookie";
 
 /** ======== helpers ======== */
 const hasKey = <T extends object>(o: T, k: keyof any) => Object.prototype.hasOwnProperty.call(o, k);
@@ -114,10 +115,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     const { id } = await params;
     if (!isValidObjectId(id)) return errorResponse(400, "Invalid onboarding ID");
 
-    const onboardingDoc = await OnboardingTracker.findById(id);
-    if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
-    if (onboardingDoc.status.completed === true) return errorResponse(401, "onboarding process already completed");
-    if (onboardingExpired(onboardingDoc)) return errorResponse(400, "Onboarding session expired");
+    const { tracker: onboardingDoc, refreshCookie } = await requireOnboardingSession(id);
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) return errorResponse(404, "ApplicationForm not linked");
@@ -312,10 +310,12 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();
     await onboardingDoc.save();
 
-    return successResponse(200, "ApplicationForm Page 4 updated", {
+    const res = successResponse(200, "ApplicationForm Page 4 updated", {
       onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_4),
       page4: page4Final,
     });
+
+    return attachCookies(res, refreshCookie);
   } catch (err) {
     return errorResponse(err);
   }
@@ -331,14 +331,7 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
       return errorResponse(400, "Not a valid onboarding tracker ID");
     }
 
-    // Fetch onboarding tracker
-    const onboardingDoc = await OnboardingTracker.findById(onboardingId);
-    if (!onboardingDoc || onboardingDoc.terminated) {
-      return errorResponse(404, "Onboarding document not found");
-    }
-
-    if (onboardingDoc.status.completed === true) return errorResponse(401, "onboarding process already completed");
-    if (onboardingExpired(onboardingDoc)) return errorResponse(400, "Onboarding session expired");
+    const { tracker: onboardingDoc, refreshCookie } = await requireOnboardingSession(onboardingId);
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) {
@@ -354,10 +347,12 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
       return errorResponse(403, "Please complete previous steps first");
     }
 
-    return successResponse(200, "Page 4 data retrieved", {
+    const res = successResponse(200, "Page 4 data retrieved", {
       onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_4),
       page4: appFormDoc.page4,
     });
+
+    return attachCookies(res, refreshCookie);
   } catch (error) {
     return errorResponse(error);
   }

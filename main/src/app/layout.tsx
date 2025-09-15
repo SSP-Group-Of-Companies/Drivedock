@@ -12,7 +12,7 @@ import GlobalLayoutWrapper from "@/components/shared/GlobalLayoutWrapper";
 import ConditionalBackground from "@/components/shared/ConditionalBackground";
 
 // NEW: read user once and provide globally
-import { currentUser } from "@/lib/auth/authUtils";
+import { currentUser } from "@/lib/utils/auth/authUtils";
 import { AuthProvider } from "./providers/authProvider";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
@@ -26,28 +26,16 @@ export const metadata: Metadata = {
   description: "Digital onboarding for truck drivers at SSP Truck Line",
 };
 
-export default async function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-  headers: () => Promise<Headers>;
-}) {
+export default async function RootLayout({ children }: { children: React.ReactNode; headers: () => Promise<Headers> }) {
   // Decode JWT once per request
   const user = await currentUser();
 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link
-          rel="icon"
-          href="/assets/logos/blackFavicon.png"
-          type="image/png"
-        />
+        <link rel="icon" href="/assets/logos/blackFavicon.png" type="image/png" />
       </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased relative min-h-screen overflow-x-hidden`}
-        suppressHydrationWarning
-      >
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased relative min-h-screen overflow-x-hidden`} suppressHydrationWarning>
         {/* Make user available to the entire app */}
         <AuthProvider user={user}>
           <I18nProvider>

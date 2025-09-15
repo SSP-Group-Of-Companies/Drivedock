@@ -14,7 +14,7 @@ import { EStepPath } from "@/types/onboardingTracker.types";
 import { isValidObjectId } from "mongoose";
 import { parseJsonBody } from "@/lib/utils/reqParser";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
-import { guard } from "@/lib/auth/authUtils";
+import { guard } from "@/lib/utils/auth/authUtils";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {

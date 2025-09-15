@@ -9,7 +9,7 @@ import { EStepPath } from "@/types/onboardingTracker.types";
 import type { DashboardOnboardingItem } from "@/types/adminDashboard.types";
 import { getOnboardingStepFlow } from "@/lib/utils/onboardingUtils";
 import { EDrugTestStatus } from "@/types/drugTest.types";
-import { guard } from "@/lib/auth/authUtils";
+import { guard } from "@/lib/utils/auth/authUtils";
 
 // ---------- helpers ----------
 function toBool(v: string | null): boolean | undefined {
@@ -124,11 +124,7 @@ async function buildBaseFilter(searchParams: URLSearchParams) {
         ? tokens.map((tok) => {
             const rx = new RegExp(escapeRegex(tok), "i");
             return {
-              $or: [
-                { "page1.firstName": rx }, 
-                { "page1.lastName": rx },
-                { "page4.truckDetails.truckUnitNumber": rx }
-              ],
+              $or: [{ "page1.firstName": rx }, { "page1.lastName": rx }, { "page4.truckDetails.truckUnitNumber": rx }],
             };
           })
         : [];

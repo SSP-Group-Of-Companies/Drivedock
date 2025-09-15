@@ -14,7 +14,7 @@ import { canHaveFlatbedTraining } from "@/constants/companies";
 
 import { EStepPath } from "@/types/onboardingTracker.types";
 import type { IFlatbedTraining } from "@/types/flatbedTraining.types";
-import { guard } from "@/lib/auth/authUtils";
+import { guard } from "@/lib/utils/auth/authUtils";
 
 /**
  * GET /admin/onboarding/:id/appraisal/flatbed-training

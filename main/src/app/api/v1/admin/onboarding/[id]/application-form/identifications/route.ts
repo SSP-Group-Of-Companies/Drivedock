@@ -4,7 +4,7 @@ import { isValidObjectId } from "mongoose";
 
 import connectDB from "@/lib/utils/connectDB";
 import { errorResponse, successResponse, AppError } from "@/lib/utils/apiResponse";
-import { guard } from "@/lib/auth/authUtils";
+import { guard } from "@/lib/utils/auth/authUtils";
 
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
@@ -99,8 +99,7 @@ function businessKeysPresentInBody(b: PatchBody) {
 
 /** Business clear intent: ALL five keys present and all empty */
 function isBusinessClearIntent(b: PatchBody) {
-  const allKeysPresent =
-    hasKey(b, "businessName") && hasKey(b, "hstNumber") && hasKey(b, "incorporatePhotos") && hasKey(b, "bankingInfoPhotos") && hasKey(b, "hstPhotos");
+  const allKeysPresent = hasKey(b, "businessName") && hasKey(b, "hstNumber") && hasKey(b, "incorporatePhotos") && hasKey(b, "bankingInfoPhotos") && hasKey(b, "hstPhotos");
 
   if (!allKeysPresent) return false;
 

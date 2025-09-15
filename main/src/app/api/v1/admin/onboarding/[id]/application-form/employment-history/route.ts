@@ -8,7 +8,7 @@ import { buildTrackerContext, advanceProgress, nextResumeExpiry, hasCompletedSte
 import { isValidObjectId } from "mongoose";
 import { NextRequest } from "next/server";
 import { validateEmploymentHistory } from "@/lib/utils/validationUtils";
-import { guard } from "@/lib/auth/authUtils";
+import { guard } from "@/lib/utils/auth/authUtils";
 
 /**
  * PATCH /admin/onboarding/[id]/application-form/employment-history

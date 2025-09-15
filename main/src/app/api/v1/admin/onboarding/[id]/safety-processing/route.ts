@@ -18,7 +18,7 @@ import { IFileAsset, EFileMimeType } from "@/types/shared.types";
 import { EStepPath } from "@/types/onboardingTracker.types";
 import { EDrugTestStatus } from "@/types/drugTest.types";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
-import { guard } from "@/lib/auth/authUtils";
+import { guard } from "@/lib/utils/auth/authUtils";
 
 /**
  * GET /api/v1/admin/onboarding/[id]/safety-processing

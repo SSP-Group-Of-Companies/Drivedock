@@ -4,15 +4,12 @@ import { isValidObjectId } from "mongoose";
 
 import connectDB from "@/lib/utils/connectDB";
 import { errorResponse, successResponse } from "@/lib/utils/apiResponse";
-import { guard } from "@/lib/auth/authUtils";
+import { guard } from "@/lib/utils/auth/authUtils";
 
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import PoliciesConsents from "@/mongoose/models/PoliciesConsents";
 
-import {
-  buildTrackerContext,
-  hasCompletedStep,
-} from "@/lib/utils/onboardingUtils";
+import { buildTrackerContext, hasCompletedStep } from "@/lib/utils/onboardingUtils";
 import { EStepPath } from "@/types/onboardingTracker.types";
 
 /**
@@ -22,10 +19,7 @@ import { EStepPath } from "@/types/onboardingTracker.types";
  * - Returns the policiesConsents doc (signature, signedAt, sendPoliciesByEmail, etc.)
  *   and an onboardingContext (built from lastVisited for UX)
  */
-export const GET = async (
-  _: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) => {
+export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
     await connectDB();
     await guard();

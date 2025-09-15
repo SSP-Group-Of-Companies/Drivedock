@@ -1,7 +1,7 @@
 import connectDB from "@/lib/utils/connectDB";
 import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
-import { guard } from "@/lib/auth/authUtils";
+import { guard } from "@/lib/utils/auth/authUtils";
 import { ETerminationType } from "@/types/onboardingTracker.types";
 
 export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {

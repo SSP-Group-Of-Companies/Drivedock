@@ -1,12 +1,19 @@
 // lib/utils/fetchServerPageData.ts
 import "server-only";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { ensureLeadingSlash, isAbsoluteUrl, trimTrailingSlash } from "./urlHelper";
 import { getCurrentOrigin } from "./urlHelper.server";
 import { isProd } from "@/config/env";
 
 /** Standard result shape for server page data fetches. */
-export type ServerPageDataResult<T> = { data?: T; error?: string };
+export type ServerPageDataResult<T> = {
+  data?: T;
+  error?: string;
+  status?: number;
+  code?: string; // matches API's error "code" (e.g., "SESSION_REQUIRED")
+  meta?: any; // optional metadata from API error
+};
 
 /** Minimal Next.js `next` config typing to avoid importing framework types. */
 type NextFetchConfig = {
@@ -29,8 +36,18 @@ type FetchExtras = {
    * - "never": never attach cookies()
    */
   forwardCookies?: "auto" | "always" | "never";
+
   /** Enable tiny debug logging during auth debugging. */
   debug?: boolean;
+
+  /**
+   * If the API responds with { code: "SESSION_REQUIRED" }, automatically redirect.
+   * Default: true.
+   */
+  redirectOnSessionRequired?: boolean;
+
+  /** Where to redirect when SESSION_REQUIRED is hit. Default: "/" */
+  homeRedirectPath?: string;
 };
 
 function isJsonResponse(res: Response) {
@@ -55,17 +72,20 @@ async function isSameOrigin(absoluteUrl: string): Promise<boolean> {
   }
 }
 
+/** Detect Next.js redirect errors without importing Next internals */
+function isNextRedirectError(err: unknown): boolean {
+  return typeof err === "object" && err !== null && "digest" in err && typeof (err as any).digest === "string" && (err as any).digest.startsWith("NEXT_REDIRECT;");
+}
+
 /**
  * Server-only helper for Server Components.
  * - Accepts absolute URLs, or relative ("/api/...") and resolves to absolute.
- * - Cookie forwarding is configurable; defaults to "auto" which:
- *     * in prod: forwards only when same-origin (Vercel preview protection friendly)
- *     * in dev:  always forwards (covers http://localhost:<port> internal calls)
- * - Safe defaults: Accept JSON, no-store (unless caller sets cache/revalidate), redirect: "manual".
- * - Returns `{ data, error }`, unwrapping `{ data: ... }` if present.
+ * - Cookie forwarding is configurable; defaults to "auto".
+ * - Auto-redirects on { code: "SESSION_REQUIRED" } (defaults to "/").
+ * - Returns `{ data }` on success, or `{ error, status, code, meta }` on failure.
  */
 export async function fetchServerPageData<T = unknown>(inputUrl: string, init: ServerFetchInit & FetchExtras = {}): Promise<ServerPageDataResult<T>> {
-  const { forwardCookies = "auto", debug = false, ...initRest } = init;
+  const { forwardCookies = "auto", debug = false, redirectOnSessionRequired = true, homeRedirectPath = "/", ...initRest } = init;
 
   try {
     const url = await toAbsoluteUrlIfNeeded(inputUrl);
@@ -96,7 +116,6 @@ export async function fetchServerPageData<T = unknown>(inputUrl: string, init: S
       const cookieStr = (await cookies()).toString();
       if (cookieStr) defaultHeaders.set("cookie", cookieStr);
       if (debug) {
-        // lightweight debug so you can see when forwarding occurs
         console.log(
           "[fetchServerPageData] forwarding cookies ->",
           cookieStr.split("; ").map((p) => p.split("=")[0])
@@ -124,17 +143,25 @@ export async function fetchServerPageData<T = unknown>(inputUrl: string, init: S
 
     if (res.status >= 300 && res.status < 400) {
       const location = res.headers.get("location") || "(unknown)";
-      return { error: `Unexpected redirect (${res.status}) to ${location}.` };
+      return { error: `Unexpected redirect (${res.status}) to ${location}.`, status: res.status };
     }
 
     if (!res.ok) {
       if (isJsonResponse(res)) {
         const errJson = (await res.json().catch(() => null)) as any;
         const msg = (errJson && (errJson.message || errJson.error)) || `Request failed with ${res.status}`;
-        return { error: msg };
+        const code = errJson?.code as string | undefined;
+        const meta = errJson?.meta;
+
+        // 🔐 unified handling for session loss
+        if (code === "SESSION_REQUIRED" && redirectOnSessionRequired) {
+          redirect(homeRedirectPath); // throws; let it bubble
+        }
+
+        return { error: msg, status: res.status, code, meta };
       } else {
         await res.text().catch(() => "");
-        return { error: `Request failed with ${res.status}. Received non-JSON response.` };
+        return { error: `Request failed with ${res.status}. Received non-JSON response.`, status: res.status };
       }
     }
 
@@ -146,10 +173,11 @@ export async function fetchServerPageData<T = unknown>(inputUrl: string, init: S
     const json = (await res.json().catch(() => null)) as any;
     if (json == null) return { error: "Empty JSON response." };
 
-
     const payload = (Object.prototype.hasOwnProperty.call(json, "data") ? json.data : json) as T;
     return { data: payload };
   } catch (err) {
+    // Let Next.js handle redirect() exceptions
+    if (isNextRedirectError(err)) throw err;
     console.error("[fetchServerPageData] Unexpected error:", err);
     return { error: "Unexpected server error. Please try again later." };
   }

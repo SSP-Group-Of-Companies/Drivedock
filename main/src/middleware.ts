@@ -1,41 +1,89 @@
-// middleware.ts
+// src/middleware.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { AUTH_COOKIE_NAME, DISABLE_AUTH, NEXTAUTH_SECRET, NEXT_PUBLIC_PORTAL_BASE_URL } from "./config/env";
-import { resolveBaseUrl, resolveBaseUrlFromRequest } from "./lib/utils/urlHelper.server";
 
+/**
+ * Middleware guidelines:
+ * - Keep it LIGHT: no DB calls. Use it for UX guards only.
+ * - API routes remain the source of truth (requireOnboardingSession).
+ * - Forward cookies when fetching internal APIs from middleware.
+ */
 export async function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl;
+  const { pathname, origin } = req.nextUrl;
 
-  // Onboarding flow: hard redirect to completed page when status.completed = true
-  // This prevents a brief flash of in-progress pages on reload
+  // ------------------------------------------------------------
+  // Onboarding pages
+  // ------------------------------------------------------------
   if (pathname.startsWith("/onboarding/")) {
+    // Allow resume pages without a session so drivers can obtain one
+    if (pathname.startsWith("/onboarding/resume")) {
+      return NextResponse.next();
+    }
+
+    // Parse /onboarding/:id/... structure
+    const segments = pathname.split("/").filter(Boolean); // ["onboarding", ":id", maybe "subpath"...]
+    const trackerId = segments[1];
+    const subPath = segments[2] ?? "";
+
+    // If path doesn't actually include an :id (e.g., /onboarding), let it through
+    if (!trackerId) return NextResponse.next();
+
+    // 1) DB-backed session check (no page flash)
     try {
-      // Extract trackerId from /onboarding/:id/... path
-      const parts = pathname.split("/");
-      const trackerId = parts[2];
-      const subPath = parts[3] ?? "";
+      const apiUrl = `${origin}/api/v1/onboarding/${trackerId}/session-check`;
+      const sessionRes = await fetch(apiUrl, {
+        cache: "no-store",
+        headers: { cookie: req.headers.get("cookie") ?? "" }, // forward cookies
+      });
 
-      // Skip redirect for the completed page itself
-      if (trackerId && subPath !== "completed") {
-        const base = resolveBaseUrlFromRequest(req);
-        const url = `${base}/api/v1/onboarding/${trackerId}/completion-status`;
+      if (!sessionRes.ok) {
+        // optional: inspect JSON for code === "SESSION_REQUIRED"
+        // const json = await sessionRes.json().catch(() => null);
+        // if (json?.code === "SESSION_REQUIRED") { ... }
 
-        // Use no-store to avoid any caching between edge and origin
-        const res = await fetch(url, { cache: "no-store" });
+        const url = req.nextUrl.clone();
+        url.pathname = "/";
+        return NextResponse.redirect(url);
+      }
+    } catch {
+      // Fail closed to be strict; if you prefer fail-open, return NextResponse.next()
+      const url = req.nextUrl.clone();
+      url.pathname = "/";
+      return NextResponse.redirect(url);
+    }
+
+    // 2) Avoid flash: if already completed, hard redirect to the completed page
+    // Only run this check when not already on /completed
+    if (subPath !== "completed") {
+      try {
+        // IMPORTANT: forward cookies so the API can see the session
+        const apiUrl = `${origin}/api/v1/onboarding/${trackerId}/completion-status`;
+        const res = await fetch(apiUrl, {
+          cache: "no-store",
+          headers: {
+            // Forward the cookie header from the request; required for auth/session APIs
+            cookie: req.headers.get("cookie") ?? "",
+          },
+        });
+
+        // Convention: completion-status returns 200 OK when completed
         if (res.ok) {
           return NextResponse.redirect(new URL(`/onboarding/${trackerId}/completed`, req.url));
         }
+      } catch {
+        // Fail open — let the page render if the check fails for any reason
       }
-    } catch {
-      // Fail open – allow normal rendering if check errors
     }
-    // Allow onboarding routes to continue without auth
+
+    // Allow onboarding routes to continue (API routes enforce real validity)
     return NextResponse.next();
   }
 
-  // Dashboard: auth guard
+  // ------------------------------------------------------------
+  // Dashboard: auth guard (admin side)
+  // ------------------------------------------------------------
   if (!DISABLE_AUTH && pathname.startsWith("/dashboard")) {
     const token = await getToken({
       req: req as any,
@@ -44,8 +92,7 @@ export async function middleware(req: NextRequest) {
     });
 
     if (!token) {
-      const base = await resolveBaseUrl();
-      const callbackUrl = encodeURIComponent(`${base}/dashboard/home`);
+      const callbackUrl = encodeURIComponent(`${origin}/dashboard/home`);
       return NextResponse.redirect(`${NEXT_PUBLIC_PORTAL_BASE_URL}/login?callbackUrl=${callbackUrl}`);
     }
   }
@@ -53,7 +100,6 @@ export async function middleware(req: NextRequest) {
   return NextResponse.next();
 }
 
-// Apply to all routes you want guarded
 export const config = {
   matcher: ["/dashboard/:path*", "/onboarding/:path*"],
 };

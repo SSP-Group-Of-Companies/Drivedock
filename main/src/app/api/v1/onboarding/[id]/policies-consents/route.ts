@@ -1,7 +1,6 @@
 import { errorResponse, successResponse } from "@/lib/utils/apiResponse";
 import connectDB from "@/lib/utils/connectDB";
 import PoliciesConsents from "@/mongoose/models/PoliciesConsents";
-import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import { deleteS3Objects, finalizeAsset } from "@/lib/utils/s3Upload";
 import { EStepPath } from "@/types/onboardingTracker.types";
 import { isValidObjectId } from "mongoose";
@@ -9,10 +8,12 @@ import { NextRequest } from "next/server";
 import { IFileAsset } from "@/types/shared.types";
 import { IPoliciesConsents } from "@/types/policiesConsents.types";
 import { parseJsonBody } from "@/lib/utils/reqParser";
-import { advanceProgress, buildTrackerContext, hasReachedStep, nextResumeExpiry, onboardingExpired } from "@/lib/utils/onboardingUtils";
+import { advanceProgress, buildTrackerContext, hasReachedStep, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
 import { getLocationFromCoordinates } from "@/lib/utils/geolocationUtils";
 import { S3_SUBMISSIONS_FOLDER, S3_TEMP_FOLDER } from "@/constants/aws";
 import { ES3Folder } from "@/types/aws.types";
+import { requireOnboardingSession } from "@/lib/utils/auth/onboardingSession";
+import { attachCookies } from "@/lib/utils/auth/attachCookie";
 
 type PatchBody = IPoliciesConsents & {
   location?: { latitude: number; longitude: number } | null;
@@ -24,10 +25,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const { id } = await params;
     if (!isValidObjectId(id)) return errorResponse(400, "Invalid onboarding ID");
 
-    const onboardingDoc = await OnboardingTracker.findById(id);
-    if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
-    if (onboardingDoc.status.completed === true) return errorResponse(401, "onboarding process already completed");
-    if (onboardingExpired(onboardingDoc)) return errorResponse(400, "Onboarding session expired");
+    const { tracker: onboardingDoc, refreshCookie } = await requireOnboardingSession(id);
 
     if (!hasReachedStep(onboardingDoc, EStepPath.POLICIES_CONSENTS)) return errorResponse(400, "Please complete previous steps first");
 
@@ -127,10 +125,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();
     await onboardingDoc.save();
 
-    return successResponse(200, "Policies & Consents updated", {
+    const res = successResponse(200, "Policies & Consents updated", {
       onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.POLICIES_CONSENTS),
       policiesConsents: updatedDoc.toObject(),
     });
+
+    return attachCookies(res, refreshCookie);
   } catch (error) {
     console.error("PATCH /policies-consents error:", error);
     return errorResponse(error);
@@ -146,10 +146,7 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
       return errorResponse(400, "not a valid id");
     }
 
-    const onboardingDoc = await OnboardingTracker.findById(id);
-    if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
-    if (onboardingDoc.status.completed === true) return errorResponse(401, "onboarding process already completed");
-    if (onboardingExpired(onboardingDoc)) return errorResponse(400, "Onboarding session expired");
+    const { tracker: onboardingDoc, refreshCookie } = await requireOnboardingSession(id);
 
     const policiesId = onboardingDoc.forms?.policiesConsents;
     let policiesDoc = null;
@@ -161,10 +158,12 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
       return errorResponse(403, "Please complete previous steps first");
     }
 
-    return successResponse(200, "Policies & Consents data retrieved", {
+    const res = successResponse(200, "Policies & Consents data retrieved", {
       onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.POLICIES_CONSENTS),
       policiesConsents: policiesDoc ?? {},
     });
+
+    return attachCookies(res, refreshCookie);
   } catch (error) {
     return errorResponse(error);
   }

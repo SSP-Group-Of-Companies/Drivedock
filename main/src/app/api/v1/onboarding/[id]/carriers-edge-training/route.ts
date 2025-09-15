@@ -3,13 +3,14 @@ import { NextRequest } from "next/server";
 import { isValidObjectId } from "mongoose";
 
 import connectDB from "@/lib/utils/connectDB";
-import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import CarriersEdgeTraining from "@/mongoose/models/CarriersEdgeTraining";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
 
 import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
-import { buildTrackerContext, hasReachedStep, onboardingExpired } from "@/lib/utils/onboardingUtils";
+import { buildTrackerContext, hasReachedStep } from "@/lib/utils/onboardingUtils";
 import { EStepPath } from "@/types/onboardingTracker.types";
+import { requireOnboardingSession } from "@/lib/utils/auth/onboardingSession";
+import { attachCookies } from "@/lib/utils/auth/attachCookie";
 
 /**
  * GET /api/v1/onboarding/[id]/carriers-edge-training  (Driver-side)
@@ -33,10 +34,7 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
       return errorResponse(400, "Not a valid onboarding tracker ID");
     }
 
-    const onboardingDoc = await OnboardingTracker.findById(onboardingId);
-    if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
-    if (onboardingDoc.status.completed === true) return errorResponse(401, "onboarding process already completed");
-    if (onboardingExpired(onboardingDoc)) return errorResponse(400, "Onboarding session expired");
+    const { tracker: onboardingDoc, refreshCookie } = await requireOnboardingSession(onboardingId);
 
     if (!hasReachedStep(onboardingDoc, EStepPath.CARRIERS_EDGE_TRAINING)) {
       return errorResponse(403, "Please complete previous steps first");
@@ -90,10 +88,12 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
       },
     };
 
-    return successResponse(200, "CarriersEdge training data retrieved", {
+    const res = successResponse(200, "CarriersEdge training data retrieved", {
       onboardingContext: enrichedContext,
       carriersEdgeTraining: ceDoc?.toObject() ?? {},
     });
+
+    return attachCookies(res, refreshCookie);
   } catch (error) {
     return errorResponse(error);
   }

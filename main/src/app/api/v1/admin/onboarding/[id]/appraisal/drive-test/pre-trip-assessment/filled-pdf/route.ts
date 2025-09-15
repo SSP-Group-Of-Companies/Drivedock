@@ -20,7 +20,7 @@ import { loadImageBytesFromAsset } from "@/lib/utils/s3Upload";
 
 import { EPreTripFillableFormFields as F } from "@/lib/pdf/drive-test/mappers/pre-trip.types";
 import type { IDriveTest } from "@/types/driveTest.types";
-import { guard } from "@/lib/auth/authUtils";
+import { guard } from "@/lib/utils/auth/authUtils";
 
 export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {

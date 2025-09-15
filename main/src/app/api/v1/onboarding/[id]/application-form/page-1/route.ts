@@ -6,7 +6,7 @@ import connectDB from "@/lib/utils/connectDB";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import { isValidSIN, isValidPhoneNumber, isValidEmail, isValidDOB, isValidSINIssueDate, isValidGender } from "@/lib/utils/validationUtils";
 import { hasRecentAddressCoverage } from "@/lib/utils/hasMinimumAddressDuration";
-import { advanceProgress, buildTrackerContext, nextResumeExpiry, onboardingExpired } from "@/lib/utils/onboardingUtils";
+import { advanceProgress, buildTrackerContext, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
 import { deleteS3Objects, finalizeAsset, buildFinalDest } from "@/lib/utils/s3Upload";
 import { ES3Folder } from "@/types/aws.types";
 import { S3_TEMP_FOLDER } from "@/constants/aws";
@@ -15,6 +15,8 @@ import { EStepPath } from "@/types/onboardingTracker.types";
 import { isValidObjectId } from "mongoose";
 import { parseJsonBody } from "@/lib/utils/reqParser";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
+import { requireOnboardingSession } from "@/lib/utils/auth/onboardingSession";
+import { attachCookies } from "@/lib/utils/auth/attachCookie";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -25,10 +27,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return errorResponse(400, "Invalid onboarding ID");
     }
 
-    const onboardingDoc = await OnboardingTracker.findById(onboardingId);
-    if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
-    if (onboardingDoc.status.completed === true) return errorResponse(401, "onboarding process already completed");
-    if (onboardingExpired(onboardingDoc)) return errorResponse(400, "Onboarding session expired");
+    const { tracker: onboardingDoc, refreshCookie } = await requireOnboardingSession(onboardingId);
 
     const oldSin = decryptString(onboardingDoc.sinEncrypted);
 
@@ -167,10 +166,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();
     await onboardingDoc.save();
 
-    return successResponse(200, "ApplicationForm Page 1 updated", {
+    const res = successResponse(200, "ApplicationForm Page 1 updated", {
       onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_1),
       page1: appFormDoc.page1,
     });
+
+    return attachCookies(res, refreshCookie);
   } catch (error) {
     console.error("PATCH /application-form/page-1 error:", error);
     return errorResponse(error);
@@ -187,14 +188,7 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
       return errorResponse(400, "Not a valid onboarding tracker ID");
     }
 
-    // Fetch onboarding tracker
-    const onboardingDoc = await OnboardingTracker.findById(onboardingId);
-    if (!onboardingDoc || onboardingDoc.terminated) {
-      return errorResponse(404, "Onboarding document not found");
-    }
-
-    if (onboardingDoc.status.completed === true) return errorResponse(401, "onboarding process already completed");
-    if (onboardingExpired(onboardingDoc)) return errorResponse(400, "Onboarding session expired");
+    const { tracker: onboardingDoc, refreshCookie } = await requireOnboardingSession(onboardingId);
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) {
@@ -210,10 +204,12 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
       return errorResponse(404, "Page 1 of the application form not found");
     }
 
-    return successResponse(200, "Page 1 data retrieved", {
+    const res = successResponse(200, "Page 1 data retrieved", {
       onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_1),
       page1: appFormDoc.page1,
     });
+
+    return attachCookies(res, refreshCookie);
   } catch (error) {
     return errorResponse(error);
   }

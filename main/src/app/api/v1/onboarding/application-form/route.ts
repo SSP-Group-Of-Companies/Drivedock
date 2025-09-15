@@ -17,6 +17,8 @@ import { ES3Folder } from "@/types/aws.types";
 import { ECountryCode, ELicenseType } from "@/types/shared.types";
 import { isValidEmail, isValidPhoneNumber, isValidDOB, isValidSIN, isValidSINIssueDate, isValidGender } from "@/lib/utils/validationUtils";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
+import { createOnboardingSessionAndCookie } from "@/lib/utils/auth/onboardingSession";
+import { attachCookies } from "@/lib/utils/auth/attachCookie";
 
 export async function POST(req: NextRequest) {
   await connectDB();
@@ -144,11 +146,16 @@ export async function POST(req: NextRequest) {
       { new: true }
     );
 
-    return successResponse(200, "Onboarding created successfully", {
+    // Create (or reuse) a 6h session and issue cookie
+    const { setCookie } = await createOnboardingSessionAndCookie(String(onboardingDoc._id));
+
+    const res = successResponse(200, "Onboarding created successfully", {
       onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_1),
       preQualifications: preQualDoc.toObject(),
       applicationForm: updatedForm?.toObject({ virtuals: true }),
     });
+
+    return attachCookies(res, setCookie);
   } catch (error) {
     // Cleanup
     if (appFormDoc?._id) await ApplicationForm.findByIdAndDelete(appFormDoc._id);

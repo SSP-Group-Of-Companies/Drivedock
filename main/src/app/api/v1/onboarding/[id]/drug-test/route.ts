@@ -2,7 +2,6 @@
 import { NextRequest } from "next/server";
 import { errorResponse, successResponse } from "@/lib/utils/apiResponse";
 import connectDB from "@/lib/utils/connectDB";
-import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import DrugTest from "@/mongoose/models/DrugTest";
 import { IFileAsset } from "@/types/shared.types";
 import { isValidObjectId } from "mongoose";
@@ -10,9 +9,11 @@ import { parseJsonBody } from "@/lib/utils/reqParser";
 import { deleteS3Objects, finalizeAsset } from "@/lib/utils/s3Upload";
 import { S3_SUBMISSIONS_FOLDER, S3_TEMP_FOLDER } from "@/constants/aws";
 import { ES3Folder } from "@/types/aws.types";
-import { buildTrackerContext, hasReachedStep, nextResumeExpiry, onboardingExpired } from "@/lib/utils/onboardingUtils";
+import { buildTrackerContext, hasReachedStep, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
 import { EStepPath } from "@/types/onboardingTracker.types";
 import { EDrugTestStatus } from "@/types/drugTest.types";
+import { requireOnboardingSession } from "@/lib/utils/auth/onboardingSession";
+import { attachCookies } from "@/lib/utils/auth/attachCookie";
 
 /** Payload: { documents: IFileAsset[] } */
 type PatchBody = { driverDocuments: IFileAsset[] };
@@ -24,10 +25,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     const { id: onboardingId } = await params;
     if (!isValidObjectId(onboardingId)) return errorResponse(400, "Invalid onboarding ID");
 
-    const onboardingDoc = await OnboardingTracker.findById(onboardingId);
-    if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
-    if (onboardingDoc.status.completed === true) return errorResponse(401, "onboarding process already completed");
-    if (onboardingExpired(onboardingDoc)) return errorResponse(400, "Onboarding session expired");
+    const { tracker: onboardingDoc, refreshCookie } = await requireOnboardingSession(onboardingId);
 
     if (!hasReachedStep(onboardingDoc, EStepPath.DRUG_TEST)) {
       return errorResponse(400, "Please complete previous steps first");
@@ -99,10 +97,12 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();
     await onboardingDoc.save();
 
-    return successResponse(200, "Drug test documents updated", {
+    const res = successResponse(200, "Drug test documents updated", {
       onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.DRUG_TEST),
       drugTest: drugTestDoc.toObject(), // return the updated doc directly
     });
+
+    return attachCookies(res, refreshCookie);
   } catch (err) {
     return errorResponse(err);
   }
@@ -115,10 +115,7 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
     const { id: onboardingId } = await params;
     if (!isValidObjectId(onboardingId)) return errorResponse(400, "Not a valid onboarding tracker ID");
 
-    const onboardingDoc = await OnboardingTracker.findById(onboardingId);
-    if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
-    if (onboardingDoc.status.completed === true) return errorResponse(401, "onboarding process already completed");
-    if (onboardingExpired(onboardingDoc)) return errorResponse(400, "Onboarding session expired");
+    const { tracker: onboardingDoc, refreshCookie } = await requireOnboardingSession(onboardingId);
 
     if (!hasReachedStep(onboardingDoc, EStepPath.DRUG_TEST)) {
       return errorResponse(403, "Please complete previous steps first");
@@ -127,10 +124,12 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
     const drugTestId = onboardingDoc.forms?.drugTest as any | undefined;
     const drugTestDoc = drugTestId ? await DrugTest.findById(drugTestId) : null;
 
-    return successResponse(200, "Drug test data retrieved", {
+    const res = successResponse(200, "Drug test data retrieved", {
       onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.DRUG_TEST),
       drugTest: drugTestDoc?.toObject() ?? {}, // return doc directly (or null if not created yet)
     });
+
+    return attachCookies(res, refreshCookie);
   } catch (error) {
     return errorResponse(error);
   }

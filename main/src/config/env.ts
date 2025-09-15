@@ -13,3 +13,5 @@ export const NEXT_PUBLIC_PORTAL_BASE_URL = process.env.NEXT_PUBLIC_PORTAL_BASE_U
 export const isProd = process.env.NODE_ENV === "production";
 export const PORT = process.env.PORT! ?? 3000;
 export const DISABLE_AUTH = process.env.DISABLE_AUTH === "true";
+export const ONBOARDING_SESSION_COOKIE_NAME = process.env.ONBOARDING_SESSION_COOKIE_NAME || "SSP_ONBOARDING_SESSION";
+export const ONBOARDING_SESSION_TTL_SECONDS = parseInt(process.env.ONBOARDING_SESSION_TTL_SECONDS || "21600", 10); // default 6 hours

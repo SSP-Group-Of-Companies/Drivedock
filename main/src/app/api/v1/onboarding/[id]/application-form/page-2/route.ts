@@ -1,13 +1,14 @@
 import { errorResponse, successResponse } from "@/lib/utils/apiResponse";
 import connectDB from "@/lib/utils/connectDB";
-import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
 import { IApplicationFormPage2 } from "@/types/applicationForm.types";
 import { EStepPath } from "@/types/onboardingTracker.types";
-import { buildTrackerContext, onboardingExpired, hasReachedStep, advanceProgress, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
+import { buildTrackerContext, hasReachedStep, advanceProgress, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
 import { isValidObjectId } from "mongoose";
 import { NextRequest } from "next/server";
 import { validateEmploymentHistory } from "@/lib/utils/validationUtils";
+import { requireOnboardingSession } from "@/lib/utils/auth/onboardingSession";
+import { attachCookies } from "@/lib/utils/auth/attachCookie";
 
 /**
  * PATCH /page-2
@@ -28,10 +29,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     const validationError = validateEmploymentHistory(body.employments);
     if (validationError) return errorResponse(400, validationError);
 
-    const onboardingDoc = await OnboardingTracker.findById(id);
-    if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
-    if (onboardingExpired(onboardingDoc)) return errorResponse(400, "Onboarding session expired");
-    if (onboardingDoc.status.completed === true) return errorResponse(401, "onboarding process already completed");
+    const { tracker: onboardingDoc, refreshCookie } = await requireOnboardingSession(id);
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) return errorResponse(404, "ApplicationForm not linked");
@@ -61,10 +59,12 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
     await onboardingDoc.save();
 
-    return successResponse(200, "ApplicationForm Page 2 updated", {
+    const res = successResponse(200, "ApplicationForm Page 2 updated", {
       onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_2),
       page2: appFormDoc.page2,
     });
+
+    return attachCookies(res, refreshCookie);
   } catch (error) {
     return errorResponse(error);
   }
@@ -83,10 +83,7 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
     const { id: onboardingId } = await params;
     if (!isValidObjectId(onboardingId)) return errorResponse(400, "Not a valid onboarding tracker ID");
 
-    const onboardingDoc = await OnboardingTracker.findById(onboardingId);
-    if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
-    if (onboardingDoc.status.completed === true) return errorResponse(401, "onboarding process already completed");
-    if (onboardingExpired(onboardingDoc)) return errorResponse(400, "Onboarding session expired");
+    const { tracker: onboardingDoc, refreshCookie } = await requireOnboardingSession(onboardingId);
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) return errorResponse(404, "ApplicationForm not linked");
@@ -99,11 +96,13 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
       return errorResponse(403, "Please complete previous steps first");
     }
 
-    return successResponse(200, "Page 2 data retrieved", {
+    const res = successResponse(200, "Page 2 data retrieved", {
       // For page rendering/resume, build context from lastVisited
       onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_2),
       page2: appFormDoc.page2,
     });
+
+    return attachCookies(res, refreshCookie);
   } catch (error) {
     return errorResponse(error);
   }
