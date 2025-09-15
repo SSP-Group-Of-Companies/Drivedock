@@ -351,6 +351,13 @@
           "fastCard": {
             "title": "Carte FAST",
             "disclaimer": "Cette section est optionnelle. Toutefois, si vous fournissez des informations sur la carte FAST, vous devez remplir tous les champs et téléverser les photos du recto et du verso."
+          },
+          "eligibilityDocs": {
+            "title": "Documents de santé / d'identification",
+            "description": "Veuillez fournir des photos claires et lisibles des documents de santé et d'identité requis listés ci-dessous. Tous les détails doivent être visibles (recto et verso le cas échéant). Si un document manque ou n'est pas clair, votre candidature peut être retardée."
+          },
+          "workAuthorization": {
+            "title": "Preuve d'autorisation de travail"
           }
         },
         "fields": {
@@ -374,9 +381,56 @@
             "ok": "OK"
           },
           "fastNumber": "Numéro de carte FAST",
-          "fastExpiry": "Date d’expiration",
+          "fastExpiry": "Date d'expiration",
           "fastFront": "Photo recto",
-          "fastBack": "Photo verso"
+          "fastBack": "Photo verso",
+          "uploadFront": "Téléverser recto",
+          "uploadBack": "Téléverser verso",
+          
+          "healthCard": "Carte de santé",
+          "healthCardPhotos": "Carte de santé (recto et verso)",
+          "healthCardDescription": "Téléversez des photos claires du recto et du verso de votre carte de santé (p. ex., carte de santé de l'Ontario).",
+          
+          "passportTypeQuestion": "Quel type de passeport avez-vous ?",
+          "selectPassportType": "Sélectionner le type de passeport",
+          "passportType": {
+            "canadian": "Canadien",
+            "others": "Autres"
+          },
+          
+          "workAuthorizationTypeQuestion": "Quel type d'autorisation de travail avez-vous ?",
+          "selectWorkAuthorizationType": "Sélectionner le type d'autorisation de travail",
+          "workAuthorizationType": {
+            "local": "Local (au Canada)",
+            "crossBorder": "Transfrontalier (Canada-États-Unis)"
+          },
+          
+          "passport": "Passeport",
+          "passportPhotos": "Passeport (page de données et verso)",
+          "passportDescription": "Téléversez la page de données du passeport (avec votre photo) et la page de couverture arrière (p. ex., passeport canadien ou étranger).",
+          "passportDescriptionUS": "Téléversez la page de données du passeport (avec votre photo) et la page de couverture arrière (p. ex., passeport américain).",
+          
+          "usVisa": "Visa américain",
+          "usVisaPhotos": "Visa américain",
+          "usVisaDescription": "Téléversez des photos claires de votre visa américain valide (p. ex., pages de visa de visiteur, de travail ou d'études).",
+          
+          "prPermitCitizenship": "Carte de résident permanent / Permis de travail / Citoyenneté",
+          "prPermitCitizenshipPhotos": "Résident permanent / Permis / Citoyenneté",
+          "prPermitCitizenshipDescription": "Téléversez des photos claires de votre carte de résident permanent, permis de travail/études ou document de citoyenneté (p. ex., recto et verso de la carte de RP, lettre de permis de travail).",
+          
+          "greenCardCitizenship": "Carte verte / Citoyenneté",
+          "greenCardCitizenshipDescription": "Téléversez des photos claires de votre carte de résident permanent ou document de citoyenneté américaine (p. ex., recto et verso de la carte de RP, certificat de naturalisation).",
+          
+          "medicalCertification": "Certification médicale",
+          "medicalCertificationPhotos": "Certification médicale",
+          "medicalCertificationDescription": "Téléversez des photos claires de votre certificat médical DOT valide (recto et verso le cas échéant).",
+          
+          "oneOfTheseRequired": "Un de ceux-ci requis",
+          "optional": "Optionnel",
+          
+          "incorporatePhotosDescription": "Téléversez des photos claires de vos documents d'incorporation d'entreprise (p. ex., articles d'incorporation, certificat d'incorporation).",
+          "hstPhotosDescription": "Téléversez une photo de votre document d'enregistrement du numéro d'entreprise TVH/TPS (p. ex., lettre d'enregistrement de l'ARC).",
+          "bankingInfoPhotosDescription": "Téléversez une photo d'un chèque annulé ou d'un formulaire de dépôt direct de votre banque (doit clairement montrer le numéro de compte et les détails de l'institution)."
         },
         "placeholders": {
           "optionalDetails": "Fournissez des précisions..."

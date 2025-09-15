@@ -168,12 +168,12 @@ export default function FastCardSection({ isCanadian }: { isCanadian: boolean })
             ) : (
               <label className="cursor-pointer flex flex-col items-center justify-center py-6 px-4 mt-1 w-full text-sm text-gray-600 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 hover:border-gray-400">
                 <Camera className="w-6 h-6 text-gray-400 mb-1" />
-                <span className="text-gray-400 text-xs">Upload Front</span>
+                <span className="text-gray-400 text-xs">{t("form.step2.page4.fields.uploadFront", "Upload Front")}</span>
                 <input type="file" accept="image/*" className="hidden" onChange={(e) => uploadSide(e.target.files?.[0] || null, "front")} />
               </label>
             )}
 
-            {frontStatus === "uploading" && <p className="text-yellow-600 text-xs mt-1">Uploading...</p>}
+            {frontStatus === "uploading" && <p className="text-yellow-600 text-xs mt-1">{t("form.step3.status.uploading", "Uploading...")}</p>}
             {frontStatus === "error" && <p className="text-red-500 text-xs mt-1">{frontMsg}</p>}
             {frontStatus === "idle" && frontMsg && <p className="text-green-600 text-xs mt-1">{frontMsg}</p>}
 
@@ -204,12 +204,12 @@ export default function FastCardSection({ isCanadian }: { isCanadian: boolean })
             ) : (
               <label className="cursor-pointer flex flex-col items-center justify-center py-6 px-4 mt-1 w-full text-sm text-gray-600 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 hover:border-gray-400">
                 <Camera className="w-6 h-6 text-gray-400 mb-1" />
-                <span className="text-gray-400 text-xs">Upload Back</span>
+                <span className="text-gray-400 text-xs">{t("form.step2.page4.fields.uploadBack", "Upload Back")}</span>
                 <input type="file" accept="image/*" className="hidden" onChange={(e) => uploadSide(e.target.files?.[0] || null, "back")} />
               </label>
             )}
 
-            {backStatus === "uploading" && <p className="text-yellow-600 text-xs mt-1">Uploading...</p>}
+            {backStatus === "uploading" && <p className="text-yellow-600 text-xs mt-1">{t("form.step3.status.uploading", "Uploading...")}</p>}
             {backStatus === "error" && <p className="text-red-500 text-xs mt-1">{backMsg}</p>}
             {backStatus === "idle" && backMsg && <p className="text-green-600 text-xs mt-1">{backMsg}</p>}
 

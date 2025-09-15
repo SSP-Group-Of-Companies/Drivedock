@@ -362,6 +362,13 @@
           "fastCard": {
             "title": "FAST Card",
             "disclaimer": "This section is optional. However, if you provide any FAST Card information, you must complete all fields and upload both front and back photos."
+          },
+          "eligibilityDocs": {
+            "title": "Health / Identification Documents",
+            "description": "Please provide clear and readable photos of the required health and identity documents listed below. All details must be visible (front and back where applicable). If any document is missing or unclear, your application may be delayed."
+          },
+          "workAuthorization": {
+            "title": "Proof of Work Authorization"
           }
         },
         "fields": {
@@ -387,7 +394,54 @@
           "fastNumber": "FAST Card Number",
           "fastExpiry": "Expiry Date",
           "fastFront": "Photo Front",
-          "fastBack": "Photo Back"
+          "fastBack": "Photo Back",
+          "uploadFront": "Upload Front",
+          "uploadBack": "Upload Back",
+          
+          "healthCard": "Health Card",
+          "healthCardPhotos": "Health Card (Front & Back)",
+          "healthCardDescription": "Upload clear photos of both the front and back of your health card (e.g., Ontario Health Card).",
+          
+          "passportTypeQuestion": "What type of passport do you have?",
+          "selectPassportType": "Select passport type",
+          "passportType": {
+            "canadian": "Canadian",
+            "others": "Others"
+          },
+          
+          "workAuthorizationTypeQuestion": "What type of work authorization do you have?",
+          "selectWorkAuthorizationType": "Select work authorization type",
+          "workAuthorizationType": {
+            "local": "Local (within Canada)",
+            "crossBorder": "Cross-border (Canada-US)"
+          },
+          
+          "passport": "Passport",
+          "passportPhotos": "Passport (Bio & Back)",
+          "passportDescription": "Upload the passport bio/data page (with your photo) and the back cover page (e.g., Canadian or foreign passport).",
+          "passportDescriptionUS": "Upload the passport bio/data page (with your photo) and the back cover page (e.g., US passport).",
+          
+          "usVisa": "US Visa",
+          "usVisaPhotos": "US Visa",
+          "usVisaDescription": "Upload clear photos of your valid US visa (e.g., visitor, work, or study visa pages).",
+          
+          "prPermitCitizenship": "PR Card/ Work Permit / Citizenship",
+          "prPermitCitizenshipPhotos": "PR / Permit / Citizenship",
+          "prPermitCitizenshipDescription": "Upload clear photos of your Permanent Resident card, Work/Study Permit, or Citizenship document (e.g., PR card front & back, Work Permit letter).",
+          
+          "greenCardCitizenship": "Green Card / Citizenship",
+          "greenCardCitizenshipDescription": "Upload clear photos of your Permanent Resident card or US Citizenship document (e.g., PR card front & back, Certificate of Naturalization).",
+          
+          "medicalCertification": "Medical Certification",
+          "medicalCertificationPhotos": "Medical Certification",
+          "medicalCertificationDescription": "Upload clear photos of your valid DOT Medical Certificate (front and back if applicable).",
+          
+          "oneOfTheseRequired": "One of these required",
+          "optional": "Optional",
+          
+          "incorporatePhotosDescription": "Upload clear photos of your business incorporation documents (e.g., Articles of Incorporation, Certificate of Incorporation).",
+          "hstPhotosDescription": "Upload a photo of your HST/GST business number registration document (e.g., CRA registration letter).",
+          "bankingInfoPhotosDescription": "Upload a photo of a void cheque or direct deposit form from your bank (must clearly show account number and institution details)."
         },
         "placeholders": {
           "optionalDetails": "Provide details..."

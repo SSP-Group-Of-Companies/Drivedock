@@ -90,7 +90,7 @@ export default function BusinessSection() {
           <OnboardingPhotoGroup
             name="incorporatePhotos"
             label={t("form.step2.page4.fields.incorporatePhotos", "Incorporation Photos")}
-            description="Upload clear photos of your business incorporation documents (e.g., Articles of Incorporation, Certificate of Incorporation)."
+            description={t("form.step2.page4.fields.incorporatePhotosDescription", "Upload clear photos of your business incorporation documents (e.g., Articles of Incorporation, Certificate of Incorporation).")}
             folder={ES3Folder.INCORPORATION_PHOTOS}
             maxPhotos={10}
           />
@@ -100,7 +100,7 @@ export default function BusinessSection() {
           <OnboardingPhotoGroup
             name="hstPhotos"
             label={t("form.step2.page4.fields.hstPhotos", "HST Business Number Photos")}
-            description="Upload a photo of your HST/GST business number registration document (e.g., CRA registration letter)."
+            description={t("form.step2.page4.fields.hstPhotosDescription", "Upload a photo of your HST/GST business number registration document (e.g., CRA registration letter).")}
             folder={ES3Folder.HST_PHOTOS}
             maxPhotos={2}
           />
@@ -110,7 +110,7 @@ export default function BusinessSection() {
           <OnboardingPhotoGroup
             name="bankingInfoPhotos"
             label={t("form.step2.page4.fields.bankingInfoPhotos", "Banking Info Photos")}
-            description="Upload a photo of a void cheque or direct deposit form from your bank (must clearly show account number and institution details)."
+            description={t("form.step2.page4.fields.bankingInfoPhotosDescription", "Upload a photo of a void cheque or direct deposit form from your bank (must clearly show account number and institution details).")}
             folder={ES3Folder.BANKING_INFO_PHOTOS}
             maxPhotos={2}
           />

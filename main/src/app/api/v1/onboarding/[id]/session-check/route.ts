@@ -12,7 +12,10 @@ import { isValidObjectId } from "mongoose";
  * - On failure, returns your unified error shape (e.g., code: "SESSION_REQUIRED")
  *   and clears the cookie via errorResponse/AppError meta.
  */
-export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+export const GET = async (
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) => {
   try {
     await connectDB();
 
@@ -27,7 +30,6 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
     const res = successResponse(200, "OK");
     return attachCookies(res, refreshCookie); // if your util accepts arrays, pass ...refreshCookies
   } catch (err) {
-    console.log(err);
     return errorResponse(err);
   }
 };

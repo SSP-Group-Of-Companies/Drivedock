@@ -351,6 +351,13 @@
           "fastCard": {
             "title": "Tarjeta FAST",
             "disclaimer": "Esta sección es opcional. Sin embargo, si proporcionas información de la tarjeta FAST, debes completar todos los campos y subir las fotos del frente y dorso."
+          },
+          "eligibilityDocs": {
+            "title": "Documentos de salud / identificación",
+            "description": "Proporciona fotos claras y legibles de los documentos de salud e identidad requeridos listados a continuación. Todos los detalles deben ser visibles (frente y dorso cuando corresponda). Si falta algún documento o no está claro, tu solicitud puede retrasarse."
+          },
+          "workAuthorization": {
+            "title": "Prueba de autorización de trabajo"
           }
         },
         "fields": {
@@ -376,7 +383,54 @@
           "fastNumber": "Número de tarjeta FAST",
           "fastExpiry": "Fecha de vencimiento",
           "fastFront": "Foto frontal",
-          "fastBack": "Foto posterior"
+          "fastBack": "Foto posterior",
+          "uploadFront": "Subir frontal",
+          "uploadBack": "Subir posterior",
+          
+          "healthCard": "Tarjeta de salud",
+          "healthCardPhotos": "Tarjeta de salud (frente y dorso)",
+          "healthCardDescription": "Sube fotos claras del frente y dorso de tu tarjeta de salud (ej., tarjeta de salud de Ontario).",
+          
+          "passportTypeQuestion": "¿Qué tipo de pasaporte tienes?",
+          "selectPassportType": "Seleccionar tipo de pasaporte",
+          "passportType": {
+            "canadian": "Canadiense",
+            "others": "Otros"
+          },
+          
+          "workAuthorizationTypeQuestion": "¿Qué tipo de autorización de trabajo tienes?",
+          "selectWorkAuthorizationType": "Seleccionar tipo de autorización de trabajo",
+          "workAuthorizationType": {
+            "local": "Local (dentro de Canadá)",
+            "crossBorder": "Transfronterizo (Canadá-Estados Unidos)"
+          },
+          
+          "passport": "Pasaporte",
+          "passportPhotos": "Pasaporte (página de datos y dorso)",
+          "passportDescription": "Sube la página de datos del pasaporte (con tu foto) y la página de cubierta posterior (ej., pasaporte canadiense o extranjero).",
+          "passportDescriptionUS": "Sube la página de datos del pasaporte (con tu foto) y la página de cubierta posterior (ej., pasaporte estadounidense).",
+          
+          "usVisa": "Visa estadounidense",
+          "usVisaPhotos": "Visa estadounidense",
+          "usVisaDescription": "Sube fotos claras de tu visa estadounidense válida (ej., páginas de visa de visitante, trabajo o estudio).",
+          
+          "prPermitCitizenship": "Tarjeta de residente permanente / Permiso de trabajo / Ciudadanía",
+          "prPermitCitizenshipPhotos": "Residente permanente / Permiso / Ciudadanía",
+          "prPermitCitizenshipDescription": "Sube fotos claras de tu tarjeta de residente permanente, permiso de trabajo/estudio o documento de ciudadanía (ej., frente y dorso de la tarjeta de RP, carta de permiso de trabajo).",
+          
+          "greenCardCitizenship": "Tarjeta verde / Ciudadanía",
+          "greenCardCitizenshipDescription": "Sube fotos claras de tu tarjeta de residente permanente o documento de ciudadanía estadounidense (ej., frente y dorso de la tarjeta de RP, certificado de naturalización).",
+          
+          "medicalCertification": "Certificación médica",
+          "medicalCertificationPhotos": "Certificación médica",
+          "medicalCertificationDescription": "Sube fotos claras de tu certificado médico DOT válido (frente y dorso si aplica).",
+          
+          "oneOfTheseRequired": "Uno de estos requerido",
+          "optional": "Opcional",
+          
+          "incorporatePhotosDescription": "Sube fotos claras de tus documentos de incorporación empresarial (ej., artículos de incorporación, certificado de incorporación).",
+          "hstPhotosDescription": "Sube una foto de tu documento de registro del número de empresa HST/GST (ej., carta de registro de CRA).",
+          "bankingInfoPhotosDescription": "Sube una foto de un cheque cancelado o formulario de depósito directo de tu banco (debe mostrar claramente el número de cuenta y detalles de la institución)."
         },
         "placeholders": {
           "optionalDetails": "Proporciona detalles..."
