@@ -162,7 +162,7 @@ export default function OnboardingLayoutClientShell({
                     exit={{ y: 20, opacity: 0 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <DialogPanel className="max-w-md w-full bg-white rounded-xl p-6 shadow-xl space-y-6">
+                    <DialogPanel className="w-[min(95vw,640px)] max-h-[90vh] bg-white rounded-xl p-4 sm:p-6 shadow-xl space-y-4 sm:space-y-6 overflow-y-auto">
                       {/* Title */}
                       <DialogTitle className="text-lg text-center font-bold text-gray-900">
                         {t("infoPopUp.modalTitle")}
@@ -175,7 +175,7 @@ export default function OnboardingLayoutClientShell({
                         </h3>
                         <div className="space-y-2">
                           {[1, 2, 3, 4, 5, 6].map((step) => (
-                            <div key={step} className="text-sm text-gray-700">
+                            <div key={step} className="text-xs sm:text-sm text-gray-700">
                               <p>
                                 <span className="font-semibold">
                                   {t(`infoPopUp.steps.step${step}.label`)}
@@ -187,7 +187,7 @@ export default function OnboardingLayoutClientShell({
 
                           {/* Step 7 (optional Yard Training) */}
                           {ctx?.needsFlatbedTraining && (
-                            <div className="text-sm text-gray-700">
+                            <div className="text-xs sm:text-sm text-gray-700">
                               <p>
                                 <span className="font-semibold">
                                   {t("infoPopUp.steps.step7.label")}
@@ -204,7 +204,7 @@ export default function OnboardingLayoutClientShell({
                         <h3 className="text-sm text-center font-semibold text-gray-900">
                           {t("infoPopUp.savingTitle")}
                         </h3>
-                        <ul className="list-disc pl-5 text-sm text-gray-700 space-y-1">
+                        <ul className="list-disc pl-4 sm:pl-5 text-xs sm:text-sm text-gray-700 space-y-1">
                           <li>{t("infoPopUp.saving.autoSignOut")}</li>
                           <li>{t("infoPopUp.saving.progressSaves")}</li>
                           <li>{t("infoPopUp.saving.resumeLater")}</li>
@@ -213,10 +213,10 @@ export default function OnboardingLayoutClientShell({
                       </section>
 
                       {/* Footer */}
-                      <div className="text-right">
+                      <div className="text-center sm:text-right pt-2">
                         <button
                           onClick={() => setShowModal(false)}
-                          className="px-4 py-1.5 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700"
+                          className="w-full sm:w-auto px-6 py-2 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
                         >
                           {t("infoPopUp.close")}
                         </button>
