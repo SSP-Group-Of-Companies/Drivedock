@@ -27,7 +27,6 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
     const res = successResponse(200, "OK");
     return attachCookies(res, refreshCookie); // if your util accepts arrays, pass ...refreshCookies
   } catch (err) {
-    console.log(err);
     return errorResponse(err);
   }
 };
