@@ -3,7 +3,7 @@
  * Root Layout — DriveDock (SSP Portal)
  * (trimmed header for brevity)
  */
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import I18nProvider from "./providers/i18n-provider";
@@ -111,13 +111,6 @@ export const metadata: Metadata = {
     ]
   },
   
-  // Viewport (keeping your current settings)
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
   
   // Security and verification
   verification: {
@@ -138,6 +131,13 @@ export const metadata: Metadata = {
     "msapplication-TileColor": "#1e40af",
     "msapplication-config": "none", // Since you don't have browserconfig.xml
   }
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode; headers: () => Promise<Headers> }) {
