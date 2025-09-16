@@ -179,4 +179,6 @@ onboardingTrackerSchema.index({ terminated: 1, createdAt: -1 }, { name: "termina
 
 onboardingTrackerSchema.index({ terminated: 1, applicationType: 1, updatedAt: -1 }, { name: "terminated_appType_updatedAt" });
 
+onboardingTrackerSchema.index({ "status.completed": 1, resumeExpiresAt: 1 }, { name: "completed_resumeExpiresAt" });
+
 export default onboardingTrackerSchema;
