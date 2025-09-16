@@ -1,0 +1,8 @@
+Contact: security@ssp4you.com
+Expires: 2026-12-31T23:59:59.000Z
+Preferred-Languages: en
+Canonical: https://drivedock.ssp4you.com/.well-known/security.txt
+Policy: https://ssp4you.com/security-policy
+
+# Security Contact Information for DriveDock Platform
+# Please report security vulnerabilities responsibly
