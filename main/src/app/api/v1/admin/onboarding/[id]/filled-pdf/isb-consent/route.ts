@@ -121,8 +121,8 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
       criminalRecords: (page4?.criminalRecords as any[]) || [],
 
       // Signed-at city/province → use current address
-      signedAtCity: page1.addresses?.[page1.addresses.length - 1]?.city || undefined,
-      signedAtProvince: page1.addresses?.[page1.addresses.length - 1]?.stateOrProvince || undefined,
+      signedAtCity: onboarding.completionLocation?.city || undefined,
+      signedAtProvince: onboarding.completionLocation?.region || undefined,
     });
 
     // Load template
