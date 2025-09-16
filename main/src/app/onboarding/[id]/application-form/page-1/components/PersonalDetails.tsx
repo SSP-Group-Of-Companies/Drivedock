@@ -405,10 +405,10 @@ export default function PersonalDetails({ onboardingContext }: PersonalDetailsPr
             </div>
           )}
           {sinPhotoStatus === "deleting" && (
-            <p className="text-yellow-600 text-sm mt-1 flex items-center">
-              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-600 mr-2"></div>
+            <div className="text-yellow-600 text-sm mt-1 flex items-center">
+              <p className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-600 mr-2"></p>
               Deleting...
-            </p>
+            </div>
           )}
           {sinPhotoStatus === "error" && <p className="text-red-500 text-sm mt-1">{sinPhotoMessage}</p>}
           {!errors.sinPhoto && sinPhotoStatus === "idle" && sinPhotoMessage && <p className="text-green-600 text-sm mt-1">{sinPhotoMessage}</p>}
