@@ -1,5 +1,5 @@
 "use client";
-
+//general imports
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useContract } from "@/hooks/dashboard/contract/useContract";
@@ -12,8 +12,12 @@ import { type PoliciesConsentsResponse } from "@/app/api/v1/admin/onboarding/[id
 import StepNotCompletedMessage from "../components/StepNotCompletedMessage";
 
 // Helper functions for API calls
-async function fetchPoliciesConsents(trackerId: string): Promise<PoliciesConsentsResponse> {
-  const response = await fetch(`/api/v1/admin/onboarding/${trackerId}/policies-consents`);
+async function fetchPoliciesConsents(
+  trackerId: string
+): Promise<PoliciesConsentsResponse> {
+  const response = await fetch(
+    `/api/v1/admin/onboarding/${trackerId}/policies-consents`
+  );
   if (!response.ok) {
     // Check if it's a 401 error and include the error message
     if (response.status === 401) {
@@ -27,11 +31,7 @@ async function fetchPoliciesConsents(trackerId: string): Promise<PoliciesConsent
   return response.json();
 }
 
-export default function PoliciesClient({
-  trackerId,
-}: {
-  trackerId: string;
-}) {
+export default function PoliciesClient({ trackerId }: { trackerId: string }) {
   const { data: contractData, isLoading: isContractLoading } =
     useContract(trackerId);
   const { hideLoader } = useDashboardPageLoading();
@@ -55,7 +55,11 @@ export default function PoliciesClient({
         const data = await fetchPoliciesConsents(trackerId);
         setPoliciesData(data);
       } catch (err) {
-        setError(err instanceof Error ? err : new Error('Failed to load policies consents'));
+        setError(
+          err instanceof Error
+            ? err
+            : new Error("Failed to load policies consents")
+        );
       } finally {
         setIsPoliciesLoading(false);
       }
@@ -93,7 +97,12 @@ export default function PoliciesClient({
   }
 
   // Show loading state for contract data while layout is visible
-  if (isContractLoading || !contractData || isPoliciesLoading || !policiesData) {
+  if (
+    isContractLoading ||
+    !contractData ||
+    isPoliciesLoading ||
+    !policiesData
+  ) {
     return (
       <div
         className="rounded-xl border p-8 text-center"
@@ -105,12 +114,15 @@ export default function PoliciesClient({
         <div className="flex flex-col items-center gap-2">
           <div
             className="h-6 w-6 animate-spin rounded-full border-2 border-transparent"
-            style={{ 
+            style={{
               borderTopColor: "var(--color-primary)",
-              borderWidth: "2px"
+              borderWidth: "2px",
             }}
           />
-          <span className="text-xs font-medium" style={{ color: "var(--color-on-surface-variant)" }}>
+          <span
+            className="text-xs font-medium"
+            style={{ color: "var(--color-on-surface-variant)" }}
+          >
             Loading Policies & Consents...
           </span>
         </div>
@@ -129,10 +141,16 @@ export default function PoliciesClient({
         }}
       >
         <div className="flex flex-col items-center gap-2">
-          <span className="text-sm font-medium" style={{ color: "var(--color-on-surface-variant)" }}>
+          <span
+            className="text-sm font-medium"
+            style={{ color: "var(--color-on-surface-variant)" }}
+          >
             No policies consents data found
           </span>
-          <span className="text-xs" style={{ color: "var(--color-on-surface-variant)" }}>
+          <span
+            className="text-xs"
+            style={{ color: "var(--color-on-surface-variant)" }}
+          >
             This driver may not have completed the policies consents step yet.
           </span>
         </div>
@@ -146,10 +164,10 @@ export default function PoliciesClient({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ 
+      transition={{
         duration: 0.5,
         ease: "easeOut",
-        delay: 0.1 // Small delay to ensure smooth transition after loader hides
+        delay: 0.1, // Small delay to ensure smooth transition after loader hides
       }}
       className="space-y-4"
     >
@@ -157,27 +175,34 @@ export default function PoliciesClient({
       <DashboardFormWizard contractContext={ctx} />
 
       {/* Policies Content */}
-      <div className="rounded-xl border p-4 sm:p-6 lg:p-8 shadow-sm dark:shadow-none" style={{
-        background: "var(--color-card)",
-        borderColor: "var(--color-outline)",
-      }}>
+      <div
+        className="rounded-xl border p-4 sm:p-6 lg:p-8 shadow-sm dark:shadow-none"
+        style={{
+          background: "var(--color-card)",
+          borderColor: "var(--color-outline)",
+        }}
+      >
         <div className="flex justify-end mb-6">
           <div className="flex items-center gap-2">
-            <span className="text-xs sm:text-sm" style={{ color: "var(--color-on-surface-variant)" }}>
+            <span
+              className="text-xs sm:text-sm"
+              style={{ color: "var(--color-on-surface-variant)" }}
+            >
               Edit Mode:
             </span>
-            <span className="px-2 py-1 rounded text-xs font-medium" style={{
-              background: "var(--color-surface-variant)",
-              color: "var(--color-on-surface-variant)",
-            }}>
+            <span
+              className="px-2 py-1 rounded text-xs font-medium"
+              style={{
+                background: "var(--color-surface-variant)",
+                color: "var(--color-on-surface-variant)",
+              }}
+            >
               DISABLED (Read-only policies)
             </span>
           </div>
         </div>
-        
-        <PoliciesContent
-          data={policiesData.data}
-        />
+
+        <PoliciesContent data={policiesData.data} />
       </div>
     </motion.div>
   );
