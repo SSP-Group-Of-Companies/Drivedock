@@ -52,7 +52,14 @@ export default function SignatureSection({ signature, signedAt, sendPoliciesByEm
                 background: "var(--color-surface)",
               }}
             >
-              <Image src={signature.url} alt="Driver signature" className="max-h-32 max-w-full object-contain" style={{ filter: "invert(0.1)" }} />
+              <Image 
+                src={signature.url} 
+                alt="Driver signature" 
+                width={400}
+                height={128}
+                className="max-h-32 max-w-full object-contain" 
+                style={{ filter: "invert(0.1)" }} 
+              />
             </div>
           ) : (
             <div
