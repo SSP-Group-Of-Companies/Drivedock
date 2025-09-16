@@ -55,7 +55,7 @@ export default function OnboardingLayoutClientShell({
   const titleStep = activeMacro || 1;
 
   return (
-    <>
+    <div className="min-h-screen flex flex-col">
       {/* Top navbar hidden on scroll */}
       <div className={isScrolled ? "hidden" : "block"}>
         <Navbar needsFlatbedTraining={!!ctx?.needsFlatbedTraining} />
@@ -126,7 +126,7 @@ export default function OnboardingLayoutClientShell({
       </AnimatePresence>
 
       {/* Main body */}
-      <main className="relative min-h-[calc(100vh-120px)] bg-gradient-to-b from-slate-50 via-sky-100 to-sky-200 px-4 py-6 sm:px-8 flex items-center justify-center">
+      <main className="flex-1 relative bg-gradient-to-b from-slate-50 via-sky-100 to-sky-200 px-4 py-6 sm:px-8 flex items-center justify-center">
         <div className="max-w-3xl mx-auto bg-white p-6 rounded-2xl shadow-lg space-y-6 relative w-full">
           {/* Info icon - hidden on completed page */}
           {!isCompletedPage && (
@@ -248,6 +248,6 @@ export default function OnboardingLayoutClientShell({
       </main>
 
       <Footer />
-    </>
+    </div>
   );
 }
