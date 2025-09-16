@@ -5,6 +5,41 @@ const bucketName = process.env.AWS_BUCKET_NAME;
 const region = process.env.AWS_REGION;
 const s3Domain = bucketName && region ? `${bucketName}.s3.${region}.amazonaws.com` : undefined;
 
+function parseExtraDomains(envVar?: string): string[] {
+  if (!envVar) return [];
+  return envVar
+    .split(",")
+    .map((x) => x.trim())
+    .filter(Boolean);
+}
+
+function parseRemotePatterns(envVar?: string) {
+  if (!envVar) return [];
+  return envVar
+    .split(",")
+    .map((x) => x.trim())
+    .filter(Boolean)
+    .map((pattern) => {
+      try {
+        const hasProto = /^[a-zA-Z]+:\/\//.test(pattern);
+        const url = new URL(hasProto ? pattern : `https://${pattern}`);
+        return {
+          protocol: (url.protocol.replace(":", "") as "http" | "https") ?? "https",
+          hostname: url.hostname,
+          pathname: url.pathname || "/**",
+        };
+      } catch {
+        return null;
+      }
+    })
+    .filter((v): v is { protocol: "http" | "https"; hostname: string; pathname: string } => !!v);
+}
+
+const extraDomains = parseExtraDomains(process.env.NEXT_IMAGE_EXTRA_DOMAINS);
+const remotePatterns = parseRemotePatterns(process.env.NEXT_IMAGE_REMOTE_PATTERNS);
+
+const domains = Array.from(new Set([...(s3Domain ? [s3Domain] : []), ...extraDomains]));
+
 const nextConfig: NextConfig = {
   i18n: {
     ...i18nConfig.i18n,
@@ -12,16 +47,15 @@ const nextConfig: NextConfig = {
   },
   reactStrictMode: true,
   images: {
-    domains: s3Domain ? [s3Domain] : [],
+    domains,
+    remotePatterns, // <-- always an array now ([], not undefined)
   },
   webpack: (config, { isServer }) => {
-    // Hard-alias `canvas` to false in BOTH client & server bundles
     config.resolve.alias = {
       ...(config.resolve.alias ?? {}),
       canvas: false,
     };
 
-    // Also set fallbacks for modules some pdfjs/react-pdf-viewer paths poke at
     config.resolve.fallback = {
       ...(config.resolve.fallback ?? {}),
       canvas: false,
@@ -34,13 +68,10 @@ const nextConfig: NextConfig = {
       process: false,
     };
 
-    // Keep `canvas` out of the Node/SSR bundle entirely
     if (isServer) {
       config.externals = [...(config.externals ?? []), { canvas: "commonjs canvas" }];
     }
 
-    // You don't actually need a worker file rule because you’re using <Worker> with a CDN URL.
-    // If you want to keep it, it’s harmless; otherwise you can remove the block below.
     config.module.rules.push({
       test: /pdf\.worker\.(min\.)?js/,
       type: "asset/resource",
