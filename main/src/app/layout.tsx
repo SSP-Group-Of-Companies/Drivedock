@@ -27,24 +27,27 @@ export const metadata: Metadata = {
     default: "DriveDock – Digital Driver Onboarding Platform",
     template: "%s | DriveDock – SSP Truck Line"
   },
-  description: "Streamlined digital onboarding platform for truck drivers at SSP Truck Line. Complete your application, documentation, and training requirements online with our secure, multilingual platform.",
+  description: "Join SSP Group of Companies - Transportation specialist for all your needs! Digital onboarding platform for truck drivers. Complete your CDL application, documentation, and training requirements online. Founded in 2015, serving Canada, USA & Mexico with 501-1,000 employees.",
   keywords: [
+    "SSP Group of Companies",
     "truck driver jobs",
     "CDL driver application", 
-    "SSP Truck Line",
+    "Milton Ontario trucking",
+    "transportation logistics",
     "commercial driver registration",
     "trucking company careers",
     "driver onboarding platform",
     "truck driver hiring",
-    "commercial driving jobs",
-    "transport driver application",
-    "freight driver careers",
-    "digital driver application",
-    "truck driver recruitment",
+    "flatbed trucking",
+    "cross border shipping",
+    "warehousing solutions",
+    "supply chain storage",
+    "CTPAT certified",
     "CDL jobs Canada",
     "CDL jobs USA",
     "long haul driver jobs",
-    "local truck driver jobs"
+    "freight transportation",
+    "logistics specialist"
   ],
   authors: [{ name: "SSP Truck Line" }],
   creator: "SSP Truck Line",
@@ -60,32 +63,22 @@ export const metadata: Metadata = {
     },
   },
   
-  // Open Graph for social sharing
+  // Open Graph for social sharing (optimized for LinkedIn)
   openGraph: {
     type: "website",
     locale: "en_US",
     url: "https://drivedock.ssp4you.com",
-    siteName: "DriveDock",
-    title: "DriveDock – Digital Driver Onboarding Platform",
-    description: "Streamlined digital onboarding platform for truck drivers at SSP Truck Line. Complete your application, documentation, and training requirements online.",
+    siteName: "DriveDock - SSP Group of Companies",
+    title: "Join SSP Group of Companies - Truck Driver Careers",
+    description: "Transportation specialist for all your needs! Digital onboarding for truck drivers at SSP Group of Companies. Milton, Ontario-based company with 501-1,000 employees, serving North America since 2015.",
     images: [
       {
         url: "/assets/logos/SSP-Truck-LineFullLogo.png",
         width: 1200,
         height: 630,
-        alt: "SSP Truck Line - DriveDock Platform",
+        alt: "SSP Group of Companies - DriveDock Digital Onboarding Platform",
       }
     ],
-  },
-  
-  // Twitter Card
-  twitter: {
-    card: "summary_large_image",
-    site: "@SSPTruckLine", // Add your Twitter handle if you have one
-    creator: "@SSPTruckLine",
-    title: "DriveDock – Digital Driver Onboarding Platform",
-    description: "Streamlined digital onboarding platform for truck drivers at SSP Truck Line.",
-    images: ["/assets/logos/SSP-Truck-LineFullLogo.png"],
   },
   
   // App-specific metadata
@@ -111,7 +104,6 @@ export const metadata: Metadata = {
     ]
   },
   
-  
   // Security and verification
   verification: {
     // Add these if you have them:
@@ -129,7 +121,10 @@ export const metadata: Metadata = {
     "apple-mobile-web-app-title": "DriveDock",
     "theme-color": "#1e40af",
     "msapplication-TileColor": "#1e40af",
-    "msapplication-config": "none", // Since you don't have browserconfig.xml
+    "msapplication-config": "none",
+    // LinkedIn-specific optimization
+    "linkedin:owner": "ssp-group-of-companies",
+    "linkedin:site": "https://ca.linkedin.com/company/ssp-group-of-companies",
   }
 };
 
