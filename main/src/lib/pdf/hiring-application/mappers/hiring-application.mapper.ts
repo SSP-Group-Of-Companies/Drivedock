@@ -620,31 +620,24 @@ export function buildHiringApplicationFieldMap({ onboarding, application, prequa
   });
 
   /* =========================
-   * Page 11 - Pre-Employment Competency Test (Q1–Q16) + Security (Q17–Q21)
+   * Page 11 - Pre-Employment Competency Test (Q1–Q18)
    * ========================= */
   const setAnswer = (qid: string, aid: string) => {
     const n = Number(qid);
-    const option = aid?.toLowerCase?.();
+    const option = aid?.toLowerCase?.().trim();
     if (!option || !Number.isFinite(n)) return;
 
-    if (n >= 1 && n <= 16) {
-      const key = `COMPETENCY_Q${n}_${option.toUpperCase()}` as keyof typeof F;
-      (map as any)[F[key]] = "Yes";
-    } else if (n >= 17 && n <= 21) {
-      const secIndex = n - 16; // 1..5
-      const key = `SECURITY_Q${secIndex}_${option.toUpperCase()}` as keyof typeof F;
-      (map as any)[F[key]] = "Yes";
-    }
-  };
-  for (const ans of p5?.answers || []) setAnswer(ans.questionId, ans.answerId);
+    // Only questions 1..18; only options a/b/c/d
+    if (n < 1 || n > 18) return;
+    const opt = option[0];
+    if (!["a", "b", "c", "d"].includes(opt)) return;
 
-  Object.assign(map, {
-    [F.COMPETENCY_DRIVER_NAME]: name,
-    [F.COMPETENCY_SIGNATURE]: (policies as any)?.signature?.url || "",
-    [F.COMPETENCY_DATE_DAY]: signDMY.d,
-    [F.COMPETENCY_DATE_MONTH]: signDMY.m,
-    [F.COMPETENCY_DATE_YEAR]: signDMY.y,
-  });
+    const key = `COMPETENCY_Q${n}_${opt.toUpperCase()}` as keyof typeof F;
+    const field = F[key];
+    if (field) (map as any)[field] = "Yes";
+  };
+
+  for (const ans of p5?.answers || []) setAnswer(ans.questionId, ans.answerId);
 
   /* =========================
    * Page 12 - Acknowledgement & Insurance

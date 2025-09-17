@@ -479,45 +479,19 @@ export enum EDriverApplicationFillableFormFields {
 
   COMPETENCY_Q15_A = "competency_q15_a",
   COMPETENCY_Q15_B = "competency_q15_b",
-  COMPETENCY_Q15_C = "competency_q15_c",
-  COMPETENCY_Q15_D = "competency_q15_d",
 
   COMPETENCY_Q16_A = "competency_q16_a",
   COMPETENCY_Q16_B = "competency_q16_b",
+  COMPETENCY_Q16_C = "competency_q16_c",
+  COMPETENCY_Q16_D = "competency_q16_d",
 
-  // Security block (mapped from competency questions 17–21)
-  SECURITY_Q1_A = "security_q1_a",
-  SECURITY_Q1_B = "security_q1_b",
-  SECURITY_Q1_C = "security_q1_c",
-  SECURITY_Q1_D = "security_q1_d",
+  COMPETENCY_Q17_A = "competency_q17_a",
+  COMPETENCY_Q17_B = "competency_q17_b",
+  COMPETENCY_Q17_C = "competency_q17_c",
 
-  SECURITY_Q2_A = "security_q2_a",
-  SECURITY_Q2_B = "security_q2_b",
-  SECURITY_Q2_C = "security_q2_c",
-  SECURITY_Q2_D = "security_q2_d",
-
-  SECURITY_Q3_A = "security_q3_a",
-  SECURITY_Q3_B = "security_q3_b",
-  SECURITY_Q3_C = "security_q3_c",
-  SECURITY_Q3_D = "security_q3_d",
-
-  SECURITY_Q4_A = "security_q4_a",
-  SECURITY_Q4_B = "security_q4_b",
-  SECURITY_Q4_C = "security_q4_c",
-  SECURITY_Q4_D = "security_q4_d",
-
-  SECURITY_Q5_A = "security_q5_a",
-  SECURITY_Q5_B = "security_q5_b",
-  SECURITY_Q5_C = "security_q5_c",
-  SECURITY_Q5_D = "security_q5_d",
-
-  // Signature/date at bottom of page 11
-  COMPETENCY_DRIVER_NAME = "competency_driver_name",
-  COMPETENCY_SIGNATURE = "competency_signature",
-
-  COMPETENCY_DATE_DAY = "competency_date_day",
-  COMPETENCY_DATE_MONTH = "competency_date_month",
-  COMPETENCY_DATE_YEAR = "competency_date_year",
+  COMPETENCY_Q18_A = "competency_q18_a",
+  COMPETENCY_Q18_B = "competency_q18_b",
+  COMPETENCY_Q18_C = "competency_q18_c",
 
   /* =========================
    * Page 12 - Acknowledgement & Insurance

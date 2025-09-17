@@ -211,9 +211,6 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     pushDraw(9, F.TRAILER_SEAL_SIGNATURE, driverSignatureBytes);
     pushDraw(9, F.TRAILER_CERTIFICATION_SIGNATURE, driverSignatureBytes);
 
-    // Page 11
-    pushDraw(10, F.COMPETENCY_SIGNATURE, driverSignatureBytes);
-
     // Page 12
     pushDraw(11, F.COMP_ACK_SIGNATURE, driverSignatureBytes);
     const hasAccidentalInsurance = application.page4?.hasAccidentalInsurance === true;
