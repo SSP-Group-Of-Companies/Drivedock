@@ -15,7 +15,7 @@ type Props = {
   setJustSubmitted: (val: boolean) => void;
   checkboxChecked: boolean;
   setHighlightError: (val: boolean) => void;
-  /** NEW: let parent capture the final answers for results UI */
+  /** Let parent capture the final answers for results UI */
   onSuccessfulSubmit: (answers: { questionId: string; answerId: string }[]) => void;
 };
 
@@ -48,7 +48,6 @@ export default function CompetencyStepButton({ score, setScore, trackerId, justS
       handleFormError(errors);
       return;
     }
-
     setErrorMessage(null);
     setShowConfirmModal(true);
   };
@@ -79,6 +78,7 @@ export default function CompetencyStepButton({ score, setScore, trackerId, justS
 
       if (typeof updatedScore === "number") {
         setScore(updatedScore);
+        // mark justSubmitted to trigger top scroll + banner in parent
         setJustSubmitted(true);
 
         // Surface answers for result rendering (fallback to current form if API doesn't echo them)

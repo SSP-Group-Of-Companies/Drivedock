@@ -7,7 +7,7 @@ import CompetencyQuestionList from "./components/CompetencyQuestionList";
 import useMounted from "@/hooks/useMounted";
 import { IApplicationFormPage5 } from "@/types/applicationForm.types";
 import { getCompetencyQuestions } from "@/constants/competencyTestQuestions";
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import CompetencyStepButton from "./components/CompetencyStepButton";
 import { useTranslation } from "react-i18next";
 
@@ -20,7 +20,7 @@ export default function Page5Client({ data, trackerId }: Page5ClientProps) {
   const { t } = useTranslation("common");
   const mounted = useMounted();
 
-  // Score & “locked” state (locked when score !== null)
+  // Score & locked state (locked when score !== null)
   const [score, setScore] = useState<number | null>(data.score ?? null);
   const [justSubmitted, setJustSubmitted] = useState(false);
   const [checkboxChecked, setCheckboxChecked] = useState(false);
@@ -63,14 +63,33 @@ export default function Page5Client({ data, trackerId }: Page5ClientProps) {
 
   const showResults = (finalAnswers?.length ?? 0) > 0 && score !== null;
 
+  // Smoothly scroll to top after a *fresh* successful submission
+  useEffect(() => {
+    if (justSubmitted && score !== null && typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  }, [justSubmitted, score]);
+
   if (!mounted) return null;
 
   return (
     <FormProvider {...methods}>
       <h2 className="text-lg text-center font-semibold">{t("form.step2.page5.title")}</h2>
 
-      {/* Locked banner */}
-      {score !== null && <div className="text-sm text-center text-gray-600 bg-gray-50 border border-gray-200 rounded-md py-2 px-4 max-w-xl mx-auto">{t("form.step2.page5.lockedNote")}</div>}
+      {/* Instruction / Lock banners */}
+      {score !== null && (
+        <div className="mt-3 text-sm text-center text-gray-700 bg-blue-50 border border-blue-200 rounded-md py-2 px-4 max-w-3xl mx-auto">
+          {/* If just submitted now, show explicit “review then checkbox+continue” message */}
+          {justSubmitted ? (
+            <span className="font-medium">
+              Review your answers below. When ready, scroll down and <strong>check the acknowledgment box</strong>, then click <strong>Continue</strong> to proceed.
+            </span>
+          ) : (
+            // Existing locked note (when re-opening an already-completed page)
+            <span>{t("form.step2.page5.lockedNote")}</span>
+          )}
+        </div>
+      )}
 
       {/* Score summary */}
       {score !== null && (
@@ -95,6 +114,7 @@ export default function Page5Client({ data, trackerId }: Page5ClientProps) {
                   setHighlightError(false); // remove error on check
                 }}
               />
+              {/* Keep your localized text */}
               <span>{t("form.step2.page5.note")}</span>
             </label>
           </div>
@@ -108,7 +128,7 @@ export default function Page5Client({ data, trackerId }: Page5ClientProps) {
           setJustSubmitted={setJustSubmitted}
           checkboxChecked={checkboxChecked}
           setHighlightError={setHighlightError}
-          // NEW: capture final answers on success so the UI can render results like admin
+          // Capture final answers on success so the UI can render results like admin
           onSuccessfulSubmit={(answersFromServerOrForm) => {
             setFinalAnswers(answersFromServerOrForm);
           }}
