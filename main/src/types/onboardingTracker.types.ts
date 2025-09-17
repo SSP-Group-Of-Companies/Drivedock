@@ -62,6 +62,7 @@ export enum EEmailStatus {
  * Main document representing the entire onboarding session for a driver.
  */
 export interface IOnboardingTracker {
+  id: string;
   sinHash: string;
   sinEncrypted: string;
   sin?: string;
@@ -118,6 +119,7 @@ export interface IOnboardingTracker {
 }
 
 export interface IOnboardingTrackerDoc extends IOnboardingTracker, Document {
+  id: string;
   sin?: string;
 }
 

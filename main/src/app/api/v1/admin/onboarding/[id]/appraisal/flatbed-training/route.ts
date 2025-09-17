@@ -1,5 +1,5 @@
 // app/api/v1/admin/onboarding/[id]/appraisal/flatbed-training/route.ts
-import { NextRequest, after } from "next/server";
+import { NextRequest } from "next/server";
 import { isValidObjectId } from "mongoose";
 
 import connectDB from "@/lib/utils/connectDB";
@@ -12,10 +12,10 @@ import FlatbedTraining from "@/mongoose/models/FlatbedTraining";
 import { buildTrackerContext, hasReachedStep, advanceProgress, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
 import { canHaveFlatbedTraining } from "@/constants/companies";
 
-import { EStepPath } from "@/types/onboardingTracker.types";
+import { EStepPath, IOnboardingTracker } from "@/types/onboardingTracker.types";
 import type { IFlatbedTraining } from "@/types/flatbedTraining.types";
 import { guard } from "@/lib/utils/auth/authUtils";
-import { triggerCompletionEmailIfEligible } from "@/lib/services/triggerCompletionEmail";
+import { sendCompletionEmailIfEligible } from "@/lib/services/sendCompletionEmail";
 /**
  * GET /admin/onboarding/:id/appraisal/flatbed-training
  * - Returns { onboardingContext, flatbedTraining } (flatbedTraining can be null if not created yet)
@@ -145,10 +145,16 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     await onboardingDoc.save();
 
     // send onboarding completion email to driver if applicable
-    after(() => triggerCompletionEmailIfEligible(onboardingDoc, req));
+    let updatedTracker: IOnboardingTracker | null = null;
+    if (onboardingDoc.status?.completed === true) {
+      const { tracker } = await sendCompletionEmailIfEligible(onboardingDoc.id);
+      updatedTracker = tracker;
+    }
+
+    const responseTracker = updatedTracker ?? onboardingDoc;
 
     return successResponse(200, "flatbed training marked completed", {
-      onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.FLATBED_TRAINING, true),
+      onboardingContext: buildTrackerContext(responseTracker, EStepPath.FLATBED_TRAINING, true),
       flatbedTraining: flatbedDoc.toObject(),
     });
   } catch (error) {

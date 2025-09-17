@@ -15,12 +15,11 @@ import { deleteS3Objects, finalizeAsset } from "@/lib/utils/s3Upload";
 import { S3_SUBMISSIONS_FOLDER, S3_TEMP_FOLDER } from "@/constants/aws";
 import { ES3Folder } from "@/types/aws.types";
 import { IFileAsset, EFileMimeType } from "@/types/shared.types";
-import { EStepPath } from "@/types/onboardingTracker.types";
+import { EStepPath, IOnboardingTracker } from "@/types/onboardingTracker.types";
 import { EDrugTestStatus } from "@/types/drugTest.types";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
 import { guard } from "@/lib/utils/auth/authUtils";
-import { triggerCompletionEmailIfEligible } from "@/lib/services/triggerCompletionEmail";
-import { after } from "next/server";
+import { sendCompletionEmailIfEligible } from "@/lib/services/sendCompletionEmail";
 
 /**
  * GET /api/v1/admin/onboarding/[id]/safety-processing
@@ -497,7 +496,11 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     await onboardingDoc.save();
 
     // send onboarding completion email to driver if applicable
-    after(() => triggerCompletionEmailIfEligible(onboardingDoc, req));
+    let updatedTracker: IOnboardingTracker | null = null;
+    if (onboardingDoc.status?.completed === true) {
+      const { tracker } = await sendCompletionEmailIfEligible(onboardingDoc.id);
+      updatedTracker = tracker;
+    }
 
     /* ---------------------- Build GET-like response ---------------------- */
 
@@ -582,7 +585,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       if (fallbackAppDoc) tryExtractFromDoc(fallbackAppDoc);
     }
 
-    const baseContext = buildTrackerContext(onboardingDoc, null, true);
+    const baseContext = buildTrackerContext(updatedTracker ?? onboardingDoc, null, true);
     const enrichedContext = {
       ...baseContext,
       itemSummary: {

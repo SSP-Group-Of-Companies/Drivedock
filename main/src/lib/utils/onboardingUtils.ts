@@ -1,5 +1,5 @@
 import { FORM_RESUME_EXPIRES_AT_IN_MILSEC } from "@/config/env";
-import { EStepPath, IOnboardingStatus, IOnboardingTrackerDoc, IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
+import { EStepPath, IOnboardingStatus, IOnboardingTrackerDoc, IOnboardingTrackerContext, IOnboardingTracker } from "@/types/onboardingTracker.types";
 
 /**
  * ======================================================================
@@ -150,11 +150,11 @@ export function advanceProgress(doc: IOnboardingTrackerDoc, completedNow: EStepP
       currentStep: (mappedCurrentStep ?? doc.status.currentStep) as EStepPath,
       completed: isCompleted,
       // Set completionDate only when actually completed
-      ...(isCompleted && { 
-        completionDate: doc.status.completionDate ?? new Date()
+      ...(isCompleted && {
+        completionDate: doc.status.completionDate ?? new Date(),
       }),
     };
-    
+
     return result;
   }
 
@@ -166,11 +166,11 @@ export function advanceProgress(doc: IOnboardingTrackerDoc, completedNow: EStepP
     currentStep: (next ?? completedNow) as EStepPath,
     completed: isNowCompleted,
     // Set completionDate only when actually completed
-    ...(isNowCompleted && { 
-      completionDate: doc.status.completionDate ?? new Date()
+    ...(isNowCompleted && {
+      completionDate: doc.status.completionDate ?? new Date(),
     }),
   };
-  
+
   return result;
 }
 
@@ -259,7 +259,7 @@ export function hasCompletedStep(doc: IOnboardingTrackerDoc, step: EStepPath): b
  * - Provides prev/current/next steps from the doc-aware flow.
  * - Exposes needsFlatbedTraining and a top-level completed boolean.
  */
-export function buildTrackerContext(tracker: IOnboardingTrackerDoc, defaultStep?: EStepPath | null, includeAdminData = false): IOnboardingTrackerContext {
+export function buildTrackerContext(tracker: IOnboardingTrackerDoc | IOnboardingTracker, defaultStep?: EStepPath | null, includeAdminData = false): IOnboardingTrackerContext {
   const step = defaultStep || tracker.status.currentStep;
   const opts = getFlowOpts(tracker);
   const { prevStep, nextStep } = getNeighborSteps(step, opts);
