@@ -20,6 +20,7 @@ import { EDrugTestStatus } from "@/types/drugTest.types";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
 import { guard } from "@/lib/utils/auth/authUtils";
 import { triggerCompletionEmailIfEligible } from "@/lib/services/triggerCompletionEmail";
+import { after } from "next/server";
 
 /**
  * GET /api/v1/admin/onboarding/[id]/safety-processing
@@ -496,7 +497,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     await onboardingDoc.save();
 
     // send onboarding completion email to driver if applicable
-    triggerCompletionEmailIfEligible(onboardingDoc, req);
+    after(() => triggerCompletionEmailIfEligible(onboardingDoc, req));
 
     /* ---------------------- Build GET-like response ---------------------- */
 

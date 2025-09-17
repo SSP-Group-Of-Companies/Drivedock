@@ -1,5 +1,5 @@
 // app/api/v1/admin/onboarding/[id]/appraisal/flatbed-training/route.ts
-import { NextRequest } from "next/server";
+import { NextRequest, after } from "next/server";
 import { isValidObjectId } from "mongoose";
 
 import connectDB from "@/lib/utils/connectDB";
@@ -16,7 +16,6 @@ import { EStepPath } from "@/types/onboardingTracker.types";
 import type { IFlatbedTraining } from "@/types/flatbedTraining.types";
 import { guard } from "@/lib/utils/auth/authUtils";
 import { triggerCompletionEmailIfEligible } from "@/lib/services/triggerCompletionEmail";
-
 /**
  * GET /admin/onboarding/:id/appraisal/flatbed-training
  * - Returns { onboardingContext, flatbedTraining } (flatbedTraining can be null if not created yet)
@@ -146,7 +145,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     await onboardingDoc.save();
 
     // send onboarding completion email to driver if applicable
-    triggerCompletionEmailIfEligible(onboardingDoc, req);
+    after(() => triggerCompletionEmailIfEligible(onboardingDoc, req));
 
     return successResponse(200, "flatbed training marked completed", {
       onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.FLATBED_TRAINING, true),
