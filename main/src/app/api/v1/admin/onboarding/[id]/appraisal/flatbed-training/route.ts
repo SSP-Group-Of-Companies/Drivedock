@@ -15,6 +15,7 @@ import { canHaveFlatbedTraining } from "@/constants/companies";
 import { EStepPath } from "@/types/onboardingTracker.types";
 import type { IFlatbedTraining } from "@/types/flatbedTraining.types";
 import { guard } from "@/lib/utils/auth/authUtils";
+import { triggerCompletionEmailIfEligible } from "@/lib/services/triggerCompletionEmail";
 
 /**
  * GET /admin/onboarding/:id/appraisal/flatbed-training
@@ -143,6 +144,9 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.FLATBED_TRAINING);
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();
     await onboardingDoc.save();
+
+    // send onboarding completion email to driver if applicable
+    triggerCompletionEmailIfEligible(onboardingDoc, req);
 
     return successResponse(200, "flatbed training marked completed", {
       onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.FLATBED_TRAINING, true),

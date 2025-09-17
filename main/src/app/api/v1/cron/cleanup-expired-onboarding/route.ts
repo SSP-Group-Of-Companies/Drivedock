@@ -1,6 +1,11 @@
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const maxDuration = 60;
+
 import { NextRequest } from "next/server";
 import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
 import { bulkCascadeDeleteExpiredTrackers } from "@/lib/services/onboardingCleanup";
+import { CRON_SECRET } from "@/config/env";
 
 /**
  * POST /api/cron/cleanup-expired-onboarding
@@ -10,9 +15,11 @@ import { bulkCascadeDeleteExpiredTrackers } from "@/lib/services/onboardingClean
 export async function POST(req: NextRequest) {
   try {
     const auth = req.headers.get("authorization") || "";
-    const expected = `Bearer ${process.env.CRON_SECRET ?? ""}`;
 
-    if (!process.env.CRON_SECRET || auth !== expected) {
+    if (!CRON_SECRET) return errorResponse(500, "CRON_SECRET env missing");
+    const expected = `Bearer ${CRON_SECRET ?? ""}`;
+
+    if (auth !== expected) {
       return errorResponse(401, "unauthorized");
     }
 

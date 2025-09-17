@@ -1,5 +1,5 @@
 import { Schema } from "mongoose";
-import { EStepPath, ETerminationType, IOnboardingTrackerDoc } from "@/types/onboardingTracker.types";
+import { EEmailStatus, EStepPath, ETerminationType, IOnboardingTrackerDoc } from "@/types/onboardingTracker.types";
 import { ECompanyApplicationType, ECompanyId } from "@/constants/companies";
 
 import PreQualifications from "../models/Prequalifications";
@@ -51,6 +51,23 @@ const onboardingTrackerSchema = new Schema<IOnboardingTrackerDoc>(
       },
       completionDate: {
         type: Date,
+      },
+    },
+    emails: {
+      completionPdfs: {
+        consentGiven: { type: Boolean, default: false },
+        status: {
+          type: String,
+          enum: {
+            values: Object.values(EEmailStatus),
+            message: `email status can only be one of ${Object.values(EEmailStatus)}`,
+          },
+          default: EEmailStatus.NOT_SENT,
+          required: true,
+        },
+        attempts: { type: Number, default: 0 },
+        lastError: { type: String },
+        sentAt: { type: Date },
       },
     },
     companyId: {
@@ -180,5 +197,7 @@ onboardingTrackerSchema.index({ terminated: 1, createdAt: -1 }, { name: "termina
 onboardingTrackerSchema.index({ terminated: 1, applicationType: 1, updatedAt: -1 }, { name: "terminated_appType_updatedAt" });
 
 onboardingTrackerSchema.index({ "status.completed": 1, resumeExpiresAt: 1 }, { name: "completed_resumeExpiresAt" });
+
+onboardingTrackerSchema.index({ "status.completed": 1, "emails.completionPdfs.status": 1, updatedAt: 1 }, { name: "completed_emailStatus_updatedAt" });
 
 export default onboardingTrackerSchema;

@@ -48,6 +48,17 @@ export enum ETerminationType {
 }
 
 /**
+ * Enum for email status*
+ */
+export enum EEmailStatus {
+  NOT_SENT = "NOT_SENT",
+  PENDING = "PENDING",
+  SENDING = "SENDING",
+  SENT = "SENT",
+  ERROR = "ERROR",
+}
+
+/**
  * Main document representing the entire onboarding session for a driver.
  */
 export interface IOnboardingTracker {
@@ -59,6 +70,16 @@ export interface IOnboardingTracker {
   applicationType?: ECompanyApplicationType;
 
   status: IOnboardingStatus;
+
+  emails?: {
+    completionPdfs?: {
+      consentGiven?: boolean; // from policies form
+      status: EEmailStatus;
+      attempts: number;
+      lastError?: string;
+      sentAt?: Date;
+    };
+  };
 
   completionLocation?: {
     country?: string; // Full country name (e.g., "Canada", "United States")

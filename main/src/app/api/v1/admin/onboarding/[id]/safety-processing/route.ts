@@ -19,6 +19,7 @@ import { EStepPath } from "@/types/onboardingTracker.types";
 import { EDrugTestStatus } from "@/types/drugTest.types";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
 import { guard } from "@/lib/utils/auth/authUtils";
+import { triggerCompletionEmailIfEligible } from "@/lib/services/triggerCompletionEmail";
 
 /**
  * GET /api/v1/admin/onboarding/[id]/safety-processing
@@ -256,7 +257,6 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
     if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
     if (onboardingDoc.terminated) return errorResponse(400, "Onboarding document terminated");
-    if (onboardingDoc.status.completed === true) return errorResponse(401, "onboarding process already completed");
 
     const body = await parseJsonBody<{
       notes?: string;
@@ -494,6 +494,9 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     // Save tracker
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();
     await onboardingDoc.save();
+
+    // send onboarding completion email to driver if applicable
+    triggerCompletionEmailIfEligible(onboardingDoc, req);
 
     /* ---------------------- Build GET-like response ---------------------- */
 

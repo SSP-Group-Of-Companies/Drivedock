@@ -2,7 +2,7 @@ import { errorResponse, successResponse } from "@/lib/utils/apiResponse";
 import connectDB from "@/lib/utils/connectDB";
 import PoliciesConsents from "@/mongoose/models/PoliciesConsents";
 import { deleteS3Objects, finalizeAsset } from "@/lib/utils/s3Upload";
-import { EStepPath } from "@/types/onboardingTracker.types";
+import { EStepPath, EEmailStatus } from "@/types/onboardingTracker.types";
 import { isValidObjectId } from "mongoose";
 import { NextRequest } from "next/server";
 import { IFileAsset } from "@/types/shared.types";
@@ -122,6 +122,43 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     // Persist completionLocation on the root doc (incoming behavior)
     if (completionLocation) {
       onboardingDoc.completionLocation = completionLocation;
+    }
+
+    // Mirror driver's email preference onto the tracker.emails.completionPdfs
+    if (typeof sendPoliciesByEmail === "boolean") {
+      if (!onboardingDoc.emails) onboardingDoc.emails = {};
+      if (!onboardingDoc.emails.completionPdfs) {
+        onboardingDoc.emails.completionPdfs = {
+          consentGiven: sendPoliciesByEmail,
+          status: EEmailStatus.NOT_SENT,
+          attempts: 0,
+          lastError: undefined,
+          sentAt: undefined,
+        };
+      } else {
+        const meta = onboardingDoc.emails.completionPdfs;
+        const prevConsent = !!meta.consentGiven;
+        meta.consentGiven = sendPoliciesByEmail;
+
+        if (sendPoliciesByEmail === false) {
+          // Reset state so future opt-in starts clean
+          meta.status = EEmailStatus.NOT_SENT;
+          meta.attempts = 0;
+          meta.lastError = undefined;
+          meta.sentAt = undefined;
+        } else {
+          // Consent turned on (or reaffirmed)
+          if (!meta.status) meta.status = EEmailStatus.NOT_SENT;
+
+          // If previously errored or never sent, requeue cleanly
+          if (meta.status === EEmailStatus.ERROR || (!prevConsent && meta.status !== EEmailStatus.SENT)) {
+            meta.status = EEmailStatus.NOT_SENT;
+            meta.attempts = 0;
+            meta.lastError = undefined;
+            meta.sentAt = undefined;
+          }
+        }
+      }
     }
 
     // (Do not pass location to advanceProgress — match incoming behavior)

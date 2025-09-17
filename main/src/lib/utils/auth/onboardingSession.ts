@@ -27,34 +27,37 @@ function sixHoursFromNow() {
 }
 
 /**
- * Reuse an existing active session for a tracker if present; otherwise create one.
+ * Reuse an existing session for a tracker if present; otherwise create one.
  * Returns a Set-Cookie header for the (re)issued session id.
  */
 export async function createOnboardingSessionAndCookie(trackerId: string) {
   await connectDB();
+
   const now = new Date();
+  const trackerObjId = new Types.ObjectId(trackerId);
+  const newExpiry = sixHoursFromNow();
 
-  // 1) Try to reuse an existing active (not revoked, not expired)
-  let session = await OnboardingSession.findOne({
-    trackerId: new Types.ObjectId(trackerId),
-    revoked: { $ne: true },
-    expiresAt: { $gt: now },
-  }).sort({ lastUsedAt: -1 });
-
-  // 2) If none, create a new one
-  if (!session) {
-    session = await OnboardingSession.create({
-      trackerId: new Types.ObjectId(trackerId),
-      expiresAt: sixHoursFromNow(),
-      lastUsedAt: now,
-      revoked: false,
-    });
-  } else {
-    // 3) Slide expiry for the reused session
-    session.expiresAt = sixHoursFromNow();
-    session.lastUsedAt = now;
-    await session.save();
-  }
+  const session = await OnboardingSession.findOneAndUpdate(
+    // Pick the most recent session for this tracker (any status)
+    { trackerId: trackerObjId },
+    {
+      // Always refresh these
+      $set: {
+        expiresAt: newExpiry,
+        lastUsedAt: now,
+        revoked: false,
+      },
+      // If none existed, create a new one
+      $setOnInsert: {
+        trackerId: trackerObjId,
+      },
+    },
+    {
+      upsert: true,
+      new: true, // return the updated/inserted doc
+      sort: { lastUsedAt: -1 }, // prefer the most recently used one
+    }
+  );
 
   const setCookie = buildSessionCookie(String(session._id), ONBOARDING_SESSION_TTL_SECONDS);
   return { session, setCookie };
@@ -63,34 +66,15 @@ export async function createOnboardingSessionAndCookie(trackerId: string) {
 /**
  * Require a valid driver onboarding session for the given tracker.
  *
- * What this validates (in this order):
- * 1) Cookie presence & shape
- *    - Reads `ONBOARDING_SESSION_COOKIE_NAME` (e.g. "OD_SESS")
- *    - Cookie value must be a valid Mongo ObjectId
- *    - Supplied `trackerId` must be a valid Mongo ObjectId
- *
- * 2) Session document is present and usable
- *    - Finds `OnboardingSession` by cookie `_id`
- *    - Ensures `trackerId` matches the route param
- *    - Ensures `revoked !== true`
- *    - Ensures `expiresAt > now` (not expired)
- *
- * 3) Tracker document is eligible to continue
- *    - Tracker exists
- *    - NOT `terminated`
- *    - NOT `onboardingExpired(tracker)` (resume window still valid)
- *    - NOT `status.completed`
- *
  * Failure behavior:
- *  - Throws `AppError(401, <friendly message>, EEApiErrorType.SESSION_REQUIRED, { reason, clearCookieHeader })`
+ *  - Throws `AppError(401, ..., EEApiErrorType.SESSION_REQUIRED, { reason, clearCookieHeader })`
  *    so the caller can `return errorResponse(err)` which will include:
  *      { code: "SESSION_REQUIRED", meta.reason } and will clear the stale cookie.
  *
  * Success behavior (sliding session window):
  *  - Extends the session expiry by `ONBOARDING_SESSION_TTL_SECONDS` (default 6h),
  *    updates `lastUsedAt`, persists the session document
- *  - Returns `{ tracker, refreshCookie }` where `refreshCookie` is a single
- *    "Set-Cookie" header string for the refreshed session cookie
+ *  - Returns `{ tracker, refreshCookie }`
  */
 export async function requireOnboardingSession(trackerId: string) {
   await connectDB();
@@ -108,42 +92,55 @@ export async function requireOnboardingSession(trackerId: string) {
   const session = await OnboardingSession.findOne({
     _id: new Types.ObjectId(raw),
     trackerId: new Types.ObjectId(trackerId),
-    revoked: { $ne: true },
-    expiresAt: { $gt: now },
   });
 
   if (!session) {
-    throw new AppError(401, "session expired, resume required", EEApiErrorType.SESSION_REQUIRED, { reason: "SESSION_NOT_FOUND_OR_REVOKED_OR_EXPIRED", clearCookieHeader: clearCookie });
+    // No such session for this tracker (mismatch / deleted).
+    throw new AppError(401, "session expired, resume required", EEApiErrorType.SESSION_REQUIRED, { reason: "SESSION_NOT_FOUND_OR_MISMATCH", clearCookieHeader: clearCookie });
   }
+
+  // if revoked or expired, delete the session doc then throw ---
+  const deleteSessionAndThrow = async (status: number, message: string, code: EEApiErrorType, reason: string): Promise<never> => {
+    try {
+      await OnboardingSession.deleteOne({ _id: session._id });
+    } catch {
+      // swallow cleanup errors
+    }
+    throw new AppError(status, message, code, { reason, clearCookieHeader: clearCookie });
+  };
+
+  if (session.revoked === true) {
+    await deleteSessionAndThrow(401, "session expired, resume required", EEApiErrorType.SESSION_REQUIRED, "SESSION_REVOKED");
+  }
+
+  if (session.expiresAt && session.expiresAt <= now) {
+    await deleteSessionAndThrow(401, "session expired, resume required", EEApiErrorType.SESSION_REQUIRED, "SESSION_EXPIRED");
+  }
+  // --- END NEW ---
 
   const tracker = await OnboardingTracker.findById(trackerId);
+
+  // Keep your existing tracker-eligibility invalidation (delete session + throw)
   if (!tracker) {
-    throw new AppError(401, "onboarding record not found", EEApiErrorType.SESSION_REQUIRED, { reason: "TRACKER_NOT_FOUND", clearCookieHeader: clearCookie });
+    return await deleteSessionAndThrow(404, "onboarding record not found", EEApiErrorType.NOT_FOUND, "TRACKER_NOT_FOUND");
   }
-
   if (tracker.terminated) {
-    throw new AppError(401, "onboarding terminated", EEApiErrorType.SESSION_REQUIRED, { reason: "TERMINATED", clearCookieHeader: clearCookie });
+    await deleteSessionAndThrow(404, "onboarding record not found", EEApiErrorType.NOT_FOUND, "TERMINATED");
   }
-
   if (onboardingExpired(tracker)) {
-    throw new AppError(401, "onboarding time expired", EEApiErrorType.SESSION_REQUIRED, { reason: "ONBOARDING_EXPIRED", clearCookieHeader: clearCookie });
+    await deleteSessionAndThrow(401, "onboarding time expired", EEApiErrorType.UNAUTHORIZED, "ONBOARDING_EXPIRED");
   }
-
   if (tracker.status.completed) {
-    throw new AppError(401, "onboarding already completed", EEApiErrorType.SESSION_REQUIRED, { reason: "COMPLETED", clearCookieHeader: clearCookie });
+    await deleteSessionAndThrow(401, "onboarding already completed", EEApiErrorType.UNAUTHORIZED, "COMPLETED");
   }
 
-  // Slide expiry
+  // Slide expiry on success
   session.expiresAt = sixHoursFromNow();
   session.lastUsedAt = new Date();
   await session.save();
 
   const refreshCookie = buildSessionCookie(String(session._id), ONBOARDING_SESSION_TTL_SECONDS);
-
-  return {
-    tracker,
-    refreshCookie,
-  };
+  return { tracker, refreshCookie };
 }
 
 /** Revoke sessions for a tracker (e.g., on completion/termination) */

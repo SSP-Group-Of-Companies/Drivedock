@@ -16,3 +16,7 @@ export const PORT = process.env.PORT! ?? 3000;
 export const DISABLE_AUTH = process.env.DISABLE_AUTH === "true";
 export const ONBOARDING_SESSION_COOKIE_NAME = process.env.ONBOARDING_SESSION_COOKIE_NAME || "SSP_ONBOARDING_SESSION";
 export const ONBOARDING_SESSION_TTL_SECONDS = parseInt(process.env.ONBOARDING_SESSION_TTL_SECONDS || "21600", 10); // default 6 hours
+export const AZURE_AD_CLIENT_ID = process.env.AZURE_AD_CLIENT_ID!;
+export const AZURE_AD_CLIENT_SECRET = process.env.AZURE_AD_CLIENT_SECRET!;
+export const AZURE_AD_TENANT_ID = process.env.AZURE_AD_TENANT_ID!;
+export const OUTBOUND_SENDER_EMAIL = process.env.OUTBOUND_SENDER_EMAIL!;
