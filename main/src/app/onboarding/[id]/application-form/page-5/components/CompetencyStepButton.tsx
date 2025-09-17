@@ -15,9 +15,11 @@ type Props = {
   setJustSubmitted: (val: boolean) => void;
   checkboxChecked: boolean;
   setHighlightError: (val: boolean) => void;
+  /** NEW: let parent capture the final answers for results UI */
+  onSuccessfulSubmit: (answers: { questionId: string; answerId: string }[]) => void;
 };
 
-export default function CompetencyStepButton({ score, setScore, trackerId, justSubmitted, setJustSubmitted, checkboxChecked, setHighlightError }: Props) {
+export default function CompetencyStepButton({ score, setScore, trackerId, justSubmitted, setJustSubmitted, checkboxChecked, setHighlightError, onSuccessfulSubmit }: Props) {
   const {
     trigger,
     getValues,
@@ -37,7 +39,6 @@ export default function CompetencyStepButton({ score, setScore, trackerId, justS
       setHighlightError(true);
       return;
     }
-
     router.push(nextRoute);
   };
 
@@ -73,11 +74,15 @@ export default function CompetencyStepButton({ score, setScore, trackerId, justS
         return;
       }
 
-      const updatedScore = json?.data?.page5?.score;
+      const updatedScore: number | null = json?.data?.page5?.score ?? null;
+      const returnedAnswers: { questionId: string; answerId: string }[] | undefined = json?.data?.page5?.answers;
 
       if (typeof updatedScore === "number") {
         setScore(updatedScore);
         setJustSubmitted(true);
+
+        // Surface answers for result rendering (fallback to current form if API doesn't echo them)
+        onSuccessfulSubmit(returnedAnswers && returnedAnswers.length ? returnedAnswers : values.answers);
       } else {
         setErrorMessage("Something went wrong. No score returned.");
       }
