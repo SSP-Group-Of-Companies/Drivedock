@@ -449,111 +449,111 @@
         },
         "questions": {
           "1": {
-            "question": "Según FMCSA, no puedes conducir por más de:",
+            "question": "Según la FMCSA, no puede conducir por más de:",
             "options": {
-              "a": "11 Horas",
-              "b": "Después de estar en servicio por 14 horas",
-              "c": "Después de estar en servicio por más de 8 horas siguiendo 10 horas continuas fuera de servicio",
+              "a": "11 horas",
+              "b": "Después de estar en servicio 14 horas",
+              "c": "Después de estar en servicio más de 8 horas tras 10 horas continuas fuera de servicio",
               "d": "Todas las anteriores"
             }
           },
           "2": {
-            "question": "Según FMCSA, no puedes trabajar por más de ____ horas en 8 días:",
+            "question": "Según la FMCSA, no puede trabajar más de cuántas horas en 8 días:",
             "options": {
-              "a": "70 Horas",
-              "b": "120 Horas",
+              "a": "70 horas",
+              "b": "120 horas",
               "c": "11 horas",
-              "d": "500 millas de viaje redondo"
+              "d": "500 millas ida y vuelta"
             }
           },
           "3": {
-            "question": "Después de 11 horas de tiempo de conducción debes",
+            "question": "Después de 11 horas de conducción, debe",
             "options": {
               "a": "Dejar de trabajar e ir a casa",
-              "b": "Puedes trabajar 5 horas más",
-              "c": "Obtener 10 horas consecutivas de descanso antes de conducir nuevamente",
+              "b": "Trabajar 5 horas más",
+              "c": "Tomar 10 horas consecutivas de descanso antes de volver a conducir",
               "d": "Todas las anteriores"
             }
           },
           "4": {
-            "question": "En Canadá puedes tener dos horas extra de tiempo de conducción además de la regla de turno de 14 horas si",
+            "question": "Durante la inspección previa al viaje, debe demostrar que",
             "options": {
-              "a": "Las condiciones climáticas/de conducción interfieren con la capacidad de realizar deberes dentro de 11 horas y no pudiste preverlas antes de salir",
-              "b": "Usas la opción de descanso dividido",
-              "c": "Obtienes 6 horas consecutivas de descanso entre períodos de conducción",
+              "a": "El vehículo es seguro para conducir",
+              "b": "El vehículo tiene menos de 4 años",
+              "c": "Es competente y no tiene alcohol en el sistema",
               "d": "Todas las anteriores"
             }
           },
           "5": {
-            "question": "Durante la inspección previa al viaje debes mostrar que el",
+            "question": "La carga cognitiva mientras conduce se refiere a:",
             "options": {
-              "a": "El vehículo es seguro para conducir",
-              "b": "El vehículo es más nuevo que 4 años",
-              "c": "Eres competente y no tienes alcohol en el sistema"
+              "a": "Cuánto trabajo está haciendo su cerebro",
+              "b": "Su capacidad para tomar decisiones",
+              "c": "La cantidad de peligros que puede ver"
             }
           },
           "6": {
-            "question": "Durante la inspección previa al viaje",
+            "question": "Usar el modo manos libres en un dispositivo móvil mientras conduce:",
             "options": {
-              "a": "Te sentarás en el camión y conducirás hablando sobre tu experiencia",
-              "b": "Tomarás una prueba computarizada sobre conducción de camiones",
-              "c": "Caminarás alrededor del vehículo y señalarás al entrenador cada elemento y explicarás al examinador qué estás verificando y por qué"
+              "a": "Aumenta la carga cognitiva",
+              "b": "Disminuye la carga cognitiva",
+              "c": "No afecta la carga cognitiva"
             }
           },
           "7": {
-            "question": "Durante la inspección previa al viaje, el espejo y el parabrisas deben verificarse por",
+            "question": "Durante la inspección previa al viaje, usted",
             "options": {
-              "a": "Alineación adecuada",
-              "b": "Pegatinas",
-              "c": "Limpieza, obstrucción y daños"
+              "a": "Se sienta en el camión y conduce hablando de su experiencia",
+              "b": "Realiza una prueba computarizada sobre conducción",
+              "c": "Camina alrededor del vehículo y señala o toca cada elemento y explica al examinador qué revisa y por qué"
             }
           },
           "8": {
-            "question": "¿Qué significa C-TPAT?",
+            "question": "Durante la inspección previa, los espejos y el parabrisas deben revisarse por",
             "options": {
-              "a": "Participación Canadiense en Transporte Contra Terrorismo",
-              "b": "Asociación Comercial Aduanera Contra Terrorismo",
-              "c": "Asociación Comercial Canadiense Contra Terrorismo"
+              "a": "Alineación correcta",
+              "b": "Calcomanías",
+              "c": "Limpieza, obstrucciones y daños"
             }
           },
           "9": {
-            "question": "Mientras haces inspección del remolque, cuál de los siguientes debería hacerte sospechar",
+            "question": "¿Qué significa C-TPAT?",
             "options": {
-              "a": "Ruido anormal al golpear la puerta",
-              "b": "Pintura fresca en cualquier componente",
-              "c": "Pegamento en la llanta",
-              "d": "Todas las anteriores"
+              "a": "Participación Canadiense en Transporte contra el Terrorismo",
+              "b": "Asociación de Comercio y Aduanas contra el Terrorismo",
+              "c": "Asociación Comercial Canadiense contra el Terrorismo",
+              "d": "Asociación de Comercio y Transporte de Aduanas"
             }
           },
           "10": {
-            "question": "Si un conductor encuentra el sello del remolque roto en una parada de camiones debe",
+            "question": "Si un conductor encuentra el sello del remolque roto en un paradero, debe",
             "options": {
-              "a": "Reportar al despacho inmediatamente",
-              "b": "Re-inspeccionar su equipo por cualquier comportamiento sospechoso",
-              "c": "Debería poner otro sello",
+              "a": "Informar de inmediato a despacho",
+              "b": "Reinspeccionar su equipo por cualquier comportamiento sospechoso",
+              "c": "Colocar otro sello",
               "d": "Todas las anteriores"
             }
           },
           "11": {
-            "question": "Cuando un conductor recibe aviso de revocación o suspensión de licencia o permiso debe",
+            "question": "Cuando un conductor recibe aviso de revocación/suspensión de licencia o permisos, debe",
             "options": {
-              "a": "Notificar al transportista dentro de 72 horas",
-              "b": "Notificar al transportista dentro de una semana",
-              "c": "Notificar al transportista inmediatamente",
-              "d": "No tomar acción ya que el transportista recibirá notificación"
+              "a": "Notificar a la empresa en 72 horas",
+              "b": "Notificar a la empresa dentro de una semana",
+              "c": "Notificar a la empresa de inmediato",
+              "d": "No hacer nada porque la empresa será notificada"
             }
           },
           "12": {
-            "question": "El peso bruto máximo que se permite a una combinación tandem en los EE.UU.",
+            "question": "El peso bruto legal máximo para una combinación tándem permitido en EE. UU. es:",
             "options": {
-              "a": "90000 Lbs",
-              "b": "84000 Lbs",
-              "c": "80000 Lbs",
-              "d": "15000 Lbs por eje"
+              "a": "90 000 lb",
+              "b": "84 000 lb",
+              "c": "80 000 lb",
+              "d": "15 000 lb por eje"
             }
           },
           "13": {
-            "question": "Puedes reiniciar tu ciclo de 70 horas teniendo al menos ____ horas fuera de servicio en Canadá",
+            "question": "Puede reiniciar su ciclo de 70 horas teniendo al menos cuántas horas fuera de servicio en Canadá:",
             "options": {
               "a": "10",
               "b": "24",
@@ -562,71 +562,44 @@
             }
           },
           "14": {
-            "question": "Si eres inspeccionado y puesto OOS en una inspección en carretera por cualquier razón debes",
+            "question": "Un conductor no puede conducir más rápido que el límite de velocidad publicado",
             "options": {
-              "a": "Registrar el evento en tu libro y continuar tu viaje",
-              "b": "No dejar la estación de inspección hasta que hayas acumulado suficientes horas para conducir nuevamente",
-              "c": "Informar a tu transportista del incidente",
-              "d": "Todas las anteriores"
+              "a": "A menos que esté enfermo y deba terminar rápido para ver a un médico",
+              "b": "En ningún momento",
+              "c": "Durante el día porque se ve mejor",
+              "d": "A menos que llegue tarde y deba recuperar el tiempo"
             }
           },
           "15": {
-            "question": "Un conductor no puede conducir más rápido que el límite de velocidad publicado",
-            "options": {
-              "a": "A menos que el conductor esté enfermo y deba completar el viaje rápidamente para ver a un doctor",
-              "b": "En cualquier momento",
-              "c": "Durante el día ya que puedes ver las cosas claramente",
-              "d": "A menos que el conductor esté tarde y esté recuperando el tiempo perdido"
-            }
-          },
-          "16": {
-            "question": "Los remolques vacíos cruzando la frontera no requieren sello de perno",
+            "question": "Los remolques vacíos que cruzan fronteras no requieren sello de perno.",
             "options": {
               "a": "Verdadero",
               "b": "Falso"
             }
           },
-          "17": {
-            "question": "¿Cuándo debe completarse una inspección?",
+          "16": {
+            "question": "¿Quién debe colocar el sello en el remolque?",
             "options": {
-              "a": "Cualquier momento durante el viaje",
-              "b": "Pre y post viaje",
-              "c": "Antes de llegar a la frontera",
-              "d": "Si el despacho te pide que lo hagas"
+              "a": "Cualquiera",
+              "b": "Despacho",
+              "c": "Remitente (Shipper)",
+              "d": "Guardia de seguridad"
+            }
+          },
+          "17": {
+            "question": "Regla general en un punto de inspección durante una inspección de seguridad: buscar",
+            "options": {
+              "a": "Señales de manipulación",
+              "b": "Evidencia de drogas",
+              "c": "Áreas que necesitan reparación"
             }
           },
           "18": {
-            "question": "¿Qué debes hacer si encuentras una persona no autorizada en las instalaciones?",
+            "question": "El último paso al colocar un sello de seguridad a un remolque o contenedor es:",
             "options": {
-              "a": "Llamar a la policía",
-              "b": "Llamar al despacho",
-              "c": "Hablar con la persona",
-              "d": "No hacer nada"
-            }
-          },
-          "19": {
-            "question": "¿Quién debería estar poniendo el sello en el remolque?",
-            "options": {
-              "a": "Cualquiera",
-              "b": "Despacho"
-            }
-          },
-          "20": {
-            "question": "¿Quién debe ser contactado si detectas manipulación en tu camión o remolque?",
-            "options": {
-              "a": "Llamar al otro conductor que es senior en la empresa",
-              "b": "Llamar a la policía",
-              "c": "Ir a la frontera y decirle a aduanas",
-              "d": "Llamar al despacho"
-            }
-          },
-          "21": {
-            "question": "¿Qué tipo de sello debe ponerse en el remolque?",
-            "options": {
-              "a": "Plástico",
-              "b": "Perno",
-              "c": "Metal",
-              "d": "Sellos certificados ISA PAS 17712"
+              "a": "Tirar del sello hacia abajo para confirmar que está seguro",
+              "b": "Girar el sello para ver si se sale",
+              "c": "Verificar que el número del sello coincida con su documentación"
             }
           }
         }

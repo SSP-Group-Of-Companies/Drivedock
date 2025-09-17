@@ -449,111 +449,111 @@
         },
         "questions": {
           "1": {
-            "question": "Selon la FMCSA, vous ne pouvez pas conduire pendant plus de :",
+            "question": "Selon la FMCSA, vous ne pouvez pas conduire plus de :",
             "options": {
-              "a": "11 Heures",
+              "a": "11 heures",
               "b": "Après avoir été en service pendant 14 heures",
-              "c": "Après avoir été en service pendant plus de 8 heures suivant 10 heures consécutives hors service",
+              "c": "Après plus de 8 heures en service suivant 10 heures continues hors service",
               "d": "Toutes les réponses ci-dessus"
             }
           },
           "2": {
-            "question": "Selon la FMCSA, vous ne pouvez pas travailler pendant plus de ____ heures en 8 jours :",
+            "question": "Selon la FMCSA, vous ne pouvez pas travailler plus de combien d’heures en 8 jours :",
             "options": {
-              "a": "70 Heures",
-              "b": "120 Heures",
+              "a": "70 heures",
+              "b": "120 heures",
               "c": "11 heures",
-              "d": "500 milles aller-retour"
+              "d": "500 miles aller-retour"
             }
           },
           "3": {
-            "question": "Après 11 heures de temps de conduite, vous devez",
+            "question": "Après 11 heures de conduite, vous devez",
             "options": {
-              "a": "Arrêter de travailler et rentrer à la maison",
-              "b": "Pouvez travailler 5 heures de plus",
-              "c": "Obtenir 10 heures consécutives de repos avant de conduire à nouveau",
+              "a": "Arrêter de travailler et rentrer chez vous",
+              "b": "Travailler 5 heures de plus",
+              "c": "Prendre 10 heures consécutives de repos avant de reconduire",
               "d": "Toutes les réponses ci-dessus"
             }
           },
           "4": {
-            "question": "Au Canada, vous pouvez avoir deux heures supplémentaires de temps de conduite en plus de la règle de quart de 14 heures si",
+            "question": "Lors de l’inspection avant départ, vous devez démontrer que",
             "options": {
-              "a": "Les conditions météorologiques/de conduite interfèrent avec la capacité d'exécuter les fonctions dans les 11 heures et vous ne pouviez pas les prévoir avant de partir",
-              "b": "Vous utilisez l'option de repos fractionné",
-              "c": "Vous obtenez 6 heures consécutives de repos entre les périodes de conduite",
+              "a": "Le véhicule est sécuritaire à conduire",
+              "b": "Le véhicule a moins de 4 ans",
+              "c": "Vous êtes compétent et n’avez pas d’alcool dans l’organisme",
               "d": "Toutes les réponses ci-dessus"
             }
           },
           "5": {
-            "question": "Lors de l'inspection pré-voyage, vous devez montrer que le",
+            "question": "La charge cognitive pendant la conduite fait référence à :",
             "options": {
-              "a": "Le véhicule est sûr à conduire",
-              "b": "Le véhicule a moins de 4 ans",
-              "c": "Vous êtes compétent et n'avez pas d'alcool dans le système"
+              "a": "La quantité de travail effectuée par votre cerveau",
+              "b": "Votre capacité à prendre des décisions",
+              "c": "Le nombre de dangers que vous pouvez voir"
             }
           },
           "6": {
-            "question": "Lors de l'inspection pré-voyage, vous",
+            "question": "Utiliser le mode mains libres sur un appareil mobile en conduisant :",
             "options": {
-              "a": "Vous asseoir dans le camion et conduire en parlant de votre expertise",
-              "b": "Passer un test informatisé sur la conduite de camion",
-              "c": "Marcher autour du véhicule et pointer chaque élément à l'entraîneur et expliquer à l'examinateur ce que vous vérifiez et pourquoi"
+              "a": "Augmente la charge cognitive",
+              "b": "Diminue la charge cognitive",
+              "c": "N’affecte pas la charge cognitive"
             }
           },
           "7": {
-            "question": "Lors de l'inspection pré-voyage, le miroir et le pare-brise doivent être vérifiés pour",
+            "question": "Lors de l’inspection avant départ, vous",
             "options": {
-              "a": "Alignement approprié",
-              "b": "Autocollants",
-              "c": "Propreté, obstruction et dommages"
+              "a": "Restez dans le camion et conduisez en parlant de votre expertise",
+              "b": "Passez un test informatisé sur la conduite",
+              "c": "Faites le tour du véhicule, pointez ou touchez chaque élément et expliquez à l’examinateur ce que vous vérifiez et pourquoi"
             }
           },
           "8": {
-            "question": "Que signifie C-TPAT ?",
+            "question": "Lors de l’inspection, les rétroviseurs et le pare-brise doivent être vérifiés pour",
             "options": {
-              "a": "Participation Canadienne au Transport Contre le Terrorisme",
-              "b": "Partenariat Commercial Douanier Contre le Terrorisme",
-              "c": "Partenariat Commercial Canadien Contre le Terrorisme"
+              "a": "Un bon alignement",
+              "b": "Des autocollants",
+              "c": "La propreté, les obstructions et les dommages"
             }
           },
           "9": {
-            "question": "Lors de l'inspection de la remorque, lequel des éléments suivants devrait vous rendre suspect",
+            "question": "Que signifie C-TPAT ?",
             "options": {
-              "a": "Bruit anormal en frappant la porte",
-              "b": "Peinture fraîche sur n'importe quel composant",
-              "c": "Colle sur le pneu",
-              "d": "Toutes les réponses ci-dessus"
+              "a": "Participation canadienne au transport contre le terrorisme",
+              "b": "Partenariat douanes-commerce contre le terrorisme",
+              "c": "Partenariat commercial canadien contre le terrorisme",
+              "d": "Partenariat douanes-commerce et transport"
             }
           },
           "10": {
-            "question": "Si un conducteur trouve le sceau de la remorque cassé à un arrêt de camion, il doit",
+            "question": "Si un conducteur constate que le scellé du remorque est brisé à un relais routier, il doit",
             "options": {
-              "a": "Signaler immédiatement à la répartition",
-              "b": "Ré-inspecter son équipement pour tout comportement suspect",
-              "c": "Devrait mettre un autre sceau",
+              "a": "Informer immédiatement le dispatch",
+              "b": "Réinspecter son équipement pour tout comportement suspect",
+              "c": "Mettre un autre scellé",
               "d": "Toutes les réponses ci-dessus"
             }
           },
           "11": {
-            "question": "Lorsqu'un conducteur reçoit un avis de révocation ou de suspension de permis ou de licence, il doit",
+            "question": "Lorsqu’un conducteur reçoit un avis de révocation/suspension de permis, il/elle doit",
             "options": {
-              "a": "Notifier le transporteur dans les 72 heures",
-              "b": "Notifier le transporteur dans la semaine",
-              "c": "Notifier le transporteur immédiatement",
-              "d": "Ne prendre aucune mesure car le transporteur recevra la notification"
+              "a": "Avertir le transporteur dans les 72 heures",
+              "b": "Avertir le transporteur dans la semaine",
+              "c": "Avertir immédiatement le transporteur",
+              "d": "Ne rien faire car le transporteur sera informé"
             }
           },
           "12": {
-            "question": "Le poids brut maximum autorisé pour une combinaison tandem aux États-Unis",
+            "question": "Le poids brut légal maximal d’une combinaison tandem autorisé aux États-Unis est :",
             "options": {
-              "a": "90000 Lbs",
-              "b": "84000 Lbs",
-              "c": "80000 Lbs",
-              "d": "15000 Lbs par essieu"
+              "a": "90 000 lb",
+              "b": "84 000 lb",
+              "c": "80 000 lb",
+              "d": "15 000 lb par essieu"
             }
           },
           "13": {
-            "question": "Vous pouvez réinitialiser votre cycle de 70 heures en ayant au moins ____ heures hors service au Canada",
+            "question": "Vous pouvez réinitialiser votre cycle de 70 heures en ayant au moins combien d’heures hors service au Canada :",
             "options": {
               "a": "10",
               "b": "24",
@@ -562,71 +562,44 @@
             }
           },
           "14": {
-            "question": "Si vous êtes inspecté et mis OOS lors d'une inspection routière pour quelque raison que ce soit, vous devez",
+            "question": "Un conducteur ne peut pas rouler plus vite que la limite de vitesse affichée",
             "options": {
-              "a": "Enregistrer avec précision l'événement dans votre livre et continuer votre voyage",
-              "b": "Ne pas quitter la station d'inspection jusqu'à ce que vous ayez accumulé assez d'heures pour conduire à nouveau",
-              "c": "Informer votre transporteur de l'incident",
-              "d": "Toutes les réponses ci-dessus"
+              "a": "Sauf s’il est malade et doit terminer rapidement pour voir un médecin",
+              "b": "À aucun moment",
+              "c": "Le jour, car on voit mieux",
+              "d": "S’il est en retard et veut rattraper le temps perdu"
             }
           },
           "15": {
-            "question": "Un conducteur ne peut pas conduire plus vite que la limite de vitesse affichée",
-            "options": {
-              "a": "Sauf si le conducteur est malade et doit terminer le voyage rapidement pour voir un médecin",
-              "b": "À tout moment",
-              "c": "Pendant la journée car vous pouvez voir les choses clairement",
-              "d": "Sauf si le conducteur est en retard et rattrape le temps perdu"
-            }
-          },
-          "16": {
-            "question": "Les remorques vides traversant la frontière ne nécessitent pas de sceau à boulon",
+            "question": "Les remorques vides qui franchissent la frontière n’exigent pas de scellé boulonné.",
             "options": {
               "a": "Vrai",
               "b": "Faux"
             }
           },
-          "17": {
-            "question": "Quand une inspection doit-elle être terminée ?",
+          "16": {
+            "question": "Qui doit poser le scellé sur la remorque ?",
             "options": {
-              "a": "N'importe quand pendant le voyage",
-              "b": "Pré et post voyage",
-              "c": "Avant d'atteindre la frontière",
-              "d": "Si la répartition vous demande de le faire"
+              "a": "N’importe qui",
+              "b": "Le dispatch",
+              "c": "L’expéditeur (shipper)",
+              "d": "L’agent de sécurité"
+            }
+          },
+          "17": {
+            "question": "Règle générale à un point d’inspection lors d’un contrôle de sûreté : rechercher",
+            "options": {
+              "a": "Des signes d’altération",
+              "b": "Des preuves de drogues",
+              "c": "Des zones nécessitant des réparations"
             }
           },
           "18": {
-            "question": "Que devez-vous faire si vous trouvez une personne non autorisée sur les lieux ?",
+            "question": "La dernière étape pour fixer un scellé de sécurité à une remorque ou un conteneur consiste à :",
             "options": {
-              "a": "Appeler la police",
-              "b": "Appeler la répartition",
-              "c": "Parler à la personne",
-              "d": "Ne rien faire"
-            }
-          },
-          "19": {
-            "question": "Qui devrait mettre le sceau sur la remorque ?",
-            "options": {
-              "a": "N'importe qui",
-              "b": "Répartition"
-            }
-          },
-          "20": {
-            "question": "Qui doit être contacté si vous détectez une manipulation sur votre camion ou remorque ?",
-            "options": {
-              "a": "Appeler l'autre conducteur qui est senior dans l'entreprise",
-              "b": "Appeler la police",
-              "c": "Aller à la frontière et dire aux douanes",
-              "d": "Appeler la répartition"
-            }
-          },
-          "21": {
-            "question": "Quel type de sceau doit être mis sur la remorque ?",
-            "options": {
-              "a": "Plastique",
-              "b": "Boulon",
-              "c": "Métal",
-              "d": "Sceaux certifiés ISA PAS 17712"
+              "a": "Tirer vers le bas sur le scellé pour confirmer qu’il est bien fixé",
+              "b": "Tordre le scellé pour voir s’il se détache",
+              "c": "Vérifier que le numéro du scellé correspond à votre documentation"
             }
           }
         }

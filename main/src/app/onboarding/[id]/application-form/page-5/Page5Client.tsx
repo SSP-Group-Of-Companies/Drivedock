@@ -25,7 +25,7 @@ export default function Page5Client({ data, trackerId }: Page5ClientProps) {
   const [highlightError, setHighlightError] = useState(false);
 
   const competencyQuestions = getCompetencyQuestions(t);
-  
+
   const defaultValues: ApplicationFormPage5Schema = data.answers?.length
     ? {
         answers: data.answers.map((a) => ({
@@ -46,7 +46,8 @@ export default function Page5Client({ data, trackerId }: Page5ClientProps) {
     defaultValues,
   });
 
-  const percentage = score !== null ? Math.round((score / 21) * 100) : null;
+  const totalQuestions = competencyQuestions.length;
+  const percentage = score !== null ? Math.round((score / totalQuestions) * 100) : null;
 
   if (!mounted) return null;
 
@@ -59,7 +60,7 @@ export default function Page5Client({ data, trackerId }: Page5ClientProps) {
 
         {score !== null && (
           <p className="text-center text-green-700 font-semibold">
-            {t("form.step2.page5.scoreLabel")} {score}/21 ({percentage}%)
+            {t("form.step2.page5.scoreLabel")} {score}/{totalQuestions} ({percentage}%)
           </p>
         )}
 

@@ -20,9 +20,9 @@ export default function QuizResultsContent({ data, onRefresh: _onRefresh }: Quiz
   // Ensure lastUpdated is a proper Date object
   const completionDate = lastUpdated ? new Date(lastUpdated) : new Date();
   const competencyQuestions = getCompetencyQuestions(t);
-
+  const totalQuestions = competencyQuestions.length;
   // Calculate percentage
-  const percentage = score !== null ? Math.round((score / 21) * 100) : null;
+  const percentage = score !== null ? Math.round((score / totalQuestions) * 100) : null;
 
   // Create a map of answers for easy lookup
   const answersMap = new Map(answers.map((answer) => [answer.questionId, answer.answerId]));
@@ -43,6 +43,7 @@ export default function QuizResultsContent({ data, onRefresh: _onRefresh }: Quiz
         <div className="w-full lg:w-72 lg:flex-shrink-0 order-1 lg:order-1">
           <QuizSummaryCard
             score={score}
+            totalQuestions={totalQuestions}
             percentage={percentage}
             acknowledgedFaults={true} // This would come from the data if available
             dateOfCompletion={completionDate} // Use properly converted Date object
