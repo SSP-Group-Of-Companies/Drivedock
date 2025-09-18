@@ -8,7 +8,7 @@ import {
 import OnboardingPhotoGroup from "@/app/onboarding/components/OnboardingPhotoGroup";
 import { ES3Folder } from "@/types/aws.types";
 import { useFormContext, useWatch } from "react-hook-form";
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 
 function RequiredBadge({ children = "Required" }) {
@@ -31,9 +31,24 @@ export default function EligibilityDocsSection({
   const {
     register,
     formState: { errors },
+    setValue,
   } = useFormContext();
   const passportType = useWatch({ name: "passportType" });
   const workAuthorizationType = useWatch({ name: "workAuthorizationType" });
+
+  // Clear fields when passport type changes to maintain form state consistency
+  useEffect(() => {
+    if (isCA && passportType === EPassportType.CANADIAN) {
+      // Clear work authorization type since it's not needed for Canadian passports
+      setValue("workAuthorizationType", undefined);
+      // Also clear US visa and PR/Permit photos since they're not needed for Canadian passports
+      setValue("usVisaPhotos", []);
+      setValue("prPermitCitizenshipPhotos", []);
+    } else if (isCA && passportType === EPassportType.OTHERS) {
+      // When switching to "Others", clear the work authorization type to force re-selection
+      setValue("workAuthorizationType", undefined);
+    }
+  }, [isCA, passportType, setValue]);
 
   // Determine which fields to show based on passport type
   const showFields = useMemo(() => {
