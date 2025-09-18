@@ -2,17 +2,11 @@
   "crons": [
     {
       "path": "/api/v1/cron/cleanup-expired-onboarding",
-      "schedule": "0 0 */14 * *",
-      "headers": {
-        "Authorization": "Bearer ${CRON_SECRET}"
-      }
+      "schedule": "0 0 */14 * *"
     },
     {
       "path": "/api/v1/cron/send-onboarding-completion-emails",
-      "schedule": "0 0 * * *",
-      "headers": {
-        "Authorization": "Bearer ${CRON_SECRET}"
-      }
+      "schedule": "0 0 * * *"
     }
   ]
 }
