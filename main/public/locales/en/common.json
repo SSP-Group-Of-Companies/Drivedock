@@ -452,6 +452,7 @@
         "lockedNote": "You have submitted your answers. The test is now locked.",
         "scoreLabel": "Score:",
         "note": "I confirm I have reviewed my score and understand I cannot retake this test.",
+        "reviewInstruction": "Review your answers below. When ready, scroll down and check the acknowledgment box, then click Continue to proceed.",
         "modal": {
           "finalConfirmation": "Final Confirmation",
           "confirmMessage": "You cannot retake this competency test once submitted. Are you sure you want to proceed?",

@@ -73,12 +73,20 @@ export default function CompetencyQuestionList({ disabled, showResults, resultsM
                 return (
                   <label key={option.id} className={containerClass}>
                     <input type="radio" value={option.id} {...register(inputName)} className="sr-only" disabled={disabled} />
-                    <div className="flex items-center gap-2">
-                      <span className="uppercase font-medium">{option.id}.</span>
-                      <span>{option.value}</span>
+                    <div className="flex items-start gap-2">
+                      <span className="uppercase font-medium flex-shrink-0 leading-5">{option.id}.</span>
 
-                      {showResults && isCorrectAnswer && <CheckCircle className="h-4 w-4 ml-auto text-green-600" />}
-                      {showResults && isUserAnswer && !isCorrect && <XCircle className="h-4 w-4 ml-auto text-red-600" />}
+                      <span className="flex-1 leading-5 break-words">{option.value}</span>
+
+                      {showResults && (
+                        <span className="ml-2 flex-shrink-0 self-start">
+                          {isCorrectAnswer ? (
+                            <CheckCircle className="h-5 w-5 min-w-[1.25rem] min-h-[1.25rem] text-green-600" />
+                          ) : isUserAnswer && !isCorrect ? (
+                            <XCircle className="h-5 w-5 min-w-[1.25rem] min-h-[1.25rem] text-red-600" />
+                          ) : null}
+                        </span>
+                      )}
                     </div>
                   </label>
                 );
@@ -89,25 +97,6 @@ export default function CompetencyQuestionList({ disabled, showResults, resultsM
             {!showResults && errorMessage && <p className="mt-2 text-sm text-red-600 font-medium">{errorMessage}</p>}
 
             <input type="hidden" value={question.questionId} {...register(`answers.${index}.questionId`)} />
-
-            {/* Result summary */}
-            {showResults && isAnswered && (
-              <div className="mt-4 text-xs sm:text-sm">
-                {isCorrect ? (
-                  <div className="flex items-center gap-2 text-green-700">
-                    <CheckCircle className="h-4 w-4" />
-                    <span>Correct answer!</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 text-red-700 bg-red-50 border border-red-200 rounded-md p-2">
-                    <XCircle className="h-4 w-4" />
-                    <span>
-                      Incorrect. Your answer: <strong className="uppercase">{currentAnswerId}</strong>. Correct answer: <strong className="uppercase">{question.correctAnswerId}</strong>.
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         );
       })}

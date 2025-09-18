@@ -441,6 +441,7 @@
         "lockedNote": "Vous avez soumis vos réponses. Le test est maintenant verrouillé.",
         "scoreLabel": "Score :",
         "note": "Je confirme avoir pris connaissance de mon score et comprends que je ne peux pas repasser ce test.",
+        "reviewInstruction": "Vérifiez vos réponses ci-dessous. Lorsque vous êtes prêt, descendez et cochez la case d’accusé de réception, puis cliquez sur Continuer pour poursuivre.",
         "modal": {
           "finalConfirmation": "Confirmation finale",
           "confirmMessage": "Vous ne pourrez pas repasser ce test de compétences une fois soumis. Êtes-vous sûr de vouloir continuer ?",

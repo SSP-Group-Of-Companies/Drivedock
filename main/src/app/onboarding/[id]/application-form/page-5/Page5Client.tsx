@@ -81,9 +81,7 @@ export default function Page5Client({ data, trackerId }: Page5ClientProps) {
         <div className="mt-3 text-sm text-center text-gray-700 bg-blue-50 border border-blue-200 rounded-md py-2 px-4 max-w-3xl mx-auto">
           {/* If just submitted now, show explicit “review then checkbox+continue” message */}
           {justSubmitted ? (
-            <span className="font-medium">
-              Review your answers below. When ready, scroll down and <strong>check the acknowledgment box</strong>, then click <strong>Continue</strong> to proceed.
-            </span>
+            <span className="font-medium">{t("form.step2.page5.reviewInstruction")}</span>
           ) : (
             // Existing locked note (when re-opening an already-completed page)
             <span>{t("form.step2.page5.lockedNote")}</span>

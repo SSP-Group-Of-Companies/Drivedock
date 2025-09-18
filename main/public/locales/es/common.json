@@ -441,6 +441,7 @@
         "lockedNote": "Has enviado tus respuestas. La prueba ahora está bloqueada.",
         "scoreLabel": "Puntuación:",
         "note": "Confirmo que he revisado mi puntuación y entiendo que no puedo repetir esta prueba.",
+        "reviewInstruction": "Revise sus respuestas a continuación. Cuando esté listo, desplácese hacia abajo y marque la casilla de reconocimiento, luego haga clic en Continuar para continuar.",
         "modal": {
           "finalConfirmation": "Confirmación final",
           "confirmMessage": "No podrás repetir esta prueba de competencias una vez enviada. ¿Seguro que deseas continuar?",
