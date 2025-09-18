@@ -1,5 +1,7 @@
 import { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
 import { buildOnboardingStepPath } from "../utils/onboardingUtils";
+import { apiClient } from "../onboarding/apiClient";
+import { ErrorManager } from "../onboarding/errorManager";
 
 type Scope = "application-form" | "prequalifications" | "policies-consents";
 
@@ -30,21 +32,34 @@ export async function submitFormStep({
     ? `/api/v1/onboarding/${id}/application-form/${submitSegment}`
     : `/api/v1/onboarding/${id}/${scope}`;
 
-  const res = await fetch(url, {
-    method: isPatch ? "PATCH" : "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(json),
+  // Set retry callback for error handling
+  const errorManager = ErrorManager.getInstance();
+  errorManager.setRetryCallback(() => {
+    return submitFormStep({ json, tracker, submitSegment, urlTrackerId, scope });
   });
 
-  if (!res.ok) throw new Error((await res.text()) || "Submission failed");
-  const data = await res.json();
-  const trackerContext: IOnboardingTrackerContext =
-    data?.data?.onboardingContext;
-  const nextStep = trackerContext.nextStep || null;
-  if (!trackerContext) throw new Error("trackerContext missing");
+  const response = isPatch 
+    ? await apiClient.patch(url, json)
+    : await apiClient.post(url, json);
+
+  // Clear retry callback after successful response
+  errorManager.clearRetryCallback();
+
+  if (!response.success) {
+    throw new Error("Submission failed");
+  }
+
+  const trackerContext: IOnboardingTrackerContext = (response.data as any)?.onboardingContext;
+  const nextStep = trackerContext?.nextStep || null;
+  
+  if (!trackerContext) {
+    throw new Error("trackerContext missing");
+  }
+
   const nextUrl = nextStep
     ? buildOnboardingStepPath(trackerContext, nextStep)
     : null;
+    
   return {
     trackerContext,
     nextUrl,

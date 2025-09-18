@@ -6,8 +6,9 @@
 "use client";
 
 import { useFormContext, FieldValues } from "react-hook-form";
-import { useRouter, useParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
+import { useProtectedRouter } from "@/hooks/onboarding/useProtectedRouter";
 import { useState, ReactNode } from "react";
 
 import useMounted from "@/hooks/useMounted";
@@ -19,6 +20,7 @@ import { useFormErrorScroll } from "@/hooks/useFormErrorScroll";
 import { COMPANIES } from "@/constants/companies";
 import { submitFormStep } from "@/lib/frontendUtils/submitFormStep";
 import { ECompanyApplicationType } from "@/constants/companies";
+import { ErrorManager } from "@/lib/onboarding/errorManager";
 import type {
   BuildPayloadCtx,
   FormPageConfig,
@@ -43,7 +45,7 @@ export default function ContinueButton<T extends FieldValues>({
     formState: { errors, defaultValues },
   } = useFormContext<T>();
 
-  const router = useRouter();
+  const router = useProtectedRouter();
   const params = useParams();
 
   const mounted = useMounted();
@@ -92,20 +94,53 @@ export default function ContinueButton<T extends FieldValues>({
 
     const ruleError = resolvedConfig.validateBusinessRules?.(values);
     if (ruleError) {
-      alert(ruleError);
+      // Show business rule error via ErrorManager
+      const errorManager = ErrorManager.getInstance();
+      errorManager.showModal({
+        type: "GENERIC_ERROR" as any,
+        title: t("errors.generic.title", "Error"),
+        message: ruleError,
+        primaryAction: {
+          label: t("errors.generic.tryAgain", "OK"),
+          action: () => errorManager.hideModal()
+        },
+        canClose: true
+      });
       return;
     }
 
     if (isPost) {
       if (!prequalifications?.completed) {
-        alert(
-          "Prequalification data is missing. Please restart the application."
-        );
+        const errorManager = ErrorManager.getInstance();
+        errorManager.showModal({
+          type: "GENERIC_ERROR" as any,
+          title: t("errors.generic.title", "Error"),
+          message: "Prequalification data is missing. Please restart the application.",
+          primaryAction: {
+            label: "Restart Application",
+            action: () => {
+              window.location.href = "/start/company";
+            }
+          },
+          canClose: false
+        });
         return;
       }
       const companyId = selectedCompany?.id;
       if (!companyId || !COMPANIES.some((c) => c.id === companyId)) {
-        alert("Invalid company selection. Please restart the application.");
+        const errorManager = ErrorManager.getInstance();
+        errorManager.showModal({
+          type: "GENERIC_ERROR" as any,
+          title: t("errors.generic.title", "Error"),
+          message: "Invalid company selection. Please restart the application.",
+          primaryAction: {
+            label: "Restart Application",
+            action: () => {
+              window.location.href = "/start/company";
+            }
+          },
+          canClose: false
+        });
         return;
       }
     }
@@ -158,9 +193,7 @@ export default function ContinueButton<T extends FieldValues>({
     } catch (err: any) {
       console.error("Submission error:", err);
       hide();
-      alert(
-        err.message || "An error occurred while submitting. Please try again."
-      );
+      // Error display is now handled by ErrorManager through submitFormStep
     } finally {
       setSubmitting(false);
       // Success path leaves global loader visible until route transition

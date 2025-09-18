@@ -16,8 +16,8 @@ import {
   preQualificationQuestions,
   categoryQuestions,
 } from "@/constants/form-questions/preQualification";
-import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
+import { useProtectedRouter } from "@/hooks/onboarding/useProtectedRouter";
 import { ArrowRight } from "lucide-react";
 
 // components, hooks, and types
@@ -27,6 +27,8 @@ import FlatbedPopup from "@/app/onboarding/components/FlatbedPopup";
 import { useCompanySelection } from "@/hooks/frontendHooks/useCompanySelection";
 import { useOnboardingTracker } from "@/store/useOnboardingTracker";
 import { useGlobalLoading } from "@/store/useGlobalLoading";
+import { apiClient } from "@/lib/onboarding/apiClient";
+import { ErrorManager } from "@/lib/onboarding/errorManager";
 import {
   EDriverType,
   EHaulPreference,
@@ -59,7 +61,7 @@ export default function PreQualificationClient({
 }: Props) {
   const mounted = useMounted(); // Prevent SSR/CSR mismatch
   const { t } = useTranslation("common");
-  const router = useRouter();
+  const router = useProtectedRouter();
 
   // 1) Pull currently selected company from UI (fallback)
   const { selectedCompany } = useCompanySelection();
@@ -155,43 +157,47 @@ export default function PreQualificationClient({
       // Show loading immediately for API operations
       show(t("form.loading", "Processing..."));
 
-      // PATCH to backend for this tracker
-      const res = await fetch(
+      // Set retry callback for error handling
+      const errorManager = ErrorManager.getInstance();
+      errorManager.setRetryCallback(() => {
+        onSubmit(data);
+      });
+
+      // PATCH to backend for this tracker using API client
+      const response = await apiClient.patch(
         `/api/v1/onboarding/${trackerId}/prequalifications`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(transformed),
-        }
+        transformed
       );
 
-      if (!res.ok) {
-        const { message } = await res
-          .json()
-          .catch(() => ({ message: "Failed to update prequalifications" }));
-        throw new Error(message || "Failed to update prequalifications");
+      // Clear retry callback after response
+      errorManager.clearRetryCallback();
+
+      if (!response.success) {
+        // Error handling is now managed by the API client and ErrorManager
+        hide();
+        return;
       }
 
       // Expect onboardingContext.nextUrl to be returned for navigation
-      const result = await res.json();
-      const onboardingContext: IOnboardingTrackerContext =
-        result?.data?.onboardingContext;
+      const onboardingContext: IOnboardingTrackerContext = (
+        response.data as any
+      )?.onboardingContext;
       const nextStep = onboardingContext?.nextStep;
-      if (!onboardingContext || !nextStep)
-        throw new Error("nextStep missing from onboardingContext");
+
+      if (!onboardingContext || !nextStep) {
+        console.error("nextStep missing from onboardingContext");
+        hide();
+        return;
+      }
 
       // Navigate to the next step in the wizard
       router.push(buildOnboardingStepPath(onboardingContext, nextStep));
       // ensure the *destination* layout refetches with the new doc
       router.refresh();
     } catch (err) {
-      // Log for debugging; show a basic alert for the MVP
+      // Log for debugging; error display is handled by ErrorManager
       console.error("Prequalification submit error:", err);
       hide(); // Hide loading screen on error
-      alert(
-        t("form.errors.saveFailed") ||
-          "Failed to save your answers. Please try again."
-      );
     } finally {
       // Success path navigates away; we leave loading to route transition UI
     }
