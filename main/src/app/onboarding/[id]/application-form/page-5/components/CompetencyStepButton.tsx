@@ -1,11 +1,13 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useFormContext } from "react-hook-form";
+import { useProtectedRouter } from "@/hooks/onboarding/useProtectedRouter";
 import { useFormErrorScroll } from "@/hooks/useFormErrorScroll";
 import { useState } from "react";
 import CompetencyConfirmSubmitModal from "./CompetencyConfirmSubmitModal";
 import { useTranslation } from "react-i18next";
+import { apiClient } from "@/lib/onboarding/apiClient";
+import { ErrorManager } from "@/lib/onboarding/errorManager";
 
 type Props = {
   score: number | null;
@@ -26,7 +28,7 @@ export default function CompetencyStepButton({ score, setScore, trackerId, justS
     formState: { errors },
   } = useFormContext();
   const { t } = useTranslation("common");
-  const router = useRouter();
+  const router = useProtectedRouter();
   const { handleFormError } = useFormErrorScroll();
   const [loading, setLoading] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -59,36 +61,45 @@ export default function CompetencyStepButton({ score, setScore, trackerId, justS
     setLoading(true);
 
     try {
-      const res = await fetch(`/api/v1/onboarding/${trackerId}/application-form/page-5`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ answers: values.answers }),
+      // Wire retry to this exact attempt
+      const errorManager = ErrorManager.getInstance();
+      errorManager.setRetryCallback(() => {
+        handleSubmit();
       });
 
-      const json = await res.json();
+      const response = await apiClient.patch(`/api/v1/onboarding/${trackerId}/application-form/page-5`, {
+        answers: values.answers,
+      });
 
-      if (!res.ok) {
-        const message = json?.message || "Failed to submit. Please try again.";
-        setErrorMessage(message);
+      // Clear retry callback after response
+      errorManager.clearRetryCallback();
+
+      if (!response.success) {
+        // Error handling (toasts/modals) is centralized in ErrorManager/apiClient.
+        // Keep a local message only if you want an inline hint.
+        setErrorMessage(response.message || "Submission failed. Please try again.");
         return;
       }
 
-      const updatedScore: number | null = json?.data?.page5?.score ?? null;
-      const returnedAnswers: { questionId: string; answerId: string }[] | undefined = json?.data?.page5?.answers;
+      // Success path — pull score from response
+      const updatedScore = (response.data as any)?.page5?.score;
 
       if (typeof updatedScore === "number") {
         setScore(updatedScore);
-        // mark justSubmitted to trigger top scroll + banner in parent
         setJustSubmitted(true);
+        setErrorMessage(null); // clear any lingering error
 
-        // Surface answers for result rendering (fallback to current form if API doesn't echo them)
-        onSuccessfulSubmit(returnedAnswers && returnedAnswers.length ? returnedAnswers : values.answers);
+        // Preserve current behavior: let parent capture final answers for results UI
+        if (Array.isArray(values?.answers)) {
+          onSuccessfulSubmit(values.answers as { questionId: string; answerId: string }[]);
+        }
       } else {
         setErrorMessage("Something went wrong. No score returned.");
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      setErrorMessage(err?.message || "Failed to submit. Please try again.");
+      // Centralized ErrorManager will surface details; keep concise inline message for this view
+      setErrorMessage("Failed to submit. Please try again.");
     } finally {
       setLoading(false);
     }

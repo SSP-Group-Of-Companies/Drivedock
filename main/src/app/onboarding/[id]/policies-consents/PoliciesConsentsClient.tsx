@@ -8,7 +8,7 @@ import { ES3Folder } from "@/types/aws.types";
 import { UploadResult } from "@/lib/utils/s3Upload";
 import { useRef, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useRouter } from "next/navigation";
+import { useProtectedRouter } from "@/hooks/onboarding/useProtectedRouter";
 
 import PoliciesPdfGrid from "./components/PoliciesPdfGrid";
 import PoliciesConsentCheckbox from "./components/PoliciesConsentCheckbox";
@@ -19,6 +19,8 @@ import useMounted from "@/hooks/useMounted";
 // Self-contained signature component
 import SignatureBox, { type SignatureBoxHandle } from "@/components/react-canvas/SignatureBox";
 import { buildOnboardingNextStepPath } from "@/lib/utils/onboardingUtils";
+import { apiClient } from "@/lib/onboarding/apiClient";
+import { ErrorManager } from "@/lib/onboarding/errorManager";
 
 export type PoliciesConsentsClientProps = {
   policiesConsents: Partial<IPoliciesConsents>;
@@ -27,7 +29,7 @@ export type PoliciesConsentsClientProps = {
 
 export default function PoliciesConsentsClient({ policiesConsents, onboardingContext }: PoliciesConsentsClientProps) {
   const mounted = useMounted();
-  const router = useRouter();
+  const router = useProtectedRouter();
   const { t } = useTranslation("common");
 
   const company = getCompanyById(onboardingContext.companyId as ECompanyId);
@@ -156,22 +158,27 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
         locationPermissionGranted: locationToggleEnabled,
       };
 
-      const response = await fetch(`/api/v1/onboarding/${id}/policies-consents`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(requestBody),
+      // Set retry callback for error handling
+      const errorManager = ErrorManager.getInstance();
+      errorManager.setRetryCallback(() => {
+        proceedWithSubmission();
       });
 
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data?.message || "Failed to save signature.");
+      const response = await apiClient.patch(`/api/v1/onboarding/${id}/policies-consents`, requestBody);
+
+      // Clear retry callback after response
+      errorManager.clearRetryCallback();
+
+      if (!response.success) {
+        // Error handling is now managed by the API client and ErrorManager
+        return;
       }
 
       // Success - navigate to next step
       router.push(buildOnboardingNextStepPath(onboardingContext, EStepPath.POLICIES_CONSENTS));
     } catch (error: any) {
       console.error("Submit failed", error);
-      alert(error?.message || "Submission failed.");
+      // Error display is now handled by ErrorManager - no more alerts
     } finally {
       setSubmitting(false);
     }

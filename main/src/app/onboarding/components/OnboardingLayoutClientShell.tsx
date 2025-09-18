@@ -18,6 +18,12 @@ import useMounted from "@/hooks/useMounted";
 import { handleBackNavigation } from "@/lib/utils/onboardingUtils";
 import { useOnboardingTrackerContext } from "@/app/providers/OnboardingTrackerContextProvider";
 import { useActiveOnboardingStep } from "@/hooks/useActiveOnboardingStep";
+import { useSessionMonitor } from "@/hooks/onboarding/useSessionMonitor";
+import { useErrorModal } from "@/hooks/onboarding/useErrorModal";
+import ErrorModal from "@/components/onboarding/ErrorModal";
+import OnboardingErrorBoundary from "@/components/onboarding/OnboardingErrorBoundary";
+// Import simple testing utils for development
+import "@/lib/onboarding/simpleTestUtils";
 
 export default function OnboardingLayoutClientShell({
   children,
@@ -29,6 +35,10 @@ export default function OnboardingLayoutClientShell({
   const mounted = useMounted();
   const ctx = useOnboardingTrackerContext();
   const { pathname, activeMacro } = useActiveOnboardingStep();
+
+  // Session monitoring and error handling
+  useSessionMonitor();
+  const { currentModal, hideModal } = useErrorModal();
 
   const [showModal, setShowModal] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -242,12 +252,17 @@ export default function OnboardingLayoutClientShell({
             </div>
           )}
 
-          {/* Page content */}
-          {children}
+          {/* Page content wrapped in error boundary */}
+          <OnboardingErrorBoundary>
+            {children}
+          </OnboardingErrorBoundary>
         </div>
       </main>
 
       <Footer />
+
+      {/* Error Modal */}
+      <ErrorModal modal={currentModal} onClose={hideModal} />
     </div>
   );
 }

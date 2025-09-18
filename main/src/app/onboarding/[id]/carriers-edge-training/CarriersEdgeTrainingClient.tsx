@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
-import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
+import { useProtectedRouter } from "@/hooks/onboarding/useProtectedRouter";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { CheckCircle2, Award } from "lucide-react";
@@ -23,7 +23,7 @@ export default function CarriersEdgeTrainingClient({
   onboardingContext,
 }: CarriersEdgeTrainingClientProps) {
   const { t } = useTranslation("common");
-  const router = useRouter();
+  const router = useProtectedRouter();
   const [showConfetti, setShowConfetti] = useState(false);
 
   const { emailSent, completed } = carriersEdgeTraining;

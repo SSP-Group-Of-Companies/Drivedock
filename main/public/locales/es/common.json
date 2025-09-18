@@ -813,5 +813,43 @@
       "resume": "Ver Solicitud"
     },
     "resumeInfo": "Puedes usar tu SIN/SSN para reanudar y ver tu solicitud completada en cualquier momento desde la página de inicio."
+  },
+
+  "errors": {
+    "session": {
+      "title": "Sesión expirada",
+      "message": "Su sesión ha expirado por seguridad después de 6 horas de inactividad. Su progreso está guardado de forma segura.",
+      "resume": "Reanudar solicitud",
+      "goHome": "Ir al inicio"
+    },
+    "notFound": {
+      "title": "Solicitud no encontrada",
+      "message": "No se pudo encontrar su solicitud. Esto puede ocurrir si la solicitud fue terminada o ha expirado.",
+      "startNew": "Nueva solicitud",
+      "resume": "Reanudar existente"
+    },
+    "network": {
+      "title": "Fallo de conexión",
+      "message": "No se puede conectar al servidor. Verifique su conexión a Internet e intente de nuevo.",
+      "retry": "Cerrar",
+      "goHome": "Ir al inicio"
+    },
+    "server": {
+      "title": "Error del servidor",
+      "message": "Algo salió mal de nuestro lado. Intente de nuevo o contacte soporte si el problema persiste.",
+      "tryAgain": "Intentar de nuevo",
+      "contactSupport": "Contactar soporte"
+    },
+    "rateLimit": {
+      "title": "Demasiadas solicitudes",
+      "message": "Ha hecho demasiadas solicitudes. Reintentaremos automáticamente en 30 segundos, o puede ir al inicio e intentar más tarde.",
+      "wait": "Reintento automático en 30s",
+      "goHome": "Ir al inicio"
+    },
+    "generic": {
+      "title": "Error",
+      "tryAgain": "Intentar de nuevo",
+      "goHome": "Ir al inicio"
+    }
   }
 }

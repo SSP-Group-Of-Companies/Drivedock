@@ -1,6 +1,7 @@
 // src/app/onboarding/[id]/drug-test/DrugTestClient.tsx
 "use client";
 
+// React and library imports
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Hourglass, XCircle } from "lucide-react";
@@ -16,6 +17,8 @@ import { EDrugTestStatus } from "@/types/drugTest.types";
 import { buildOnboardingStepPath } from "@/lib/utils/onboardingUtils";
 import OnboardingPhotoGroupControlled from "../../components/OnboardingPhotoGroupControlled";
 import { Confetti } from "@/components/shared";
+import { apiClient } from "@/lib/onboarding/apiClient";
+import { ErrorManager } from "@/lib/onboarding/errorManager";
 
 export type DrugTestClientProps = {
   drugTest: Partial<IDrugTestDoc>;
@@ -24,7 +27,10 @@ export type DrugTestClientProps = {
 
 const MAX_PHOTOS = 5;
 
-export default function DrugTestClient({ drugTest, onboardingContext }: DrugTestClientProps) {
+export default function DrugTestClient({
+  drugTest,
+  onboardingContext,
+}: DrugTestClientProps) {
   const mounted = useMounted();
   const router = useRouter();
   const { t } = useTranslation();
@@ -34,10 +40,16 @@ export default function DrugTestClient({ drugTest, onboardingContext }: DrugTest
   const trackerId = ctx.id;
 
   // Drive UI from local status; initialize from server
-  const [status, setStatus] = useState<EDrugTestStatus>(drugTest.status ?? EDrugTestStatus.NOT_UPLOADED);
+  const [status, setStatus] = useState<EDrugTestStatus>(
+    drugTest.status ?? EDrugTestStatus.NOT_UPLOADED
+  );
 
   // RULE: ignore any server-provided driverDocuments if NOT_UPLOADED
-  const initialPhotos: IFileAsset[] = (drugTest.status ?? EDrugTestStatus.NOT_UPLOADED) === EDrugTestStatus.NOT_UPLOADED ? [] : drugTest.driverDocuments ?? [];
+  const initialPhotos: IFileAsset[] =
+    (drugTest.status ?? EDrugTestStatus.NOT_UPLOADED) ===
+    EDrugTestStatus.NOT_UPLOADED
+      ? []
+      : drugTest.driverDocuments ?? [];
 
   const [photos, setPhotos] = useState<IFileAsset[]>(initialPhotos);
   const [submitting, setSubmitting] = useState(false);
@@ -64,15 +76,21 @@ export default function DrugTestClient({ drugTest, onboardingContext }: DrugTest
    *      - If driver has not uploaded anything yet (driverDocuments empty AND no staged photos), allow upload.
    *      - Otherwise, block (normal pending state).
    */
-  const hasNoDriverDocs = (drugTest.driverDocuments?.length ?? 0) === 0 && photos.length === 0;
-  const canUpload = status === EDrugTestStatus.NOT_UPLOADED || isRejected || (status === EDrugTestStatus.AWAITING_REVIEW && hasNoDriverDocs);
+  const hasNoDriverDocs =
+    (drugTest.driverDocuments?.length ?? 0) === 0 && photos.length === 0;
+  const canUpload =
+    status === EDrugTestStatus.NOT_UPLOADED ||
+    isRejected ||
+    (status === EDrugTestStatus.AWAITING_REVIEW && hasNoDriverDocs);
 
   const headerBlock = useMemo(() => {
     if (completed) {
       return (
         <div className="rounded-xl bg-green-50 ring-1 ring-green-100 p-4 flex items-center gap-2">
           <CheckCircle2 className="text-green-600 w-5 h-5" />
-          <p className="text-sm text-green-800 font-medium">{t("form.step6.verified")}</p>
+          <p className="text-sm text-green-800 font-medium">
+            {t("form.step6.verified")}
+          </p>
         </div>
       );
     }
@@ -81,7 +99,9 @@ export default function DrugTestClient({ drugTest, onboardingContext }: DrugTest
       return (
         <div className="rounded-xl bg-amber-50 ring-1 ring-amber-100 p-4 flex items-center gap-2 justify-center">
           <Hourglass className="text-amber-600 w-5 h-5" />
-          <p className="text-sm text-amber-800 font-medium">{t("form.step6.pending")}</p>
+          <p className="text-sm text-amber-800 font-medium">
+            {t("form.step6.pending")}
+          </p>
         </div>
       );
     }
@@ -89,13 +109,20 @@ export default function DrugTestClient({ drugTest, onboardingContext }: DrugTest
       return (
         <div className="rounded-xl bg-red-50 ring-1 ring-red-100 p-4 flex items-center gap-2">
           <XCircle className="text-red-600 w-5 h-5" />
-          <p className="text-sm text-red-800 font-medium">{t("form.step6.rejected", "Your drug test driverDocuments were rejected. Please re-upload and re-submit.")}</p>
+          <p className="text-sm text-red-800 font-medium">
+            {t(
+              "form.step6.rejected",
+              "Your drug test driverDocuments were rejected. Please re-upload and re-submit."
+            )}
+          </p>
         </div>
       );
     }
     return (
       <div className="rounded-xl bg-gray-50/60 ring-1 ring-gray-100 p-4">
-        <p className="text-sm text-gray-700 text-center">{t("form.step6.description", { count: MAX_PHOTOS })}</p>
+        <p className="text-sm text-gray-700 text-center">
+          {t("form.step6.description", { count: MAX_PHOTOS })}
+        </p>
       </div>
     );
   }, [completed, isPending, isRejected, canUpload, t]);
@@ -114,31 +141,40 @@ export default function DrugTestClient({ drugTest, onboardingContext }: DrugTest
 
     try {
       setSubmitting(true);
-      const res = await fetch(`/api/v1/onboarding/${trackerId}/drug-test`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          driverDocuments: photos.map(
-            (p) =>
-              ({
-                s3Key: p.s3Key,
-                url: p.url,
-                mimeType: p.mimeType,
-                sizeInBytes: p.sizeBytes,
-                originalName: p.originalName,
-              } as IFileAsset)
-          ),
-        }),
+
+      // Set retry callback for error handling
+      const errorManager = ErrorManager.getInstance();
+      errorManager.setRetryCallback(() => {
+        submit();
       });
 
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(data?.message || "Failed to submit driverDocuments.");
+      const requestBody = {
+        driverDocuments: photos.map(
+          (p) =>
+            ({
+              s3Key: p.s3Key,
+              url: p.url,
+              mimeType: p.mimeType,
+              sizeInBytes: p.sizeBytes,
+              originalName: p.originalName,
+            } as IFileAsset)
+        ),
+      };
+
+      const response = await apiClient.patch(`/api/v1/onboarding/${trackerId}/drug-test`, requestBody);
+
+      // Clear retry callback after response
+      errorManager.clearRetryCallback();
+
+      if (!response.success) {
+        // Error handling is now managed by the API client and ErrorManager
+        return;
       }
 
       // Update local state from server response
-      const updatedDrugTest: Partial<IDrugTestDoc> = data?.data?.drugTest ?? {};
-      const updatedCtx: IOnboardingTrackerContext | undefined = data?.data?.onboardingContext;
+      const updatedDrugTest: Partial<IDrugTestDoc> = (response.data as any)?.drugTest ?? {};
+      const updatedCtx: IOnboardingTrackerContext | undefined =
+        (response.data as any)?.onboardingContext;
 
       if (updatedCtx) setCtx(updatedCtx);
       if (Array.isArray(updatedDrugTest.driverDocuments)) {
@@ -148,7 +184,7 @@ export default function DrugTestClient({ drugTest, onboardingContext }: DrugTest
       // Stay on page; UI will now show "Pending review" unless canUpload remains true (i.e., still no driver docs)
     } catch (e) {
       console.error(e);
-      // Optional: toast error
+      // Error display is now handled by ErrorManager
     } finally {
       setSubmitting(false);
     }
@@ -161,7 +197,12 @@ export default function DrugTestClient({ drugTest, onboardingContext }: DrugTest
     return (
       <>
         {showConfetti && <Confetti />}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="text-center space-y-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-center space-y-6"
+        >
           {/* Drug Test Icon */}
           <motion.div
             initial={{ scale: 0 }}
@@ -174,8 +215,12 @@ export default function DrugTestClient({ drugTest, onboardingContext }: DrugTest
 
           {/* Congratulations Message */}
           <div className="bg-green-50 border border-green-200 rounded-xl p-4 max-w-2xl mx-auto">
-            <h2 className="text-lg font-bold text-gray-800 pb-2">{t("form.step6.success.title")}</h2>
-            <p className="text-sm text-green-800 max-w-2xl mx-auto">{t("form.step6.success.message")}</p>
+            <h2 className="text-lg font-bold text-gray-800 pb-2">
+              {t("form.step6.success.title")}
+            </h2>
+            <p className="text-sm text-green-800 max-w-2xl mx-auto">
+              {t("form.step6.success.message")}
+            </p>
           </div>
 
           {/* Continue Button */}
@@ -199,7 +244,13 @@ export default function DrugTestClient({ drugTest, onboardingContext }: DrugTest
 
       {canUpload ? (
         <>
-          <OnboardingPhotoGroupControlled label={t("form.step6.labeldriverDocuments")} folder={ES3Folder.DRUG_TEST_DOCS} maxPhotos={MAX_PHOTOS} photos={photos} setPhotos={setPhotos} />
+          <OnboardingPhotoGroupControlled
+            label={t("form.step6.labeldriverDocuments")}
+            folder={ES3Folder.DRUG_TEST_DOCS}
+            maxPhotos={MAX_PHOTOS}
+            photos={photos}
+            setPhotos={setPhotos}
+          />
 
           <div className="flex justify-center">
             <button
@@ -207,15 +258,30 @@ export default function DrugTestClient({ drugTest, onboardingContext }: DrugTest
               onClick={submit}
               disabled={photos.length === 0 || submitting}
               className={`px-8 py-2 mt-2 rounded-full font-semibold transition-colors shadow-md
-                ${photos.length === 0 || submitting ? "bg-gray-400 text-white cursor-not-allowed" : "bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 text-white hover:opacity-90"}`}
+                ${
+                  photos.length === 0 || submitting
+                    ? "bg-gray-400 text-white cursor-not-allowed"
+                    : "bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 text-white hover:opacity-90"
+                }`}
             >
-              {isRejected ? t("actions.resubmitdriverDocuments", "Re-submit driverDocuments") : submitting ? t("actions.submitting", "Submitting...") : t("actions.submitdriverDocuments")}
+              {isRejected
+                ? t(
+                    "actions.resubmitdriverDocuments",
+                    "Re-submit driverDocuments"
+                  )
+                : submitting
+                ? t("actions.submitting", "Submitting...")
+                : t("actions.submitdriverDocuments")}
             </button>
           </div>
         </>
       ) : (
         <div className="flex justify-center">
-          <button type="button" disabled className="px-8 py-2 mt-2 rounded-full font-semibold transition-colors shadow-md bg-gray-400 text-white cursor-not-allowed">
+          <button
+            type="button"
+            disabled
+            className="px-8 py-2 mt-2 rounded-full font-semibold transition-colors shadow-md bg-gray-400 text-white cursor-not-allowed"
+          >
             {t("actions.pendingVerification")}
           </button>
         </div>
