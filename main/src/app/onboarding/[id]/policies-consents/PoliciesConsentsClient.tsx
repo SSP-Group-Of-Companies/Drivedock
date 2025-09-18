@@ -67,7 +67,7 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
     const initialEmail = policiesConsents.sendPoliciesByEmail || false;
     const currentEmail = sendPoliciesByEmail;
     const signatureChanged = sigRef.current?.isDirty?.() || false;
-    
+
     setIsDirty(signatureChanged || currentEmail !== initialEmail);
   }, [sendPoliciesByEmail, policiesConsents.sendPoliciesByEmail]);
 
@@ -200,7 +200,7 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
   if (!mounted || !company) return null;
 
   // 1 helper → the exact ordered list for this company (policy → region → hiring)
-  const pdfs = getPoliciesPdfsForCompany("ssp-us" as ECompanyId);
+  const pdfs = getPoliciesPdfsForCompany(company.id as ECompanyId);
 
   return (
     <div className="space-y-6">
@@ -208,7 +208,7 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
       {!locationBlocked && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="flex items-center gap-3">
-            <svg className={`h-5 w-5 text-blue-600 flex-shrink-0 ${locationRequested && !userLocation ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className={`h-5 w-5 text-blue-600 flex-shrink-0 ${locationRequested && !userLocation ? "animate-spin" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               {locationRequested && !userLocation ? (
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               ) : (
@@ -217,20 +217,14 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
             </svg>
             <div className="flex-1">
               <h4 className="font-medium text-blue-900 mb-1">
-                {locationRequested && !userLocation 
-                  ? "Confirming Location Access" 
-                  : locationToggleEnabled 
-                    ? "Location Verification Enabled" 
-                    : "Location Verification Required"
-                }
+                {locationRequested && !userLocation ? "Confirming Location Access" : locationToggleEnabled ? "Location Verification Enabled" : "Location Verification Required"}
               </h4>
               <p className="text-sm text-blue-700">
                 {locationRequested && !userLocation
                   ? "Please allow location access when prompted to verify your location for application completion."
-                  : locationToggleEnabled 
-                    ? "Location access is enabled. Your location will be verified when you submit the form."
-                    : "We need to verify your location to complete your application. Toggle on to allow location access."
-                }
+                  : locationToggleEnabled
+                  ? "Location access is enabled. Your location will be verified when you submit the form."
+                  : "We need to verify your location to complete your application. Toggle on to allow location access."}
               </p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
@@ -240,7 +234,6 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
           </div>
         </div>
       )}
-
 
       {locationBlocked && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -300,10 +293,13 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
 
       <PoliciesPdfViewerModal modalUrl={modalUrl} onClose={() => setModalUrl(null)} />
 
-      <PoliciesConsentCheckbox checked={sendPoliciesByEmail} onChange={(value) => {
-        setSendPoliciesByEmail(value);
-        setIsDirty(true);
-      }} />
+      <PoliciesConsentCheckbox
+        checked={sendPoliciesByEmail}
+        onChange={(value) => {
+          setSendPoliciesByEmail(value);
+          setIsDirty(true);
+        }}
+      />
 
       <PoliciesSubmitSection onSubmit={handleSubmit} submitting={submitting} disabled={locationBlocked} />
     </div>
