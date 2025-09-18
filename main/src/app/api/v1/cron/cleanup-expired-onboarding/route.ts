@@ -45,13 +45,16 @@ export async function POST(req: NextRequest) {
       console.warn(`cleanup-expired-onboarding nearly hit timeout: duration=${durationMs}ms (soft=${SOFT_DEADLINE_MS})`);
     }
 
-    return successResponse(200, "cleanup complete", {
+    const responseData = {
       ranAt: now.toISOString(),
       limitApplied,
       durationMs,
       softDeadlineMs: SOFT_DEADLINE_MS,
       ...result,
-    });
+    };
+
+    console.log(responseData);
+    return successResponse(200, "cleanup complete", responseData);
   } catch (err) {
     return errorResponse(err);
   }
