@@ -17,6 +17,8 @@ import { EDrugTestStatus } from "@/types/drugTest.types";
 import { buildOnboardingStepPath } from "@/lib/utils/onboardingUtils";
 import OnboardingPhotoGroupControlled from "../../components/OnboardingPhotoGroupControlled";
 import { Confetti } from "@/components/shared";
+import { apiClient } from "@/lib/onboarding/apiClient";
+import { ErrorManager } from "@/lib/onboarding/errorManager";
 
 export type DrugTestClientProps = {
   drugTest: Partial<IDrugTestDoc>;
@@ -139,32 +141,40 @@ export default function DrugTestClient({
 
     try {
       setSubmitting(true);
-      const res = await fetch(`/api/v1/onboarding/${trackerId}/drug-test`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          driverDocuments: photos.map(
-            (p) =>
-              ({
-                s3Key: p.s3Key,
-                url: p.url,
-                mimeType: p.mimeType,
-                sizeInBytes: p.sizeBytes,
-                originalName: p.originalName,
-              } as IFileAsset)
-          ),
-        }),
+
+      // Set retry callback for error handling
+      const errorManager = ErrorManager.getInstance();
+      errorManager.setRetryCallback(() => {
+        submit();
       });
 
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(data?.message || "Failed to submit driverDocuments.");
+      const requestBody = {
+        driverDocuments: photos.map(
+          (p) =>
+            ({
+              s3Key: p.s3Key,
+              url: p.url,
+              mimeType: p.mimeType,
+              sizeInBytes: p.sizeBytes,
+              originalName: p.originalName,
+            } as IFileAsset)
+        ),
+      };
+
+      const response = await apiClient.patch(`/api/v1/onboarding/${trackerId}/drug-test`, requestBody);
+
+      // Clear retry callback after response
+      errorManager.clearRetryCallback();
+
+      if (!response.success) {
+        // Error handling is now managed by the API client and ErrorManager
+        return;
       }
 
       // Update local state from server response
-      const updatedDrugTest: Partial<IDrugTestDoc> = data?.data?.drugTest ?? {};
+      const updatedDrugTest: Partial<IDrugTestDoc> = (response.data as any)?.drugTest ?? {};
       const updatedCtx: IOnboardingTrackerContext | undefined =
-        data?.data?.onboardingContext;
+        (response.data as any)?.onboardingContext;
 
       if (updatedCtx) setCtx(updatedCtx);
       if (Array.isArray(updatedDrugTest.driverDocuments)) {
@@ -174,7 +184,7 @@ export default function DrugTestClient({
       // Stay on page; UI will now show "Pending review" unless canUpload remains true (i.e., still no driver docs)
     } catch (e) {
       console.error(e);
-      // Optional: toast error
+      // Error display is now handled by ErrorManager
     } finally {
       setSubmitting(false);
     }

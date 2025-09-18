@@ -840,5 +840,43 @@
       "resume": "Voir la Candidature"
     },
     "resumeInfo": "Vous pouvez utiliser votre NAS/SSN pour reprendre et consulter votre candidature terminée à tout moment depuis la page d'accueil."
+  },
+
+  "errors": {
+    "session": {
+      "title": "Session expirée",
+      "message": "Votre session a expiré pour des raisons de sécurité après 6 heures d'inactivité. Vos progrès sont sauvegardés en toute sécurité.",
+      "resume": "Reprendre la candidature",
+      "goHome": "Aller à l'accueil"
+    },
+    "notFound": {
+      "title": "Candidature introuvable",
+      "message": "Votre candidature n'a pas pu être trouvée. Cela peut arriver si la candidature a été terminée ou a expiré.",
+      "startNew": "Nouvelle candidature",
+      "resume": "Reprendre existante"
+    },
+    "network": {
+      "title": "Échec de connexion",
+      "message": "Impossible de se connecter au serveur. Veuillez vérifier votre connexion Internet et réessayer.",
+      "retry": "Fermer",
+      "goHome": "Aller à l'accueil"
+    },
+    "server": {
+      "title": "Erreur du serveur",
+      "message": "Quelque chose s'est mal passé de notre côté. Veuillez réessayer ou contacter le support si le problème persiste.",
+      "tryAgain": "Réessayer",
+      "contactSupport": "Contacter le support"
+    },
+    "rateLimit": {
+      "title": "Trop de requêtes",
+      "message": "Vous avez fait trop de requêtes. Nous réessaierons automatiquement dans 30 secondes, ou vous pouvez rentrer à l'accueil et réessayer plus tard.",
+      "wait": "Réessai automatique dans 30s",
+      "goHome": "Aller à l'accueil"
+    },
+    "generic": {
+      "title": "Erreur",
+      "tryAgain": "Réessayer",
+      "goHome": "Aller à l'accueil"
+    }
   }
 }

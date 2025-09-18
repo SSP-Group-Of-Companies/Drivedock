@@ -39,8 +39,8 @@
 
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { useEffect, useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
+import { useProtectedRouter } from "@/hooks/onboarding/useProtectedRouter";
 import { ArrowRight } from "lucide-react";
 
 // components, hooks, and types
@@ -63,7 +63,7 @@ type FormValues = Record<string, string>;
 export default function PreQualificationPage() {
   const mounted = useMounted(); // Prevent hydration mismatch by rendering only after mount
   const { t } = useTranslation("common"); // i18n translator (namespace: common)
-  const router = useRouter(); // Next.js router for navigation
+  const router = useProtectedRouter(); // Protected router for navigation
 
   // Zustand store providing persisted prequalification data
   const { data: prequalData, setData } = usePrequalificationStore();

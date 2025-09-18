@@ -850,5 +850,44 @@
       "resume": "View Application"
     },
     "resumeInfo": "You can use your SIN/SSN to resume and view your completed application anytime from the home page."
+  },
+
+  "errors": {
+    "session": {
+      "title": "Session Expired",
+      "message": "Your session has expired for security after 6 hours of inactivity. Your progress is safely saved.",
+      "resume": "Resume Application",
+      "goHome": "Go Home"
+    },
+    "notFound": {
+      "title": "Application Not Found",
+      "message": "Your application could not be found. This may happen if the application was terminated or has expired.",
+      "startNew": "Start New Application",
+      "resume": "Resume Existing"
+    },
+    "network": {
+      "title": "Connection Failed",
+      "message": "Unable to connect to the server. Please check your internet connection and try again.",
+      "retry": "Close",
+      "goHome": "Go Home"
+    },
+    "server": {
+      "title": "Server Error",
+      "message": "Something went wrong on our end. Please try again or contact support if the problem persists.",
+      "tryAgain": "Try Again",
+      "contactSupport": "Contact Support"
+    },
+    "rateLimit": {
+      "title": "Too Many Requests",
+      "message": "You've made too many requests. We'll automatically retry in 30 seconds, or you can go home and try again later.",
+      "wait": "Auto-Retry in 30s",
+      "goHome": "Go Home"
+    },
+    "generic": {
+      "title": "Unexpected Error",
+      "tryAgain": "Try Again",
+      "contactSupport": "Contact Support",
+      "goHome": "Go Home"
+    }
   }
 }

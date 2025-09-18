@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import { CheckCircle2, Users, AlertTriangle } from "lucide-react";
+import { useProtectedRouter } from "@/hooks/onboarding/useProtectedRouter";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { useTranslation } from "react-i18next";
@@ -22,7 +22,7 @@ export default function FlatbedTrainingClient({
   onboardingContext,
 }: FlatbedTrainingClientProps) {
   const mounted = useMounted();
-  const router = useRouter();
+  const router = useProtectedRouter();
   const { t } = useTranslation("common");
 
   const { id: trackerId, nextStep } = onboardingContext;
