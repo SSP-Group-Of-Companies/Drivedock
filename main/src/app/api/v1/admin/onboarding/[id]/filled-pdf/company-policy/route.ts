@@ -93,12 +93,11 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     const effectiveSignedAt: Date | string = (policies as any)?.signedAt || (onboarding as any)?.createdAt;
 
     // Load signatures (both REQUIRED)
-    let driverSigBytes: Uint8Array;
+    let driverSigBytes: Uint8Array | undefined;
     try {
       driverSigBytes = await loadImageBytesFromAsset(policies.signature);
     } catch (e) {
       console.error("Error loading driver signature image:", e);
-      return errorResponse(500, "Failed to load driver signature image");
     }
 
     let witnessSigBytes: Uint8Array;
@@ -154,7 +153,8 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     } as const;
 
     // Helper to draw signatures
-    const draw = async (pageIndex: number, fieldName: F, bytes: Uint8Array, width = 120, height = 35) => {
+    const draw = async (pageIndex: number, fieldName: F, bytes?: Uint8Array, width = 120, height = 35) => {
+      if (!bytes) return;
       await drawPdfImage({
         pdfDoc,
         form,

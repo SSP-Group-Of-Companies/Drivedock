@@ -140,15 +140,7 @@ export default function PdfViewer({ pdfUrl, strategy = "auto", minHeight = "60sv
 
   const Toolbar = () =>
     readyWithPdf ? (
-      <div
-        className="absolute bottom-2 left-2 z-10 flex gap-2 rounded px-2 py-1 shadow"
-        style={{
-          background: "color-mix(in srgb, var(--color-card) 86%, transparent)",
-          backgroundColor: "var(--color-card)",
-          boxShadow: "var(--elevation-1)",
-          border: "1px solid var(--card-border-color)",
-        }}
-      >
+      <div className="absolute bottom-2 left-2 z-10 flex items-center gap-2 rounded bg-white shadow px-2 py-1">
         <ZoomOutButton />
         <ZoomInButton />
       </div>
