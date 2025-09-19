@@ -393,6 +393,15 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
         const anyProvided = !!fc.fastCardNumber?.trim() || !!fc.fastCardExpiry || !!fc.fastCardFrontPhoto || !!fc.fastCardBackPhoto;
         if (!anyProvided) (val as any).fastCard = undefined;
       }
+
+      // Clean up workAuthorizationType for Canadian passport holders
+      if (isCanadian && val.passportType === EPassportType.CANADIAN) {
+        (val as any).workAuthorizationType = undefined;
+        // Also clear related photos that aren't needed for Canadian passports
+        (val as any).usVisaPhotos = [];
+        (val as any).prPermitCitizenshipPhotos = [];
+      }
+
       return val;
     });
 
