@@ -298,7 +298,7 @@ export default function PoliciesConsentsClient({ policiesConsents, onboardingCon
         Please <strong>draw</strong> your signature above or <strong>upload</strong> a signature image.
       </p>
 
-      <PoliciesPdfViewerModal modalUrl={modalUrl} onClose={() => setModalUrl(null)} />
+      <PoliciesPdfViewerModal modalUrl={modalUrl} strategy="direct" onClose={() => setModalUrl(null)} />
 
       <PoliciesConsentCheckbox
         checked={sendPoliciesByEmail}

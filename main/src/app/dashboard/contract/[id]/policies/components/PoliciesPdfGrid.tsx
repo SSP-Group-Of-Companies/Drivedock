@@ -19,10 +19,7 @@ export default function PoliciesPdfGrid({ companyId }: PoliciesPdfGridProps) {
   return (
     <>
       <div className="space-y-4">
-        <h2
-          className="text-lg font-semibold"
-          style={{ color: "var(--color-on-surface)" }}
-        >
+        <h2 className="text-lg font-semibold" style={{ color: "var(--color-on-surface)" }}>
           Policy Documents
         </h2>
 
@@ -38,9 +35,7 @@ export default function PoliciesPdfGrid({ companyId }: PoliciesPdfGridProps) {
               }}
             >
               {/* PDF Badge */}
-              <div className="absolute top-2 right-2 transform rotate-12 bg-red-500 text-white text-xs px-2 py-1 rounded font-bold shadow-sm">
-                PDF
-              </div>
+              <div className="absolute top-2 right-2 transform rotate-12 bg-red-500 text-white text-xs px-2 py-1 rounded font-bold shadow-sm">PDF</div>
 
               {/* Content */}
               <div className="flex items-start gap-3 pr-8">
@@ -55,16 +50,10 @@ export default function PoliciesPdfGrid({ companyId }: PoliciesPdfGridProps) {
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <h3
-                    className="text-sm font-medium leading-tight"
-                    style={{ color: "var(--color-on-surface)" }}
-                  >
+                  <h3 className="text-sm font-medium leading-tight" style={{ color: "var(--color-on-surface)" }}>
                     {pdf.label}
                   </h3>
-                  <p
-                    className="text-xs mt-1"
-                    style={{ color: "var(--color-on-surface-variant)" }}
-                  >
+                  <p className="text-xs mt-1" style={{ color: "var(--color-on-surface-variant)" }}>
                     Click to view document
                   </p>
                 </div>
@@ -72,10 +61,7 @@ export default function PoliciesPdfGrid({ companyId }: PoliciesPdfGridProps) {
 
               {/* External Link Icon */}
               <div className="absolute bottom-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                <ExternalLink
-                  className="h-4 w-4"
-                  style={{ color: "var(--color-on-surface-variant)" }}
-                />
+                <ExternalLink className="h-4 w-4" style={{ color: "var(--color-on-surface-variant)" }} />
               </div>
             </button>
           ))}
@@ -83,10 +69,7 @@ export default function PoliciesPdfGrid({ companyId }: PoliciesPdfGridProps) {
       </div>
 
       {/* PDF Viewer Modal */}
-      <PoliciesPdfViewerModal
-        modalUrl={modalUrl}
-        onClose={() => setModalUrl(null)}
-      />
+      <PoliciesPdfViewerModal modalUrl={modalUrl} strategy="direct" onClose={() => setModalUrl(null)} />
     </>
   );
 }

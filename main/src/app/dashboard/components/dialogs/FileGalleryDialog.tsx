@@ -5,7 +5,7 @@ import { FileText, File as FileIcon } from "lucide-react";
 import dynamic from "next/dynamic";
 
 // Lazy-load PDF viewer only when needed
-const PdfViewerInner = dynamic(() => import("@/components/pdf-viewer/PdfViewerInner"), { ssr: false });
+const PdfViewerInner = dynamic(() => import("@/components/pdf-viewer/PdfViewer"), { ssr: false });
 
 export type GalleryItem = {
   url: string; // absolute or same-origin URL

@@ -297,7 +297,7 @@ export default function PrintClient({ trackerId }: { trackerId: string }) {
       </div>
 
       {/* PDF Preview Modal */}
-      <PrintPdfViewerModal modalUrl={previewModalUrl} onClose={() => setPreviewModalUrl(null)} />
+      <PrintPdfViewerModal modalUrl={previewModalUrl} strategy="fetch" onClose={() => setPreviewModalUrl(null)} />
 
       {/* Safety Admin Picker Modal */}
       <SafetyAdminPickerModal
