@@ -29,15 +29,23 @@ function computeNotifications(ctx: ContractContext | null) {
   const notes: { id: string; text: string }[] = [];
   if (!ctx) return notes;
 
+  const step = ctx.status?.currentStep;
+
+  // License expiry notification - only show when driver has completed page 4 or beyond
   const days = daysUntil(ctx.forms?.identifications?.driverLicenseExpiration);
-  if (days !== null && days <= 60) {
+  if (days !== null && days <= 60 && 
+      (step === EStepPath.APPLICATION_PAGE_4 ||
+       step === EStepPath.APPLICATION_PAGE_5 ||
+       step === EStepPath.POLICIES_CONSENTS ||
+       step === EStepPath.DRIVE_TEST ||
+       step === EStepPath.CARRIERS_EDGE_TRAINING ||
+       step === EStepPath.DRUG_TEST ||
+       step === EStepPath.FLATBED_TRAINING)) {
     notes.push({
       id: "license",
       text: `Driver's license will expire in ${days} day(s)`,
     });
   }
-
-  const step = ctx.status?.currentStep;
 
   if (step === EStepPath.DRIVE_TEST && ctx.forms?.driveTest?.completed !== true) {
     notes.push({ id: "dt", text: "Driver is waiting for drive test" });
