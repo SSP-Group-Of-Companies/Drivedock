@@ -7,6 +7,16 @@ frontend/out/
 frontend/.env
 frontend/.env.*
 
+# =========================
+# Main (Next.js)
+# =========================
+/main/node_modules/
+main/.next/
+main/out/
+main/.env
+main/.env.*
+
+/node_modules/
 
 # =========================
 # Backend (Node.js / Express)

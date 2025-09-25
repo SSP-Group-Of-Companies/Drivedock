@@ -1,0 +1,867 @@
+{
+  "navbar": {
+    "backButton": "Back"
+  },
+
+  "footer": {
+    "rights": "All rights reserved.",
+    "tagline": "DriveDock – Digital Driver Onboarding Platform"
+  },
+
+  "welcome": {
+    "heading": "Join the Road with SSP",
+    "description": "Your digital onboarding platform for joining SSP Truck Line. Complete your hiring documents quickly and securely.",
+
+    "features": {
+      "language": {
+        "title": "Multi-language",
+        "description": "Available in English, Spanish, and French to serve all drivers comfortably"
+      },
+      "security": {
+        "title": "Secure & Safe",
+        "description": "Your information is protected with enterprise-grade security and encryption"
+      },
+      "steps": {
+        "title": "6-Step Process",
+        "description": "Complete all required hiring documents through our guided 6-stage form wizard"
+      }
+    },
+
+    "steps": {
+      "title": "Application Process",
+      "personal": "Personal Information",
+      "employment": "Employment History",
+      "driving": "Driving Record",
+      "medical": "Medical Information",
+      "references": "References",
+      "review": "Final Review"
+    }
+  },
+
+  "start": {
+    "heading": "Start Your Application",
+    "subheading": "Begin your journey with SSP Group of Companies",
+    "languageLabel": "🌐 Select Language",
+    "beforeYouBegin": "Before You Begin",
+    "ensureDoc": "Please ensure you have the documents listed below to complete this application process",
+    "continue": "Continue to Application",
+    "estimatedTime": "Estimated time: 15–20 minutes",
+    "agreeToTerms": "I agree to the Terms & Conditions and Privacy Policy",
+
+    "CanadaDocChecklist": {
+      "driverLicense": "Driver's License",
+      "SINnumber": "SIN Number",
+      "healthCard": "Health Card",
+      "Passport": "Passport",
+      "visa": "US Visa (for cross-border drivers)",
+      "permit": "PR/Work Permit/Canadian Citizen",
+      "option": "Optional documents:",
+      "fastCard": "Fast Card",
+      "IncorporateDocuments": "Incorporate documents",
+      "bankingInfo": "Banking Info (For Incorporate)"
+    },
+
+    "USAChecklist": {
+      "driverLicense": "Driver's License",
+      "SSNnumber": "SSN Number",
+      "healthCard": "Medical Certificate",
+      "Passport": "Passport/PR/US Citizen",
+      "option": "Optional documents:",
+      "IncorporateDocuments": "Incorporate documents",
+      "bankingInfo": "Banking Info (For Incorporate)"
+    },
+    "docs": {
+      "OptionalDocuments": "Optional Documents:",
+      "RequiredDocuments": "Required Documents:"
+    },
+
+    "termsModal": {
+      "title": "Terms & Conditions",
+      "intro": "Please review the terms below. To continue, confirm your agreement.",
+      "points": {
+        "accurateInfo": "All information I provide will be accurate and truthful.",
+        "digitalProcess": "I understand this is a digital application and that records may be stored electronically.",
+        "selfApplication": "I confirm that this application is being completed by me personally and not for or on behalf of another person.",
+        "truthfulInfo": "I confirm that all information I submit is true and accurate.",
+        "applicationType": "I acknowledge my selected application type (contractor or employee) in this application.",
+        "rulesTitle": "I understand and agree to the following company rules:",
+        "drugPolicy": "Drug & Alcohol policies",
+        "dashCam": "Dual facing dashcam",
+        "safetyRules": "Speed limits (105 km/h), incident reporting, and no phone use while driving",
+        "seals": "Trailer seals and cross-border inspection requirements",
+        "laws": "I am responsible for complying with Canadian and U.S. trucking laws."
+      },
+      "masterConsent": "I have read and agree to the Terms & Conditions listed above.",
+      "cancel": "Cancel",
+      "next": "I Agree & Continue"
+    },
+
+    "policiesModal": {
+      "title": "Policies & Data Usage Notice",
+      "sub-title": "As part of your application to become a driver with One of our many companies, we collect and use certain personal information to confirm your qualifications and comply with legal and safety requirements.",
+      "section": {
+        "whatInfo": "What information we collect",
+        "whatInfoItems": {
+          "itemOne": "Personal details (name, address, contact information)",
+          "itemTwo": "Driver’s licence details and driving record (abstract)",
+          "itemThree": "Employment history and references",
+          "itemFour": "Results of background checks and drug/alcohol testing"
+        },
+        "whyInfo": "Why we collect this information",
+        "whyInfoItems": {
+          "itemOne": "To verify you meet legal requirements for commercial driving",
+          "itemTwo": "To ensure workplace and road safety",
+          "itemThree": "To complete background and employment checks as required by law",
+          "itemFour": "To maintain accurate employment and compliance records"
+        },
+        "whoInfo": "Who has access to this information",
+        "whoInfoItems": {
+          "itemOne": "Company's Human Resources and Compliance teams",
+          "itemTwo": "Regulatory authorities (e.g., Transport Canada; FMCSA if cross-border)",
+          "itemThree": "Authorized third parties (e.g., background check providers, insurers)"
+        },
+        "howLong": "How long we keep your information",
+        "duration": "Your information will be securely stored for the period required by law (typically 3–7 years, depending on document type and jurisdiction)."
+      },
+      "back": "Back",
+      "agree": "I Agree & Finish"
+    }
+  },
+  "company": {
+    "heading": "Join Our Family of Companies",
+    "subheading": "Choose the company where you want to build your driving career",
+    "applyNow": "Apply Now",
+    "selectType": "Select Application Type",
+    "selectTypeDesc": "Please choose the type of position you are applying for:",
+    "flatbed": "Flatbed",
+    "dropdeck": "Dry Van",
+    "cancel": "Cancel",
+    "descriptions": {
+      "ssp-ca": "Leading transportation solutions across Canada with specialized freight services",
+      "ssp-us": "Premier freight solutions across the United States with cross-border coverage",
+      "fellowtrans": "Reliable freight solutions with a focus on customer satisfaction",
+      "webfreight": "Modern logistics solutions powered by technology and innovation",
+      "nesh": "Specialized steel and heavy materials transportation across North America"
+    }
+  },
+
+  "form": {
+    "subtitle": "All information must be answered truthfully. Liability falls on the applicant.",
+
+    "helpPopups": {
+      "page2SafetySensitive": "As part of our regulatory compliance process, please confirm the following information:\n\nCross-Border Driving: Please indicate \"Yes\" if you have previously operated a commercial vehicle across the U.S.–Canada border. If not, please indicate \"No.\"\n\nDOT-Regulated Drug Testing: Please indicate \"Yes\" if your previous employer conducted drug and alcohol testing in accordance with U.S. Department of Transportation (DOT) regulations. If not, please indicate \"No.\"\n\nYour responses help us ensure compliance with applicable transportation and safety regulations. If you have any questions or need clarification, feel free to reach out.",
+      "page3CanadianHours": "As part of the Hours of Service (HOS) compliance requirements under Canadian regulations, please provide the number of on-duty hours (including driving) you completed in the last 14 days with your previous employer.\n\nKindly ensure the following:\n• Indicate the number of hours worked for each day in the 14-day period.\n• Include the total hours worked over the entire 14 days.\n• If you were on vacation, off-duty, or did not work on any day, please indicate that by entering \"0\" or \"nil\" for that day.\n\nThis information is essential for us to accurately track your compliance with Canadian HOS rules. Thank you for your cooperation."
+    },
+    "step1": {
+      "title": "Pre-Qualification Form",
+      "questions": {
+        "over23Local": "Are you over the age of 23 (for Local)?",
+        "over25CrossBorder": "Are you over the age of 25 (for Cross Border)?",
+        "canDriveManual": "Can you Drive Manual Transmission?",
+        "experienceDrivingTractorTrailer": "Do you have at least 2 years of verifiable experience driving Tractor/Trailer?",
+        "faultAccidentIn3Years": "Do you have any at-fault accident in the past 3 years?",
+        "zeroPointsOnAbstract": "Do you have more than 0 points on your driver’s abstract?",
+        "noUnpardonedCriminalRecord": "Do you have any criminal record for which pardon has not been granted?",
+        "legalRightToWorkCanada": "Do you have legal right to work in Canada?",
+        "legalRightToWorkUS": "Do you have legal right to work in the US?",
+        "canCrossBorderUSA": "Can you cross borders into USA?",
+        "hasFASTCard": "Do you have a FAST card?",
+
+        "categories": "Categories",
+        "driverType": "Which type of driver are you?",
+        "haulPreference": "Which do you prefer?",
+        "teamStatus": "Are you part of a team or driving solo?",
+        "preferLocalDriving": "Do you prefer driving local?",
+        "preferSwitching": "Do you prefer switching (drop & hook)?",
+        "flatbedExperience": "Do you have flatbed experience?",
+
+        "yes": "Yes",
+        "no": "No",
+
+        "company": "Company",
+        "owneroperator": "Owner Operator",
+        "ownerdriver": "Owner Driver",
+        "shorthaul": "Short Haul",
+        "longhaul": "Long Haul",
+        "team": "Team",
+        "single": "Single",
+
+        "flatbedPopup": {
+          "title": "Notice",
+          "yes": "Your flatbed skill level will be tested during the Drive Test.",
+          "no": "After your Drive Test, you will be enrolled in a 2-week flatbed training.",
+          "ok": "OK"
+        }
+      },
+      "next": "Next"
+    },
+    "step2": {
+      "title": "Application Form",
+      "page1": {
+        "sections": {
+          "personal": "Personal Information",
+          "birth": "Place of Birth",
+          "license": "License Information",
+          "address": {
+            "title": "Address History",
+            "subtitle": "Please provide your address history for the past 5 years",
+            "current": "Current Address",
+            "previous": "Previous Address"
+          }
+        },
+        "fields": {
+          "firstName": "First Name",
+          "lastName": "Last Name",
+          "sin": "SIN (Social Insurance Number)",
+          "sinIssueDate": "SIN Issue Date",
+          "gender": "Gender",
+          "male": "Male",
+          "female": "Female",
+          "sinPhoto": "SIN Card Photo",
+          "sinPhotoDesc": "Click to capture or select an image",
+          "dob": "Date of Birth",
+          "canProvideProof": "Can you provide proof of age?",
+          "phoneHome": "Phone (Home) (Optional)",
+          "email": "Email Address",
+          "phoneCell": "Phone (Cell)",
+          "emergencyContactName": "Emergency Contact Name",
+          "emergencyContactPhone": "Emergency Contact Phone",
+          "birthCity": "City of Birth",
+          "birthStateOrProvince": "State or Province",
+          "birthCountry": "Country of Birth",
+          "licenseNumber": "License Number",
+          "licenseProvince": "Province",
+          "licenseType": "License Type",
+          "licenseExpiry": "Expiry Date",
+          "licenseFrontPhoto": "License Front Photo",
+          "licensePhotoDesc": "Click to capture or select an image",
+          "licenseBackPhoto": "License Back Photo",
+          "address": "Address",
+          "city": "City",
+          "stateOrProvince": "State or Province",
+          "postalCode": "Postal Code",
+          "zipCode": "Zip Code",
+          "from": "From Date",
+          "to": "To Date"
+        },
+        "actions": {
+          "addLicense": "Add Another License",
+          "removeLicense": "Remove License",
+          "addAddress": "Add Another Address",
+          "removeAddress": "Remove Address"
+        }
+      },
+      "page2": {
+        "sections": {
+          "employment": "Employment History"
+        },
+        "requirements": "The Federal Motor Carrier Safety Regulations (49CFR391.21) require that all applicants wishing to drive a commercial vehicle must provide employment history for the last ten (10) years. Any 1 month or more gaps in employment must be explained.",
+        "questions": {
+          "workedWithCompanyBefore": "Have you ever worked (Under Sub-contractor) with this company previously?",
+          "reasonForLeavingCompany": "What was the reason for leaving the company?",
+          "currentlyEmployed": "Are you currently employed?",
+          "referredBy": "Who referred you to us?",
+          "expectedRateOfPay": "What is your expected rate of pay?"
+        },
+        "labels": {
+          "currentEmployer": "Current Employer",
+          "previousEmployer": "Previous Employer"
+        },
+        "fields": {
+          "employerName": "Employer Name",
+          "supervisorName": "Supervisor Name",
+          "address": "Street Address",
+          "city": "City",
+          "stateOrProvince": "Province or State",
+          "postalCode": "Postal code",
+          "phone1": "Phone 1",
+          "phone2": "Phone 2 (optional)",
+          "email": "Email Address",
+          "positionHeld": "Position Held",
+          "from": "From Date",
+          "to": "To Date",
+          "salary": "Salary",
+          "salaryPlaceholder": "$0.50/mile or $25/hr",
+          "reasonForLeaving": "Reason for Leaving...",
+          "subjectToFMCSR": "Were you subject to FMCSR (Federal Motor Carrier Safety Regulations)?",
+          "safetySensitiveFunction": "Was your job designated as a safety sensitive function in any DOT regulated mode subject to the drug and alcohol testing requirement of 49 CFR part 40.",
+          "previousWorkFrom": "From Date",
+          "previousWorkTo": "To Date",
+          "previousWorkRateOfPay": "Rate of Pay",
+          "previousWorkPosition": "Position"
+        },
+        "actions": {
+          "addPrevious": "Add Previous Employer",
+          "removePrevious": "Remove"
+        },
+        "modal": {
+          "title": "Additional Employment History Required",
+          "message": "You must provide 10 years of employment history. Please add your previous employment history to complete the required information."
+        },
+        "gapDetected": "Gap of {days} days detected between employments. Please explain:"
+      },
+      "page3": {
+        "sections": {
+          "accidentHistory": "Accident Report",
+          "trafficConvictions": "Traffic Convictions",
+          "education": "Education",
+          "canadianHours": "Canadian Hours of Service"
+        },
+        "instructionsCanadianHours": "INSTRUCTIONS: Motor carriers when using a driver for the first time or intermittently shall obtain from the driver a signed statement giving the driver's total time on –duty during the immediately preceding 14 days and time at which such driver was last relieved from duty prior to beginning work for such carrier (see Section 395.8(j)(2) Federal Motor Carrier Safety Regulations). NOTE: Hours for any compensated work during the preceding 14 days, including work for a non- motor carrier entity, must be recorded on this form.",
+        "instructionsAccidentHistory": "Please provide details of any accidents history you have been involved. If you have no accidents to report, you may leave all fields empty.",
+        "instructionsTrafficConvictions": "Please provide details of any traffic convictions you have received forfeitures, and Warnings for the past three years (other than parking violations). If you have no convictions to report, you may leave all fields empty.",
+        "instructionsEducation": "Please indicate the number of years completed in each education level. Select 0 if you did not attend that level.",
+        "fields": {
+          "date": "Date",
+          "natureOfAccident": "Nature of Accident (Head-on, Rear end, upset, NAF, etc...",
+          "fatalities": "Fatalities",
+          "injuries": "Injuries",
+          "location": "Location",
+          "charge": "Charge",
+          "penalty": "Penalty",
+          "gradeSchool": "Grade School (yrs)",
+          "college": "College (yrs)",
+          "postGraduate": "Post Graduate (yrs)",
+          "dayOneDate": "Date Day One (YYYY-MM-DD)",
+          "totalHours": "Total Hours",
+          "dateTitle": "Daily Hours (0-24 hours per day)"
+        },
+
+        "actions": {
+          "addRow": "Add Row",
+          "remove": "Remove"
+        }
+      },
+      "page4": {
+        "sections": {
+          "criminalRecords": {
+            "title": "Criminal Record Verification",
+            "subtitle": "Applicants must declare all convictions for offenses under Canadian federal law.",
+            "guidance": {
+              "intro": "Please read the following carefully before completing this section:",
+              "dontDeclareTitle": "Do not declare the following:",
+              "items": {
+                "item1": "A conviction for which you have received a Record Suspension (formerly pardon) in accordance with the Criminal Records Act;",
+                "item2": "A conviction where you were a 'young person' under the Youth Criminal Justice Act;",
+                "item3": "An Absolute or Conditional Discharge, pursuant to section 730 of the Criminal Code;",
+                "item4": "An offense for which you were not convicted;",
+                "item5": "Any provincial or municipal offense; and",
+                "item6": "Any charges dealt with outside of Canada."
+              }
+            }
+          },
+          "business": {
+            "title": "Incorporate Details",
+            "disclaimer": {
+              "text": "If you provide any incorporation detail, you must complete every field and upload all related documents in this section. This includes Employee Number, HST Number, Business Name, and the required photos (Incorporation, HST, Banking)."
+            }
+          },
+          "additionalInfo": {
+            "title": "Additional Info"
+          },
+          "fastCard": {
+            "title": "FAST Card",
+            "disclaimer": "This section is optional. However, if you provide any FAST Card information, you must complete all fields and upload both front and back photos."
+          },
+          "eligibilityDocs": {
+            "title": "Health / Identification Documents",
+            "description": "Please provide clear and readable photos of the required health and identity documents listed below. All details must be visible (front and back where applicable). If any document is missing or unclear, your application may be delayed."
+          },
+          "workAuthorization": {
+            "title": "Proof of Work Authorization"
+          }
+        },
+        "fields": {
+          "dateOfSentence": "Date of Sentence",
+          "offense": "Offense",
+          "courtLocation": "Court Location",
+          "hstNumber": "HST Number",
+          "businessName": "Business Name",
+          "incorporatePhotos": "Incorporate Photos",
+          "hstPhotos": "HST Business Number Photos",
+          "bankingInfoPhotos": "Banking Info Photos",
+          "denied": "Have you ever been denied a license, permit or privilege to operate a motor vehicle?",
+          "suspended": "Has any license, permit or privilege ever been suspended or revoked?",
+          "suspensionNotes": "Notes",
+          "testedPositive": "Have you ever tested positive, or refused to test, on any pre-employment drug or alcohol test administered by an employer to which you applied for, but did not obtain, safety-sensitive transportation work covered by DOT agency drug and alcohol testing rules during the past two years?",
+          "completedDOT": "If you answered YES, can you provide/obtain proof that you’ve successfully completed the DOT return-to-duty requirements?",
+          "hasInsurance": "Do you have your own Accidental Benefit Insurance Coverage?",
+          "accidentalInsurancePopup": {
+            "title": "Company Insurance Registration",
+            "message": "For your safety and compliance, SSP Truck Line will register every driver under the company's Accident Benefit Insurance plan. This ensures you are fully covered while working, regardless of whether you already have your own personal accident benefit insurance. Your personal coverage, if any, remains unaffected — but company registration is mandatory to provide consistent protection for all drivers.",
+            "ok": "OK"
+          },
+          "fastNumber": "FAST Card Number",
+          "fastExpiry": "Expiry Date",
+          "fastFront": "Photo Front",
+          "fastBack": "Photo Back",
+          "uploadFront": "Upload Front",
+          "uploadBack": "Upload Back",
+
+          "healthCard": "Health Card",
+          "healthCardPhotos": "Health Card (Front & Back)",
+          "healthCardDescription": "Upload clear photos of both the front and back of your health card (e.g., Ontario Health Card).",
+
+          "passportTypeQuestion": "What type of passport do you have?",
+          "selectPassportType": "Select passport type",
+          "passportType": {
+            "canadian": "Canadian",
+            "others": "Others"
+          },
+
+          "workAuthorizationTypeQuestion": "What type of work authorization do you have?",
+          "selectWorkAuthorizationType": "Select work authorization type",
+          "workAuthorizationType": {
+            "local": "Local (within Canada)",
+            "crossBorder": "Cross-border (Canada-US)"
+          },
+
+          "passport": "Passport",
+          "passportPhotos": "Passport (Bio & Back)",
+          "passportDescription": "Upload the passport bio/data page (with your photo) and the back cover page (e.g., Canadian or foreign passport).",
+          "passportDescriptionUS": "Upload the passport bio/data page (with your photo) and the back cover page (e.g., US passport).",
+
+          "usVisa": "US Visa",
+          "usVisaPhotos": "US Visa",
+          "usVisaDescription": "Upload clear photos of your valid US visa (e.g., visitor, work, or study visa pages).",
+
+          "prPermitCitizenship": "PR Card/ Work Permit / Citizenship",
+          "prPermitCitizenshipPhotos": "PR / Permit / Citizenship",
+          "prPermitCitizenshipDescription": "Upload clear photos of your Permanent Resident card, Work/Study Permit, or Citizenship document (e.g., PR card front & back, Work Permit letter).",
+
+          "greenCardCitizenship": "Green Card / Citizenship",
+          "greenCardCitizenshipDescription": "Upload clear photos of your Permanent Resident card or US Citizenship document (e.g., PR card front & back, Certificate of Naturalization).",
+
+          "medicalCertification": "Medical Certification",
+          "medicalCertificationPhotos": "Medical Certification",
+          "medicalCertificationDescription": "Upload clear photos of your valid DOT Medical Certificate (front and back if applicable).",
+
+          "oneOfTheseRequired": "One of these required",
+          "optional": "Optional",
+
+          "incorporatePhotosDescription": "Upload clear photos of your business incorporation documents (e.g., Articles of Incorporation, Certificate of Incorporation).",
+          "hstPhotosDescription": "Upload a photo of your HST/GST business number registration document (e.g., CRA registration letter).",
+          "bankingInfoPhotosDescription": "Upload a photo of a void cheque or direct deposit form from your bank (must clearly show account number and institution details)."
+        },
+        "placeholders": {
+          "optionalDetails": "Provide details..."
+        }
+      },
+      "page5": {
+        "title": "Competency Test",
+        "lockedNote": "You have submitted your answers. The test is now locked.",
+        "scoreLabel": "Score:",
+        "note": "I confirm I have reviewed my score and understand I cannot retake this test.",
+        "reviewInstruction": "Review your answers below. When ready, scroll down and check the acknowledgment box, then click Continue to proceed.",
+        "modal": {
+          "finalConfirmation": "Final Confirmation",
+          "confirmMessage": "You cannot retake this competency test once submitted. Are you sure you want to proceed?",
+          "cancel": "Cancel",
+          "confirm": "Yes, Submit"
+        },
+        "questions": {
+          "1": {
+            "question": "According to FMCSA, you may not drive for more than:",
+            "options": {
+              "a": "11 Hours",
+              "b": "After being on duty for 14 hours",
+              "c": "After being on duty for more than 8 hours following continuous 10 hours off duty",
+              "d": "All of the above"
+            }
+          },
+          "2": {
+            "question": "According to FMCSA, you may not work for more than how many hours in 8 days:",
+            "options": {
+              "a": "70 Hours",
+              "b": "120 Hours",
+              "c": "11 hours",
+              "d": "500 miles round trip"
+            }
+          },
+          "3": {
+            "question": "After 11 hours of driving time, you must",
+            "options": {
+              "a": "Stop working and go home",
+              "b": "Can work 5 more hours",
+              "c": "Get 10 consecutive hours of rest before driving again",
+              "d": "All the above"
+            }
+          },
+          "4": {
+            "question": "During pre-trip inspection, you must show that the",
+            "options": {
+              "a": "The vehicle is safe to drive",
+              "b": "The vehicle is newer than 4 years",
+              "c": "You are competent and have no alcohol in the system",
+              "d": "All the above"
+            }
+          },
+          "5": {
+            "question": "Cognitive load while you drive refers to:",
+            "options": {
+              "a": "How much work your brain is doing",
+              "b": "Your ability to make decisions",
+              "c": "The number of hazards you can see"
+            }
+          },
+          "6": {
+            "question": "Using hands-free mode on a mobile device while driving:",
+            "options": {
+              "a": "Increases cognitive load",
+              "b": "Decreases cognitive load",
+              "c": "Does not affect cognitive load"
+            }
+          },
+          "7": {
+            "question": "During the pre-trip inspection, you will",
+            "options": {
+              "a": "Sit in the truck and drive around talking about your expertise",
+              "b": "Take a computerized test about truck driving",
+              "c": "Walk around the vehicle and point to or touch each item and explain to the examiner what you are checking and why"
+            }
+          },
+          "8": {
+            "question": "During pre-trip inspection, the mirror and windscreen should be checked for",
+            "options": {
+              "a": "Proper alignment",
+              "b": "Stickers",
+              "c": "Cleanliness, obstruction, and damage"
+            }
+          },
+          "9": {
+            "question": "What is meant by C-TPAT?",
+            "options": {
+              "a": "Canadian Transportation Participation Against Terrorism",
+              "b": "Customs Trade Partnership Against Terrorism",
+              "c": "Canadian Trade Partnership Against Terrorism",
+              "d": "Customs Trade Partnership and Transportation"
+            }
+          },
+          "10": {
+            "question": "If a driver finds trailer’s seal broken at a truck stop, he must",
+            "options": {
+              "a": "Report to dispatch immediately",
+              "b": "Re-inspect his equipment for any suspicious behavior",
+              "c": "Should put another seal",
+              "d": "All the above"
+            }
+          },
+          "11": {
+            "question": "When a driver receives notice of license or permits revocation/suspension he/she must",
+            "options": {
+              "a": "Notify the carrier within 72 hours",
+              "b": "Notify the carrier within a week",
+              "c": "Notify the carrier immediately",
+              "d": "Take no action since the carrier will get notification"
+            }
+          },
+          "12": {
+            "question": "The maximum legal gross weight a tandem combination is permitted in the US:",
+            "options": {
+              "a": "90000 Lbs.",
+              "b": "84000 Lbs.",
+              "c": "80000 Lbs.",
+              "d": "15000 Lbs. per axle"
+            }
+          },
+          "13": {
+            "question": "You may reset your 70-hour cycle by having at least how many hours off duty in Canada:",
+            "options": {
+              "a": "10",
+              "b": "24",
+              "c": "32",
+              "d": "36"
+            }
+          },
+          "14": {
+            "question": "A driver may not drive faster than the posted speed limit",
+            "options": {
+              "a": "Unless the driver is sick and must complete the run quickly to see a doctor",
+              "b": "At any time",
+              "c": "During the day as you can see things clearly",
+              "d": "Unless the driver is late and is making for the time lost"
+            }
+          },
+          "15": {
+            "question": "Empty trailers crossing borders do not require bolt seal.",
+            "options": {
+              "a": "True",
+              "b": "False"
+            }
+          },
+          "16": {
+            "question": "Who should be putting the seal on the trailer?",
+            "options": {
+              "a": "Anyone",
+              "b": "Dispatch",
+              "c": "Shipper",
+              "d": "Security Guard"
+            }
+          },
+          "17": {
+            "question": "A general rule for any inspection point during a security inspection is to look for:",
+            "options": {
+              "a": "Signs of tampering",
+              "b": "Evidence of drugs",
+              "c": "Areas in need of repair"
+            }
+          },
+          "18": {
+            "question": "The last step of affixing a security seal to a trailer or container is to:",
+            "options": {
+              "a": "Pull down on the seal to confirm that it is secure",
+              "b": "Twist the seal to see if it comes off",
+              "c": "Double check the seal number matches your documentation"
+            }
+          }
+        }
+      }
+    },
+
+    "step3": {
+      "title": "Policies & Consents",
+      "disclaimer": "By signing below, you agree to all the contract here and future contracts. Please read all documents carefully. Your provided information will automatically prefill required fields.",
+      "sendToEmail": "Send me the signed documents to my email when the application process is complete.",
+      "helper": {
+        "drawOrUpload": "Please draw your signature above or upload a signature image."
+      },
+      "status": {
+        "uploading": "Uploading...",
+        "deleting": "Deleting..."
+      },
+      "messages": {
+        "uploadSuccess": "Upload successful",
+        "deleteFailed": "Delete failed",
+        "needSignature": "Please draw or upload a signature before continuing.",
+        "uploadFailed": "Failed to upload your signature. Please try again.",
+        "submissionFailed": "Submission failed."
+      }
+    },
+    "step4": {
+      "title": "Drive Test",
+      "instructions": {
+        "header": "You have reached the Drive Test stage of the application process.",
+        "contactSafety": "Please speak with Safety department to begin your test.",
+        "passMessage": "If you pass: You will proceed to Step 5 (Carrier's Edge Training).",
+        "failMessage": "If you do not pass: A decision would be made on either equipping you with additional training or terminating your application.",
+        "note": "Note: Based on your performance, if you are required to have flatbed driving experience and you do not have this skill yet, you may also be assigned Yard Training (Step 7) to further develop your driving skills. If you never had experience to begin with, then you will have Yard Training by default."
+      },
+      "success": {
+        "title": "Congratulations! 🎉",
+        "message": "You have successfully completed your Drive Test! Your driving skills have been evaluated and approved. Next Step: You will now proceed to (Step 5) Carrier's Edge Training to complete your onboarding process.",
+        "continueButton": "Next"
+      },
+      "buttons": {
+        "completeTest": "Next"
+      }
+    },
+
+    "step5": {
+      "title": "CarriersEdge Training",
+      "instructions": {
+        "header": "Our Safety Team will send your login credentials for the CarriersEdge training to the following email:",
+        "emailInfo": "{{email}}",
+        "completionRequired": "Please complete the training in full on the CarriersEdge website. Completion is required before you can proceed to the next step of the hiring process.",
+        "nextStepInfo": "Once completed, you will be able to proceed to the next step of your application."
+      },
+      "emailSent": {
+        "message": "Your Carrier edge training test credential has been sent to your email {{email}} please visit your email and follow the instruction to complete your test."
+      },
+      "completed": {
+        "congratulations": "Congratulations! 🎉",
+        "message": "Congratulations on the completion of your test, you can now proceed to step 6 of the application process. Next Step: You will now proceed to (Step 6) Drug Test to complete your onboarding process.",
+        "nextStep": "N",
+        "continueButton": "Next"
+      },
+      "button": {
+        "next": "Next"
+      }
+    },
+
+    "step6": {
+      "title": "Drug Test",
+      "description": "Please upload clear photos of your drug test documents. You can add up to {{count}} photos. Once uploaded, documents will be verified before you can continue.",
+      "verified": "Documents verified.",
+      "pending": "Documents uploaded. Pending verification. Uploads are disabled.",
+      "rejected": "Your drug test documents were rejected. Please re-upload and re-submit.",
+      "labeldriverDocuments": "Drug Test Documents",
+      "success": {
+        "title": "Congratulations! 🎉",
+        "message": "You have successfully completed your Drug Test! Your documents have been verified and approved. You can now proceed to the next step of your onboarding process.",
+        "continueButton": "Next"
+      }
+    },
+
+    "step7": {
+      "title": "Flatbed Training",
+      "instructions": {
+        "header": "You have reached the Flatbed Training stage of the application process.",
+        "contactSafety": "Please speak with Safety department to begin your flatbed training.",
+        "passMessage": "If you pass: You will proceed to the next step of your onboarding process.",
+        "failMessage": "If you do not pass: A decision would be made on either equipping you with additional training or terminating your application.",
+        "note": "Note: This training is required for drivers who need flatbed driving experience. The Safety department will contact you to schedule your training session."
+      },
+      "success": {
+        "title": "Congratulations! 🎉",
+        "message": "You have successfully completed your Flatbed Training! Your flatbed driving skills have been evaluated and approved. You can now proceed to the next step of your onboarding process.",
+        "continueButton": "Next"
+      },
+      "buttons": {
+        "completeTraining": "Next"
+      }
+    },
+    "errors": {
+      "minimum5Years": "You must provide at least 5 years of address history.",
+      "addressDurationError": "Address provided should span for the last 5 years. Please add previous address if you lived in more than one location."
+    },
+    "continue": "Continue",
+    "submitting": "Submitting..."
+  },
+
+  "resume": {
+    "title": "Resume Your Application",
+    "description": "Enter your SIN/SSN to continue your onboarding from where you stopped.",
+    "placeholder": "999-888-777",
+    "success": "Match found! Redirecting...",
+    "error": "No application found for that SIN.",
+    "cancel": "Cancel",
+    "continue": "Continue",
+    "loading": "Loading...",
+    "loadingCta": "Resuming...",
+    "validation": {
+      "enterSin": "Please enter your SIN",
+      "sinLength": "SIN must be exactly 9 digits"
+    },
+    "errors": {
+      "invalidResponse": "Invalid response from server",
+      "generic": "Could not resume application. Please try again.",
+      "resumeInfoMissing": "Resume info missing"
+    }
+  },
+
+  "infoPopUp": {
+    "modalTitle": "How it works",
+    "close": "Close",
+    "aboutTitle": "About this application",
+    "stepsTitle": "Steps at a glance",
+    "savingTitle": "Saving & security",
+    "tipsTitle": "Tips",
+    "steps": {
+      "step1": {
+        "label": "1. Pre-Qualification",
+        "desc": "Quick eligibility check (≈2 min): age, AZ licence, work eligibility (Canada/US), and basic readiness."
+      },
+      "step2": {
+        "label": "2. Application Form",
+        "desc": "5-page form covering personal details, 5-year address history, licences & uploads, employment history, and declarations."
+      },
+      "step3": {
+        "label": "3. Policies",
+        "desc": "Review company policies and provide required acknowledgements/signatures."
+      },
+      "step4": {
+        "label": "4. Drive Test",
+        "desc": "Scheduling and results for road/in-yard evaluation (managed by Safety)."
+      },
+      "step5": {
+        "label": "5. Carriers Edge",
+        "desc": "Complete assigned online safety training; we'll guide you to sign in."
+      },
+      "step6": {
+        "label": "6. Drug Test",
+        "desc": "If required, you'll receive instructions and a referral location."
+      },
+      "step7": {
+        "label": "7. Flatbed Training (If Required)",
+        "desc": "On-site flatbed training and evaluation for drivers who need this specialized skill."
+      }
+    },
+    "saving": {
+      "autoSignOut": "Auto-logout for security: If there’s no activity for 10 minutes, the form will automatically return to the Welcome screen.",
+      "progressSaves": "Your progress is saved: Once you enter your SIN (Social Insurance Number)/SSN on page 2 and continue, your progress will be securely saved.",
+      "resumeLater": "Resume anytime: If you disconnect or switch devices, you can use your SIN and the Resume button on the Welcome screen to continue where you left off.",
+      "privacyNote": "Privacy note: Your SIN is used only to locate your application and is stored securely."
+    }
+  },
+  "actions": {
+    "addPhoto": "Add Photo",
+    "remove": "Remove",
+    "addRow": "Add Row",
+    "manage": "Manage",
+    "close": "Close",
+    "done": "Done",
+    "replace": "Replace",
+    "delete": "Delete",
+    "upload": "Upload",
+    "clear": "Clear",
+    "processing": "Processing...",
+    "submitting": "Submitting...",
+    "submitAnswers": "Submit Answers",
+    "continue": "Continue",
+    "submitDocuments": "Submit Documents",
+    "submitdriverDocuments": "Submit Documents",
+    "resubmitDocuments": "Re-submit Documents",
+    "resubmitdriverDocuments": "Re-submit Documents",
+    "pendingVerification": "Pending Verification"
+  },
+
+  "photoGroup": {
+    "noPhotosYet": "No photos yet",
+    "managePhotos": "Manage Photos",
+    "maxReached": "Maximum of {{count}} photos reached",
+    "moreCount": "+{{count}}"
+  },
+
+  "completion": {
+    "title": "Application Completed Successfully! 🎉",
+    "message": "Congratulations! You have successfully completed your driver onboarding application! Your application has been submitted and is now under review by our team. We will contact you soon with next steps.",
+    "nextSteps": {
+      "title": "What Happens Next?",
+      "message": "Our team will review your application and contact you within 2-3 business days to discuss the next steps in your hiring process. Please keep your phone and email available for our team to reach you."
+    },
+    "buttons": {
+      "goHome": "Return to Home",
+      "resume": "View Application"
+    },
+    "resumeInfo": "You can use your SIN/SSN to resume and view your completed application anytime from the home page."
+  },
+
+  "errors": {
+    "session": {
+      "title": "Session Expired",
+      "message": "Your session has expired for security after 6 hours of inactivity. Your progress is safely saved.",
+      "resume": "Resume Application",
+      "goHome": "Go Home"
+    },
+    "notFound": {
+      "title": "Application Not Found",
+      "message": "Your application could not be found. This may happen if the application was terminated or has expired.",
+      "startNew": "Start New Application",
+      "resume": "Resume Existing"
+    },
+    "network": {
+      "title": "Connection Failed",
+      "message": "Unable to connect to the server. Please check your internet connection and try again.",
+      "retry": "Close",
+      "goHome": "Go Home"
+    },
+    "server": {
+      "title": "Server Error",
+      "message": "Something went wrong on our end. Please try again or contact support if the problem persists.",
+      "tryAgain": "Try Again",
+      "contactSupport": "Contact Support"
+    },
+    "rateLimit": {
+      "title": "Too Many Requests",
+      "message": "You've made too many requests. We'll automatically retry in 30 seconds, or you can go home and try again later.",
+      "wait": "Auto-Retry in 30s",
+      "goHome": "Go Home"
+    },
+    "generic": {
+      "title": "Unexpected Error",
+      "tryAgain": "Try Again",
+      "contactSupport": "Contact Support",
+      "goHome": "Go Home"
+    }
+  }
+}

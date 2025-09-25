@@ -1,0 +1,856 @@
+{
+  "navbar": {
+    "backButton": "Retour"
+  },
+
+  "footer": {
+    "rights": "Tous droits réservés.",
+    "tagline": "DriveDock – Plateforme numérique d’intégration des conducteurs"
+  },
+
+  "welcome": {
+    "heading": "Rejoignez la route avec SSP",
+    "description": "Votre plateforme d’intégration numérique pour rejoindre SSP Truck Line. Remplissez vos documents d’embauche rapidement et en toute sécurité.",
+
+    "features": {
+      "language": {
+        "title": "Multilingue",
+        "description": "Disponible en anglais, espagnol et français afin d’accompagner tous les conducteurs"
+      },
+      "security": {
+        "title": "Sécurisé et fiable",
+        "description": "Vos informations sont protégées par une sécurité et un chiffrement de niveau entreprise"
+      },
+      "steps": {
+        "title": "Processus en 6 étapes",
+        "description": "Remplissez tous les documents d’embauche requis via notre assistant en 6 étapes"
+      }
+    },
+
+    "steps": {
+      "title": "Processus de candidature",
+      "personal": "Renseignements personnels",
+      "employment": "Historique d’emploi",
+      "driving": "Dossier de conduite",
+      "medical": "Renseignements médicaux",
+      "references": "Références",
+      "review": "Vérification finale"
+    }
+  },
+
+  "start": {
+    "heading": "Commencez votre candidature",
+    "subheading": "Commencez votre parcours avec SSP Group of Companies",
+    "languageLabel": "🌐 Sélectionner la langue",
+    "beforeYouBegin": "Avant de commencer",
+    "ensureDoc": "Veuillez vous assurer de disposer des documents listés ci-dessous pour compléter ce processus de candidature",
+    "continue": "Continuer vers la candidature",
+    "estimatedTime": "Temps estimé : 15–20 minutes",
+    "agreeToTerms": "J’accepte les Conditions d’utilisation et la Politique de confidentialité",
+
+    "CanadaDocChecklist": {
+      "driverLicense": "Permis de conduire",
+      "SINnumber": "Numéro d’assurance sociale (NAS)",
+      "healthCard": "Carte santé",
+      "Passport": "Passeport",
+      "visa": "Visa américain (pour les conducteurs transfrontaliers)",
+      "permit": "RP/Permis de travail/Citoyen canadien",
+      "option": "Documents optionnels :",
+      "fastCard": "Carte FAST",
+      "IncorporateDocuments": "Documents d’incorporation",
+      "bankingInfo": "Coordonnées bancaires (pour l’incorporation)"
+    },
+
+    "USAChecklist": {
+      "driverLicense": "Permis de conduire",
+      "SSNnumber": "Numéro SSN",
+      "healthCard": "Certificat médical",
+      "Passport": "Passeport/RP/Citoyen américain",
+      "option": "Documents optionnels :",
+      "IncorporateDocuments": "Documents d’incorporation",
+      "bankingInfo": "Coordonnées bancaires (pour l’incorporation)"
+    },
+    "docs": {
+      "OptionalDocuments": "Documents optionnels :",
+      "RequiredDocuments": "Documents obligatoires :"
+    },
+
+    "termsModal": {
+      "title": "Conditions d’utilisation",
+      "intro": "Veuillez lire les conditions ci-dessous. Pour continuer, confirmez votre accord.",
+      "points": {
+        "accurateInfo": "Toutes les informations que je fournis seront exactes et véridiques.",
+        "digitalProcess": "Je comprends qu'il s'agit d'une candidature numérique et que les dossiers peuvent être conservés électroniquement.",
+        "selfApplication": "Je confirme que je suis la personne qui remplit cette candidature et que je ne le fais pas au nom d'une autre personne.",
+        "truthfulInfo": "Je confirme que toutes les informations soumises sont vraies et exactes.",
+        "applicationType": "Je reconnais le type de candidature sélectionné (entrepreneur ou employé) dans cette demande.",
+        "rulesTitle": "Je comprends et j’accepte les règles de l’entreprise suivantes :",
+        "drugPolicy": "Politiques en matière d’alcool et de drogues",
+        "dashCam": "Caméra embarquée double face",
+        "safetyRules": "Limites de vitesse (105 km/h), déclaration des incidents et interdiction d'utiliser le téléphone au volant",
+        "seals": "Scellés de remorque et exigences d’inspection transfrontalière",
+        "laws": "Je suis responsable du respect des lois canadiennes et américaines sur le transport routier."
+      },
+      "masterConsent": "J’ai lu et j’accepte les Conditions d’utilisation énumérées ci-dessus.",
+      "cancel": "Annuler",
+      "next": "J’accepte et je continue"
+    },
+
+    "policiesModal": {
+      "title": "Politiques et avis d’utilisation des données",
+      "sub-title": "Dans le cadre de votre candidature pour devenir conducteur au sein de l'une de nos nombreuses entreprises, nous recueillons et utilisons certaines informations personnelles afin de confirmer vos qualifications et de respecter les exigences légales et de sécurité.",
+      "section": {
+        "whatInfo": "Quelles informations nous collectons",
+        "whatInfoItems": {
+          "itemOne": "Renseignements personnels (nom, adresse, coordonnées)",
+          "itemTwo": "Détails du permis de conduire et dossier de conduite (résumé)",
+          "itemThree": "Historique d’emploi et références",
+          "itemFour": "Résultats des vérifications d’antécédents et des tests de dépistage d’alcool/drogues"
+        },
+        "whyInfo": "Pourquoi nous collectons ces informations",
+        "whyInfoItems": {
+          "itemOne": "Vérifier que vous répondez aux exigences légales pour la conduite commerciale",
+          "itemTwo": "Assurer la sécurité au travail et sur la route",
+          "itemThree": "Effectuer les vérifications d’antécédents et d’emploi requises par la loi",
+          "itemFour": "Maintenir des dossiers d’emploi et de conformité exacts"
+        },
+        "whoInfo": "Qui a accès à ces informations",
+        "whoInfoItems": {
+          "itemOne": "Les équipes des ressources humaines et de conformité de l'entreprise",
+          "itemTwo": "Autorités de réglementation (p. ex., Transports Canada; FMCSA en cas de traversée de frontière)",
+          "itemThree": "Tiers autorisés (p. ex., fournisseurs de vérification d’antécédents, assureurs)"
+        },
+        "howLong": "Durée de conservation de vos informations",
+        "duration": "Vos informations seront conservées de manière sécurisée pendant la période requise par la loi (généralement 3 à 7 ans, selon le type de document et la juridiction)."
+      },
+      "back": "Retour",
+      "agree": "J’accepte et je termine"
+    }
+  },
+  "company": {
+    "heading": "Rejoignez notre famille d'entreprises",
+    "subheading": "Choisissez l'entreprise où vous souhaitez bâtir votre carrière de conducteur",
+    "applyNow": "Postuler maintenant",
+    "selectType": "Sélectionner le type de candidature",
+    "selectTypeDesc": "Veuillez choisir le type de poste pour lequel vous postulez :",
+    "flatbed": "Plateau",
+    "dropdeck": "Fourgon sec",
+    "cancel": "Annuler",
+    "descriptions": {
+      "ssp-ca": "Solutions de transport de premier plan au Canada avec des services de fret spécialisés",
+      "ssp-us": "Solutions de fret de premier plan aux États-Unis avec couverture transfrontalière",
+      "fellowtrans": "Solutions de fret fiables axées sur la satisfaction client",
+      "webfreight": "Solutions logistiques modernes alimentées par la technologie et l'innovation",
+      "nesh": "Transport spécialisé d'acier et de matériaux lourds en Amérique du Nord"
+    }
+  },
+
+  "form": {
+    "subtitle": "Toutes les informations doivent être exactes. La responsabilité incombe au candidat.",
+
+    "helpPopups": {
+      "page2SafetySensitive": "Dans le cadre de notre processus de conformité réglementaire, veuillez confirmer les informations suivantes :\n\nConduite transfrontalière : Indiquez « Oui » si vous avez déjà conduit un véhicule commercial à travers la frontière États-Unis–Canada. Sinon, indiquez « Non ».\n\nDépistage conforme au DOT : Indiquez « Oui » si votre employeur précédent a réalisé des tests de dépistage d’alcool et de drogues conformément aux règlements du Department of Transportation (DOT) des États-Unis. Sinon, indiquez « Non ».\n\nVos réponses nous aident à assurer la conformité aux règlements applicables en matière de transport et de sécurité. Pour toute question, n’hésitez pas à nous contacter.",
+      "page3CanadianHours": "Dans le cadre des exigences de conformité aux Heures de service (HOS) selon la réglementation canadienne, veuillez indiquer le nombre d’heures de service (y compris la conduite) que vous avez effectuées au cours des 14 derniers jours chez votre employeur précédent.\n\nVeuillez vous assurer de ce qui suit :\n• Indiquez le nombre d’heures travaillées pour chaque jour de la période de 14 jours.\n• Incluez le total des heures travaillées sur l’ensemble des 14 jours.\n• Si vous étiez en vacances, en congé ou que vous n’avez pas travaillé un jour donné, veuillez l’indiquer en saisissant « 0 » ou « néant » pour ce jour.\n\nCes informations sont essentielles pour suivre avec exactitude votre conformité aux règles canadiennes sur les HOS. Merci de votre collaboration."
+    },
+    "step1": {
+      "title": "Formulaire de présélection",
+      "questions": {
+        "over23Local": "Avez-vous plus de 23 ans (pour le local) ?",
+        "over25CrossBorder": "Avez-vous plus de 25 ans (pour le transfrontalier) ?",
+        "canDriveManual": "Pouvez-vous conduire une transmission manuelle ?",
+        "experienceDrivingTractorTrailer": "Avez-vous au moins 2 ans d’expérience vérifiable en conduite de tracteur/remorque ?",
+        "faultAccidentIn3Years": "Avez-vous eu un accident responsable au cours des 3 dernières années ?",
+        "zeroPointsOnAbstract": "Avez-vous plus de 0 point sur votre relevé de conducteur ?",
+        "noUnpardonedCriminalRecord": "Avez-vous un casier judiciaire pour lequel un pardon n’a pas été accordé ?",
+        "legalRightToWorkCanada": "Avez-vous le droit légal de travailler au Canada ?",
+        "legalRightToWorkUS": "Avez-vous le droit légal de travailler aux États-Unis ?",
+        "canCrossBorderUSA": "Pouvez-vous traverser la frontière vers les États-Unis ?",
+        "hasFASTCard": "Avez-vous une carte FAST ?",
+
+        "categories": "Catégories",
+        "driverType": "Quel type de conducteur êtes-vous ?",
+        "haulPreference": "Que préférez-vous ?",
+        "teamStatus": "Faites-vous partie d’une équipe ou conduisez-vous en solo ?",
+        "preferLocalDriving": "Préférez-vous conduire localement ?",
+        "preferSwitching": "Préférez-vous le switching (drop & hook) ?",
+        "flatbedExperience": "Avez-vous de l’expérience en plateau ?",
+
+        "yes": "Oui",
+        "no": "Non",
+
+        "company": "Société",
+        "owneroperator": "Propriétaire-exploitant",
+        "ownerdriver": "Propriétaire-conducteur",
+        "shorthaul": "Courte distance",
+        "longhaul": "Longue distance",
+        "team": "Équipe",
+        "single": "Solo",
+
+        "flatbedPopup": {
+          "title": "Avis",
+          "yes": "Votre niveau en plateau sera évalué pendant l’essai de conduite.",
+          "no": "Après votre essai de conduite, vous serez inscrit à une formation plateau de 2 semaines.",
+          "ok": "OK"
+        }
+      },
+      "next": "Suivant"
+    },
+    "step2": {
+      "title": "Formulaire de candidature",
+      "page1": {
+        "sections": {
+          "personal": "Renseignements personnels",
+          "birth": "Lieu de naissance",
+          "license": "Informations sur le permis",
+          "address": {
+            "title": "Historique d’adresses",
+            "subtitle": "Veuillez fournir votre historique d’adresses pour les 5 dernières années",
+            "current": "Adresse actuelle",
+            "previous": "Adresse précédente"
+          }
+        },
+        "fields": {
+          "firstName": "Prénom",
+          "lastName": "Nom",
+          "sin": "NAS (Numéro d'assurance sociale)",
+          "sinIssueDate": "Date d'émission du NAS",
+          "gender": "Genre",
+          "male": "Masculin",
+          "female": "Féminin",
+          "sinPhoto": "Photo de la carte NAS",
+          "sinPhotoDesc": "Cliquez pour capturer ou sélectionner une image",
+          "dob": "Date de naissance",
+          "canProvideProof": "Pouvez-vous fournir une preuve d’âge ?",
+          "phoneHome": "Téléphone (domicile) (Optionnel)",
+          "email": "Adresse courriel",
+          "phoneCell": "Téléphone (cellulaire)",
+          "emergencyContactName": "Nom de la personne à contacter en cas d’urgence",
+          "emergencyContactPhone": "Téléphone de la personne à contacter",
+          "birthCity": "Ville de naissance",
+          "birthStateOrProvince": "État ou province",
+          "birthCountry": "Pays de naissance",
+          "licenseNumber": "Numéro de permis",
+          "licenseProvince": "Province",
+          "licenseType": "Type de permis",
+          "licenseExpiry": "Date d’expiration",
+          "licenseFrontPhoto": "Photo recto du permis",
+          "licensePhotoDesc": "Cliquez pour capturer ou sélectionner une image",
+          "licenseBackPhoto": "Photo verso du permis",
+          "address": "Adresse",
+          "city": "Ville",
+          "stateOrProvince": "État ou province",
+          "postalCode": "Code postal",
+          "zipCode": "Code ZIP",
+          "from": "Date de début",
+          "to": "Date de fin"
+        },
+        "actions": {
+          "addLicense": "Ajouter un autre permis",
+          "removeLicense": "Supprimer le permis",
+          "addAddress": "Ajouter une autre adresse",
+          "removeAddress": "Supprimer l’adresse"
+        }
+      },
+      "page2": {
+        "sections": {
+          "employment": "Historique d’emploi"
+        },
+        "requirements": "Les Federal Motor Carrier Safety Regulations (49CFR391.21) exigent que tous les candidats souhaitant conduire un véhicule commercial listent tous les emplois des deux (2) dernières années. De plus, si vous avez déjà conduit un véhicule commercial, vous devez fournir l’historique d’emploi pour huit (8) années supplémentaires, pour un total de dix (10) ans. Tout écart d’un mois ou plus dans l’emploi doit être expliqué.",
+        "labels": {
+          "currentEmployer": "Employeur actuel",
+          "previousEmployer": "Employeur précédent"
+        },
+        "fields": {
+          "employerName": "Nom de l’employeur",
+          "supervisorName": "Nom du superviseur",
+          "address": "Adresse",
+          "city": "Ville",
+          "stateOrProvince": "Province ou État",
+          "postalCode": "Code postal",
+          "phone1": "Téléphone 1",
+          "phone2": "Téléphone 2 (optionnel)",
+          "email": "Adresse courriel",
+          "positionHeld": "Poste occupé",
+          "from": "Date de début",
+          "to": "Date de fin",
+          "salary": "Salaire",
+          "salaryPlaceholder": "0,50$/mile ou 25$/hr",
+          "reasonForLeaving": "Raison du départ...",
+          "subjectToFMCSR": "Étiez-vous soumis aux FMCSR (Federal Motor Carrier Safety Regulations) ?",
+          "safetySensitiveFunction": "Votre poste était-il désigné comme fonction critique pour la sécurité dans un mode réglementé par le DOT, soumis aux exigences de dépistage d’alcool et de drogues de la partie 40 du 49 CFR ?"
+        },
+        "actions": {
+          "addPrevious": "Ajouter un employeur précédent",
+          "removePrevious": "Supprimer"
+        },
+        "modal": {
+          "title": "Historique d’emploi supplémentaire requis",
+          "message": "Vous avez plus de 2 ans d’expérience. Veuillez ajouter votre emploi précédent pour compléter les informations requises."
+        },
+        "gapDetected": "Intervalle de {days} jours détecté entre les emplois. Veuillez expliquer :"
+      },
+      "page3": {
+        "sections": {
+          "accidentHistory": "Rapport d’accident",
+          "trafficConvictions": "Infractions au code de la route",
+          "education": "Éducation",
+          "canadianHours": "Heures de service – Canada"
+        },
+        "instructionsCanadianHours": "INSTRUCTIONS : Les transporteurs, lorsqu’ils utilisent un conducteur pour la première fois ou de manière intermittente, doivent obtenir du conducteur une déclaration signée indiquant le total des heures de service du conducteur au cours des 14 jours précédents et l’heure à laquelle ce conducteur a été relevé de ses fonctions avant de commencer à travailler pour ce transporteur (voir Section 395.8(j)(2) des Federal Motor Carrier Safety Regulations). REMARQUE : Les heures de tout travail rémunéré au cours des 14 jours précédents, y compris pour une entité autre qu’un transporteur, doivent être consignées dans ce formulaire.",
+        "instructionsAccidentHistory": "Veuillez fournir les détails de tout accident auquel vous avez été impliqué. Si vous n’avez aucun accident à déclarer, vous pouvez laisser tous les champs vides.",
+        "instructionsTrafficConvictions": "Veuillez indiquer les détails de toutes les infractions routières, amendes et avertissements reçus au cours des trois dernières années (autres que les contraventions de stationnement). Si vous n’avez aucune infraction à déclarer, vous pouvez laisser tous les champs vides.",
+        "instructionsEducation": "Veuillez indiquer le nombre d’années complétées à chaque niveau d’études. Sélectionnez 0 si vous n’avez pas fréquenté ce niveau.",
+        "fields": {
+          "date": "Date",
+          "natureOfAccident": "Nature de l’accident (frontale, arrière, renversement, NAF, etc.)",
+          "fatalities": "Décès",
+          "injuries": "Blessés",
+          "location": "Lieu",
+          "charge": "Accusation",
+          "penalty": "Sanction",
+          "gradeSchool": "École primaire (années)",
+          "college": "Collège/Université (années)",
+          "postGraduate": "Études supérieures (années)",
+          "dayOneDate": "Date jour un (AAAA-MM-JJ)",
+          "totalHours": "Total d’heures",
+          "dateTitle": "Heures quotidiennes (0–24 heures par jour)"
+        },
+
+        "actions": {
+          "addRow": "Ajouter une ligne",
+          "remove": "Supprimer"
+        }
+      },
+      "page4": {
+        "sections": {
+          "criminalRecords": {
+            "title": "Vérification du casier judiciaire",
+            "subtitle": "Les candidats doivent déclarer toutes les condamnations pour des infractions relevant du droit fédéral canadien.",
+            "guidance": {
+              "intro": "Veuillez lire attentivement ce qui suit avant de compléter cette section :",
+              "dontDeclareTitle": "Ne déclarez pas les éléments suivants :",
+              "items": {
+                "item1": "Une condamnation pour laquelle vous avez obtenu une suspension de casier (anciennement pardon) en vertu de la Loi sur le casier judiciaire ;",
+                "item2": "Une condamnation lorsque vous étiez un « adolescent » au sens de la Loi sur le système de justice pénale pour les adolescents ;",
+                "item3": "Une absolution inconditionnelle ou conditionnelle, conformément à l’article 730 du Code criminel ;",
+                "item4": "Une infraction pour laquelle vous n’avez pas été condamné ;",
+                "item5": "Toute infraction provinciale ou municipale ;",
+                "item6": "Toute accusation traitée à l’extérieur du Canada."
+              }
+            }
+          },
+          "business": {
+            "title": "Détails d’incorporation",
+            "disclaimer": {
+              "text": "Si vous fournissez des détails d’incorporation, vous devez remplir tous les champs et téléverser tous les documents liés dans cette section. Cela inclut le numéro d’employé, le numéro de TVH, le numéro d’entreprise et les photos requises (Incorporation, TVH, Bancaire)."
+            }
+          },
+          "additionalInfo": {
+            "title": "Renseignements supplémentaires"
+          },
+          "fastCard": {
+            "title": "Carte FAST",
+            "disclaimer": "Cette section est optionnelle. Toutefois, si vous fournissez des informations sur la carte FAST, vous devez remplir tous les champs et téléverser les photos du recto et du verso."
+          },
+          "eligibilityDocs": {
+            "title": "Documents de santé / d'identification",
+            "description": "Veuillez fournir des photos claires et lisibles des documents de santé et d'identité requis listés ci-dessous. Tous les détails doivent être visibles (recto et verso le cas échéant). Si un document manque ou n'est pas clair, votre candidature peut être retardée."
+          },
+          "workAuthorization": {
+            "title": "Preuve d'autorisation de travail"
+          }
+        },
+        "fields": {
+          "dateOfSentence": "Date de la sentence",
+          "offense": "Infraction",
+          "courtLocation": "Lieu du tribunal",
+          "hstNumber": "Numéro de TVH",
+          "businessName": "Nom de l'entreprise",
+          "incorporatePhotos": "Photos d'incorporation",
+          "hstPhotos": "Photos du numéro de TVH",
+          "bankingInfoPhotos": "Photos des coordonnées bancaires",
+          "denied": "Vous est-il déjà arrivé qu’un permis, une autorisation ou un droit de conduire un véhicule motorisé vous soit refusé ?",
+          "suspended": "Un permis, une autorisation ou un droit vous a-t-il déjà été suspendu ou révoqué ?",
+          "suspensionNotes": "Notes",
+          "testedPositive": "Avez-vous déjà obtenu un résultat positif, ou refusé de vous soumettre, à un test de dépistage d’alcool ou de drogues pré-emploi administré par un employeur auprès duquel vous avez postulé, mais pour lequel vous n’avez pas obtenu un emploi de transport sensible à la sécurité, conformément aux règles des agences du DOT au cours des deux dernières années ?",
+          "completedDOT": "Si vous avez répondu OUI, pouvez-vous fournir/obtenir la preuve que vous avez rempli avec succès les exigences de retour au travail du DOT ?",
+          "hasInsurance": "Disposez-vous de votre propre assurance d'indemnités en cas d'accident ?",
+          "accidentalInsurancePopup": {
+            "title": "Enregistrement d'Assurance de l'Entreprise",
+            "message": "Pour votre sécurité et conformité, SSP Truck Line enregistrera chaque conducteur sous le plan d'Assurance d'Indemnités d'Accident de l'entreprise. Cela garantit que vous êtes entièrement couvert pendant le travail, peu importe si vous avez déjà votre propre assurance personnelle d'indemnités d'accident. Votre couverture personnelle, le cas échéant, reste inchangée — mais l'enregistrement de l'entreprise est obligatoire pour fournir une protection cohérente pour tous les conducteurs.",
+            "ok": "OK"
+          },
+          "fastNumber": "Numéro de carte FAST",
+          "fastExpiry": "Date d'expiration",
+          "fastFront": "Photo recto",
+          "fastBack": "Photo verso",
+          "uploadFront": "Téléverser recto",
+          "uploadBack": "Téléverser verso",
+
+          "healthCard": "Carte de santé",
+          "healthCardPhotos": "Carte de santé (recto et verso)",
+          "healthCardDescription": "Téléversez des photos claires du recto et du verso de votre carte de santé (p. ex., carte de santé de l'Ontario).",
+
+          "passportTypeQuestion": "Quel type de passeport avez-vous ?",
+          "selectPassportType": "Sélectionner le type de passeport",
+          "passportType": {
+            "canadian": "Canadien",
+            "others": "Autres"
+          },
+
+          "workAuthorizationTypeQuestion": "Quel type d'autorisation de travail avez-vous ?",
+          "selectWorkAuthorizationType": "Sélectionner le type d'autorisation de travail",
+          "workAuthorizationType": {
+            "local": "Local (au Canada)",
+            "crossBorder": "Transfrontalier (Canada-États-Unis)"
+          },
+
+          "passport": "Passeport",
+          "passportPhotos": "Passeport (page de données et verso)",
+          "passportDescription": "Téléversez la page de données du passeport (avec votre photo) et la page de couverture arrière (p. ex., passeport canadien ou étranger).",
+          "passportDescriptionUS": "Téléversez la page de données du passeport (avec votre photo) et la page de couverture arrière (p. ex., passeport américain).",
+
+          "usVisa": "Visa américain",
+          "usVisaPhotos": "Visa américain",
+          "usVisaDescription": "Téléversez des photos claires de votre visa américain valide (p. ex., pages de visa de visiteur, de travail ou d'études).",
+
+          "prPermitCitizenship": "Carte de résident permanent / Permis de travail / Citoyenneté",
+          "prPermitCitizenshipPhotos": "Résident permanent / Permis / Citoyenneté",
+          "prPermitCitizenshipDescription": "Téléversez des photos claires de votre carte de résident permanent, permis de travail/études ou document de citoyenneté (p. ex., recto et verso de la carte de RP, lettre de permis de travail).",
+
+          "greenCardCitizenship": "Carte verte / Citoyenneté",
+          "greenCardCitizenshipDescription": "Téléversez des photos claires de votre carte de résident permanent ou document de citoyenneté américaine (p. ex., recto et verso de la carte de RP, certificat de naturalisation).",
+
+          "medicalCertification": "Certification médicale",
+          "medicalCertificationPhotos": "Certification médicale",
+          "medicalCertificationDescription": "Téléversez des photos claires de votre certificat médical DOT valide (recto et verso le cas échéant).",
+
+          "oneOfTheseRequired": "Un de ceux-ci requis",
+          "optional": "Optionnel",
+
+          "incorporatePhotosDescription": "Téléversez des photos claires de vos documents d'incorporation d'entreprise (p. ex., articles d'incorporation, certificat d'incorporation).",
+          "hstPhotosDescription": "Téléversez une photo de votre document d'enregistrement du numéro d'entreprise TVH/TPS (p. ex., lettre d'enregistrement de l'ARC).",
+          "bankingInfoPhotosDescription": "Téléversez une photo d'un chèque annulé ou d'un formulaire de dépôt direct de votre banque (doit clairement montrer le numéro de compte et les détails de l'institution)."
+        },
+        "placeholders": {
+          "optionalDetails": "Fournissez des précisions..."
+        }
+      },
+      "page5": {
+        "title": "Test de compétences",
+        "lockedNote": "Vous avez soumis vos réponses. Le test est maintenant verrouillé.",
+        "scoreLabel": "Score :",
+        "note": "Je confirme avoir pris connaissance de mon score et comprends que je ne peux pas repasser ce test.",
+        "reviewInstruction": "Vérifiez vos réponses ci-dessous. Lorsque vous êtes prêt, descendez et cochez la case d’accusé de réception, puis cliquez sur Continuer pour poursuivre.",
+        "modal": {
+          "finalConfirmation": "Confirmation finale",
+          "confirmMessage": "Vous ne pourrez pas repasser ce test de compétences une fois soumis. Êtes-vous sûr de vouloir continuer ?",
+          "cancel": "Annuler",
+          "confirm": "Oui, soumettre"
+        },
+        "questions": {
+          "1": {
+            "question": "Selon la FMCSA, vous ne pouvez pas conduire plus de :",
+            "options": {
+              "a": "11 heures",
+              "b": "Après avoir été en service pendant 14 heures",
+              "c": "Après plus de 8 heures en service suivant 10 heures continues hors service",
+              "d": "Toutes les réponses ci-dessus"
+            }
+          },
+          "2": {
+            "question": "Selon la FMCSA, vous ne pouvez pas travailler plus de combien d’heures en 8 jours :",
+            "options": {
+              "a": "70 heures",
+              "b": "120 heures",
+              "c": "11 heures",
+              "d": "500 miles aller-retour"
+            }
+          },
+          "3": {
+            "question": "Après 11 heures de conduite, vous devez",
+            "options": {
+              "a": "Arrêter de travailler et rentrer chez vous",
+              "b": "Travailler 5 heures de plus",
+              "c": "Prendre 10 heures consécutives de repos avant de reconduire",
+              "d": "Toutes les réponses ci-dessus"
+            }
+          },
+          "4": {
+            "question": "Lors de l’inspection avant départ, vous devez démontrer que",
+            "options": {
+              "a": "Le véhicule est sécuritaire à conduire",
+              "b": "Le véhicule a moins de 4 ans",
+              "c": "Vous êtes compétent et n’avez pas d’alcool dans l’organisme",
+              "d": "Toutes les réponses ci-dessus"
+            }
+          },
+          "5": {
+            "question": "La charge cognitive pendant la conduite fait référence à :",
+            "options": {
+              "a": "La quantité de travail effectuée par votre cerveau",
+              "b": "Votre capacité à prendre des décisions",
+              "c": "Le nombre de dangers que vous pouvez voir"
+            }
+          },
+          "6": {
+            "question": "Utiliser le mode mains libres sur un appareil mobile en conduisant :",
+            "options": {
+              "a": "Augmente la charge cognitive",
+              "b": "Diminue la charge cognitive",
+              "c": "N’affecte pas la charge cognitive"
+            }
+          },
+          "7": {
+            "question": "Lors de l’inspection avant départ, vous",
+            "options": {
+              "a": "Restez dans le camion et conduisez en parlant de votre expertise",
+              "b": "Passez un test informatisé sur la conduite",
+              "c": "Faites le tour du véhicule, pointez ou touchez chaque élément et expliquez à l’examinateur ce que vous vérifiez et pourquoi"
+            }
+          },
+          "8": {
+            "question": "Lors de l’inspection, les rétroviseurs et le pare-brise doivent être vérifiés pour",
+            "options": {
+              "a": "Un bon alignement",
+              "b": "Des autocollants",
+              "c": "La propreté, les obstructions et les dommages"
+            }
+          },
+          "9": {
+            "question": "Que signifie C-TPAT ?",
+            "options": {
+              "a": "Participation canadienne au transport contre le terrorisme",
+              "b": "Partenariat douanes-commerce contre le terrorisme",
+              "c": "Partenariat commercial canadien contre le terrorisme",
+              "d": "Partenariat douanes-commerce et transport"
+            }
+          },
+          "10": {
+            "question": "Si un conducteur constate que le scellé du remorque est brisé à un relais routier, il doit",
+            "options": {
+              "a": "Informer immédiatement le dispatch",
+              "b": "Réinspecter son équipement pour tout comportement suspect",
+              "c": "Mettre un autre scellé",
+              "d": "Toutes les réponses ci-dessus"
+            }
+          },
+          "11": {
+            "question": "Lorsqu’un conducteur reçoit un avis de révocation/suspension de permis, il/elle doit",
+            "options": {
+              "a": "Avertir le transporteur dans les 72 heures",
+              "b": "Avertir le transporteur dans la semaine",
+              "c": "Avertir immédiatement le transporteur",
+              "d": "Ne rien faire car le transporteur sera informé"
+            }
+          },
+          "12": {
+            "question": "Le poids brut légal maximal d’une combinaison tandem autorisé aux États-Unis est :",
+            "options": {
+              "a": "90 000 lb",
+              "b": "84 000 lb",
+              "c": "80 000 lb",
+              "d": "15 000 lb par essieu"
+            }
+          },
+          "13": {
+            "question": "Vous pouvez réinitialiser votre cycle de 70 heures en ayant au moins combien d’heures hors service au Canada :",
+            "options": {
+              "a": "10",
+              "b": "24",
+              "c": "32",
+              "d": "36"
+            }
+          },
+          "14": {
+            "question": "Un conducteur ne peut pas rouler plus vite que la limite de vitesse affichée",
+            "options": {
+              "a": "Sauf s’il est malade et doit terminer rapidement pour voir un médecin",
+              "b": "À aucun moment",
+              "c": "Le jour, car on voit mieux",
+              "d": "S’il est en retard et veut rattraper le temps perdu"
+            }
+          },
+          "15": {
+            "question": "Les remorques vides qui franchissent la frontière n’exigent pas de scellé boulonné.",
+            "options": {
+              "a": "Vrai",
+              "b": "Faux"
+            }
+          },
+          "16": {
+            "question": "Qui doit poser le scellé sur la remorque ?",
+            "options": {
+              "a": "N’importe qui",
+              "b": "Le dispatch",
+              "c": "L’expéditeur (shipper)",
+              "d": "L’agent de sécurité"
+            }
+          },
+          "17": {
+            "question": "Règle générale à un point d’inspection lors d’un contrôle de sûreté : rechercher",
+            "options": {
+              "a": "Des signes d’altération",
+              "b": "Des preuves de drogues",
+              "c": "Des zones nécessitant des réparations"
+            }
+          },
+          "18": {
+            "question": "La dernière étape pour fixer un scellé de sécurité à une remorque ou un conteneur consiste à :",
+            "options": {
+              "a": "Tirer vers le bas sur le scellé pour confirmer qu’il est bien fixé",
+              "b": "Tordre le scellé pour voir s’il se détache",
+              "c": "Vérifier que le numéro du scellé correspond à votre documentation"
+            }
+          }
+        }
+      }
+    },
+
+    "step3": {
+      "title": "Politiques et consentements",
+      "disclaimer": "En signant ci-dessous, vous acceptez l’ensemble du contrat présent et des contrats à venir. Veuillez lire attentivement tous les documents. Les informations que vous fournissez prérempliront automatiquement les champs requis.",
+      "sendToEmail": "M’envoyer les documents signés par courriel lorsque le processus de candidature sera terminé.",
+      "helper": {
+        "drawOrUpload": "Veuillez dessiner votre signature ci-dessus ou téléverser une image de signature."
+      },
+      "status": {
+        "uploading": "Téléversement...",
+        "deleting": "Suppression..."
+      },
+      "messages": {
+        "uploadSuccess": "Téléversement réussi",
+        "deleteFailed": "La suppression a échoué",
+        "needSignature": "Veuillez dessiner ou téléverser une signature avant de continuer.",
+        "uploadFailed": "Échec du téléversement de votre signature. Veuillez réessayer.",
+        "submissionFailed": "Échec de l’envoi."
+      }
+    },
+    "step4": {
+      "title": "Essai de conduite",
+      "instructions": {
+        "header": "Vous avez atteint l’étape de l’essai de conduite dans le processus de candidature.",
+        "contactSafety": "Veuillez communiquer avec le service Sécurité pour commencer votre test.",
+        "passMessage": "Si vous réussissez : vous passerez à l’étape 5 (formation CarriersEdge).",
+        "failMessage": "Si vous ne réussissez pas : une décision sera prise quant à vous fournir une formation supplémentaire ou à mettre fin à votre candidature.",
+        "note": "Remarque : Selon vos performances, si l’expérience de conduite sur plateau est requise et que vous ne possédez pas encore cette compétence, une formation en cour (étape 7) pourra vous être attribuée pour développer vos aptitudes. Si vous n’avez jamais eu d’expérience, une formation en cour vous sera attribuée par défaut."
+      },
+      "success": {
+        "title": "Félicitations ! 🎉",
+        "message": "Vous avez réussi votre essai de conduite ! Vos compétences de conduite ont été évaluées et approuvées. Étape suivante : vous passerez maintenant à (étape 5) la formation CarriersEdge pour compléter votre intégration.",
+        "continueButton": "Suivant"
+      },
+      "buttons": {
+        "completeTest": "Suivant"
+      }
+    },
+
+    "step5": {
+      "title": "Formation CarriersEdge",
+      "instructions": {
+        "header": "Notre équipe Sécurité enverra vos identifiants de connexion pour la formation CarriersEdge à l’adresse courriel suivante :",
+        "emailInfo": "{{email}}",
+        "completionRequired": "Veuillez terminer intégralement la formation sur le site CarriersEdge. L’achèvement est requis avant de pouvoir passer à l’étape suivante du processus d’embauche.",
+        "nextStepInfo": "Une fois terminée, vous pourrez passer à l’étape suivante de votre candidature."
+      },
+      "emailSent": {
+        "message": "Les identifiants de votre test de formation CarriersEdge ont été envoyés à votre courriel {{email}}. Veuillez consulter votre messagerie et suivre les instructions pour compléter votre test."
+      },
+      "completed": {
+        "congratulations": "Félicitations ! 🎉",
+        "message": "Félicitations pour l’achèvement de votre test, vous pouvez maintenant passer à l’étape 6 du processus de candidature. Étape suivante : vous passerez maintenant à (étape 6) le test de dépistage pour compléter votre intégration.",
+        "nextStep": "N",
+        "continueButton": "Suivant"
+      },
+      "button": {
+        "next": "Suivant"
+      }
+    },
+
+    "step6": {
+      "title": "Test de dépistage",
+      "description": "Veuillez téléverser des photos claires de vos documents de dépistage. Vous pouvez ajouter jusqu'à {{count}} photos. Une fois téléversés, les documents seront vérifiés avant que vous puissiez continuer.",
+      "verified": "Documents vérifiés.",
+      "pending": "Documents téléversés. Vérification en attente. Les téléversements sont désactivés.",
+      "rejected": "Vos documents de test de dépistage ont été rejetés. Veuillez les téléverser à nouveau et les soumettre.",
+      "labeldriverDocuments": "Documents de test de dépistage",
+      "success": {
+        "title": "Félicitations ! 🎉",
+        "message": "Vous avez terminé avec succès votre test de dépistage ! Vos documents ont été vérifiés et approuvés. Vous pouvez maintenant passer à l'étape suivante de votre intégration.",
+        "continueButton": "Suivant"
+      }
+    },
+
+    "step7": {
+      "title": "Formation sur Plateau",
+      "instructions": {
+        "header": "Vous avez atteint l'étape de formation sur plateau dans le processus de candidature.",
+        "contactSafety": "Veuillez communiquer avec le service Sécurité pour commencer votre formation sur plateau.",
+        "passMessage": "Si vous réussissez : vous passerez à l'étape suivante de votre processus d'intégration.",
+        "failMessage": "Si vous ne réussissez pas : une décision sera prise quant à vous fournir une formation supplémentaire ou à mettre fin à votre candidature.",
+        "note": "Remarque : Cette formation est requise pour les conducteurs qui ont besoin d'expérience de conduite sur plateau. Le service Sécurité communiquera avec vous pour planifier votre session de formation."
+      },
+      "success": {
+        "title": "Félicitations ! 🎉",
+        "message": "Vous avez terminé avec succès votre formation sur plateau ! Vos compétences de conduite sur plateau ont été évaluées et approuvées. Vous pouvez maintenant passer à l'étape suivante de votre intégration.",
+        "continueButton": "Suivant"
+      },
+      "buttons": {
+        "completeTraining": "Suivant"
+      }
+    },
+
+    "errors": {
+      "minimum5Years": "Vous devez fournir au moins 5 ans d’historique d’adresses.",
+      "addressDurationError": "L’historique d’adresses fourni doit couvrir les 5 dernières années. Veuillez ajouter une adresse précédente si vous avez vécu à plus d’un endroit."
+    },
+    "continue": "Continuer",
+    "submitting": "Envoi en cours..."
+  },
+
+  "resume": {
+    "title": "Reprendre votre candidature",
+    "description": "Entrez votre NAS/SSN pour poursuivre votre intégration là où vous vous êtes arrêté.",
+    "placeholder": "999-888-777",
+    "success": "Correspondance trouvée ! Redirection...",
+    "error": "Aucune candidature trouvée pour ce NAS.",
+    "cancel": "Annuler",
+    "continue": "Continuer",
+    "loading": "Chargement...",
+    "loadingCta": "Reprise en cours...",
+    "validation": {
+      "enterSin": "Veuillez saisir votre NAS",
+      "sinLength": "Le NAS doit comporter exactement 9 chiffres"
+    },
+    "errors": {
+      "invalidResponse": "Réponse invalide du serveur",
+      "generic": "Impossible de reprendre la candidature. Veuillez réessayer.",
+      "resumeInfoMissing": "Informations de reprise manquantes"
+    }
+  },
+
+  "infoPopUp": {
+    "modalTitle": "Fonctionnement",
+    "close": "Fermer",
+    "aboutTitle": "À propos de cette application",
+    "stepsTitle": "Étapes en un coup d’œil",
+    "savingTitle": "Enregistrement et sécurité",
+    "tipsTitle": "Conseils",
+    "steps": {
+      "step1": {
+        "label": "1. Présélection",
+        "desc": "Vérification rapide de l’admissibilité (≈2 min) : âge, permis AZ, droit de travailler (Canada/É.-U.) et préparation de base."
+      },
+      "step2": {
+        "label": "2. Formulaire de candidature",
+        "desc": "Formulaire en 5 pages couvrant renseignements personnels, 5 ans d’historique d’adresses, permis et téléversements, historique d’emploi et déclarations."
+      },
+      "step3": {
+        "label": "3. Politiques",
+        "desc": "Lire les politiques de l’entreprise et fournir les accusés de réception/signatures requis."
+      },
+      "step4": {
+        "label": "4. Essai de conduite",
+        "desc": "Planification et résultats de l’évaluation sur route/en cour (gérée par Sécurité)."
+      },
+      "step5": {
+        "label": "5. Carriers Edge",
+        "desc": "Terminez la formation en ligne assignée sur la sécurité ; nous vous guiderons pour la connexion."
+      },
+      "step6": {
+        "label": "6. Test de dépistage",
+        "desc": "Si nécessaire, vous recevrez les instructions et l’adresse de référence."
+      },
+      "step7": {
+        "label": "7. Formation sur Plateau (Si Requise)",
+        "desc": "Orientation sur site et présentation de l’équipement."
+      }
+    },
+    "saving": {
+      "autoSignOut": "Déconnexion automatique pour la sécurité : en cas d’inactivité pendant 10 minutes, le formulaire reviendra automatiquement à l’écran d’accueil.",
+      "progressSaves": "Votre progression est enregistrée : après avoir saisi votre NAS/SSN à la page 2 et continué, vos progrès seront enregistrés de manière sécurisée.",
+      "resumeLater": "Reprendre à tout moment : en cas de déconnexion ou de changement d’appareil, vous pouvez utiliser votre NAS et le bouton Reprendre sur l’écran d’accueil pour continuer où vous vous êtes arrêté.",
+      "privacyNote": "Note de confidentialité : votre NAS est utilisé uniquement pour retrouver votre candidature et est stocké de manière sécurisée."
+    }
+  },
+  "actions": {
+    "addPhoto": "Ajouter une photo",
+    "remove": "Supprimer",
+    "addRow": "Ajouter une ligne",
+    "manage": "Gérer",
+    "close": "Fermer",
+    "done": "Terminé",
+    "replace": "Remplacer",
+    "delete": "Supprimer",
+    "upload": "Téléverser",
+    "clear": "Effacer",
+    "processing": "Traitement...",
+    "submitting": "Soumission...",
+    "submitAnswers": "Soumettre les réponses",
+    "continue": "Continuer",
+    "submitDocuments": "Soumettre les documents",
+    "submitdriverDocuments": "Soumettre les documents",
+    "resubmitDocuments": "Resoumettre les documents",
+    "resubmitdriverDocuments": "Resoumettre les documents",
+    "pendingVerification": "Vérification en attente"
+  },
+
+  "photoGroup": {
+    "noPhotosYet": "Aucune photo pour le moment",
+    "managePhotos": "Gérer les photos",
+    "maxReached": "Maximum de {{count}} photos atteint",
+    "moreCount": "+{{count}}"
+  },
+
+  "completion": {
+    "title": "Candidature Terminée avec Succès ! 🎉",
+    "message": "Félicitations ! Vous avez terminé avec succès votre candidature d'intégration de conducteur ! Votre candidature a été soumise et est maintenant en cours d'examen par notre équipe. Nous vous contacterons bientôt pour les prochaines étapes.",
+    "nextSteps": {
+      "title": "Que Se Passe-t-il Ensuite ?",
+      "message": "Notre équipe examinera votre candidature et vous contactera dans les 2-3 jours ouvrables pour discuter des prochaines étapes de votre processus d'embauche. Veuillez garder votre courriel et votre téléphone disponibles pour que notre équipe puisse vous joindre."
+    },
+    "buttons": {
+      "goHome": "Retour à l'Accueil",
+      "resume": "Voir la Candidature"
+    },
+    "resumeInfo": "Vous pouvez utiliser votre NAS/SSN pour reprendre et consulter votre candidature terminée à tout moment depuis la page d'accueil."
+  },
+
+  "errors": {
+    "session": {
+      "title": "Session expirée",
+      "message": "Votre session a expiré pour des raisons de sécurité après 6 heures d'inactivité. Vos progrès sont sauvegardés en toute sécurité.",
+      "resume": "Reprendre la candidature",
+      "goHome": "Aller à l'accueil"
+    },
+    "notFound": {
+      "title": "Candidature introuvable",
+      "message": "Votre candidature n'a pas pu être trouvée. Cela peut arriver si la candidature a été terminée ou a expiré.",
+      "startNew": "Nouvelle candidature",
+      "resume": "Reprendre existante"
+    },
+    "network": {
+      "title": "Échec de connexion",
+      "message": "Impossible de se connecter au serveur. Veuillez vérifier votre connexion Internet et réessayer.",
+      "retry": "Fermer",
+      "goHome": "Aller à l'accueil"
+    },
+    "server": {
+      "title": "Erreur du serveur",
+      "message": "Quelque chose s'est mal passé de notre côté. Veuillez réessayer ou contacter le support si le problème persiste.",
+      "tryAgain": "Réessayer",
+      "contactSupport": "Contacter le support"
+    },
+    "rateLimit": {
+      "title": "Trop de requêtes",
+      "message": "Vous avez fait trop de requêtes. Nous réessaierons automatiquement dans 30 secondes, ou vous pouvez rentrer à l'accueil et réessayer plus tard.",
+      "wait": "Réessai automatique dans 30s",
+      "goHome": "Aller à l'accueil"
+    },
+    "generic": {
+      "title": "Erreur",
+      "tryAgain": "Réessayer",
+      "goHome": "Aller à l'accueil"
+    }
+  }
+}
