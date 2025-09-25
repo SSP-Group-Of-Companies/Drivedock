@@ -19,7 +19,6 @@ const onboardingSessionSchema = new Schema<IOnboardingSessionDoc>(
     expiresAt: {
       type: Date,
       required: [true, "expiresAt is required"],
-      index: true, // TTL-like queries; actual TTL index below
     },
     lastUsedAt: {
       type: Date,
