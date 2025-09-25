@@ -27,13 +27,14 @@ export default function CompletionSummary({
       return "Location Unknown";
     }
     
-    // Format as "City, State/Province, Country" (all in full names)
+    // Format as "City Province, Country" (e.g., "Toronto Ontario, Canada")
     const city = completionLocation.city || '';
     const region = completionLocation.region || '';
     const country = completionLocation.country || '';
     
-    // Filter out empty parts and join with commas
-    const parts = [city, region, country].filter(part => part.trim() !== '');
+    // Combine city and region with a space, then add country with comma
+    const cityProvince = [city, region].filter(part => part.trim() !== '').join(' ');
+    const parts = [cityProvince, country].filter(part => part.trim() !== '');
     return parts.join(', ');
   };
 

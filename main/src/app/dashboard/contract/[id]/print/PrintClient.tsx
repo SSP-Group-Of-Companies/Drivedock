@@ -11,6 +11,7 @@ import { getCompanyPdfList } from "@/lib/pdf/utils/frontendPdfUtils";
 import { ESafetyAdminId } from "@/constants/safetyAdmins";
 import PrintPdfViewerModal from "./components/PrintPdfViewerModal";
 import SafetyAdminPickerModal from "./components/SafetyAdminPickerModal";
+import { EStepPath } from "@/types/onboardingTracker.types";
 
 // Helper function to check if truck details exist
 function hasTruckDetails(truckDetails?: any): boolean {
@@ -177,8 +178,16 @@ export default function PrintClient({ trackerId }: { trackerId: string }) {
           </h2>
         </div>
 
-        {/* Truck Details Warning */}
-        {contractData?.forms?.identifications?.truckDetails && !hasTruckDetails(contractData.forms.identifications.truckDetails) && (
+        {/* Truck Details Warning - only show when driver has completed page 4 or beyond */}
+        {contractData?.forms?.identifications?.truckDetails && 
+         !hasTruckDetails(contractData.forms.identifications.truckDetails) &&
+         (contractData.status?.currentStep === EStepPath.APPLICATION_PAGE_4 ||
+          contractData.status?.currentStep === EStepPath.APPLICATION_PAGE_5 ||
+          contractData.status?.currentStep === EStepPath.POLICIES_CONSENTS ||
+          contractData.status?.currentStep === EStepPath.DRIVE_TEST ||
+          contractData.status?.currentStep === EStepPath.CARRIERS_EDGE_TRAINING ||
+          contractData.status?.currentStep === EStepPath.DRUG_TEST ||
+          contractData.status?.currentStep === EStepPath.FLATBED_TRAINING) && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
