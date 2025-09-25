@@ -1,5 +1,6 @@
 "use client";
 
+//Imports
 import { useState, useEffect, useRef } from "react";
 import { ChevronDown } from "lucide-react";
 import { useAuth } from "@/app/providers/authProvider";
