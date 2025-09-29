@@ -271,107 +271,236 @@ export function buildHiringApplicationFieldMap({ onboarding, application, prequa
     [F.JOB_LIMITATION_NOTES]: "",
   };
 
-  // ---------------- Employment page (current + prev up to 3) ----------------
+  // ---------------- Employment page (current + prev up to 7) ----------------
   const emps = [...(p2?.employments || [])].sort((a, b) => new Date(b.to as any).getTime() - new Date(a.to as any).getTime());
   const r = (i: number) => emps[i];
 
-  const fillEmploymentRow = (base: 0 | 1 | 2 | 3, e?: (typeof emps)[number]) => {
+  const asSalary = (v: unknown) => String(v ?? "");
+  const asBool = (v: unknown) => (v ? true : false);
+
+  // CURRENT
+  (function fillCurrent(e?: (typeof emps)[number]) {
     if (!e) return;
-    if (base === 0) {
-      Object.assign(map, {
-        [F.CURRENT_EMPLOYER_NAME]: e.employerName,
-        [F.CURRENT_SUPERVISOR_NAME]: e.supervisorName,
-        [F.CURRENT_EMPLOYER_ADDRESS]: e.address,
-        [F.CURRENT_EMPLOYER_CITY]: e.city,
-        [F.CURRENT_EMPLOYER_POSTAL_CODE]: e.postalCode,
-        [F.CURRENT_EMPLOYER_SATE]: e.stateOrProvince,
-        [F.CURRENT_EMPLOYER_PHONE_1]: e.phone1,
-        [F.CURRENT_EMPLOYER_PHONE_2]: e.phone2 || "",
-        [F.CURRENT_EMPLOYER_EMAIL]: e.email,
-        [F.CURRENT_POSITION_TITLE]: e.positionHeld,
-        // No specific format comment → dd/mm/yyyy
-        [F.CURRENT_POSITION_FROM]: fmtDDMMYYYY(e.from),
-        [F.CURRENT_POSITION_TO]: fmtDDMMYYYY(e.to),
-        [F.CURRENT_SALARY]: String(e.salary ?? ""),
-        [F.CURRENT_REASON_FOR_LEAVING]: e.reasonForLeaving,
-        [F.CURRENT_FMCSR_YES]: e.subjectToFMCSR ? true : false,
-        [F.CURRENT_FMCSR_NO]: !e.subjectToFMCSR ? true : false,
-        [F.CURRENT_DOT_SENSITIVE_YES]: e.safetySensitiveFunction ? true : false,
-        [F.CURRENT_DOT_SENSITIVE_NO]: !e.safetySensitiveFunction ? true : false,
-      });
-    }
-    if (base === 1) {
-      Object.assign(map, {
-        [F.PREV_EMPLOYER_1_NAME]: e.employerName,
-        [F.PREV_SUPERVISOR_1_NAME]: e.supervisorName,
-        [F.PREV_EMPLOYER_1_ADDRESS]: e.address,
-        [F.PREV_EMPLOYER_1_CITY]: e.city,
-        [F.PREV_EMPLOYER_1_POSTAL_CODE]: e.postalCode,
-        [F.PREV_EMPLOYER_STATE]: e.stateOrProvince,
-        [F.PREV_EMPLOYER_1_PHONE_1]: e.phone1,
-        [F.PREV_EMPLOYER_1_PHONE2]: e.phone2 || "",
-        [F.PREV_EMPLOYER_1_EMAIL]: e.email,
-        [F.PREV_1_POSITION_TITLE]: e.positionHeld,
-        [F.PREV_1_POSITION_FROM]: fmtDDMMYYYY(e.from),
-        [F.PREV_1_POSITION_TO]: fmtDDMMYYYY(e.to),
-        [F.PREV_1_SALARY]: String(e.salary ?? ""),
-        [F.PREV_1_REASON_FOR_LEAVING]: e.reasonForLeaving,
-        [F.PREV_1_FMCSR_YES]: e.subjectToFMCSR ? true : false,
-        [F.PREV_1_FMCSR_NO]: !e.subjectToFMCSR ? true : false,
-        [F.PREV_1_DOT_SENSITIVE_YES]: e.safetySensitiveFunction ? true : false,
-        [F.PREV_1_DOT_SENSITIVE_NO]: !e.safetySensitiveFunction ? true : false,
-      });
-    }
-    if (base === 2) {
-      Object.assign(map, {
-        [F.PREV_EMPLOYER_2_NAME]: e.employerName,
-        [F.PREV_SUPERVISOR_2_NAME]: e.supervisorName,
-        [F.PREV_EMPLOYER_2_ADDRESS]: e.address,
-        [F.PREV_EMPLOYER_2_CITY]: e.city,
-        [F.PREV_EMPLOYER_2_POSTAL_CODE]: e.postalCode,
-        [F.PREV_EMPLOYER_2_STATE]: e.stateOrProvince,
-        [F.PREV_EMPLOYER_2_PHONE_1]: e.phone1,
-        [F.PREV_EMPLOYER_2_PHONE_2]: e.phone2 || "",
-        [F.PREV_EMPLOYER_2_EMAIL]: e.email,
-        [F.PREV_2_POSITION_TITLE]: e.positionHeld,
-        [F.PREV_2_POSITION_FROM]: fmtDDMMYYYY(e.from),
-        [F.PREV_2_POSITION_TO]: fmtDDMMYYYY(e.to),
-        [F.PREV_2_SALARY]: String(e.salary ?? ""),
-        [F.PREV_2_REASON_FOR_LEAVING]: e.reasonForLeaving,
-        [F.PREV_2_FMCSR_YES]: e.subjectToFMCSR ? true : false,
-        [F.PREV_2_FMCSR_NO]: !e.subjectToFMCSR ? true : false,
-        [F.PREV_2_DOT_SENSITIVE_YES]: e.safetySensitiveFunction ? true : false,
-        [F.PREV_2_DOT_SENSITIVE_NO]: !e.safetySensitiveFunction ? true : false,
-      });
-    }
-    if (base === 3) {
-      Object.assign(map, {
-        [F.PREV_EMPLOYER_3_NAME]: e.employerName,
-        [F.PREV_EMPLOYER_3_SUPERVISOR_NAME]: e.supervisorName,
-        [F.PREV_EMPLOYER_3_ADDRESS]: e.address,
-        [F.PREV_EMPLOYER_3_CITY]: e.city,
-        [F.PREV_EMPLOYER_3_POSTAL_CODE]: e.postalCode,
-        [F.PREV_EMPLOYER_3_STATE]: e.stateOrProvince,
-        [F.PREV_EMPLOYER_3_PHONE_1]: e.phone1,
-        [F.PREV_EMPLOYER_3_PHONE_2]: e.phone2 || "",
-        [F.PREV_EMPLOYER_3_EMAIL]: e.email,
-        [F.PREV_3_POSITION_HELD]: e.positionHeld,
-        [F.PREV_3_FROM]: fmtDDMMYYYY(e.from),
-        [F.PREV_3_TO]: fmtDDMMYYYY(e.to),
-        [F.PREV_3_SALARY]: String(e.salary ?? ""),
-        [F.PREV_3_REASON_FOR_LEAVING]: e.reasonForLeaving,
-        [F.PREV_3_FMCSR_YES]: e.subjectToFMCSR ? true : false,
-        [F.PREV_3_FMCSR_NO]: !e.subjectToFMCSR ? true : false,
-        [F.PREV_3_DOT_SENSITIVE_YES]: e.safetySensitiveFunction ? true : "",
-        [F.PREV_3_DOT_SENSITIVE_NO]: !e.safetySensitiveFunction ? false : "",
-      });
-    }
+    Object.assign(map, {
+      [F.CURRENT_EMPLOYER_NAME]: e.employerName,
+      [F.CURRENT_SUPERVISOR_NAME]: e.supervisorName,
+      [F.CURRENT_EMPLOYER_ADDRESS]: e.address,
+      [F.CURRENT_EMPLOYER_CITY]: e.city,
+      [F.CURRENT_EMPLOYER_POSTAL_CODE]: e.postalCode,
+      [F.CURRENT_EMPLOYER_STATE]: e.stateOrProvince,
+      [F.CURRENT_EMPLOYER_PHONE_1]: e.phone1,
+      [F.CURRENT_EMPLOYER_PHONE_2]: e.phone2 || "",
+      [F.CURRENT_EMPLOYER_EMAIL]: e.email,
+      [F.CURRENT_POSITION_HELD]: e.positionHeld,
+      [F.CURRENT_POSITION_FROM]: fmtDDMMYYYY(e.from),
+      [F.CURRENT_POSITION_TO]: fmtDDMMYYYY(e.to),
+      [F.CURRENT_SALARY]: asSalary(e.salary),
+      [F.CURRENT_REASON_FOR_LEAVING]: e.reasonForLeaving,
+      [F.CURRENT_FMCSR_YES]: asBool(e.subjectToFMCSR),
+      [F.CURRENT_FMCSR_NO]: !asBool(e.subjectToFMCSR),
+      [F.CURRENT_DOT_SENSITIVE_YES]: asBool(e.safetySensitiveFunction),
+      [F.CURRENT_DOT_SENSITIVE_NO]: !asBool(e.safetySensitiveFunction),
+    });
+  })(r(0));
+
+  // PREVIOUS employers — per-row field sets
+  type PrevFieldSet = {
+    NAME: F;
+    SUPERVISOR: F;
+    ADDRESS: F;
+    CITY: F;
+    POSTAL: F;
+    STATE: F;
+    PHONE1: F;
+    PHONE2: F;
+    EMAIL: F;
+    POSITION_HELD: F;
+    POSITION_FROM: F;
+    POSITION_TO: F;
+    SALARY: F;
+    REASON: F;
+    FMCSR_YES: F;
+    FMCSR_NO: F;
+    DOT_YES: F;
+    DOT_NO: F;
   };
 
-  fillEmploymentRow(0, r(0));
-  fillEmploymentRow(1, r(1));
-  fillEmploymentRow(2, r(2));
-  fillEmploymentRow(3, r(3));
+  const prevFields: Record<1 | 2 | 3 | 4 | 5 | 6 | 7, PrevFieldSet> = {
+    1: {
+      NAME: F.PREV_EMPLOYER_1_NAME,
+      SUPERVISOR: F.PREV_SUPERVISOR_1_NAME,
+      ADDRESS: F.PREV_EMPLOYER_1_ADDRESS,
+      CITY: F.PREV_EMPLOYER_1_CITY,
+      POSTAL: F.PREV_EMPLOYER_1_POSTAL_CODE,
+      STATE: F.PREV_EMPLOYER_1_STATE,
+      PHONE1: F.PREV_EMPLOYER_1_PHONE_1,
+      PHONE2: F.PREV_EMPLOYER_1_PHONE_2,
+      EMAIL: F.PREV_EMPLOYER_1_EMAIL,
+      POSITION_HELD: F.PREV_1_POSITION_HELD,
+      POSITION_FROM: F.PREV_1_POSITION_FROM,
+      POSITION_TO: F.PREV_1_POSITION_TO,
+      SALARY: F.PREV_1_SALARY,
+      REASON: F.PREV_1_REASON_FOR_LEAVING,
+      FMCSR_YES: F.PREV_1_FMCSR_YES,
+      FMCSR_NO: F.PREV_1_FMCSR_NO,
+      DOT_YES: F.PREV_1_DOT_SENSITIVE_YES,
+      DOT_NO: F.PREV_1_DOT_SENSITIVE_NO,
+    },
+    2: {
+      NAME: F.PREV_EMPLOYER_2_NAME,
+      SUPERVISOR: F.PREV_SUPERVISOR_2_NAME,
+      ADDRESS: F.PREV_EMPLOYER_2_ADDRESS,
+      CITY: F.PREV_EMPLOYER_2_CITY,
+      POSTAL: F.PREV_EMPLOYER_2_POSTAL_CODE,
+      STATE: F.PREV_EMPLOYER_2_STATE,
+      PHONE1: F.PREV_EMPLOYER_2_PHONE_1,
+      PHONE2: F.PREV_EMPLOYER_2_PHONE_2,
+      EMAIL: F.PREV_EMPLOYER_2_EMAIL,
+      POSITION_HELD: F.PREV_2_POSITION_HELD,
+      POSITION_FROM: F.PREV_2_POSITION_FROM,
+      POSITION_TO: F.PREV_2_POSITION_TO,
+      SALARY: F.PREV_2_SALARY,
+      REASON: F.PREV_2_REASON_FOR_LEAVING,
+      FMCSR_YES: F.PREV_2_FMCSR_YES,
+      FMCSR_NO: F.PREV_2_FMCSR_NO,
+      DOT_YES: F.PREV_2_DOT_SENSITIVE_YES,
+      DOT_NO: F.PREV_2_DOT_SENSITIVE_NO,
+    },
+    3: {
+      NAME: F.PREV_EMPLOYER_3_NAME,
+      SUPERVISOR: F.PREV_EMPLOYER_3_SUPERVISOR_NAME,
+      ADDRESS: F.PREV_EMPLOYER_3_ADDRESS,
+      CITY: F.PREV_EMPLOYER_3_CITY,
+      POSTAL: F.PREV_EMPLOYER_3_POSTAL_CODE,
+      STATE: F.PREV_EMPLOYER_3_STATE,
+      PHONE1: F.PREV_EMPLOYER_3_PHONE_1,
+      PHONE2: F.PREV_EMPLOYER_3_PHONE_2,
+      EMAIL: F.PREV_EMPLOYER_3_EMAIL,
+      POSITION_HELD: F.PREV_3_POSITION_HELD,
+      POSITION_FROM: F.PREV_3_POSITION_FROM,
+      POSITION_TO: F.PREV_3_POSITION_TO,
+      SALARY: F.PREV_3_SALARY,
+      REASON: F.PREV_3_REASON_FOR_LEAVING,
+      FMCSR_YES: F.PREV_3_FMCSR_YES,
+      FMCSR_NO: F.PREV_3_FMCSR_NO,
+      DOT_YES: F.PREV_3_DOT_SENSITIVE_YES,
+      DOT_NO: F.PREV_3_DOT_SENSITIVE_NO,
+    },
+    4: {
+      NAME: F.PREV_EMPLOYER_4_NAME,
+      SUPERVISOR: F.PREV_EMPLOYER_4_SUPERVISOR_NAME,
+      ADDRESS: F.PREV_EMPLOYER_4_ADDRESS,
+      CITY: F.PREV_EMPLOYER_4_CITY,
+      POSTAL: F.PREV_EMPLOYER_4_POSTAL_CODE,
+      STATE: F.PREV_EMPLOYER_4_STATE,
+      PHONE1: F.PREV_EMPLOYER_4_PHONE_1,
+      PHONE2: F.PREV_EMPLOYER_4_PHONE_2,
+      EMAIL: F.PREV_EMPLOYER_4_EMAIL,
+      POSITION_HELD: F.PREV_4_POSITION_HELD,
+      POSITION_FROM: F.PREV_4_POSITION_FROM,
+      POSITION_TO: F.PREV_4_POSITION_TO,
+      SALARY: F.PREV_4_SALARY,
+      REASON: F.PREV_4_REASON_FOR_LEAVING,
+      FMCSR_YES: F.PREV_4_FMCSR_YES,
+      FMCSR_NO: F.PREV_4_FMCSR_NO,
+      DOT_YES: F.PREV_4_DOT_SENSITIVE_YES,
+      DOT_NO: F.PREV_4_DOT_SENSITIVE_NO,
+    },
+    5: {
+      NAME: F.PREV_EMPLOYER_5_NAME,
+      SUPERVISOR: F.PREV_EMPLOYER_5_SUPERVISOR_NAME,
+      ADDRESS: F.PREV_EMPLOYER_5_ADDRESS,
+      CITY: F.PREV_EMPLOYER_5_CITY,
+      POSTAL: F.PREV_EMPLOYER_5_POSTAL_CODE,
+      STATE: F.PREV_EMPLOYER_5_STATE,
+      PHONE1: F.PREV_EMPLOYER_5_PHONE_1,
+      PHONE2: F.PREV_EMPLOYER_5_PHONE_2,
+      EMAIL: F.PREV_EMPLOYER_5_EMAIL,
+      POSITION_HELD: F.PREV_5_POSITION_HELD,
+      POSITION_FROM: F.PREV_5_POSITION_FROM,
+      POSITION_TO: F.PREV_5_POSITION_TO,
+      SALARY: F.PREV_5_SALARY,
+      REASON: F.PREV_5_REASON_FOR_LEAVING,
+      FMCSR_YES: F.PREV_5_FMCSR_YES,
+      FMCSR_NO: F.PREV_5_FMCSR_NO,
+      DOT_YES: F.PREV_5_DOT_SENSITIVE_YES,
+      DOT_NO: F.PREV_5_DOT_SENSITIVE_NO,
+    },
+    6: {
+      NAME: F.PREV_EMPLOYER_6_NAME,
+      SUPERVISOR: F.PREV_EMPLOYER_6_SUPERVISOR_NAME,
+      ADDRESS: F.PREV_EMPLOYER_6_ADDRESS,
+      CITY: F.PREV_EMPLOYER_6_CITY,
+      POSTAL: F.PREV_EMPLOYER_6_POSTAL_CODE,
+      STATE: F.PREV_EMPLOYER_6_STATE,
+      PHONE1: F.PREV_EMPLOYER_6_PHONE_1,
+      PHONE2: F.PREV_EMPLOYER_6_PHONE_2,
+      EMAIL: F.PREV_EMPLOYER_6_EMAIL,
+      POSITION_HELD: F.PREV_6_POSITION_HELD,
+      POSITION_FROM: F.PREV_6_POSITION_FROM,
+      POSITION_TO: F.PREV_6_POSITION_TO,
+      SALARY: F.PREV_6_SALARY,
+      REASON: F.PREV_6_REASON_FOR_LEAVING,
+      FMCSR_YES: F.PREV_6_FMCSR_YES,
+      FMCSR_NO: F.PREV_6_FMCSR_NO,
+      DOT_YES: F.PREV_6_DOT_SENSITIVE_YES,
+      DOT_NO: F.PREV_6_DOT_SENSITIVE_NO,
+    },
+    7: {
+      NAME: F.PREV_EMPLOYER_7_NAME,
+      SUPERVISOR: F.PREV_EMPLOYER_7_SUPERVISOR_NAME,
+      ADDRESS: F.PREV_EMPLOYER_7_ADDRESS,
+      CITY: F.PREV_EMPLOYER_7_CITY,
+      POSTAL: F.PREV_EMPLOYER_7_POSTAL_CODE,
+      STATE: F.PREV_EMPLOYER_7_STATE,
+      PHONE1: F.PREV_EMPLOYER_7_PHONE_1,
+      PHONE2: F.PREV_EMPLOYER_7_PHONE_2,
+      EMAIL: F.PREV_EMPLOYER_7_EMAIL,
+      POSITION_HELD: F.PREV_7_POSITION_HELD,
+      POSITION_FROM: F.PREV_7_POSITION_FROM,
+      POSITION_TO: F.PREV_7_POSITION_TO,
+      SALARY: F.PREV_7_SALARY,
+      REASON: F.PREV_7_REASON_FOR_LEAVING,
+      FMCSR_YES: F.PREV_7_FMCSR_YES,
+      FMCSR_NO: F.PREV_7_FMCSR_NO,
+      DOT_YES: F.PREV_7_DOT_SENSITIVE_YES,
+      DOT_NO: F.PREV_7_DOT_SENSITIVE_NO,
+    },
+  };
+
+  function fillPrev(idx: 1 | 2 | 3 | 4 | 5 | 6 | 7, e?: (typeof emps)[number]) {
+    if (!e) return;
+    const f = prevFields[idx];
+    Object.assign(map, {
+      [f.NAME]: e.employerName,
+      [f.SUPERVISOR]: e.supervisorName,
+      [f.ADDRESS]: e.address,
+      [f.CITY]: e.city,
+      [f.POSTAL]: e.postalCode,
+      [f.STATE]: e.stateOrProvince,
+      [f.PHONE1]: e.phone1,
+      [f.PHONE2]: e.phone2 || "",
+      [f.EMAIL]: e.email,
+      [f.POSITION_HELD]: e.positionHeld,
+      [f.POSITION_FROM]: fmtDDMMYYYY(e.from),
+      [f.POSITION_TO]: fmtDDMMYYYY(e.to),
+      [f.SALARY]: asSalary(e.salary),
+      [f.REASON]: e.reasonForLeaving,
+      [f.FMCSR_YES]: asBool(e.subjectToFMCSR),
+      [f.FMCSR_NO]: !asBool(e.subjectToFMCSR),
+      [f.DOT_YES]: asBool(e.safetySensitiveFunction),
+      [f.DOT_NO]: !asBool(e.safetySensitiveFunction),
+    });
+  }
+
+  // Fill previous rows (sorted newest->oldest)
+  fillPrev(1, r(1));
+  fillPrev(2, r(2));
+  fillPrev(3, r(3));
+  fillPrev(4, r(4));
+  fillPrev(5, r(5));
+  fillPrev(6, r(6));
+  fillPrev(7, r(7));
 
   /* =========================
    * Page 5 - Accidents/Convictions/Education + License table + HOS

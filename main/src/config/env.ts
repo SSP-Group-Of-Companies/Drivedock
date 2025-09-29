@@ -20,3 +20,4 @@ export const AZURE_AD_CLIENT_ID = process.env.AZURE_AD_CLIENT_ID!;
 export const AZURE_AD_CLIENT_SECRET = process.env.AZURE_AD_CLIENT_SECRET!;
 export const AZURE_AD_TENANT_ID = process.env.AZURE_AD_TENANT_ID!;
 export const OUTBOUND_SENDER_EMAIL = process.env.OUTBOUND_SENDER_EMAIL!;
+export const INTERNAL_SENDER_EMAIL = process.env.INTERNAL_SENDER_EMAIL!;

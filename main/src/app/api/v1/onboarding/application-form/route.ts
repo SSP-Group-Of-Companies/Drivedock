@@ -162,7 +162,8 @@ export async function POST(req: NextRequest) {
       await sendOnboardingStartNotificationEmailToSafetyTeam(req, {
         trackerId: String(onboardingDoc._id),
         companyId,
-        fullName: `${page1.firstName} ${page1.lastName}`,
+        firstName: page1.firstName,
+        lastName: page1.lastName,
         email: page1.email,
         phone: page1.phoneCell,
       });
