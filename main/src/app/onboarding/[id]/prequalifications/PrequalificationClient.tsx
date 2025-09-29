@@ -33,6 +33,7 @@ import {
   EDriverType,
   EHaulPreference,
   ETeamStatus,
+  EStatusInCanada,
   IPreQualifications,
 } from "@/types/preQualifications.types";
 import { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
@@ -94,26 +95,90 @@ export default function PreQualificationClient({
   const filteredPreQualificationQuestions = useMemo(() => {
     if (!effectiveCompany) return preQualificationQuestions;
     if (effectiveCompany.countryCode === "US") {
-      // Hide "canCrossBorderUSA" and "hasFASTCard" for US company
+      // Hide Canada-only questions for US company
       return preQualificationQuestions.filter(
-        (q) => q.name !== "canCrossBorderUSA" && q.name !== "hasFASTCard"
+        (q) => 
+          q.name !== "canCrossBorderUSA" && 
+          q.name !== "hasFASTCard" && 
+          q.name !== "statusInCanada" &&
+          q.name !== "eligibleForFASTCard"
       );
     }
     return preQualificationQuestions;
   }, [effectiveCompany]);
 
   // Initialize RHF with defaults; validate on change for button enablement
-  const { control, handleSubmit, watch } = useForm<FormValues>({
+  const { control, handleSubmit, watch, setValue } = useForm<FormValues>({
     mode: "onChange",
     defaultValues,
   });
 
   // Watch all fields to determine whether the Next button should be enabled
   const watchAllFields = watch();
+  
+  // Get the status in Canada value for conditional logic
+  const statusInCanada = watchAllFields.statusInCanada;
+  
+  // Apply conditional filtering based on status in Canada
+  const finalFilteredQuestions = useMemo(() => {
+    if (!effectiveCompany || effectiveCompany.countryCode === "US") {
+      return filteredPreQualificationQuestions;
+    }
+    
+    // For Canadian companies, apply conditional logic
+    let questions = [...filteredPreQualificationQuestions];
+    
+    // Only show FAST card question if user has selected PR or Citizenship
+    if (statusInCanada !== EStatusInCanada.PR && statusInCanada !== EStatusInCanada.Citizenship) {
+      questions = questions.filter(q => q.name !== "hasFASTCard");
+    }
+    
+    // Only show eligible for FAST card question if user is PR/Citizen AND answered "no" to FAST card
+    if (statusInCanada === EStatusInCanada.PR || statusInCanada === EStatusInCanada.Citizenship) {
+      if (watchAllFields.hasFASTCard === "form.no") {
+        // Keep eligibleForFASTCard question
+      } else {
+        // Remove eligibleForFASTCard question
+        questions = questions.filter(q => q.name !== "eligibleForFASTCard");
+      }
+    } else {
+      // Remove eligibleForFASTCard question if not PR/Citizen
+      questions = questions.filter(q => q.name !== "eligibleForFASTCard");
+    }
+    
+    return questions;
+  }, [filteredPreQualificationQuestions, effectiveCompany, statusInCanada, watchAllFields.hasFASTCard]);
+
+  // Track previous status to only clear fields when user actually changes
+  const [previousStatus, setPreviousStatus] = useState<string | null>(null);
+  
+  // Clear dependent fields when status changes (but not on initial load)
+  useEffect(() => {
+    // Skip clearing on initial load
+    if (previousStatus === null) {
+      setPreviousStatus(statusInCanada);
+      return;
+    }
+    
+    // Only clear if status actually changed
+    if (previousStatus !== statusInCanada) {
+      if (statusInCanada === EStatusInCanada.WorkPermit) {
+        // Clear FAST card fields when Work Permit is selected
+        setValue("hasFASTCard", "");
+        setValue("eligibleForFASTCard", "");
+      } else if (statusInCanada === EStatusInCanada.PR || statusInCanada === EStatusInCanada.Citizenship) {
+        // Clear both FAST card fields when switching to PR/Citizen (user must make fresh choice)
+        setValue("hasFASTCard", "");
+        setValue("eligibleForFASTCard", "");
+      }
+      setPreviousStatus(statusInCanada);
+    }
+  }, [statusInCanada, setValue, previousStatus]);
+  
   const allAnswered = Object.keys(watchAllFields).every((key) => {
     // Only enforce answered state for fields currently shown on screen
     const isFieldRendered = [
-      ...filteredPreQualificationQuestions,
+      ...finalFilteredQuestions,
       ...categoryQuestions,
     ].some((q) => q.name === key);
     // Answered if non-empty (booleans: "form.yes"/"form.no"; categories: enum value)
@@ -150,7 +215,15 @@ export default function PreQualificationClient({
     // Append Canada-only fields if they exist on this form (i.e., not US)
     if (effectiveCompany?.countryCode !== "US") {
       transformed.canCrossBorderUSA = data.canCrossBorderUSA === "form.yes";
-      transformed.hasFASTCard = data.hasFASTCard === "form.yes";
+      transformed.statusInCanada = data.statusInCanada as EStatusInCanada;
+      
+      // Only include FAST card fields if they were shown
+      if (data.hasFASTCard !== undefined) {
+        transformed.hasFASTCard = data.hasFASTCard === "form.yes";
+      }
+      if (data.eligibleForFASTCard !== undefined) {
+        transformed.eligibleForFASTCard = data.eligibleForFASTCard === "form.yes";
+      }
     }
 
     try {
@@ -211,7 +284,7 @@ export default function PreQualificationClient({
       <div className="space-y-6">
         {/* Eligibility questions (mostly booleans) */}
         <div className="space-y-4">
-          {filteredPreQualificationQuestions.map((q) => (
+          {finalFilteredQuestions.map((q) => (
             <Controller
               key={q.name}
               control={control}

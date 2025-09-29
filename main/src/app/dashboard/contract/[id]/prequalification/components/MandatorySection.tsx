@@ -1,6 +1,7 @@
 "use client";
 
 import { Check } from "lucide-react";
+import { Company } from "@/constants/companies";
 
 interface MandatorySectionProps {
   data: {
@@ -9,9 +10,10 @@ interface MandatorySectionProps {
     experienceDrivingTractorTrailer: boolean;
     legalRightToWorkCanada: boolean;
   };
+  company?: Company | null;
 }
 
-export default function MandatorySection({ data }: MandatorySectionProps) {
+export default function MandatorySection({ data, company }: MandatorySectionProps) {
   const questions = [
     {
       key: "over23Local",
@@ -30,7 +32,9 @@ export default function MandatorySection({ data }: MandatorySectionProps) {
     },
     {
       key: "legalRightToWorkCanada",
-      label: "Do you have legal right to work in Canada?",
+      label: company?.countryCode === "US" 
+        ? "Do you have legal right to work in the US?" 
+        : "Do you have legal right to work in Canada?",
       value: data.legalRightToWorkCanada,
     },
   ];

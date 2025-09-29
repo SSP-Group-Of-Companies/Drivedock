@@ -49,18 +49,26 @@ export const PATCH = async (
 
     // Step 3: Validate required fields for Canadian applicants
     if (isCanadian) {
-      const { canCrossBorderUSA, hasFASTCard } = body;
+      const { canCrossBorderUSA, hasFASTCard, statusInCanada } = body;
       if (typeof canCrossBorderUSA !== "boolean") {
         return errorResponse(
           400,
           "Field 'canCrossBorderUSA' is required for Canadian applicants"
         );
       }
-      if (typeof hasFASTCard !== "boolean") {
+      if (!statusInCanada) {
         return errorResponse(
           400,
-          "Field 'hasFASTCard' is required for Canadian applicants"
+          "Field 'statusInCanada' is required for Canadian applicants"
         );
+      }
+      
+      // Only validate FAST card fields if they were provided (conditional logic)
+      if (hasFASTCard !== undefined && typeof hasFASTCard !== "boolean") {
+        return errorResponse(400, "'hasFASTCard' must be a boolean when provided");
+      }
+      if (body.eligibleForFASTCard !== undefined && typeof body.eligibleForFASTCard !== "boolean") {
+        return errorResponse(400, "'eligibleForFASTCard' must be a boolean when provided");
       }
     }
 

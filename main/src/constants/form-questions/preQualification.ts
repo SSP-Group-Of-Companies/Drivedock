@@ -34,6 +34,7 @@ import {
   EDriverType,
   EHaulPreference,
   ETeamStatus,
+  EStatusInCanada,
 } from "@/types/preQualifications.types";
 
 /**
@@ -107,6 +108,16 @@ export const preQualificationQuestions = [
     options: [{ labelKey: "form.step1.questions.yes", value: "form.yes" }],
   },
   {
+    // Status in Canada (Canada-only field)
+    name: "statusInCanada",
+    label: "form.step1.questions.statusInCanada",
+    options: [
+      { labelKey: "form.step1.questions.pr", value: EStatusInCanada.PR },
+      { labelKey: "form.step1.questions.citizenship", value: EStatusInCanada.Citizenship },
+      { labelKey: "form.step1.questions.workPermit", value: EStatusInCanada.WorkPermit },
+    ],
+  }, // Canada only
+  {
     // Border-crossing eligibility into the USA (Canada-only field)
     name: "canCrossBorderUSA",
     label: "form.step1.questions.canCrossBorderUSA",
@@ -118,6 +129,12 @@ export const preQualificationQuestions = [
     label: "form.step1.questions.hasFASTCard",
     options: YesNoOptions,
   }, // Canada only
+  {
+    // Eligible for FAST card (Canada-only field, conditional)
+    name: "eligibleForFASTCard",
+    label: "form.step1.questions.eligibleForFASTCard",
+    options: YesNoOptions,
+  }, // Canada only, conditional
 ];
 
 /**

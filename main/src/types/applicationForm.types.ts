@@ -95,6 +95,7 @@ export interface IApplicationFormPage1 {
   sin?: string; // Client-provided on POST only
   sinEncrypted: string; // Server-computed; client should omit
   sinIssueDate: string | Date; // YYYY-MM-DD (client) or Date (server)
+  sinExpiryDate?: string | Date; // YYYY-MM-DD (client) or Date (server) - Optional, only for Work Permit holders
   gender: EGender;
   sinPhoto: IFileAsset;
   dob: string | Date; // YYYY-MM-DD (client) or Date (server)

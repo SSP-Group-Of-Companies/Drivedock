@@ -84,7 +84,8 @@ export const addressEntrySchema = z
     { message: "End date must be after start date", path: ["to"] }
   );
 
-export const applicationFormPage1Schema = z.object({
+// Base schema without conditional fields
+const baseApplicationFormPage1Schema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
 
@@ -114,6 +115,8 @@ export const applicationFormPage1Schema = z.object({
       message: "SIN issue date cannot be in the future or more than 100 years ago",
     }
   ),
+
+  // SIN expiry date will be added conditionally
 
   gender: z.enum(["male", "female"], {
     message: "Gender must be either 'male' or 'female'",
@@ -221,5 +224,40 @@ export const applicationFormPage1Schema = z.object({
       }
     ),
 });
+
+// Schema factory function that creates schema based on prequalification data
+export function createApplicationFormPage1Schema(prequalificationData?: { statusInCanada?: string } | null) {
+  const isWorkPermit = prequalificationData?.statusInCanada === "Work Permit";
+  
+  return baseApplicationFormPage1Schema.extend({
+    sinExpiryDate: isWorkPermit 
+      ? dateYMD.refine(
+          (date) => {
+            const expiryDate = new Date(date);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            return expiryDate > today;
+          },
+          {
+            message: "SIN expiry date must be in the future",
+          }
+        )
+      : dateYMD.optional().refine(
+          (date) => {
+            if (!date) return true; // Optional when not Work Permit
+            const expiryDate = new Date(date);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            return expiryDate > today;
+          },
+          {
+            message: "SIN expiry date must be in the future",
+          }
+        ),
+  });
+}
+
+// Default schema (for backward compatibility)
+export const applicationFormPage1Schema = createApplicationFormPage1Schema();
 
 export type ApplicationFormPage1Schema = z.infer<typeof applicationFormPage1Schema>;

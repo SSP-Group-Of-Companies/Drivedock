@@ -12,6 +12,9 @@ import { fetchServerPageData } from "@/lib/utils/fetchServerPageData";
 type Page1Result = {
   page1?: any; // shape from API
   onboardingContext?: any; // if your API includes it
+  prequalificationData?: {
+    statusInCanada?: string;
+  };
 };
 
 /** Creates empty S3 photo object for form initialization */
@@ -35,6 +38,7 @@ const EMPTY_DEFAULTS: ApplicationFormPage1Schema = {
   lastName: "",
   sin: "",
   sinIssueDate: "",
+  sinExpiryDate: "",
   gender: "" as "male" | "female",
   sinPhoto: emptyS3Photo(),
   dob: "",
@@ -83,6 +87,7 @@ export default async function Page1ServerWrapper({ params }: { params: Promise<{
         lastName: pageData.lastName || "",
         sin: typeof pageData.sin === "string" && /^\d{9}$/.test(pageData.sin) ? pageData.sin : "",
         sinIssueDate: pageData.sinIssueDate ? formatInputDate(pageData.sinIssueDate) : "",
+        sinExpiryDate: pageData.sinExpiryDate ? formatInputDate(pageData.sinExpiryDate) : "",
         gender: pageData.gender || ("" as "male" | "female"),
         sinPhoto: pageData.sinPhoto || emptyS3Photo(),
         dob: formatInputDate(pageData.dob),
@@ -139,5 +144,5 @@ export default async function Page1ServerWrapper({ params }: { params: Promise<{
       }
     : EMPTY_DEFAULTS;
 
-  return <Page1Client defaultValues={defaultValues} trackerId={trackerId} trackerContextFromGet={data?.onboardingContext} />;
+  return <Page1Client defaultValues={defaultValues} trackerId={trackerId} trackerContextFromGet={data?.onboardingContext} prequalificationData={data?.prequalificationData} />;
 }

@@ -189,10 +189,10 @@ export function validateEmploymentCount(employments: IEmploymentEntry[]): Employ
     };
   }
 
-  if (employments.length > 5) {
+  if (employments.length > 8) {
     return {
       type: 'count',
-      message: 'A maximum of 5 employment entries is allowed'
+      message: 'A maximum of 8 employment entries is allowed'
     };
   }
 

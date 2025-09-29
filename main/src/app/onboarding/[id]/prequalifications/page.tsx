@@ -58,7 +58,9 @@ function transformToFormValues(data: IPreQualifications): Record<string, string>
 
     // Canada-only fields (may be omitted for US companies)
     canCrossBorderUSA: data.canCrossBorderUSA ? "form.yes" : "form.no",
-    hasFASTCard: data.hasFASTCard ? "form.yes" : "form.no",
+    hasFASTCard: data.hasFASTCard !== undefined ? (data.hasFASTCard ? "form.yes" : "form.no") : "",
+    statusInCanada: data.statusInCanada || "",
+    eligibleForFASTCard: data.eligibleForFASTCard !== undefined ? (data.eligibleForFASTCard ? "form.yes" : "form.no") : "",
 
     // Categories -> keep ENUM values (the client component options use enums)
     driverType: data.driverType,

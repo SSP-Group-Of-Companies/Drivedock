@@ -9,6 +9,7 @@ import { useDashboardLoading } from "@/store/useDashboardLoading";
 import DashboardFormWizard from "../components/DashboardFormWizard";
 import { OptionalsSection, MandatorySection, CategoriesSection } from "./components";
 import StepNotCompletedMessage from "../components/StepNotCompletedMessage";
+import { getCompanyById } from "@/constants/companies";
 
 
 // Helper function for API calls
@@ -122,6 +123,9 @@ export default function PrequalificationClient({ trackerId }: { trackerId: strin
   }
 
   const ctx = contractData;
+  
+  // Get company information for filtering
+  const company = contractData?.companyId ? getCompanyById(contractData.companyId) : null;
 
   return (
     <motion.div
@@ -163,12 +167,18 @@ export default function PrequalificationClient({ trackerId }: { trackerId: strin
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-12 gap-6 lg:gap-8">
           {/* Optionals Section - Wider for more questions */}
           <div className="lg:col-span-1 xl:col-span-4">
-            <OptionalsSection data={prequalData?.data?.preQualifications || {}} />
+            <OptionalsSection 
+              data={prequalData?.data?.preQualifications || {}} 
+              company={company}
+            />
           </div>
           
           {/* Mandatory Section - Standard width */}
           <div className="lg:col-span-1 xl:col-span-3">
-            <MandatorySection data={prequalData?.data?.preQualifications || {}} />
+            <MandatorySection 
+              data={prequalData?.data?.preQualifications || {}} 
+              company={company}
+            />
           </div>
           
           {/* Categories Section - Wider for choice options */}

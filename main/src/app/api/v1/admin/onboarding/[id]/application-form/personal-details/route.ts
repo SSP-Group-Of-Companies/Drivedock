@@ -14,6 +14,7 @@ import { EStepPath } from "@/types/onboardingTracker.types";
 import { isValidObjectId } from "mongoose";
 import { parseJsonBody } from "@/lib/utils/reqParser";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
+import PreQualifications from "@/mongoose/models/Prequalifications";
 import { guard } from "@/lib/utils/auth/authUtils";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -50,6 +51,24 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!isValidSINIssueDate(page1.sinIssueDate)) return errorResponse(400, "Invalid SIN issue date");
     if (!isValidGender(page1.gender)) return errorResponse(400, "Invalid gender");
     if (!hasRecentAddressCoverage(page1.addresses)) return errorResponse(400, "Address history must cover 5 years");
+
+    // Validate SIN expiry date for Work Permit holders
+    const preQualId = onboardingDoc.forms?.preQualification;
+    if (preQualId) {
+      const preQualDoc = await PreQualifications.findById(preQualId);
+      if (preQualDoc && preQualDoc.statusInCanada === "Work Permit") {
+        if (!page1.sinExpiryDate) {
+          return errorResponse(400, "SIN expiry date is required for Work Permit holders");
+        }
+        // Validate that expiry date is in the future
+        const expiryDate = new Date(page1.sinExpiryDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (expiryDate <= today) {
+          return errorResponse(400, "SIN expiry date must be in the future");
+        }
+      }
+    }
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) return errorResponse(404, "ApplicationForm not linked");

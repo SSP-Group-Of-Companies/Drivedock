@@ -22,7 +22,15 @@ export const page1ConfigFactory: FormPageConfigFactory<ApplicationFormPage1Schem
         "sin",
         "sinIssueDate",
         "gender",
-        // include nested photo keys so RHF can surface specific errors
+      ];
+
+      // Add sinExpiryDate only for Work Permit holders
+      if (ctx.prequalifications?.statusInCanada === "Work Permit") {
+        fields.push("sinExpiryDate");
+      }
+
+      // include nested photo keys so RHF can surface specific errors
+      fields.push(
         "sinPhoto.s3Key",
         "sinPhoto.url",
         "sinPhoto.mimeType",
@@ -42,8 +50,8 @@ export const page1ConfigFactory: FormPageConfigFactory<ApplicationFormPage1Schem
 
         // Root collections for any superRefine banner placement
         "licenses",
-        "addresses",
-      ];
+        "addresses"
+      );
 
       // Validate each visible license row (ensure first has photos)
       values.licenses?.forEach((_lic, index) => {

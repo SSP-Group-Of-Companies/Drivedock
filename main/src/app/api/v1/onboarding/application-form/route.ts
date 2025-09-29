@@ -59,9 +59,31 @@ export async function POST(req: NextRequest) {
     if (!firstLicense.licenseFrontPhoto || !firstLicense.licenseBackPhoto) return errorResponse(400, "First license must include both front and back photos");
 
     if (company.countryCode === ECountryCode.CA) {
-      const { canCrossBorderUSA, hasFASTCard } = prequalifications;
+      const { canCrossBorderUSA, hasFASTCard, statusInCanada } = prequalifications;
       if (typeof canCrossBorderUSA !== "boolean") return errorResponse(400, "'canCrossBorderUSA' is required for Canadian applicants");
-      if (typeof hasFASTCard !== "boolean") return errorResponse(400, "'hasFASTCard' is required for Canadian applicants");
+      if (!statusInCanada) return errorResponse(400, "'statusInCanada' is required for Canadian applicants");
+      
+      // Only validate FAST card fields if they were provided (conditional logic)
+      if (hasFASTCard !== undefined && typeof hasFASTCard !== "boolean") {
+        return errorResponse(400, "'hasFASTCard' must be a boolean when provided");
+      }
+      if (prequalifications.eligibleForFASTCard !== undefined && typeof prequalifications.eligibleForFASTCard !== "boolean") {
+        return errorResponse(400, "'eligibleForFASTCard' must be a boolean when provided");
+      }
+      
+      // Validate SIN expiry date for Work Permit holders
+      if (statusInCanada === "Work Permit") {
+        if (!page1.sinExpiryDate) {
+          return errorResponse(400, "SIN expiry date is required for Work Permit holders");
+        }
+        // Validate that expiry date is in the future
+        const expiryDate = new Date(page1.sinExpiryDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (expiryDate <= today) {
+          return errorResponse(400, "SIN expiry date must be in the future");
+        }
+      }
     }
 
     const sinHash = hashString(sin);

@@ -51,9 +51,12 @@ const calculateAge = (dob: string) => {
 
 interface PersonalDetailsProps {
   onboardingContext?: IOnboardingTrackerContext | null;
+  prequalificationData?: {
+    statusInCanada?: string;
+  } | null;
 }
 
-export default function PersonalDetails({ onboardingContext }: PersonalDetailsProps) {
+export default function PersonalDetails({ onboardingContext, prequalificationData }: PersonalDetailsProps) {
   const {
     register,
     setValue,
@@ -90,6 +93,9 @@ export default function PersonalDetails({ onboardingContext }: PersonalDetailsPr
   const [sinValidationMessage, setSinValidationMessage] = useState("");
 
   const calculatedAge = dobValue ? calculateAge(dobValue) : null;
+  
+  // Check if user has Work Permit status from prequalification data
+  const hasWorkPermitStatus = prequalificationData?.statusInCanada === "Work Permit";
 
   // Clear company selection when resuming an application to prevent conflicts
   useEffect(() => {
@@ -371,6 +377,25 @@ export default function PersonalDetails({ onboardingContext }: PersonalDetailsPr
           />
           {errors.sinIssueDate && <p className="text-red-500 text-sm mt-1">{errors.sinIssueDate.message?.toString()}</p>}
         </div>
+
+        {/* SIN Expiry Date - Only for Work Permit holders */}
+        {hasWorkPermitStatus && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700">{t("form.step2.page1.fields.sinExpiryDate")}</label>
+            <input
+              {...register("sinExpiryDate")}
+              type="date"
+              name="sinExpiryDate"
+              data-field="sinExpiryDate"
+              min={(() => {
+                const today = new Date();
+                return today.toISOString().split("T")[0];
+              })()}
+              className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
+            />
+            {errors.sinExpiryDate && <p className="text-red-500 text-sm mt-1">{errors.sinExpiryDate.message?.toString()}</p>}
+          </div>
+        )}
 
         {/* SIN Photo Upload - Full Width */}
         <div className="md:col-span-2" data-field="sinPhoto">

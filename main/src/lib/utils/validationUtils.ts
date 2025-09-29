@@ -171,8 +171,8 @@ export function validateEmploymentHistory(employments: IEmploymentEntry[]): stri
     return "At least one employment entry is required.";
   }
 
-  if (employments.length > 5) {
-    return "A maximum of 5 employment entries is allowed.";
+  if (employments.length > 8) {
+    return "A maximum of 8 employment entries is allowed.";
   }
 
   // Sort by from date DESC (most recent first)
