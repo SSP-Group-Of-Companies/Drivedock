@@ -19,6 +19,7 @@ import { isValidEmail, isValidPhoneNumber, isValidDOB, isValidSIN, isValidSINIss
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
 import { createOnboardingSessionAndCookie } from "@/lib/utils/auth/onboardingSession";
 import { attachCookies } from "@/lib/utils/auth/attachCookie";
+import { sendOnboardingStartNotificationEmailToSafetyTeam } from "@/lib/mail/sendOnboardingStartNotification";
 
 export async function POST(req: NextRequest) {
   await connectDB();
@@ -45,6 +46,7 @@ export async function POST(req: NextRequest) {
     if (page1.phoneHome && !isValidPhoneNumber(page1.phoneHome)) return errorResponse(400, "Invalid home phone");
     if (!isValidPhoneNumber(page1.phoneCell)) return errorResponse(400, "Invalid cell phone");
     if (!isValidPhoneNumber(page1.emergencyContactPhone)) return errorResponse(400, "Invalid emergency contact phone");
+    if (page1.phoneCell === page1.emergencyContactPhone) return errorResponse(400, "cell phone and emergency contact phone cannot be the same");
     if (!isValidDOB(page1.dob)) return errorResponse(400, "Invalid DOB");
     if (!isValidSINIssueDate(page1.sinIssueDate)) return errorResponse(400, "Invalid SIN issue date");
     if (!isValidGender(page1.gender)) return errorResponse(400, "Invalid gender");
@@ -154,6 +156,19 @@ export async function POST(req: NextRequest) {
       preQualifications: preQualDoc.toObject(),
       applicationForm: updatedForm?.toObject({ virtuals: true }),
     });
+
+    // send notification email to safety team
+    try {
+      await sendOnboardingStartNotificationEmailToSafetyTeam(req, {
+        trackerId: String(onboardingDoc._id),
+        companyId,
+        fullName: `${page1.firstName} ${page1.lastName}`,
+        email: page1.email,
+        phone: page1.phoneCell,
+      });
+    } catch (err: any) {
+      console.warn("sending email to safety team failed", err);
+    }
 
     return attachCookies(res, setCookie);
   } catch (error) {

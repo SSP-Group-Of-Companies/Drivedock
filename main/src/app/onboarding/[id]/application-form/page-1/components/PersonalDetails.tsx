@@ -465,15 +465,28 @@ export default function PersonalDetails({ onboardingContext }: PersonalDetailsPr
         </div>
 
         {/* Phone: Home */}
-        <PhoneInput label={t("form.step2.page1.fields.phoneHome")} value={getDisplayPhone(phoneHomeRaw)} onChange={(v) => handlePhoneChange("phoneHome", v)} error={errors.phoneHome} />
+        <PhoneInput
+          name="phoneHome"
+          label={t("form.step2.page1.fields.phoneHome")}
+          value={getDisplayPhone(phoneHomeRaw)}
+          onChange={(v) => handlePhoneChange("phoneHome", v)}
+          error={errors.phoneHome}
+        />
 
         {/* Phone: Cell */}
-        <PhoneInput label={t("form.step2.page1.fields.phoneCell")} value={getDisplayPhone(phoneCellRaw)} onChange={(v) => handlePhoneChange("phoneCell", v)} error={errors.phoneCell} />
+        <PhoneInput
+          name="phoneCell"
+          label={t("form.step2.page1.fields.phoneCell")}
+          value={getDisplayPhone(phoneCellRaw)}
+          onChange={(v) => handlePhoneChange("phoneCell", v)}
+          error={errors.phoneCell}
+        />
 
         {/* Emergency Contact */}
         <TextInput name="emergencyContactName" label={t("form.step2.page1.fields.emergencyContactName")} error={errors.emergencyContactName} register={register} />
 
         <PhoneInput
+          name="emergencyContactPhone"
           label={t("form.step2.page1.fields.emergencyContactPhone")}
           value={getDisplayPhone(emergencyPhoneRaw)}
           onChange={(v) => handlePhoneChange("emergencyContactPhone", v)}

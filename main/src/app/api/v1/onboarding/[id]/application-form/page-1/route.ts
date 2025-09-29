@@ -44,6 +44,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (page1.phoneHome && !isValidPhoneNumber(page1.phoneHome)) return errorResponse(400, "Invalid home phone");
     if (!isValidPhoneNumber(page1.phoneCell)) return errorResponse(400, "Invalid cell phone");
     if (!isValidPhoneNumber(page1.emergencyContactPhone)) return errorResponse(400, "Invalid emergency contact phone");
+    if (page1.phoneCell === page1.emergencyContactPhone) return errorResponse(400, "cell phone and emergency contact phone cannot be the same");
     if (!isValidDOB(page1.dob)) return errorResponse(400, "Invalid date of birth");
     if (!isValidSINIssueDate(page1.sinIssueDate)) return errorResponse(400, "Invalid SIN issue date");
     if (!isValidGender(page1.gender)) return errorResponse(400, "Invalid gender");
