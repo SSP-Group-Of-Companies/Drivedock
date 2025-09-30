@@ -270,6 +270,7 @@ export function buildTrackerContext(tracker: IOnboardingTrackerDoc | IOnboarding
     applicationType: tracker.applicationType,
     needsFlatbedTraining: opts.needsFlatbedTraining,
     status: tracker.status,
+    invitationApproved: tracker.invitationApproved,
     completionLocation: tracker.completionLocation,
     locationPermissionGranted: tracker.locationPermissionGranted,
     prevStep,
@@ -293,7 +294,7 @@ export function buildTrackerContext(tracker: IOnboardingTrackerDoc | IOnboarding
  *   → "/onboarding/64f3a8.../application-form/page-2"
  */
 export function buildOnboardingStepPath(tracker: IOnboardingTrackerDoc | IOnboardingTrackerContext, defaultStep?: EStepPath): string {
-  const step = defaultStep || tracker.status.currentStep;
+  const step = !tracker.invitationApproved ? "pending-approval" : defaultStep || tracker.status.currentStep;
   return `/onboarding/${tracker.id}/${step}`;
 }
 

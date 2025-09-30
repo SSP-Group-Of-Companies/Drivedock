@@ -101,6 +101,14 @@ export const page1ConfigFactory: FormPageConfigFactory<ApplicationFormPage1Schem
       return { page1: cleaned };
     },
 
+    confirmationPopup: !id
+      ? {
+          show: true,
+          text: "are you sure you want to submit? your application will be pending approval from admin and you cannot edit any details",
+          translationPath: "translation-path",
+        }
+      : undefined,
+
     // Fully resolved fallback; on POST we still prefer server nextUrl
     nextRoute: id ? `/onboarding/${id}/application-form/page-2` : "/onboarding", // harmless fallback for first-time POST (no id yet)
 

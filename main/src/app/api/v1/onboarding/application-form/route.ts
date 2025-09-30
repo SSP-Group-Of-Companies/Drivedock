@@ -19,7 +19,8 @@ import { isValidEmail, isValidPhoneNumber, isValidDOB, isValidSIN, isValidSINIss
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
 import { createOnboardingSessionAndCookie } from "@/lib/utils/auth/onboardingSession";
 import { attachCookies } from "@/lib/utils/auth/attachCookie";
-import { sendOnboardingStartNotificationEmailToSafetyTeam } from "@/lib/mail/sendOnboardingStartNotification";
+import { sendDriverPendingApprovalEmail } from "@/lib/mail/driver/sendDriverPendingApprovalEmail";
+import sendSafetyInvitationNotificationEmail from "@/lib/mail/safety/sendSafetyInvitationNotificationEmail";
 
 export async function POST(req: NextRequest) {
   await connectDB();
@@ -64,7 +65,7 @@ export async function POST(req: NextRequest) {
       const { canCrossBorderUSA, hasFASTCard, statusInCanada } = prequalifications;
       if (typeof canCrossBorderUSA !== "boolean") return errorResponse(400, "'canCrossBorderUSA' is required for Canadian applicants");
       if (!statusInCanada) return errorResponse(400, "'statusInCanada' is required for Canadian applicants");
-      
+
       // Only validate FAST card fields if they were provided (conditional logic)
       if (hasFASTCard !== undefined && typeof hasFASTCard !== "boolean") {
         return errorResponse(400, "'hasFASTCard' must be a boolean when provided");
@@ -72,7 +73,7 @@ export async function POST(req: NextRequest) {
       if (prequalifications.eligibleForFASTCard !== undefined && typeof prequalifications.eligibleForFASTCard !== "boolean") {
         return errorResponse(400, "'eligibleForFASTCard' must be a boolean when provided");
       }
-      
+
       // Validate SIN expiry date for Work Permit holders
       if (statusInCanada === "Work Permit") {
         if (!page1.sinExpiryDate) {
@@ -101,6 +102,7 @@ export async function POST(req: NextRequest) {
         completedStep: EStepPath.PRE_QUALIFICATIONS,
         completed: false,
       },
+      invitationApproved: false,
       companyId,
       ...(companyId === ECompanyId.SSP_CA && { applicationType }),
       forms: {},
@@ -179,9 +181,9 @@ export async function POST(req: NextRequest) {
       applicationForm: updatedForm?.toObject({ virtuals: true }),
     });
 
-    // send notification email to safety team
     try {
-      await sendOnboardingStartNotificationEmailToSafetyTeam(req, {
+      // send notification email to safety team
+      await sendSafetyInvitationNotificationEmail(req, {
         trackerId: String(onboardingDoc._id),
         companyId,
         firstName: page1.firstName,
@@ -189,6 +191,9 @@ export async function POST(req: NextRequest) {
         email: page1.email,
         phone: page1.phoneCell,
       });
+
+      // send notification email to driver
+      await sendDriverPendingApprovalEmail(req, { companyId, firstName: page1.firstName, lastName: page1.lastName, toEmail: page1.email });
     } catch (err: any) {
       console.warn("sending email to safety team failed", err);
     }

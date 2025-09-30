@@ -1,6 +1,6 @@
 /**
  * Continue Button Component — DriveDock (SSP Portal)
- * (…header unchanged…)
+ * Adds confirmation popup via ErrorManager.showConfirm before submitting.
  */
 
 "use client";
@@ -17,17 +17,11 @@ import { useOnboardingTracker } from "@/store/useOnboardingTracker";
 import { useCompanySelection } from "@/hooks/frontendHooks/useCompanySelection";
 import { useGlobalLoading } from "@/store/useGlobalLoading";
 import { useFormErrorScroll } from "@/hooks/useFormErrorScroll";
-import { COMPANIES } from "@/constants/companies";
+import { COMPANIES, ECompanyApplicationType } from "@/constants/companies";
 import { submitFormStep } from "@/lib/frontendUtils/submitFormStep";
-import { ECompanyApplicationType } from "@/constants/companies";
 import { ErrorManager } from "@/lib/onboarding/errorManager";
-import type {
-  BuildPayloadCtx,
-  FormPageConfig,
-  FormPageConfigFactory,
-} from "@/lib/frontendConfigs/formPageConfig.types";
+import type { BuildPayloadCtx, FormPageConfig, FormPageConfigFactory } from "@/lib/frontendConfigs/formPageConfig.types";
 
-// ✅ NEW: import deep-compare helpers
 import { hasDeepChanges } from "@/lib/utils/deepCompare";
 
 type ContinueButtonProps<T extends FieldValues> = {
@@ -35,10 +29,7 @@ type ContinueButtonProps<T extends FieldValues> = {
   trackerId?: string;
 };
 
-export default function ContinueButton<T extends FieldValues>({
-  config,
-  trackerId,
-}: ContinueButtonProps<T>): ReactNode {
+export default function ContinueButton<T extends FieldValues>({ config, trackerId }: ContinueButtonProps<T>): ReactNode {
   const {
     getValues,
     trigger,
@@ -59,43 +50,81 @@ export default function ContinueButton<T extends FieldValues>({
   const [submitting, setSubmitting] = useState(false);
   const { show, hide } = useGlobalLoading();
 
+  // Extract the actual submit logic so the confirmation popup can call it.
+  const doSubmit = async (resolvedConfig: FormPageConfig<T>, ctx: BuildPayloadCtx, isPost: boolean, urlTrackerId?: string) => {
+    try {
+      setSubmitting(true);
+
+      // For PATCH, if nothing changed, just navigate forward.
+      const formValues = getValues();
+      const hasChanges = hasDeepChanges(formValues, (defaultValues ?? {}) as Partial<T>, { nullAsUndefined: true, emptyStringAsUndefined: true });
+
+      if (!isPost && !hasChanges) {
+        router.push(resolvedConfig.nextRoute);
+        return;
+      }
+
+      show(t("form.loading", "Processing..."));
+
+      const jsonPayload = resolvedConfig.buildPayload(formValues, ctx);
+
+      const { trackerContext, nextUrl } = await submitFormStep({
+        json: jsonPayload,
+        tracker,
+        urlTrackerId,
+        submitSegment: resolvedConfig.submitSegment,
+      });
+
+      if (isPost) {
+        if (!trackerContext?.id) throw new Error("Tracker not returned from POST");
+        setTracker(trackerContext);
+        clearData();
+        clearSelectedCompany();
+        router.push(nextUrl ?? resolvedConfig.nextRoute);
+      } else {
+        if (trackerContext) setTracker(trackerContext);
+        router.push(nextUrl ?? resolvedConfig.nextRoute);
+        if (!nextUrl) router.refresh();
+      }
+    } catch (err) {
+      console.error("Submission error:", err);
+      // Error modal is handled by submitFormStep’s internal usage of ErrorManager
+      hide();
+    } finally {
+      setSubmitting(false);
+      // On success, leave loader to be cleared by route transition
+    }
+  };
+
   const onSubmit = async () => {
     const values = getValues();
 
     const urlTrackerId = params?.id as string | undefined;
     const effectiveTrackerId = trackerId || urlTrackerId;
-    // For POST flow, we should not have a trackerId and should be on (noid) route
     const isPost = !effectiveTrackerId && !urlTrackerId; // POST for new, PATCH for existing
-
 
     const ctx: BuildPayloadCtx = {
       prequalifications: prequalifications ?? undefined,
       companyId: selectedCompany?.id,
-      applicationType: selectedCompany?.type as
-        | ECompanyApplicationType
-        | undefined,
+      applicationType: selectedCompany?.type as ECompanyApplicationType | undefined,
       tracker,
       isPatch: !isPost,
       effectiveTrackerId,
     };
 
-    const resolvedConfig =
-      typeof config === "function"
-        ? (config as FormPageConfigFactory<T>)(ctx)
-        : (config as FormPageConfig<T>);
+    const resolvedConfig = typeof config === "function" ? (config as FormPageConfigFactory<T>)(ctx) : (config as FormPageConfig<T>);
 
+    // 1) Field-level validation
     const fieldsToValidate = resolvedConfig.validationFields(values);
-    const isValid = await trigger(
-      fieldsToValidate as Parameters<typeof trigger>[0]
-    );
+    const isValid = await trigger(fieldsToValidate as Parameters<typeof trigger>[0]);
     if (!isValid) {
       handleFormError(errors);
       return;
     }
 
+    // 2) Business rules validation
     const ruleError = resolvedConfig.validateBusinessRules?.(values);
     if (ruleError) {
-      // Show business rule error via ErrorManager
       const errorManager = ErrorManager.getInstance();
       errorManager.showModal({
         type: "GENERIC_ERROR" as any,
@@ -103,13 +132,14 @@ export default function ContinueButton<T extends FieldValues>({
         message: ruleError,
         primaryAction: {
           label: t("errors.generic.tryAgain", "OK"),
-          action: () => errorManager.hideModal()
+          action: () => errorManager.hideModal(),
         },
-        canClose: true
+        canClose: true,
       });
       return;
     }
 
+    // 3) POST-time guards
     if (isPost) {
       if (!prequalifications?.completed) {
         const errorManager = ErrorManager.getInstance();
@@ -121,9 +151,9 @@ export default function ContinueButton<T extends FieldValues>({
             label: "Restart Application",
             action: () => {
               window.location.href = "/start/company";
-            }
+            },
           },
-          canClose: false
+          canClose: false,
         });
         return;
       }
@@ -138,70 +168,45 @@ export default function ContinueButton<T extends FieldValues>({
             label: "Restart Application",
             action: () => {
               window.location.href = "/start/company";
-            }
+            },
           },
-          canClose: false
+          canClose: false,
         });
         return;
       }
     }
 
-    try {
-      setSubmitting(true);
+    // 4) Optional confirmation popup BEFORE submit
+    // const popup = resolvedConfig.confirmationPopup; // (keeping existing key)
+    // if (popup?.show) {
+    //   const errorManager = ErrorManager.getInstance();
 
-      // =====================
-      // No‑op continue (PATCH)
-      // =====================
-      const formValues = getValues();
+    //   const message = popup.translationPath ? t(popup.translationPath, popup.text || "") : popup.text || t("form.confirmation.default", "Are you sure you want to continue?");
 
-      const hasChanges = hasDeepChanges(
-        formValues,
-        (defaultValues ?? {}) as Partial<T>,
-        {
-          nullAsUndefined: true,
-          emptyStringAsUndefined: true,
-        }
-      );
+    //   // Uses your new ErrorManager.showConfirm helper
+    //   (errorManager as any).showConfirm({
+    //     title: t("form.confirmation.title", "Please confirm"),
+    //     message,
+    //     confirmLabel: t("form.proceed", "Proceed"),
+    //     cancelLabel: t("form.cancel", "Cancel"),
+    //     onConfirm: async () => {
+    //       await doSubmit(resolvedConfig, ctx, isPost, urlTrackerId);
+    //     },
+    //     onCancel: () => {
+    //       // no-op; modal hides automatically
+    //     },
+    //     canClose: true,
+    //   });
 
-      if (!isPost && !hasChanges) {
-        router.push(resolvedConfig.nextRoute);
-        return;
-      }
+    //   return; // wait for user choice
+    // }
 
-      show(t("form.loading", "Processing..."));
-
-      const jsonPayload = resolvedConfig.buildPayload(values, ctx);
-
-      const { trackerContext, nextUrl } = await submitFormStep({
-        json: jsonPayload,
-        tracker,
-        urlTrackerId,
-        submitSegment: resolvedConfig.submitSegment,
-      });
-
-      if (isPost) {
-        if (!trackerContext?.id)
-          throw new Error("Tracker not returned from POST");
-        setTracker(trackerContext);
-        clearData();
-        clearSelectedCompany(); // Clear company selection after successful POST
-        router.push(nextUrl ?? resolvedConfig.nextRoute);
-      } else {
-        if (trackerContext) setTracker(trackerContext);
-        router.push(nextUrl ?? resolvedConfig.nextRoute);
-        if (!nextUrl) router.refresh();
-      }
-    } catch (err: any) {
-      console.error("Submission error:", err);
-      hide();
-      // Error display is now handled by ErrorManager through submitFormStep
-    } finally {
-      setSubmitting(false);
-      // Success path leaves global loader visible until route transition
-    }
+    // 5) No confirmation required — submit immediately
+    await doSubmit(resolvedConfig, ctx, isPost, urlTrackerId);
   };
 
   if (!mounted) return null;
+
   return (
     <div className="flex justify-center">
       <button
@@ -209,9 +214,7 @@ export default function ContinueButton<T extends FieldValues>({
         disabled={submitting}
         onClick={onSubmit}
         className={`px-8 py-2 mt-6 rounded-full font-semibold transition-all shadow-md flex items-center gap-2 cursor-pointer active:translate-y-[1px] active:shadow ${
-          submitting
-            ? "bg-gray-400 text-white cursor-not-allowed"
-            : "bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 text-white hover:opacity-90"
+          submitting ? "bg-gray-400 text-white cursor-not-allowed" : "bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 text-white hover:opacity-90"
         }`}
       >
         {submitting ? t("form.submitting") : t("form.continue")}

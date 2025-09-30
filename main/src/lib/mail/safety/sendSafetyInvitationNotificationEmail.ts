@@ -4,6 +4,7 @@ import { sendMailAppOnly } from "@/lib/mail/mailer";
 import { OUTBOUND_SENDER_EMAIL } from "@/config/env";
 import { resolveBaseUrlFromRequest } from "@/lib/utils/urlHelper.server";
 import { COMPANIES, ECompanyId } from "@/constants/companies";
+import { escapeHtml } from "../utils";
 
 type Args = {
   trackerId: string;
@@ -16,16 +17,22 @@ type Args = {
   saveToSentItems?: boolean;
 };
 
-export async function sendOnboardingStartNotificationEmailToSafetyTeam(req: NextRequest, { trackerId, companyId, firstName, lastName, email, phone, subject, saveToSentItems = true }: Args) {
+/**
+ * Safety notification for a newly submitted application (Invitation).
+ * The applicant is pending approval and visible under Dashboard → Invitations.
+ */
+export default async function sendSafetyInvitationNotificationEmail(req: NextRequest, { trackerId, companyId, firstName, lastName, email, phone, subject, saveToSentItems = true }: Args) {
   const origin = resolveBaseUrlFromRequest(req);
   const company = COMPANIES.find((c) => c.id === companyId);
   const companyLabel = company?.name ?? String(companyId);
 
   const fullName = `${firstName} ${lastName}`;
-  const link = `${origin}/dashboard/contract/${encodeURIComponent(trackerId)}/safety-processing`;
-  const finalSubject = subject ?? `[DriveDock] New application started — ${companyLabel}: ${fullName}`;
+  const link = `${origin}/dashboard/invitations/${encodeURIComponent(trackerId)}`;
 
-  const preheader = `New onboarding started • ${fullName} • ${companyLabel}`;
+  // Wording updated to reflect "Invitation/Pending approval"
+  const finalSubject = subject ?? `[DriveDock] New application awaiting approval — ${companyLabel}: ${fullName}`;
+
+  const preheader = `Invitation created • Pending approval • ${fullName} • ${companyLabel}`;
 
   const html = `
   <!doctype html>
@@ -34,7 +41,6 @@ export async function sendOnboardingStartNotificationEmailToSafetyTeam(req: Next
       <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <title>${escapeHtml(finalSubject)}</title>
-      <!-- Preheader text (hidden in most clients) -->
       <style>
         .preheader { display:none!important; visibility:hidden; opacity:0; color:transparent; height:0; width:0; overflow:hidden; mso-hide:all; }
         a.button:hover { filter: brightness(1.07); }
@@ -49,8 +55,8 @@ export async function sendOnboardingStartNotificationEmailToSafetyTeam(req: Next
             <table role="presentation" width="560" border="0" cellspacing="0" cellpadding="0" style="width:560px; max-width:560px; background:#ffffff; border:1px solid #e6e8ec; border-radius:12px;">
               <tr>
                 <td style="padding:20px 24px 8px 24px; font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif; color:#0f172a;">
-                  <h1 style="margin:0 0 8px 0; font-size:18px; line-height:24px;">New applicant started onboarding</h1>
-                  <p style="margin:0; font-size:13px; color:#475569;">A new application has been created and is ready for processing.</p>
+                  <h1 style="margin:0 0 8px 0; font-size:18px; line-height:24px;">New application awaiting approval</h1>
+                  <p style="margin:0; font-size:13px; color:#475569;">A new applicant has submitted page 1 and is pending review in Invitations.</p>
                 </td>
               </tr>
 
@@ -102,10 +108,9 @@ export async function sendOnboardingStartNotificationEmailToSafetyTeam(req: Next
 
                     <tr>
                       <td align="left" style="padding:8px 0 2px 0;">
-                        <!-- Button -->
                         <a class="button" href="${link}"
                            style="display:inline-block; text-decoration:none; background:#0a66c2; color:#ffffff; padding:12px 16px; border-radius:8px; font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif; font-size:14px; border:1px solid #0a66c2;">
-                          Open in DriveDock →
+                          Review invitation →
                         </a>
                       </td>
                     </tr>
@@ -116,7 +121,7 @@ export async function sendOnboardingStartNotificationEmailToSafetyTeam(req: Next
 
               <tr>
                 <td style="padding:18px 24px 20px 24px; font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif; font-size:12px; color:#64748b; border-top:1px solid #f1f3f5;">
-                  This message was sent automatically by DriveDock.
+                  This message was sent automatically by DriveDock (Invitations).
                 </td>
               </tr>
             </table>
@@ -128,14 +133,14 @@ export async function sendOnboardingStartNotificationEmailToSafetyTeam(req: Next
   `.trim();
 
   const text = [
-    `New applicant started onboarding`,
+    `New application awaiting approval (Invitations)`,
     `Name: ${fullName}`,
     email ? `Email: ${email}` : null,
     phone ? `Phone: ${phone}` : null,
     `Company: ${companyLabel}`,
     `Onboarding ID: ${trackerId}`,
     ``,
-    `Open in DriveDock: ${link}`,
+    `Review invitation: ${link}`,
   ]
     .filter(Boolean)
     .join("\n");
@@ -148,8 +153,4 @@ export async function sendOnboardingStartNotificationEmailToSafetyTeam(req: Next
     text,
     saveToSentItems,
   });
-}
-
-function escapeHtml(input: string): string {
-  return input.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
 }
