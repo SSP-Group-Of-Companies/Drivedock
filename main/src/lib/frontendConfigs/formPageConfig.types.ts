@@ -5,6 +5,8 @@ import { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
 
 export type BuildPayloadCtx = {
   prequalifications?: IPreQualifications;
+  // Optional status hint for cases where local store is empty (PATCH resumes)
+  prequalificationStatusInCanada?: string;
   companyId?: string;
   applicationType?: string;
   tracker?: IOnboardingTrackerContext | null;

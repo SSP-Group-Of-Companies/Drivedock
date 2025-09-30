@@ -98,11 +98,8 @@ export default function Page1Client({ defaultValues, trackerId, trackerContextFr
               ...ctx,
               // When resuming, we already know the trackerId
               effectiveTrackerId: trackerId,
-              // Pass server-provided prequalification data for existing applications
-              prequalifications: prequalificationData ? {
-                statusInCanada: prequalificationData.statusInCanada,
-                // Add other fields as needed
-              } : undefined,
+              // Provide status hint so validation knows when Work Permit is selected on PATCH
+              prequalificationStatusInCanada: prequalificationData?.statusInCanada,
             })
           }
           trackerId={trackerId}

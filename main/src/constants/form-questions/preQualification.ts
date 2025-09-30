@@ -108,6 +108,12 @@ export const preQualificationQuestions = [
     options: [{ labelKey: "form.step1.questions.yes", value: "form.yes" }],
   },
   {
+    // Border-crossing eligibility into the USA (Canada-only field)
+    name: "canCrossBorderUSA",
+    label: "form.step1.questions.canCrossBorderUSA",
+    options: YesNoOptions,
+  }, // Canada only
+  {
     // Status in Canada (Canada-only field)
     name: "statusInCanada",
     label: "form.step1.questions.statusInCanada",
@@ -116,12 +122,6 @@ export const preQualificationQuestions = [
       { labelKey: "form.step1.questions.citizenship", value: EStatusInCanada.Citizenship },
       { labelKey: "form.step1.questions.workPermit", value: EStatusInCanada.WorkPermit },
     ],
-  }, // Canada only
-  {
-    // Border-crossing eligibility into the USA (Canada-only field)
-    name: "canCrossBorderUSA",
-    label: "form.step1.questions.canCrossBorderUSA",
-    options: YesNoOptions,
   }, // Canada only
   {
     // FAST card possession (Canada-only field)
