@@ -25,7 +25,8 @@ export const page1ConfigFactory: FormPageConfigFactory<ApplicationFormPage1Schem
       ];
 
       // Add sinExpiryDate only for Work Permit holders
-      if (ctx.prequalifications?.statusInCanada === "Work Permit") {
+      const status = ctx.prequalifications?.statusInCanada || ctx.prequalificationStatusInCanada;
+      if (status === "Work Permit") {
         fields.push("sinExpiryDate");
       }
 
