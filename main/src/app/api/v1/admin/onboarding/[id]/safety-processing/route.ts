@@ -197,7 +197,7 @@ const TEMP_PREFIX = `${S3_TEMP_FOLDER}/`;
 // Allowed MIME types for images, PDF, and Word docs
 const ALLOWED_MIME: ReadonlySet<string> = new Set<string>([EFileMimeType.JPEG, EFileMimeType.JPG, EFileMimeType.PNG, EFileMimeType.PDF, EFileMimeType.DOC, EFileMimeType.DOCX]);
 
-const MAX_DOCS = 5;
+const MAX_DOCS = 15;
 
 function assertAllowedMimeOrThrow(mime?: string) {
   const mt = (mime ?? "").toLowerCase().trim();

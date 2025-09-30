@@ -18,8 +18,6 @@ import { parseJsonBody } from "@/lib/utils/reqParser";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
 import { requireOnboardingSession } from "@/lib/utils/auth/onboardingSession";
 import { attachCookies } from "@/lib/utils/auth/attachCookie";
-import { sendOnboardingStartNotificationEmailToSafetyTeam } from "@/lib/mail/sendOnboardingStartNotification";
-import { ECompanyId } from "@/constants/companies";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -192,20 +190,6 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_1),
       page1: appFormDoc.page1,
     });
-
-    // send notification email to safety team
-    try {
-      await sendOnboardingStartNotificationEmailToSafetyTeam(req, {
-        trackerId: String(onboardingDoc._id),
-        companyId: onboardingDoc.companyId as ECompanyId,
-        firstName: page1.firstName,
-        lastName: page1.lastName,
-        email: page1.email,
-        phone: page1.phoneCell,
-      });
-    } catch (err: any) {
-      console.warn("sending email to safety team failed", err);
-    }
 
     return attachCookies(res, refreshCookie);
   } catch (error) {
