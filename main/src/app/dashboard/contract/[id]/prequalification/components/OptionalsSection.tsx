@@ -1,6 +1,7 @@
 "use client";
 
 import { Check } from "lucide-react";
+import { Company } from "@/constants/companies";
 
 interface OptionalsSectionProps {
   data: {
@@ -10,11 +11,15 @@ interface OptionalsSectionProps {
     noUnpardonedCriminalRecord: boolean;
     canCrossBorderUSA?: boolean;
     hasFASTCard?: boolean;
+    statusInCanada?: string;
+    eligibleForFASTCard?: boolean;
   };
+  company?: Company | null;
 }
 
-export default function OptionalsSection({ data }: OptionalsSectionProps) {
-  const questions = [
+export default function OptionalsSection({ data, company }: OptionalsSectionProps) {
+  // Filter questions based on company country (same logic as onboarding)
+  const allQuestions = [
     {
       key: "canDriveManual",
       label: "Can you Drive Manual Transmission?",
@@ -46,7 +51,27 @@ export default function OptionalsSection({ data }: OptionalsSectionProps) {
       label: "Do you have FAST card?",
       value: data.hasFASTCard,
     },
+    {
+      key: "statusInCanada",
+      label: "What is your status in Canada?",
+      value: data.statusInCanada,
+    },
+    {
+      key: "eligibleForFASTCard",
+      label: "Are you eligible for a FAST card?",
+      value: data.eligibleForFASTCard,
+    },
   ];
+
+  // Filter questions based on company country (same logic as onboarding)
+  const questions = company?.countryCode === "US" 
+    ? allQuestions.filter(q => 
+        q.key !== "canCrossBorderUSA" && 
+        q.key !== "hasFASTCard" && 
+        q.key !== "statusInCanada" &&
+        q.key !== "eligibleForFASTCard"
+      )
+    : allQuestions;
 
   return (
     <div className="space-y-4">
@@ -90,12 +115,16 @@ export default function OptionalsSection({ data }: OptionalsSectionProps) {
                       ? "var(--color-success)"
                       : question.value === false
                       ? "var(--color-error)"
+                      : typeof question.value === "string" && question.value
+                      ? "var(--color-primary)"
                       : "var(--color-outline-variant)",
                   background:
                     question.value === true
                       ? "var(--color-success)"
                       : question.value === false
                       ? "var(--color-error)"
+                      : typeof question.value === "string" && question.value
+                      ? "var(--color-primary)"
                       : "var(--color-surface-variant)",
                 }}
               >
@@ -103,6 +132,9 @@ export default function OptionalsSection({ data }: OptionalsSectionProps) {
                   <Check className="w-4 h-4 text-white" />
                 )}
                 {question.value === false && (
+                  <span className="w-2 h-2 bg-white rounded-full" />
+                )}
+                {typeof question.value === "string" && question.value && (
                   <span className="w-2 h-2 bg-white rounded-full" />
                 )}
               </div>
@@ -114,6 +146,8 @@ export default function OptionalsSection({ data }: OptionalsSectionProps) {
                   ? "Yes"
                   : question.value === false
                   ? "No"
+                  : typeof question.value === "string" && question.value
+                  ? question.value
                   : "N/A"}
               </span>
             </div>

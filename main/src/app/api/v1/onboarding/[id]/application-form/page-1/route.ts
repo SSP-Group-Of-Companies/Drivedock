@@ -4,6 +4,7 @@ import { decryptString, encryptString, hashString } from "@/lib/utils/cryptoUtil
 import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
 import connectDB from "@/lib/utils/connectDB";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
+import PreQualifications from "@/mongoose/models/Prequalifications";
 import { isValidSIN, isValidPhoneNumber, isValidEmail, isValidDOB, isValidSINIssueDate, isValidGender } from "@/lib/utils/validationUtils";
 import { hasRecentAddressCoverage } from "@/lib/utils/hasMinimumAddressDuration";
 import { advanceProgress, buildTrackerContext, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
@@ -51,6 +52,24 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!isValidSINIssueDate(page1.sinIssueDate)) return errorResponse(400, "Invalid SIN issue date");
     if (!isValidGender(page1.gender)) return errorResponse(400, "Invalid gender");
     if (!hasRecentAddressCoverage(page1.addresses)) return errorResponse(400, "Address history must cover 5 years");
+
+    // Validate SIN expiry date for Work Permit holders
+    const preQualId = onboardingDoc.forms?.preQualification;
+    if (preQualId) {
+      const preQualDoc = await PreQualifications.findById(preQualId);
+      if (preQualDoc && preQualDoc.statusInCanada === "Work Permit") {
+        if (!page1.sinExpiryDate) {
+          return errorResponse(400, "SIN expiry date is required for Work Permit holders");
+        }
+        // Validate that expiry date is in the future
+        const expiryDate = new Date(page1.sinExpiryDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (expiryDate <= today) {
+          return errorResponse(400, "SIN expiry date must be in the future");
+        }
+      }
+    }
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) return errorResponse(404, "ApplicationForm not linked");
@@ -221,9 +240,22 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
       return errorResponse(404, "Page 1 of the application form not found");
     }
 
+    // Get prequalification data to determine if user has Work Permit status
+    const preQualId = onboardingDoc.forms?.preQualification;
+    let prequalificationData = null;
+    if (preQualId) {
+      const preQualDoc = await PreQualifications.findById(preQualId);
+      if (preQualDoc) {
+        prequalificationData = {
+          statusInCanada: preQualDoc.statusInCanada,
+        };
+      }
+    }
+
     const res = successResponse(200, "Page 1 data retrieved", {
       onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_1),
       page1: appFormDoc.page1,
+      prequalificationData,
     });
 
     return attachCookies(res, refreshCookie);

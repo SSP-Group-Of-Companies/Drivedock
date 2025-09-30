@@ -49,6 +49,15 @@ export enum ETeamStatus {
 }
 
 /**
+ * Status in Canada (for Canadian applicants only)
+ */
+export enum EStatusInCanada {
+  PR = "PR", // Permanent Resident
+  Citizenship = "Citizenship", // Canadian Citizen
+  WorkPermit = "Work Permit", // Work Permit holder
+}
+
+/**
  * Pre-Qualification Data Structure
  * ---------------------------------
  * Captures eligibility and preference information
@@ -68,6 +77,8 @@ export interface IPreQualifications {
   // Conditional (Canada-specific)
   canCrossBorderUSA?: boolean; // Required if applicant is Canadian
   hasFASTCard?: boolean; // Required if applicant is Canadian
+  statusInCanada?: EStatusInCanada; // Required if applicant is Canadian
+  eligibleForFASTCard?: boolean; // Required if PR/Citizen and no FAST card
 
   // Preference Categories
   driverType: EDriverType; // Employment type

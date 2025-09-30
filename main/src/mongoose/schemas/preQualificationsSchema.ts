@@ -2,6 +2,7 @@ import {
   EDriverType,
   EHaulPreference,
   ETeamStatus,
+  EStatusInCanada,
   IPreQualificationsDoc,
 } from "@/types/preQualifications.types";
 import { Schema } from "mongoose";
@@ -48,6 +49,16 @@ const PreQualificationsSchema: Schema<IPreQualificationsDoc> = new Schema({
     type: Boolean,
   },
   hasFASTCard: {
+    type: Boolean,
+  },
+  statusInCanada: {
+    type: String,
+    enum: {
+      values: Object.values(EStatusInCanada),
+      message: `Status in Canada must be one of: ${Object.values(EStatusInCanada).join(", ")}`,
+    },
+  },
+  eligibleForFASTCard: {
     type: Boolean,
   },
 

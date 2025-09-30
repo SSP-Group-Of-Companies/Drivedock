@@ -14,7 +14,8 @@ export default function ProfileDropdown() {
   // Close on outside click
   useEffect(() => {
     function onClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node))
+        setOpen(false);
     }
     if (open) document.addEventListener("mousedown", onClick);
     return () => document.removeEventListener("mousedown", onClick);
@@ -31,7 +32,9 @@ export default function ProfileDropdown() {
 
   // Build logout URL -> /api/auth/logout (Portal route)
   const base = NEXT_PUBLIC_PORTAL_BASE_URL || "";
-  const logoutHref = base ? new URL("/api/auth/logout", base).toString() : "/api/auth/logout";
+  const logoutHref = base
+    ? new URL("/api/auth/logout", base).toString()
+    : "/api/auth/logout";
 
   const userName = user?.name || "User";
 
@@ -39,27 +42,29 @@ export default function ProfileDropdown() {
 
   return (
     <div className="ml-auto flex items-center gap-2 relative" ref={ref}>
-      <button 
-        onClick={() => setOpen((v) => !v)} 
-        className="flex items-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] rounded-lg px-2 py-1 transition-colors hover:bg-[var(--color-sidebar-hover)]" 
-        aria-haspopup="menu" 
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] rounded-lg px-2 py-1 transition-colors hover:bg-[var(--color-sidebar-hover)]"
+        aria-haspopup="menu"
         aria-expanded={open}
       >
         <ProfileAvatar user={user} size={32} />
-        <span 
+        <span
           className="hidden sm:inline text-xs sm:text-sm font-medium"
           style={{ color: "var(--color-on-surface)" }}
         >
           {userName}
         </span>
-        <ChevronDown 
-          className={`w-4 h-4 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+        <ChevronDown
+          className={`w-4 h-4 transition-transform duration-200 ${
+            open ? "rotate-180" : ""
+          }`}
           style={{ color: "var(--color-on-surface-variant)" }}
         />
       </button>
 
       {open && (
-        <div 
+        <div
           className="absolute right-0 top-12 mt-1 w-48 rounded-xl shadow-lg py-2 z-50 transition-all duration-200"
           style={{
             backgroundColor: "var(--color-card)",
@@ -68,31 +73,31 @@ export default function ProfileDropdown() {
           }}
           role="menu"
         >
-          <div 
+          <div
             className="px-4 py-2 border-b"
             style={{ borderBottomColor: "var(--color-outline)" }}
           >
-            <div 
+            <div
               className="text-sm font-medium"
               style={{ color: "var(--color-on-surface)" }}
             >
               {userName}
             </div>
-            <div 
+            <div
               className="text-xs"
               style={{ color: "var(--color-on-surface-variant)" }}
             >
               {user.email}
             </div>
           </div>
-          
-          <a 
-            href={logoutHref} 
+
+          <a
+            href={logoutHref}
             className="block w-full px-4 py-3 text-sm transition-colors cursor-pointer active:scale-95"
-            style={{ 
+            style={{
               color: "var(--color-on-surface)",
             }}
-            role="menuitem" 
+            role="menuitem"
             onClick={() => setOpen(false)}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = "var(--color-card-hover)";

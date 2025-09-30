@@ -28,7 +28,7 @@
 
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { applicationFormPage1Schema, ApplicationFormPage1Schema } from "@/lib/zodSchemas/applicationFormPage1.schema";
+import { createApplicationFormPage1Schema, ApplicationFormPage1Schema } from "@/lib/zodSchemas/applicationFormPage1.schema";
 
 import PersonalDetails from "./components/PersonalDetails";
 import PlaceOfBirth from "./components/PlaceOfBirth";
@@ -50,18 +50,24 @@ type Page1ClientProps = {
   // Optional: when the server wrapper passes onboardingContext from GET,
   // we hydrate the store so no-op continue can navigate forward without PATCH.
   trackerContextFromGet?: IOnboardingTrackerContext | null;
+  prequalificationData?: {
+    statusInCanada?: string;
+  } | null;
 };
 
-export default function Page1Client({ defaultValues, trackerId, trackerContextFromGet }: Page1ClientProps) {
+export default function Page1Client({ defaultValues, trackerId, trackerContextFromGet, prequalificationData }: Page1ClientProps) {
   // Normalize SIN to digits only for consistent formatting
   const cleanedDefaults: ApplicationFormPage1Schema = {
     ...defaultValues,
     sin: defaultValues.sin?.replace(/\D/g, "") || "",
   };
 
+  // Create dynamic schema based on prequalification data
+  const dynamicSchema = createApplicationFormPage1Schema(prequalificationData);
+
   // Initialize React Hook Form with Zod validation
   const methods = useForm<ApplicationFormPage1Schema>({
-    resolver: zodResolver(applicationFormPage1Schema),
+    resolver: zodResolver(dynamicSchema),
     mode: "onChange",
     defaultValues: cleanedDefaults,
   });
@@ -80,7 +86,7 @@ export default function Page1Client({ defaultValues, trackerId, trackerContextFr
         onSubmit={(e) => e.preventDefault()}
         noValidate
       >
-        <PersonalDetails onboardingContext={trackerContextFromGet} />
+        <PersonalDetails onboardingContext={trackerContextFromGet} prequalificationData={prequalificationData} />
         <PlaceOfBirth />
         <LicenseSection />
         <AddressSection />
@@ -92,6 +98,11 @@ export default function Page1Client({ defaultValues, trackerId, trackerContextFr
               ...ctx,
               // When resuming, we already know the trackerId
               effectiveTrackerId: trackerId,
+              // Pass server-provided prequalification data for existing applications
+              prequalifications: prequalificationData ? {
+                statusInCanada: prequalificationData.statusInCanada,
+                // Add other fields as needed
+              } : undefined,
             })
           }
           trackerId={trackerId}

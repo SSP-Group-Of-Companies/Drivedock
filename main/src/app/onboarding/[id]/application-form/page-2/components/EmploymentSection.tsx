@@ -12,7 +12,7 @@ import { ApplicationFormPage2Schema } from "@/lib/zodSchemas/applicationFormPage
 import { calculateTimelineFromCurrent, getEmploymentGaps } from "@/lib/frontendConfigs/applicationFormConfigs/validateEmploymentHistory";
 
 type EmploymentEntry = ApplicationFormPage2Schema["employments"][number];
-const MAX_ENTRIES = 5;
+const MAX_ENTRIES = 8;
 
 export default function EmploymentSection() {
   const { control, watch } = useFormContext<ApplicationFormPage2Schema>();
@@ -90,6 +90,7 @@ export default function EmploymentSection() {
       {fields.map((field, index) => {
         const isCurrent = index === 0;
         const isPrevious = index > 0;
+        const isLastEntry = index === fields.length - 1;
         if (isPrevious && !showPrevious) return null;
 
         const blocks: React.ReactNode[] = [];
@@ -115,8 +116,8 @@ export default function EmploymentSection() {
 
             <EmploymentCard index={index} />
 
-            {/* Add button also on the current card */}
-            {isCurrent && (
+            {/* Add button now on the last entry instead of current */}
+            {isLastEntry && (
               <div className="pt-2">
                 <button
                   type="button"
@@ -144,20 +145,6 @@ export default function EmploymentSection() {
         return <div key={`block-${field.id}`}>{blocks}</div>;
       })}
 
-      {showPrevious && totalMonths > 24 && (
-        <button
-          type="button"
-          onClick={() => {
-            if (canAddMore) append(createEmptyEmployment());
-          }}
-          disabled={!canAddMore}
-          className={`mt-6 mx-auto flex items-center gap-2 px-4 py-2 border rounded-md transition-colors duration-200 font-medium ${
-            canAddMore ? "bg-blue-50 text-blue-600 hover:bg-blue-100 border-blue-200" : "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
-          }`}
-        >
-          {t("form.step2.page2.actions.addPrevious")} ({previousCount}/{MAX_ENTRIES - 1})
-        </button>
-      )}
     </section>
   );
 }

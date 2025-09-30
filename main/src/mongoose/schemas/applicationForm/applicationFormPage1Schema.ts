@@ -67,6 +67,7 @@ export const applicationFormPage1Schema = new Schema<IApplicationFormPage1>(
     lastName: { type: String, required: [true, "Last name is required."] },
     sinEncrypted: { type: String, required: [true, "Encrypted SIN is required."] },
     sinIssueDate: { type: Date, required: [true, "SIN issue date is required."] },
+    sinExpiryDate: { type: Date, required: false },
     gender: {
       type: String,
       enum: {

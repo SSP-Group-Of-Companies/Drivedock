@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useContract } from "@/hooks/dashboard/contract/useContract";
 import { usePersonalDetails, useUpdatePersonalDetails } from "@/hooks/dashboard/contract/usePersonalDetails";
+import { usePrequalification } from "@/hooks/dashboard/contract/usePrequalification";
 import { useDashboardPageLoading } from "@/hooks/useDashboardPageLoading";
 import { useDashboardLoading } from "@/store/useDashboardLoading";
 import DashboardFormWizard from "../components/DashboardFormWizard";
@@ -37,6 +38,10 @@ export default function PersonalDetailsClient({
     error,
     isError 
   } = usePersonalDetails(trackerId);
+  
+  const { 
+    data: prequalificationData
+  } = usePrequalification(trackerId);
   
   const updateMutation = useUpdatePersonalDetails(trackerId);
 
@@ -119,6 +124,24 @@ export default function PersonalDetailsClient({
       const addressErrors = validateAddresses(staged.addresses);
       if (addressErrors.length > 0) {
         setSaveMessage("Please fix address validation errors before saving");
+        setTimeout(() => setSaveMessage(""), 5000);
+        return;
+      }
+    }
+
+    // Validate SIN expiry date for Work Permit holders
+    if (prequalificationData?.data?.preQualifications?.statusInCanada === "Work Permit") {
+      const sinExpiryDate = staged.sinExpiryDate || personalData?.sinExpiryDate;
+      if (!sinExpiryDate) {
+        setSaveMessage("SIN expiry date is required for Work Permit holders");
+        setTimeout(() => setSaveMessage(""), 5000);
+        return;
+      }
+      const expiryDate = new Date(sinExpiryDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (expiryDate <= today) {
+        setSaveMessage("SIN expiry date must be in the future");
         setTimeout(() => setSaveMessage(""), 5000);
         return;
       }
@@ -266,6 +289,7 @@ export default function PersonalDetailsClient({
                   ...changes,
                 }))
               }
+              prequalificationData={prequalificationData?.data?.preQualifications}
             />
           </div>
 

@@ -17,6 +17,8 @@ export interface PrequalificationsResponse {
       legalRightToWorkCanada: boolean;
       canCrossBorderUSA?: boolean;
       hasFASTCard?: boolean;
+      statusInCanada?: string;
+      eligibleForFASTCard?: boolean;
       driverType: string;
       haulPreference: string;
       teamStatus: string;
