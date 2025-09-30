@@ -621,7 +621,7 @@
     "step3": {
       "title": "Policies & Consents",
       "disclaimer": "By signing below, you agree to all the contract here and future contracts. Please read all documents carefully. Your provided information will automatically prefill required fields.",
-      "sendToEmail": "Send me the signed documents to my email when the application process is complete.",
+      "sendToEmail": "Send me the documents to my email when the application process is complete.",
       "helper": {
         "drawOrUpload": "Please draw your signature above or upload a signature image."
       },

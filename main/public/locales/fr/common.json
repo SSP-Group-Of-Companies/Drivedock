@@ -610,7 +610,7 @@
     "step3": {
       "title": "Politiques et consentements",
       "disclaimer": "En signant ci-dessous, vous acceptez l’ensemble du contrat présent et des contrats à venir. Veuillez lire attentivement tous les documents. Les informations que vous fournissez prérempliront automatiquement les champs requis.",
-      "sendToEmail": "M’envoyer les documents signés par courriel lorsque le processus de candidature sera terminé.",
+      "sendToEmail": "Envoyez-moi les documents à mon adresse e-mail lorsque le processus de demande est terminé.",
       "helper": {
         "drawOrUpload": "Veuillez dessiner votre signature ci-dessus ou téléverser une image de signature."
       },

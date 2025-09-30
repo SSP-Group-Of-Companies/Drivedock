@@ -610,7 +610,7 @@
     "step3": {
       "title": "Políticas y consentimientos",
       "disclaimer": "Al firmar a continuación, aceptas todo el contrato aquí y los contratos futuros. Lee todos los documentos con atención. La información que proporciones rellenará automáticamente los campos requeridos.",
-      "sendToEmail": "Envíenme los documentos firmados a mi correo cuando el proceso de solicitud esté completo.",
+      "sendToEmail": "Envíame los documentos a mi correo electrónico cuando se complete el proceso de solicitud.",
       "helper": {
         "drawOrUpload": "Dibuja tu firma arriba o sube una imagen de firma."
       },
