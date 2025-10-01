@@ -8,16 +8,19 @@ interface PhoneInputProps {
   value: string;
   onChange: (value: string) => void;
   error?: FieldError | Merge<FieldError, FieldErrorsImpl<any>>;
+  disabled?: boolean;
 }
 
-export default function PhoneInput({ name, label, value, onChange, error }: PhoneInputProps) {
+export default function PhoneInput({ name, label, value, onChange, error, disabled = false }: PhoneInputProps) {
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700">{label}</label>
       <div className="relative mt-1">
         <div className="flex">
           {/* Country Code */}
-          <div className="flex items-center px-3 py-2 border border-r-0 border-gray-300 rounded-l-md bg-gray-50 text-sm font-medium text-gray-700">+1</div>
+          <div className={`flex items-center px-3 py-2 border border-r-0 border-gray-300 rounded-l-md text-sm font-medium ${disabled ? "bg-gray-100 text-gray-400" : "bg-gray-50 text-gray-700"}`}>
+            +1
+          </div>
 
           {/* Phone Input */}
           <input
@@ -25,15 +28,18 @@ export default function PhoneInput({ name, label, value, onChange, error }: Phon
             name={name}
             placeholder="(555) 123-4567"
             value={value}
-            onChange={(e) => onChange(e.target.value)}
+            onChange={(e) => !disabled && onChange(e.target.value)}
             data-field={label}
             autoComplete="off"
             autoCorrect="off"
             autoCapitalize="off"
             spellCheck="false"
+            disabled={disabled}
             data-lpignore="true"
             data-form-type="other"
-            className="flex-1 py-2 px-3 border border-gray-300 rounded-r-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md focus:border-transparent"
+            className={`flex-1 py-2 px-3 border border-gray-300 rounded-r-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md focus:border-transparent ${
+              disabled ? "bg-gray-100 text-gray-400 cursor-not-allowed" : ""
+            }`}
           />
         </div>
       </div>

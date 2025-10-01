@@ -12,7 +12,7 @@ import DriveTest from "@/mongoose/models/DriveTest";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
 import PoliciesConsents from "@/mongoose/models/PoliciesConsents";
 import { EStepPath } from "@/types/onboardingTracker.types";
-import { hasReachedStep } from "@/lib/utils/onboardingUtils";
+import { hasReachedStep, isInvitationApproved } from "@/lib/utils/onboardingUtils";
 
 import { buildPreTripFillablePayload, applyPreTripPayloadToForm } from "@/lib/pdf/drive-test/mappers/pre-trip.mapper";
 import { drawPdfImage } from "@/lib/pdf/utils/drawPdfImage";
@@ -32,12 +32,9 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
 
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
     if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
-
+    if (!isInvitationApproved(onboardingDoc)) return errorResponse(400, "driver not yet approved for onboarding process");
     if (!onboardingDoc.status?.completed) return errorResponse(400, "onboarding is not completed yet");
-
-    if (!hasReachedStep(onboardingDoc, EStepPath.DRIVE_TEST)) {
-      return errorResponse(403, "driver hasn't reached this step yet");
-    }
+    if (!hasReachedStep(onboardingDoc, EStepPath.DRIVE_TEST)) return errorResponse(403, "driver hasn't reached this step yet");
 
     // Load Drive Test
     const driveTestId = onboardingDoc.forms?.driveTest;

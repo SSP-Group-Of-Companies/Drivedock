@@ -26,6 +26,7 @@ import { loadImageBytesFromAsset } from "@/lib/utils/s3Upload";
 import PreQualifications from "@/mongoose/models/Prequalifications";
 import { EDriverType } from "@/types/preQualifications.types";
 import { getSafetyAdminServerById } from "@/lib/assets/safetyAdmins/safetyAdmins.server";
+import { isInvitationApproved } from "@/lib/utils/onboardingUtils";
 
 export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
@@ -48,6 +49,7 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     // Onboarding
     const onboarding = await OnboardingTracker.findById(onboardingId).lean();
     if (!onboarding) return errorResponse(404, "Onboarding document not found");
+    if (!isInvitationApproved(onboarding)) return errorResponse(400, "driver not yet approved for onboarding process");
     if (!onboarding.status?.completed) return errorResponse(400, "Onboarding is not completed yet");
 
     const companyId = onboarding.companyId as ECompanyId | undefined;

@@ -16,8 +16,10 @@ export type BuildPayloadCtx = {
 
 export interface ConfirmationPopup {
   show: boolean;
-  text: string;
-  translationPath: string;
+  title: string;
+  message: string;
+  confirmLabel: string;
+  cancelLabel: string;
 }
 
 export interface FormPageConfig<T extends FieldValues> {

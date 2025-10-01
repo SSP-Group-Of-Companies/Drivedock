@@ -7,6 +7,7 @@ import { COMPANIES, type ECompanyId } from "@/constants/companies";
 import { escapeHtml } from "@/lib/mail/utils";
 
 type Args = {
+  trackerId: string;
   companyId: ECompanyId;
   firstName: string;
   lastName: string;
@@ -21,13 +22,13 @@ type Args = {
  * Sends the driver a confirmation that their application was received
  * and is awaiting admin approval (Invitations flow).
  */
-export async function sendDriverPendingApprovalEmail(req: NextRequest, { companyId, firstName, lastName, toEmail, phone, subject, saveToSentItems = true }: Args) {
+export async function sendDriverPendingApprovalEmail(req: NextRequest, { trackerId, companyId, firstName, lastName, toEmail, phone, subject, saveToSentItems = true }: Args) {
   const origin = resolveBaseUrlFromRequest(req);
   const company = COMPANIES.find((c) => c.id === companyId);
   const companyLabel = company?.name ?? String(companyId);
 
   const fullName = `${firstName} ${lastName}`.trim();
-  const pendingLink = `${origin}/onboarding/pending-approval`; // public “waiting” page
+  const pendingLink = `${origin}/onboarding/${trackerId}/pending-approval`; // public “waiting” page
 
   const finalSubject = subject ?? `[DriveDock] Application received — Pending approval (${companyLabel})`;
 

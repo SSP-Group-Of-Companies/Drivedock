@@ -5,7 +5,7 @@ import connectDB from "@/lib/utils/connectDB";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import { isValidSIN, isValidPhoneNumber, isValidEmail, isValidDOB, isValidSINIssueDate, isValidGender } from "@/lib/utils/validationUtils";
 import { hasRecentAddressCoverage } from "@/lib/utils/hasMinimumAddressDuration";
-import { advanceProgress, buildTrackerContext, hasCompletedStep, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
+import { advanceProgress, buildTrackerContext, hasCompletedStep, isInvitationApproved, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
 import { deleteS3Objects, finalizeAsset } from "@/lib/utils/s3Upload";
 import { ES3Folder } from "@/types/aws.types";
 import { S3_SUBMISSIONS_FOLDER, S3_TEMP_FOLDER } from "@/constants/aws";
@@ -30,6 +30,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
     if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
+    if (!isInvitationApproved(onboardingDoc)) return errorResponse(400, "driver not yet approved for onboarding process");
     if (!hasCompletedStep(onboardingDoc, EStepPath.APPLICATION_PAGE_1)) return errorResponse(401, "driver hasn't completed this step yet");
 
     const oldSin = decryptString(onboardingDoc.sinEncrypted);
@@ -252,6 +253,7 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
     // Fetch onboarding tracker
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
     if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
+    if (!isInvitationApproved(onboardingDoc)) return errorResponse(400, "driver not yet approved for onboarding process");
     if (!hasCompletedStep(onboardingDoc, EStepPath.APPLICATION_PAGE_1)) return errorResponse(401, "driver hasn't completed this step yet");
 
     const appFormId = onboardingDoc.forms?.driverApplication;

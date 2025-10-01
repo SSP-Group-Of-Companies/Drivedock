@@ -1,6 +1,6 @@
 import { errorResponse, successResponse } from "@/lib/utils/apiResponse";
 import connectDB from "@/lib/utils/connectDB";
-import { advanceProgress, buildTrackerContext, hasReachedStep, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
+import { advanceProgress, buildTrackerContext, hasReachedStep, isInvitationApproved, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
 import { EStepPath } from "@/types/onboardingTracker.types";
 import { isValidObjectId } from "mongoose";
 import { NextRequest } from "next/server";
@@ -18,6 +18,8 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     const body = await req.json(); // type: IApplicationFormPage3 if you have it
 
     const { tracker: onboardingDoc, refreshCookie } = await requireOnboardingSession(id);
+
+    if (!isInvitationApproved(onboardingDoc)) return errorResponse(401, "pending approval");
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) return errorResponse(404, "ApplicationForm not linked");

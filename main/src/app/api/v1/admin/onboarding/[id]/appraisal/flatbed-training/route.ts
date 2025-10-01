@@ -15,7 +15,7 @@ import { canHaveFlatbedTraining } from "@/constants/companies";
 import { EStepPath, IOnboardingTracker } from "@/types/onboardingTracker.types";
 import type { IFlatbedTraining } from "@/types/flatbedTraining.types";
 import { guard } from "@/lib/utils/auth/authUtils";
-import { sendCompletionEmailIfEligible } from "@/lib/services/sendCompletionEmail";
+import sendCompletionEmailIfEligible from "@/lib/services/sendCompletionEmailIfEligible";
 /**
  * GET /admin/onboarding/:id/appraisal/flatbed-training
  * - Returns { onboardingContext, flatbedTraining } (flatbedTraining can be null if not created yet)

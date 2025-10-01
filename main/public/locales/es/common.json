@@ -145,6 +145,24 @@
     }
   },
 
+  "pendingApprovalPage": {
+    "pending": {
+      "title": "Solicitud pendiente de aprobación",
+      "subtitle": "Gracias por iniciar su solicitud con SSP Group of Companies.",
+      "body1": "Hemos recibido su solicitud. Nuestro equipo está revisando su información.",
+      "body2": "Una vez que su solicitud sea aprobada, recibirá un correo electrónico con los siguientes pasos.",
+      "tip": "Puede cerrar esta página y volver más tarde, o actualizarla cuando crea que ya ha sido aprobada. Por favor revise también su bandeja de entrada (y la carpeta de spam/correo no deseado) para nuestro correo.",
+      "returnHome": "Inicio"
+    },
+    "approved": {
+      "title": "Solicitud aprobada",
+      "subtitle": "¡Buenas noticias! Su solicitud ha sido aprobada.",
+      "body1": "Ahora puede continuar con el siguiente paso de su proceso de incorporación.",
+      "body2": "Haga clic en el botón de abajo para continuar su solicitud.",
+      "ctaResume": "Continuar mi solicitud",
+      "ctaHome": "Inicio"
+    }
+  },
   "form": {
     "subtitle": "Toda la información debe responderse con veracidad. La responsabilidad recae en el solicitante.",
 
@@ -249,6 +267,12 @@
           "removeLicense": "Eliminar licencia",
           "addAddress": "Agregar otra dirección",
           "removeAddress": "Eliminar dirección"
+        },
+        "confirmation": {
+          "title": "Por favor confirme",
+          "message": "Está a punto de enviar sus datos personales a SSP Group of Companies para su revisión. Una vez enviados, nuestro Departamento de Seguridad revisará su solicitud. Si es aprobada, recibirá un correo electrónico con las instrucciones para continuar su proceso de incorporación. ¿Desea continuar?",
+          "confirmLabel": "Enviar",
+          "cancelLabel": "Regresar"
         }
       },
       "page2": {

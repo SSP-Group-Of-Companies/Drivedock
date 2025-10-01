@@ -9,6 +9,7 @@
 import { BuildPayloadCtx, FormPageConfig, FormPageConfigFactory } from "@/lib/frontendConfigs/formPageConfig.types";
 import { ApplicationFormPage1Schema } from "@/lib/zodSchemas/applicationFormPage1.schema";
 import { ECompanyId } from "@/constants/companies";
+import { t } from "i18next";
 
 export const page1ConfigFactory: FormPageConfigFactory<ApplicationFormPage1Schema> = (ctx: BuildPayloadCtx): FormPageConfig<ApplicationFormPage1Schema> => {
   const id = ctx.effectiveTrackerId; // undefined on true fresh POST (first submit)
@@ -105,8 +106,10 @@ export const page1ConfigFactory: FormPageConfigFactory<ApplicationFormPage1Schem
     confirmationPopup: !id
       ? {
           show: true,
-          text: "are you sure you want to submit? your application will be pending approval from admin and you cannot edit any details",
-          translationPath: "translation-path",
+          title: t("form.step2.page1.confirmation.title"),
+          message: t("form.step2.page1.confirmation.message"),
+          confirmLabel: t("form.step2.page1.confirmation.confirmLabel"),
+          cancelLabel: t("form.step2.page1.confirmation.cancelLabel"),
         }
       : undefined,
 

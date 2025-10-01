@@ -25,6 +25,7 @@ import { EDriverApplicationFillableFormFields as F } from "@/lib/pdf/hiring-appl
 import { ESafetyAdminId } from "@/constants/safetyAdmins";
 import { ECompanyId } from "@/constants/companies";
 import { getSafetyAdminServerById } from "@/lib/assets/safetyAdmins/safetyAdmins.server";
+import { isInvitationApproved } from "@/lib/utils/onboardingUtils";
 
 // ----------------------------------------------------------------------
 
@@ -52,6 +53,7 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     // ------- Load Onboarding (fail fast if missing)
     const onboarding = await OnboardingTracker.findById(onboardingId).lean();
     if (!onboarding) return errorResponse(404, "Onboarding document not found");
+    if (!isInvitationApproved(onboarding)) return errorResponse(400, "driver not yet approved for onboarding process");
     if (!onboarding.status.completed) return errorResponse(400, "Onboarding is not yet completed");
 
     const companyId = onboarding.companyId as ECompanyId | undefined;

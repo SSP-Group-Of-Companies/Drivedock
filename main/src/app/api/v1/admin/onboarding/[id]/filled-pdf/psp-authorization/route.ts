@@ -19,6 +19,7 @@ import { buildPspAuthorizationPayload, applyPspAuthorizationPayloadToForm } from
 
 import { drawPdfImage } from "@/lib/pdf/utils/drawPdfImage";
 import { loadImageBytesFromAsset } from "@/lib/utils/s3Upload";
+import { isInvitationApproved } from "@/lib/utils/onboardingUtils";
 
 export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
@@ -30,11 +31,8 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
 
     const onboardingDoc = await OnboardingTracker.findById(onboardingId).lean();
     if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
-
-    // Explicit check: onboarding must be completed
-    if (!onboardingDoc.status?.completed) {
-      return errorResponse(400, "Onboarding is not completed yet");
-    }
+    if (!isInvitationApproved(onboardingDoc)) return errorResponse(400, "driver not yet approved for onboarding process");
+    if (!onboardingDoc.status?.completed) return errorResponse(400, "Onboarding is not completed yet");
 
     // ----- Company
     const companyName = getCompanyById(onboardingDoc.companyId)?.name;

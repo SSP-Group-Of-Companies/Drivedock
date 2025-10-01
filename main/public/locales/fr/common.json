@@ -145,6 +145,24 @@
     }
   },
 
+  "pendingApprovalPage": {
+    "pending": {
+      "title": "Candidature en attente d’approbation",
+      "subtitle": "Merci d’avoir commencé votre candidature avec SSP Group of Companies.",
+      "body1": "Nous avons bien reçu votre candidature. Notre équipe est en train d’examiner vos informations.",
+      "body2": "Une fois votre candidature approuvée, vous recevrez un courriel avec les prochaines étapes.",
+      "tip": "Vous pouvez fermer cette page et revenir plus tard, ou l’actualiser lorsque vous pensez avoir été approuvé. Veuillez aussi surveiller votre boîte de réception (ainsi que le dossier indésirable/spam) pour notre courriel.",
+      "returnHome": "Accueil"
+    },
+    "approved": {
+      "title": "Candidature approuvée",
+      "subtitle": "Bonne nouvelle ! Votre candidature a été approuvée.",
+      "body1": "Vous pouvez maintenant passer à l’étape suivante de votre processus d’intégration.",
+      "body2": "Cliquez sur le bouton ci-dessous pour continuer votre candidature.",
+      "ctaResume": "Continuer ma candidature",
+      "ctaHome": "Accueil"
+    }
+  },
   "form": {
     "subtitle": "Toutes les informations doivent être exactes. La responsabilité incombe au candidat.",
 
@@ -249,6 +267,12 @@
           "removeLicense": "Supprimer le permis",
           "addAddress": "Ajouter une autre adresse",
           "removeAddress": "Supprimer l’adresse"
+        },
+        "confirmation": {
+          "title": "Veuillez confirmer",
+          "message": "Vous êtes sur le point de soumettre vos informations personnelles à SSP Group of Companies pour examen. Une fois envoyées, notre département Sécurité examinera votre demande. Si elle est approuvée, vous recevrez un courriel avec les instructions pour continuer votre processus d’intégration. Voulez-vous continuer ?",
+          "confirmLabel": "Soumettre",
+          "cancelLabel": "Retour"
         }
       },
       "page2": {

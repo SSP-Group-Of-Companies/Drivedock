@@ -25,11 +25,7 @@ import OnboardingErrorBoundary from "@/components/onboarding/OnboardingErrorBoun
 // Import simple testing utils for development
 import "@/lib/onboarding/simpleTestUtils";
 
-export default function OnboardingLayoutClientShell({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function OnboardingLayoutClientShell({ children, showStepInfo = true }: { children: React.ReactNode; showStepInfo?: boolean }) {
   const { t } = useTranslation("common");
   const router = useRouter();
   const mounted = useMounted();
@@ -44,7 +40,7 @@ export default function OnboardingLayoutClientShell({
   const [isScrolled, setIsScrolled] = useState(false);
 
   // Check if we're on the completed page
-  const isCompletedPage = pathname.includes('/completed');
+  const isCompletedPage = pathname.includes("/completed");
 
   // Back navigation: use ctx (id + needsFlatbedTraining) and the current pathname
   const handleBackClick = useCallback(() => {
@@ -88,9 +84,7 @@ export default function OnboardingLayoutClientShell({
                   <CompanyLogoHeader logoOnly onboardingContext={ctx} />
                 </div>
 
-                <div className="flex-1 flex justify-center items-center">
-                  <FormWizardNav isCompletedPage={isCompletedPage} />
-                </div>
+                <div className="flex-1 flex justify-center items-center">{showStepInfo && <FormWizardNav isCompletedPage={isCompletedPage} />}</div>
 
                 <div className="flex items-center gap-2 ml-auto h-full">
                   <LanguageDropdown />
@@ -100,9 +94,7 @@ export default function OnboardingLayoutClientShell({
                     aria-label={t("navbar.back", "Go Back")}
                   >
                     <ArrowLeft size={18} />
-                    <span className="hidden sm:inline">
-                      {t("navbar.back", "Back")}
-                    </span>
+                    <span className="hidden sm:inline">{t("navbar.back", "Back")}</span>
                   </button>
                 </div>
               </div>
@@ -119,9 +111,7 @@ export default function OnboardingLayoutClientShell({
                       aria-label={t("navbar.back", "Go Back")}
                     >
                       <ArrowLeft size={14} />
-                      <span className="hidden sm:inline">
-                        {t("navbar.back", "Back")}
-                      </span>
+                      <span className="hidden sm:inline">{t("navbar.back", "Back")}</span>
                     </button>
                   </div>
                 </div>
@@ -152,45 +142,22 @@ export default function OnboardingLayoutClientShell({
           {/* Info modal */}
           <AnimatePresence>
             {showModal && (
-              <Dialog
-                open={showModal}
-                onClose={() => setShowModal(false)}
-                className="relative z-50"
-              >
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="fixed inset-0 bg-black/30"
-                  aria-hidden="true"
-                />
+              <Dialog open={showModal} onClose={() => setShowModal(false)} className="relative z-50">
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} className="fixed inset-0 bg-black/30" aria-hidden="true" />
                 <div className="fixed inset-0 flex items-center justify-center p-4">
-                  <motion.div
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: 20, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
+                  <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} transition={{ duration: 0.2 }}>
                     <DialogPanel className="w-[min(95vw,640px)] max-h-[90vh] bg-white rounded-xl p-4 sm:p-6 shadow-xl space-y-4 sm:space-y-6 overflow-y-auto">
                       {/* Title */}
-                      <DialogTitle className="text-lg text-center font-bold text-gray-900">
-                        {t("infoPopUp.modalTitle")}
-                      </DialogTitle>
+                      <DialogTitle className="text-lg text-center font-bold text-gray-900">{t("infoPopUp.modalTitle")}</DialogTitle>
 
                       {/* Steps Section */}
                       <section className="space-y-3">
-                        <h3 className="text-sm font-semibold text-gray-900">
-                          {t("infoPopUp.stepsTitle")}
-                        </h3>
+                        <h3 className="text-sm font-semibold text-gray-900">{t("infoPopUp.stepsTitle")}</h3>
                         <div className="space-y-2">
                           {[1, 2, 3, 4, 5, 6].map((step) => (
                             <div key={step} className="text-xs sm:text-sm text-gray-700">
                               <p>
-                                <span className="font-semibold">
-                                  {t(`infoPopUp.steps.step${step}.label`)}
-                                </span>
-                                : {t(`infoPopUp.steps.step${step}.desc`)}
+                                <span className="font-semibold">{t(`infoPopUp.steps.step${step}.label`)}</span>: {t(`infoPopUp.steps.step${step}.desc`)}
                               </p>
                             </div>
                           ))}
@@ -199,10 +166,7 @@ export default function OnboardingLayoutClientShell({
                           {ctx?.needsFlatbedTraining && (
                             <div className="text-xs sm:text-sm text-gray-700">
                               <p>
-                                <span className="font-semibold">
-                                  {t("infoPopUp.steps.step7.label")}
-                                </span>
-                                : {t("infoPopUp.steps.step7.desc")}
+                                <span className="font-semibold">{t("infoPopUp.steps.step7.label")}</span>: {t("infoPopUp.steps.step7.desc")}
                               </p>
                             </div>
                           )}
@@ -211,9 +175,7 @@ export default function OnboardingLayoutClientShell({
 
                       {/* Saving Section */}
                       <section className="space-y-3">
-                        <h3 className="text-sm text-center font-semibold text-gray-900">
-                          {t("infoPopUp.savingTitle")}
-                        </h3>
+                        <h3 className="text-sm text-center font-semibold text-gray-900">{t("infoPopUp.savingTitle")}</h3>
                         <ul className="list-disc pl-4 sm:pl-5 text-xs sm:text-sm text-gray-700 space-y-1">
                           <li>{t("infoPopUp.saving.autoSignOut")}</li>
                           <li>{t("infoPopUp.saving.progressSaves")}</li>
@@ -224,10 +186,7 @@ export default function OnboardingLayoutClientShell({
 
                       {/* Footer */}
                       <div className="text-center sm:text-right pt-2">
-                        <button
-                          onClick={() => setShowModal(false)}
-                          className="w-full sm:w-auto px-6 py-2 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
-                        >
+                        <button onClick={() => setShowModal(false)} className="w-full sm:w-auto px-6 py-2 rounded-md bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors">
                           {t("infoPopUp.close")}
                         </button>
                       </div>
@@ -240,22 +199,18 @@ export default function OnboardingLayoutClientShell({
 
           {/* Header + wizard */}
           <CompanyLogoHeader logoOnly onboardingContext={ctx} />
-          <FormWizardNav isCompletedPage={isCompletedPage} />
+          {showStepInfo && <FormWizardNav isCompletedPage={isCompletedPage} />}
 
           {/* Title and subtitle - hidden on completed page */}
-          {!isCompletedPage && (
+          {!isCompletedPage && showStepInfo && (
             <div className="text-center">
-              <h1 className="text-xl font-bold text-gray-800">
-                {t(`form.step${titleStep}.title`)}
-              </h1>
+              <h1 className="text-xl font-bold text-gray-800">{t(`form.step${titleStep}.title`)}</h1>
               <p className="text-sm text-gray-600">{t("form.subtitle")}</p>
             </div>
           )}
 
           {/* Page content wrapped in error boundary */}
-          <OnboardingErrorBoundary>
-            {children}
-          </OnboardingErrorBoundary>
+          <OnboardingErrorBoundary>{children}</OnboardingErrorBoundary>
         </div>
       </main>
 

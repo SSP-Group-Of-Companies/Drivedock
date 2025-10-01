@@ -19,8 +19,13 @@ import ApplicationForm from "@/mongoose/models/ApplicationForm";
 import { requireOnboardingSession } from "@/lib/utils/auth/onboardingSession";
 import { attachCookies } from "@/lib/utils/auth/attachCookie";
 
+// disabled updating application-form/page1 by driver according to business logic
+const disalbeUpdatingApplicationPage1 = true;
+
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    if (disalbeUpdatingApplicationPage1) return errorResponse(401, "unauthorized");
+
     await connectDB();
     const { id: onboardingId } = await params;
 

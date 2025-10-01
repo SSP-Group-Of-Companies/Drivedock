@@ -145,6 +145,24 @@
     }
   },
 
+  "pendingApprovalPage": {
+    "pending": {
+      "title": "Application Pending Approval",
+      "subtitle": "Thank you for starting your application with SSP Group of Companies.",
+      "body1": "We have received your application. Our team is currently reviewing your information.",
+      "body2": "Once your application is approved, you will receive an email with the next steps.",
+      "tip": "You can close this page now and check back later, or refresh once you believe you’ve been approved. Also keep an eye on your inbox (and spam/junk folder) for our email.",
+      "returnHome": "Home"
+    },
+    "approved": {
+      "title": "Application Approved",
+      "subtitle": "Great news! Your application has been approved.",
+      "body1": "You can proceed to the next step of your onboarding now.",
+      "body2": "Click the button below to continue your application.",
+      "ctaResume": "Continue your application",
+      "ctaHome": "Home"
+    }
+  },
   "form": {
     "subtitle": "All information must be answered truthfully. Liability falls on the applicant.",
 
@@ -255,6 +273,12 @@
           "removeLicense": "Remove License",
           "addAddress": "Add Another Address",
           "removeAddress": "Remove Address"
+        },
+        "confirmation": {
+          "title": "Please Confirm",
+          "message": "You are about to submit your personal details to SSP Group of Companies for review. Once submitted, our Safety Department will review your application. If approved, you will receive an email with instructions on how to continue your onboarding process. Do you want to proceed?",
+          "confirmLabel": "Submit",
+          "cancelLabel": "Go Back"
         }
       },
       "page2": {

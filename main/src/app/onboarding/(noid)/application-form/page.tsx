@@ -15,11 +15,11 @@ import { ELicenseType } from "@/types/shared.types";
 
 // Use the factory (not the old object)
 import { page1ConfigFactory } from "@/lib/frontendConfigs/applicationFormConfigs/page1Config";
-import PersonalDetails from "../../[id]/application-form/page-1/components/PersonalDetails";
-import PlaceOfBirth from "../../[id]/application-form/page-1/components/PlaceOfBirth";
-import LicenseSection from "../../[id]/application-form/page-1/components/LicenseSection";
-import AddressSection from "../../[id]/application-form/page-1/components/AddressSection";
-import ContinueButton from "../../[id]/ContinueButton";
+import PersonalDetails from "../../[id]/(has-step)/application-form/page-1/components/PersonalDetails";
+import PlaceOfBirth from "../../[id]/(has-step)/application-form/page-1/components/PlaceOfBirth";
+import LicenseSection from "../../[id]/(has-step)/application-form/page-1/components/LicenseSection";
+import AddressSection from "../../[id]/(has-step)/application-form/page-1/components/AddressSection";
+import ContinueButton from "../../[id]/(has-step)/ContinueButton";
 import { usePrequalificationStore } from "@/store/usePrequalificationStore";
 
 const EMPTY_PHOTO = { s3Key: "", url: "", mimeType: "", sizeBytes: 0, originalName: "" };
@@ -37,10 +37,10 @@ const BLANK_ADDRESS = {
 export default function ApplicationFormPage1() {
   // Get prequalification data from store to determine if user has Work Permit status
   const { data: prequalificationData } = usePrequalificationStore();
-  
+
   // Create dynamic schema based on prequalification data
   const dynamicSchema = createApplicationFormPage1Schema(prequalificationData);
-  
+
   const methods = useForm<ApplicationFormPage1Schema>({
     resolver: zodResolver(dynamicSchema),
     mode: "onChange",

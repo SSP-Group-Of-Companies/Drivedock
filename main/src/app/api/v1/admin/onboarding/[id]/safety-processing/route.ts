@@ -7,7 +7,7 @@ import DrugTest from "@/mongoose/models/DrugTest";
 import CarriersEdgeTraining from "@/mongoose/models/CarriersEdgeTraining";
 
 import { successResponse, errorResponse, AppError } from "@/lib/utils/apiResponse";
-import { advanceProgress, buildTrackerContext, hasReachedStep, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
+import { advanceProgress, buildTrackerContext, hasReachedStep, isInvitationApproved, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
 import { readMongooseRefField } from "@/lib/utils/mongooseRef";
 import { parseJsonBody } from "@/lib/utils/reqParser";
 
@@ -19,7 +19,7 @@ import { EStepPath, IOnboardingTracker } from "@/types/onboardingTracker.types";
 import { EDrugTestStatus } from "@/types/drugTest.types";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
 import { guard } from "@/lib/utils/auth/authUtils";
-import { sendCompletionEmailIfEligible } from "@/lib/services/sendCompletionEmail";
+import sendCompletionEmailIfEligible from "@/lib/services/sendCompletionEmailIfEligible";
 
 /**
  * GET /api/v1/admin/onboarding/[id]/safety-processing
@@ -55,6 +55,7 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
       });
 
     if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
+    if (!isInvitationApproved(onboardingDoc)) return errorResponse(400, "driver not yet approved for onboarding process");
 
     // Populated form snapshots
     const drugTest = readMongooseRefField(onboardingDoc.forms?.drugTest) ?? {};

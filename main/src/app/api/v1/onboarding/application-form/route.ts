@@ -191,11 +191,15 @@ export async function POST(req: NextRequest) {
         email: page1.email,
         phone: page1.phoneCell,
       });
-
-      // send notification email to driver
-      await sendDriverPendingApprovalEmail(req, { companyId, firstName: page1.firstName, lastName: page1.lastName, toEmail: page1.email });
     } catch (err: any) {
-      console.warn("sending email to safety team failed", err);
+      console.warn("sending email to safety failed", err);
+    }
+
+    try {
+      // send notification email to driver
+      await sendDriverPendingApprovalEmail(req, { trackerId: onboardingDoc.id, companyId, firstName: page1.firstName, lastName: page1.lastName, toEmail: page1.email });
+    } catch (err: any) {
+      console.warn("sending email to driver failed", err);
     }
 
     return attachCookies(res, setCookie);

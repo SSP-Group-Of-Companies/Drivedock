@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { AppError, errorResponse, successResponse } from "@/lib/utils/apiResponse";
 import connectDB from "@/lib/utils/connectDB";
 import { IApplicationFormPage4 } from "@/types/applicationForm.types";
-import { advanceProgress, buildTrackerContext, hasReachedStep, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
+import { advanceProgress, buildTrackerContext, hasReachedStep, isInvitationApproved, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
 import { deleteS3Objects, finalizeAsset, finalizeAssetVector, buildFinalDest } from "@/lib/utils/s3Upload";
 import { COMPANIES } from "@/constants/companies";
 import { EStepPath } from "@/types/onboardingTracker.types";
@@ -117,6 +117,8 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
     const { tracker: onboardingDoc, refreshCookie } = await requireOnboardingSession(id);
 
+    if (!isInvitationApproved(onboardingDoc)) return errorResponse(401, "pending approval");
+
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) return errorResponse(404, "ApplicationForm not linked");
 
@@ -160,7 +162,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     } else {
       // Canadian drivers: passport type determines requirements
       expectCountExact(body, "passportPhotos", 2, "Passport photos");
-      
+
       // Only require PR/Permit/Citizenship for non-Canadian passports
       if (body.passportType === "others") {
         expectCountRange(body, "prPermitCitizenshipPhotos", 1, 2, "PR/Permit/Citizenship photos");
@@ -173,7 +175,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     // =========================
     if (isCanadian) {
       expectCountExact(body, "healthCardPhotos", 2, "Health card photos");
-      
+
       // US Visa only required for cross-border work authorization
       if (body.passportType === "others" && body.workAuthorizationType === "cross_border") {
         expectCountRange(body, "usVisaPhotos", 1, 2, "US visa photos");

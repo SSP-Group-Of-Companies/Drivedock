@@ -55,7 +55,7 @@ const onboardingTrackerSchema = new Schema<IOnboardingTrackerDoc>(
     },
     invitationApproved: {
       type: Boolean,
-      defaulf: false,
+      default: false,
       requred: [true, "invitationApproved is requried"],
     },
     emails: {

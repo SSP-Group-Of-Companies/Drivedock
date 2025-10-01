@@ -80,6 +80,15 @@ async function buildBaseFilter(searchParams: URLSearchParams) {
     filter.$or = [{ terminated: false }, { terminated: { $exists: false } }];
   }
 
+  // invitationApproved=true  -> only true
+  // invitationApproved=false or absent -> false OR missing
+  const invitationApproved = toBool(searchParams.get("invitationApproved"));
+  if (invitationApproved === false) {
+    filter.$or = [{ invitationApproved: false }, { invitationApproved: { $exists: false } }];
+  } else {
+    filter.invitationApproved = true;
+  }
+
   const createdAtFrom = toDate(searchParams.get("createdAtFrom"));
   const createdAtTo = toDate(searchParams.get("createdAtTo"));
   if (createdAtFrom || createdAtTo) {

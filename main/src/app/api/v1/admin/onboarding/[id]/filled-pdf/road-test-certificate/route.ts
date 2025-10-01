@@ -18,6 +18,7 @@ import { ERoadTestCertificateFillableFormFields as F } from "@/lib/pdf/road-test
 import { drawPdfImage } from "@/lib/pdf/utils/drawPdfImage";
 import { loadImageBytesFromAsset } from "@/lib/utils/s3Upload";
 import { ECompanyId } from "@/constants/companies";
+import { isInvitationApproved } from "@/lib/utils/onboardingUtils";
 
 export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
@@ -30,8 +31,7 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
     // Load onboarding (NOT lean → to access virtuals like .sin if needed)
     const onboarding = await OnboardingTracker.findById(onboardingId);
     if (!onboarding) return errorResponse(404, "Onboarding document not found");
-
-    // Must be completed
+    if (!isInvitationApproved(onboarding)) return errorResponse(400, "driver not yet approved for onboarding process");
     if (!onboarding.status?.completed) return errorResponse(400, "Onboarding is not yet completed");
 
     const companyId = onboarding.companyId as ECompanyId | undefined;
