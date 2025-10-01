@@ -38,6 +38,13 @@ export default function PendingApprovalClient({ onboardingContext }: PendingAppr
     router.push(buildOnboardingStepPath(ctx));
   }, [ctx, router]);
 
+  const handleRefresh = useCallback(() => {
+    // Hard reload to re-check approval status and session state
+    window.location.reload();
+    // Alternatively, a softer refresh could be:
+    // router.refresh();
+  }, []);
+
   const headerBlock = useMemo(() => {
     if (approved) {
       return (
@@ -109,8 +116,15 @@ export default function PendingApprovalClient({ onboardingContext }: PendingAppr
         <div className="mt-3 rounded-lg bg-blue-100 px-4 py-3 text-blue-900 text-sm">{t("pendingApprovalPage.pending.tip")}</div>
       </div>
 
-      {/* CTA */}
-      <div className="flex justify-center">
+      {/* CTAs */}
+      <div className="flex justify-center gap-3">
+        <button
+          onClick={handleRefresh}
+          className="inline-flex items-center justify-center rounded-full px-6 py-2.5 font-medium shadow bg-gray-200 text-gray-900 hover:bg-gray-300 transition active:translate-y-[1px]"
+        >
+          {t("pendingApprovalPage.pending.refresh")}
+        </button>
+
         <Link
           href="/"
           className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 px-6 py-2.5 text-white font-medium shadow hover:opacity-90 transition active:translate-y-[1px]"

@@ -15,7 +15,6 @@ export default function BankingInfoSection() {
     formState: { errors },
   } = useFormContext<ApplicationFormPage4Input>();
 
-
   // Watch photos for optional/required messaging, but validation is in Zod
   const bankingInfoPhotos = useWatch({ control, name: "bankingInfoPhotos" });
 
@@ -31,17 +30,11 @@ export default function BankingInfoSection() {
     <section className="space-y-6 border border-gray-200 p-6 rounded-2xl bg-white shadow-sm">
       <span data-field="bankingInfoSection.root" className="sr-only" />
 
-      <h2 className="text-center text-lg font-semibold text-gray-800">
-        {t("form.step2.page4.sections.banking.title")}
-      </h2>
+      <h2 className="text-center text-lg font-semibold text-gray-800">{t("form.step2.page4.sections.banking.title")}</h2>
 
       <div className="rounded-xl bg-gray-50/60 ring-1 ring-gray-100 p-4">
         <div className="text-sm text-gray-700 text-center">
-          <p>
-            {isRequired
-              ? t("form.step2.page4.sections.banking.requiredDisclaimer")
-              : t("form.step2.page4.sections.banking.optionalDisclaimer")}
-          </p>
+          <p>{isRequired ? t("form.step2.page4.sections.banking.requiredDisclaimer") : t("form.step2.page4.sections.banking.optionalDisclaimer")}</p>
         </div>
       </div>
 
@@ -53,12 +46,8 @@ export default function BankingInfoSection() {
           folder={ES3Folder.BANKING_INFO_PHOTOS}
           maxPhotos={2}
         />
-        {errors.bankingInfoPhotos && (
-          <p className="text-red-500 text-xs mt-1">{errors.bankingInfoPhotos.message?.toString()}</p>
-        )}
+        {errors.bankingInfoPhotos && <p className="text-red-500 text-xs mt-1">{errors.bankingInfoPhotos.message?.toString()}</p>}
       </div>
     </section>
   );
 }
-
-

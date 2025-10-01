@@ -152,7 +152,8 @@
       "body1": "We have received your application. Our team is currently reviewing your information.",
       "body2": "Once your application is approved, you will receive an email with the next steps.",
       "tip": "You can close this page now and check back later, or refresh once you believe you’ve been approved. Also keep an eye on your inbox (and spam/junk folder) for our email.",
-      "returnHome": "Home"
+      "returnHome": "Home",
+      "refresh": "Refresh"
     },
     "approved": {
       "title": "Application Approved",

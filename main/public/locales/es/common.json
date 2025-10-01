@@ -152,7 +152,8 @@
       "body1": "Hemos recibido su solicitud. Nuestro equipo está revisando su información.",
       "body2": "Una vez que su solicitud sea aprobada, recibirá un correo electrónico con los siguientes pasos.",
       "tip": "Puede cerrar esta página y volver más tarde, o actualizarla cuando crea que ya ha sido aprobada. Por favor revise también su bandeja de entrada (y la carpeta de spam/correo no deseado) para nuestro correo.",
-      "returnHome": "Inicio"
+      "returnHome": "Inicio",
+      "refresh": "Actualizar"
     },
     "approved": {
       "title": "Solicitud aprobada",
@@ -366,14 +367,14 @@
           "business": {
             "title": "Detalles de incorporación",
             "disclaimer": {
-            "text": "Si proporcionas algún detalle de incorporación, debes completar todos los campos y subir todos los documentos relacionados en esta sección. Esto incluye el número de HST, el nombre de la empresa y las fotos requeridas (incorporación, HST)."
+              "text": "Si proporcionas algún detalle de incorporación, debes completar todos los campos y subir todos los documentos relacionados en esta sección. Esto incluye el número de HST, el nombre de la empresa y las fotos requeridas (incorporación, HST)."
             }
           },
-        "banking": {
-          "title": "Información bancaria",
-          "requiredDisclaimer": "La información bancaria es obligatoria para solicitantes Empresa y Propietario‑operador. Sube una foto clara de un cheque anulado o de un formulario bancario de depósito directo que muestre tu nombre, número de institución, número de tránsito y número de cuenta.",
-          "optionalDisclaimer": "La información bancaria es opcional para Propietario‑conductor. Si decides proporcionarla ahora, sube una foto clara de un cheque anulado o de un formulario bancario de depósito directo que muestre tu nombre, número de institución, número de tránsito y número de cuenta, para que nómina pueda configurar tu depósito directo."
-        },
+          "banking": {
+            "title": "Información bancaria",
+            "requiredDisclaimer": "La información bancaria es obligatoria para solicitantes Empresa y Propietario‑operador. Sube una foto clara de un cheque anulado o de un formulario bancario de depósito directo que muestre tu nombre, número de institución, número de tránsito y número de cuenta.",
+            "optionalDisclaimer": "La información bancaria es opcional para Propietario‑conductor. Si decides proporcionarla ahora, sube una foto clara de un cheque anulado o de un formulario bancario de depósito directo que muestre tu nombre, número de institución, número de tránsito y número de cuenta, para que nómina pueda configurar tu depósito directo."
+          },
           "additionalInfo": {
             "title": "Información adicional"
           },
