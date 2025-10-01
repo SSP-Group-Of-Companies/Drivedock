@@ -5,7 +5,7 @@ import { errorResponse, successResponse } from "@/lib/utils/apiResponse";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import DriveTest from "@/mongoose/models/DriveTest";
 import { EStepPath, ETerminationType } from "@/types/onboardingTracker.types";
-import { buildTrackerContext, hasReachedStep, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
+import { buildTrackerContext, hasReachedStep, isInvitationApproved, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
 import { isValidObjectId } from "mongoose";
 import { deleteS3Objects, finalizeAsset } from "@/lib/utils/s3Upload";
 import { ES3Folder } from "@/types/aws.types";
@@ -28,10 +28,8 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
 
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
     if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
-
-    if (!hasReachedStep(onboardingDoc, EStepPath.DRIVE_TEST)) {
-      return errorResponse(403, "driver hasn't reached this step yet");
-    }
+    if (!isInvitationApproved(onboardingDoc)) return errorResponse(400, "driver not yet approved for onboarding process");
+    if (!hasReachedStep(onboardingDoc, EStepPath.DRIVE_TEST)) return errorResponse(403, "driver hasn't reached this step yet");
 
     const driveTestId = onboardingDoc.forms?.driveTest;
 
@@ -103,11 +101,9 @@ export const POST = async (req: NextRequest, { params }: { params: Promise<{ id:
 
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
     if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
+    if (!isInvitationApproved(onboardingDoc)) return errorResponse(400, "driver not yet approved for onboarding process");
     if (onboardingDoc.status.completed === true) return errorResponse(401, "onboarding process already completed");
-
-    if (!hasReachedStep(onboardingDoc, EStepPath.DRIVE_TEST)) {
-      return errorResponse(403, "driver hasn't reached this step yet");
-    }
+    if (!hasReachedStep(onboardingDoc, EStepPath.DRIVE_TEST)) return errorResponse(403, "driver hasn't reached this step yet");
 
     const body = await parseJsonBody<{ driveTest?: Partial<IDriveTest> }>(req);
     const payload = body?.driveTest;

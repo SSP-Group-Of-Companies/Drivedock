@@ -145,6 +145,25 @@
     }
   },
 
+  "pendingApprovalPage": {
+    "pending": {
+      "title": "Solicitud pendiente de aprobación",
+      "subtitle": "Gracias por iniciar su solicitud con SSP Group of Companies.",
+      "body1": "Hemos recibido su solicitud. Nuestro equipo está revisando su información.",
+      "body2": "Una vez que su solicitud sea aprobada, recibirá un correo electrónico con los siguientes pasos.",
+      "tip": "Puede cerrar esta página y volver más tarde, o actualizarla cuando crea que ya ha sido aprobada. Por favor revise también su bandeja de entrada (y la carpeta de spam/correo no deseado) para nuestro correo.",
+      "returnHome": "Inicio",
+      "refresh": "Actualizar"
+    },
+    "approved": {
+      "title": "Solicitud aprobada",
+      "subtitle": "¡Buenas noticias! Su solicitud ha sido aprobada.",
+      "body1": "Ahora puede continuar con el siguiente paso de su proceso de incorporación.",
+      "body2": "Haga clic en el botón de abajo para continuar su solicitud.",
+      "ctaResume": "Continuar mi solicitud",
+      "ctaHome": "Inicio"
+    }
+  },
   "form": {
     "subtitle": "Toda la información debe responderse con veracidad. La responsabilidad recae en el solicitante.",
 
@@ -249,6 +268,12 @@
           "removeLicense": "Eliminar licencia",
           "addAddress": "Agregar otra dirección",
           "removeAddress": "Eliminar dirección"
+        },
+        "confirmation": {
+          "title": "Por favor confirme",
+          "message": "Está a punto de enviar sus datos personales a SSP Group of Companies para su revisión. Una vez enviados, nuestro Departamento de Seguridad revisará su solicitud. Si es aprobada, recibirá un correo electrónico con las instrucciones para continuar su proceso de incorporación. ¿Desea continuar?",
+          "confirmLabel": "Enviar",
+          "cancelLabel": "Regresar"
         }
       },
       "page2": {
@@ -342,14 +367,14 @@
           "business": {
             "title": "Detalles de incorporación",
             "disclaimer": {
-            "text": "Si proporcionas algún detalle de incorporación, debes completar todos los campos y subir todos los documentos relacionados en esta sección. Esto incluye el número de HST, el nombre de la empresa y las fotos requeridas (incorporación, HST)."
+              "text": "Si proporcionas algún detalle de incorporación, debes completar todos los campos y subir todos los documentos relacionados en esta sección. Esto incluye el número de HST, el nombre de la empresa y las fotos requeridas (incorporación, HST)."
             }
           },
-        "banking": {
-          "title": "Información bancaria",
-          "requiredDisclaimer": "La información bancaria es obligatoria para solicitantes Empresa y Propietario‑operador. Sube una foto clara de un cheque anulado o de un formulario bancario de depósito directo que muestre tu nombre, número de institución, número de tránsito y número de cuenta.",
-          "optionalDisclaimer": "La información bancaria es opcional para Propietario‑conductor. Si decides proporcionarla ahora, sube una foto clara de un cheque anulado o de un formulario bancario de depósito directo que muestre tu nombre, número de institución, número de tránsito y número de cuenta, para que nómina pueda configurar tu depósito directo."
-        },
+          "banking": {
+            "title": "Información bancaria",
+            "requiredDisclaimer": "La información bancaria es obligatoria para solicitantes Empresa y Propietario‑operador. Sube una foto clara de un cheque anulado o de un formulario bancario de depósito directo que muestre tu nombre, número de institución, número de tránsito y número de cuenta.",
+            "optionalDisclaimer": "La información bancaria es opcional para Propietario‑conductor. Si decides proporcionarla ahora, sube una foto clara de un cheque anulado o de un formulario bancario de depósito directo que muestre tu nombre, número de institución, número de tránsito y número de cuenta, para que nómina pueda configurar tu depósito directo."
+          },
           "additionalInfo": {
             "title": "Información adicional"
           },
@@ -615,7 +640,7 @@
     "step3": {
       "title": "Políticas y consentimientos",
       "disclaimer": "Al firmar a continuación, aceptas todo el contrato aquí y los contratos futuros. Lee todos los documentos con atención. La información que proporciones rellenará automáticamente los campos requeridos.",
-      "sendToEmail": "Envíenme los documentos firmados a mi correo cuando el proceso de solicitud esté completo.",
+      "sendToEmail": "Envíame los documentos a mi correo electrónico cuando se complete el proceso de solicitud.",
       "helper": {
         "drawOrUpload": "Dibuja tu firma arriba o sube una imagen de firma."
       },

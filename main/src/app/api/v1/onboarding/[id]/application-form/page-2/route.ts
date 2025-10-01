@@ -3,7 +3,7 @@ import connectDB from "@/lib/utils/connectDB";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
 import { IApplicationFormPage2 } from "@/types/applicationForm.types";
 import { EStepPath } from "@/types/onboardingTracker.types";
-import { buildTrackerContext, hasReachedStep, advanceProgress, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
+import { buildTrackerContext, hasReachedStep, advanceProgress, nextResumeExpiry, isInvitationApproved } from "@/lib/utils/onboardingUtils";
 import { isValidObjectId } from "mongoose";
 import { NextRequest } from "next/server";
 import { validateEmploymentHistory } from "@/lib/utils/validationUtils";
@@ -30,6 +30,8 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     if (validationError) return errorResponse(400, validationError);
 
     const { tracker: onboardingDoc, refreshCookie } = await requireOnboardingSession(id);
+
+    if (!isInvitationApproved(onboardingDoc)) return errorResponse(401, "pending approval");
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) return errorResponse(404, "ApplicationForm not linked");

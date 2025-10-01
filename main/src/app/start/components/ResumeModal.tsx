@@ -87,15 +87,13 @@ export default function ResumeModal({ isOpen, onClose }: ResumeModalProps) {
       }
 
       if (!res.ok) {
-        const serverMsg =
-          data?.message || data?.error || t("resume.errors.generic");
+        const serverMsg = data?.message || data?.error || t("resume.errors.generic");
         throw new Error(serverMsg);
       }
 
       const trackerContext = data?.data?.onboardingContext;
       const isCompleted = data?.data?.isCompleted;
-      const currentStep: EStepPath | undefined =
-        trackerContext?.status?.currentStep;
+      const currentStep: EStepPath | undefined = trackerContext?.status?.currentStep;
 
       if (trackerContext) {
         setStatus("success");
@@ -120,9 +118,7 @@ export default function ResumeModal({ isOpen, onClose }: ResumeModalProps) {
       if ((err as any)?.name === "AbortError") return;
 
       setStatus("error");
-      setErrorMessage(
-        err instanceof Error ? err.message : t("resume.errors.generic")
-      );
+      setErrorMessage(err instanceof Error ? err.message : t("resume.errors.generic"));
     }
   };
 
@@ -133,15 +129,7 @@ export default function ResumeModal({ isOpen, onClose }: ResumeModalProps) {
     <Transition show={isOpen} as={Fragment}>
       <Dialog as="div" className="relative z-50" onClose={onClose}>
         {/* Backdrop overlay */}
-        <Transition.Child
-          as={Fragment}
-          enter="ease-out duration-200"
-          enterFrom="opacity-0"
-          enterTo="opacity-100"
-          leave="ease-in duration-150"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        >
+        <Transition.Child as={Fragment} enter="ease-out duration-200" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-150" leaveFrom="opacity-100" leaveTo="opacity-0">
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
         </Transition.Child>
 
@@ -158,12 +146,8 @@ export default function ResumeModal({ isOpen, onClose }: ResumeModalProps) {
           >
             <Dialog.Panel className="w-full max-w-md transform rounded-xl bg-white p-6 shadow-xl transition-all">
               {/* Title & description */}
-              <Dialog.Title className="text-lg font-semibold text-gray-900 mb-2">
-                {t("resume.title")}
-              </Dialog.Title>
-              <Dialog.Description className="text-sm text-gray-600 mb-4">
-                {t("resume.description")}
-              </Dialog.Description>
+              <Dialog.Title className="text-lg font-semibold text-gray-900 mb-2">{t("resume.title")}</Dialog.Title>
+              <Dialog.Description className="text-sm text-gray-600 mb-4">{t("resume.description")}</Dialog.Description>
 
               {/* SIN input field */}
               <input

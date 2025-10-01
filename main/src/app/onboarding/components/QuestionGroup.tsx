@@ -9,33 +9,6 @@
  *   group (e.g., Yes/No or multi-option) as segmented buttons. It is designed
  *   to be generic so it can be reused across the onboarding flow (including
  *   Pre-Qualifications and other steps) wherever the question layout matches.
- *
- * DESIGN CHOICES
- *   - Controlled component: parent owns the value and passes an onChange.
- *   - i18n-ready: each option provides an `labelKey` that maps to i18n.
- *   - Accessible: uses `radiogroup` and `radio` roles with aria-checked.
- *   - SSR-safety: defers rendering until mounted to avoid hydration mismatch.
- *   - Sensible defaults: falls back to step-1-scoped Yes/No options.
- *
- * DATA CONTRACT
- *   - `value` is the *stored* value (e.g., "form.yes"), not the translated label.
- *   - `options` is an array of { labelKey, value } where:
- *        - labelKey: i18n key resolved via `t(labelKey)`
- *        - value:    opaque string persisted back up to parent state
- *
- * USAGE
- *   <QuestionGroup
- *     question={t("form.step1.questions.canDriveManual")}
- *     value={formValue}
- *     onChange={(v) => setFormValue(v)}
- *     options={[
- *       { labelKey: "form.step1.questions.yes", value: "form.yes" },
- *       { labelKey: "form.step1.questions.no",  value: "form.no"  },
- *     ]}
- *   />
- *
- * OWNER
- *   SSP Tech Team – DriverDock project
  * ===========================================================================
  */
 
@@ -43,95 +16,79 @@ import { useTranslation } from "react-i18next";
 import useMounted from "@/hooks/useMounted";
 import FormHelpPopUps from "@/components/shared/FormHelpPopUps";
 
-/**
- * A single selectable option in the group.
- * - labelKey: i18n key used to render the visible text
- * - value:    the actual value emitted when selected (opaque string)
- */
+/** Option item */
 type Option = {
   labelKey: string; // i18n key for label
   value: string; // actual value returned on selection
 };
 
-/**
- * Props for QuestionGroup.
- * - question: string or ReactNode shown as the prompt
- * - value:    the currently selected option's `value`
- * - onChange: callback invoked when the selection changes
- * - options:  the available options; defaults to Yes/No in step-1 scope
- */
+/** Props */
 type QuestionGroupProps = {
   question: string | React.ReactNode;
   value: string;
   onChange: (val: string) => void;
-  options?: Option[]; // defaults to Yes/No with step1 scope
-  helpContent?: string; // optional help popup content
+  options?: Option[];
+  helpContent?: string;
+  disabled?: boolean;
 };
 
-/**
- * Default to a step-1-scoped Yes/No pair. This is a safe fallback and
- * ensures we always render something meaningful if options are omitted.
- */
+/** Default Yes/No options */
 const defaultOptions: Option[] = [
   { labelKey: "form.step1.questions.yes", value: "form.yes" },
   { labelKey: "form.step1.questions.no", value: "form.no" },
 ];
 
-export default function QuestionGroup({
-  question,
-  value,
-  onChange,
-  options = defaultOptions,
-  helpContent,
-}: QuestionGroupProps) {
-  // Avoid hydration mismatch by rendering only on client mount.
+export default function QuestionGroup({ question, value, onChange, options = defaultOptions, helpContent, disabled = false }: QuestionGroupProps) {
   const mounted = useMounted();
-
-  // i18n translation function; expects `labelKey` entries to exist in locale files.
   const { t } = useTranslation("common");
 
-  // If not mounted, render nothing to keep server/client markup identical.
   if (!mounted) return null;
 
   return (
     <div className="w-full bg-gray-50 rounded-xl px-4 py-3 shadow-sm">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
-        {/* Question prompt with optional help popup */}
+        {/* Question prompt + optional help */}
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          <p className="font-medium text-gray-800 text-sm break-words">
-            {question}
-          </p>
+          <p className={`font-medium text-sm break-words ${disabled ? "text-gray-400" : "text-gray-800"}`}>{question}</p>
           {helpContent && <FormHelpPopUps content={helpContent} />}
         </div>
 
-        {/* Segmented control container with ARIA radiogroup for accessibility */}
+        {/* Segmented control */}
         <div
           role="radiogroup"
           aria-label={typeof question === "string" ? question : undefined}
-          className="inline-flex w-full sm:w-auto sm:flex-shrink-0 rounded-full border border-gray-300 overflow-hidden"
+          aria-disabled={disabled || undefined}
+          className={`inline-flex w-full sm:w-auto sm:flex-shrink-0 rounded-full border overflow-hidden ${disabled ? "border-gray-200 opacity-70" : "border-gray-300"}`}
         >
           {options.map(({ labelKey, value: optValue }, idx) => {
-            // Determine if this option is the current selection
             const isSelected = value === optValue;
+
+            // Shared classes with disabled styling
+            const baseBtn = "w-full sm:w-auto px-4 py-1.5 text-sm font-medium transition-all focus:outline-none";
+            const stateClasses = disabled
+              ? isSelected
+                ? "bg-[#e6eef6] text-gray-500 cursor-not-allowed"
+                : "bg-white text-gray-400 cursor-not-allowed"
+              : isSelected
+              ? "bg-[#0071BC] text-white"
+              : "bg-white text-gray-800 hover:bg-red-50";
+            const divider = idx > 0 ? (disabled ? "border-l border-gray-200" : "border-l border-gray-300") : "";
 
             return (
               <button
-                key={optValue} // stable key derived from option's value
+                key={optValue}
                 type="button"
                 role="radio"
                 aria-checked={isSelected}
+                aria-disabled={disabled || undefined}
+                disabled={disabled}
                 onClick={() => {
-                  // Prevent deselection to behave like radio buttons
-                  if (isSelected) return; // radio behavior
-                  onChange(optValue); // bubble new selection up to parent
+                  if (disabled || isSelected) return; // no-op in disabled mode; radio behavior prevents deselect
+                  onChange(optValue);
                 }}
-                className={`w-full sm:w-auto px-4 py-1.5 text-sm font-medium transition-all ${
-                  isSelected
-                    ? "bg-[#0071BC] text-white"
-                    : "bg-white text-gray-800 hover:bg-red-50"
-                } ${idx > 0 ? "border-l border-gray-300" : ""}`}
+                className={`${baseBtn} ${stateClasses} ${divider}`}
+                tabIndex={disabled ? -1 : 0}
               >
-                {/* Visible text resolved via i18n label key */}
                 {t(labelKey)}
               </button>
             );

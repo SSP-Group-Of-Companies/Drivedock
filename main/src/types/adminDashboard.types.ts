@@ -11,19 +11,21 @@ export type DashboardOnboardingItemSummary = {
   drugTest?: { status?: EDrugTestStatus };
 };
 
+export type DashboardInvitationItemSummary = {
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+};
+
 export type DashboardOnboardingItem = Pick<
   IOnboardingTracker,
-  | "status"
-  | "companyId"
-  | "applicationType"
-  | "createdAt"
-  | "updatedAt"
-  | "terminated"
-  | "terminationType"
-  | "resumeExpiresAt"
-  | "forms"
-  | "needsFlatbedTraining"
+  "status" | "companyId" | "applicationType" | "createdAt" | "updatedAt" | "terminated" | "terminationType" | "resumeExpiresAt" | "forms" | "needsFlatbedTraining"
 > & {
   _id: string;
   itemSummary: DashboardOnboardingItemSummary;
+};
+
+export type DashboardInvitationItem = Pick<IOnboardingTracker, "companyId" | "applicationType" | "createdAt" | "updatedAt" | "invitationApproved" | "terminated" | "forms"> & {
+  _id: string;
+  itemSummary: DashboardInvitationItemSummary;
 };

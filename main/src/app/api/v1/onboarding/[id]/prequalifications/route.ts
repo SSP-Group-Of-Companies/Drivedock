@@ -1,27 +1,21 @@
 import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
 import PreQualifications from "@/mongoose/models/Prequalifications";
 import connectDB from "@/lib/utils/connectDB";
-import {
-  COMPANIES,
-  ECompanyId,
-  needsFlatbedTraining,
-} from "@/constants/companies";
-import {
-  advanceProgress,
-  buildTrackerContext,
-  nextResumeExpiry,
-} from "@/lib/utils/onboardingUtils";
+import { COMPANIES, ECompanyId, needsFlatbedTraining } from "@/constants/companies";
+import { advanceProgress, buildTrackerContext, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
 import { EStepPath } from "@/types/onboardingTracker.types";
 import { isValidObjectId } from "mongoose";
 import { NextRequest } from "next/server";
 import { requireOnboardingSession } from "@/lib/utils/auth/onboardingSession";
 import { attachCookies } from "@/lib/utils/auth/attachCookie";
 
-export const PATCH = async (
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) => {
+// disabled updating prequalifications by driver according to business logic
+const disalbeUpdatingPrequalifications = true;
+
+export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
+    if (disalbeUpdatingPrequalifications) return errorResponse(401, "unauthorized");
+
     await connectDB();
 
     const { id } = await params;
@@ -30,8 +24,7 @@ export const PATCH = async (
 
     const body = await req.json();
 
-    const { tracker: onboardingDoc, refreshCookie } =
-      await requireOnboardingSession(id);
+    const { tracker: onboardingDoc, refreshCookie } = await requireOnboardingSession(id);
 
     const preQualId = onboardingDoc.forms?.preQualification;
     if (!preQualId) {
@@ -51,18 +44,12 @@ export const PATCH = async (
     if (isCanadian) {
       const { canCrossBorderUSA, hasFASTCard, statusInCanada } = body;
       if (typeof canCrossBorderUSA !== "boolean") {
-        return errorResponse(
-          400,
-          "Field 'canCrossBorderUSA' is required for Canadian applicants"
-        );
+        return errorResponse(400, "Field 'canCrossBorderUSA' is required for Canadian applicants");
       }
       if (!statusInCanada) {
-        return errorResponse(
-          400,
-          "Field 'statusInCanada' is required for Canadian applicants"
-        );
+        return errorResponse(400, "Field 'statusInCanada' is required for Canadian applicants");
       }
-      
+
       // Only validate FAST card fields if they were provided (conditional logic)
       if (hasFASTCard !== undefined && typeof hasFASTCard !== "boolean") {
         return errorResponse(400, "'hasFASTCard' must be a boolean when provided");
@@ -73,41 +60,23 @@ export const PATCH = async (
     }
 
     // Step 4: Update PreQualifications
-    const preQualDoc = await PreQualifications.findByIdAndUpdate(
-      preQualId,
-      { $set: { ...body, completed: true } },
-      { new: true }
-    );
+    const preQualDoc = await PreQualifications.findByIdAndUpdate(preQualId, { $set: { ...body, completed: true } }, { new: true });
 
     if (!preQualDoc) {
       return errorResponse(404, "PreQualifications not found");
     }
 
     // check if flatbed training is required
-    onboardingDoc.needsFlatbedTraining = needsFlatbedTraining(
-      companyId,
-      onboardingDoc.applicationType,
-      preQualDoc.flatbedExperience
-    );
+    onboardingDoc.needsFlatbedTraining = needsFlatbedTraining(companyId, onboardingDoc.applicationType, preQualDoc.flatbedExperience);
     // Step 5: Update onboarding tracker status
-    onboardingDoc.status = advanceProgress(
-      onboardingDoc,
-      EStepPath.PRE_QUALIFICATIONS
-    );
+    onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.PRE_QUALIFICATIONS);
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();
     await onboardingDoc.save();
 
-    const res = successResponse(
-      200,
-      "PreQualifications and onboarding tracker updated",
-      {
-        onboardingContext: buildTrackerContext(
-          onboardingDoc,
-          EStepPath.PRE_QUALIFICATIONS
-        ),
-        preQualifications: preQualDoc,
-      }
-    );
+    const res = successResponse(200, "PreQualifications and onboarding tracker updated", {
+      onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.PRE_QUALIFICATIONS),
+      preQualifications: preQualDoc,
+    });
 
     return attachCookies(res, refreshCookie);
   } catch (error) {
@@ -115,18 +84,14 @@ export const PATCH = async (
   }
 };
 
-export const GET = async (
-  _: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) => {
+export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
     await connectDB();
 
     const { id } = await params;
     if (!isValidObjectId(id)) return errorResponse(400, "not a valid id");
 
-    const { tracker: onboardingDoc, refreshCookie } =
-      await requireOnboardingSession(id);
+    const { tracker: onboardingDoc, refreshCookie } = await requireOnboardingSession(id);
 
     // Step 2: Fetch pre-qualifications form using linked ID
     const preQualId = onboardingDoc.forms?.preQualification;
@@ -136,10 +101,7 @@ export const GET = async (
     }
 
     const res = successResponse(200, "PreQualifications data retrieved", {
-      onboardingContext: buildTrackerContext(
-        onboardingDoc,
-        EStepPath.PRE_QUALIFICATIONS
-      ),
+      onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.PRE_QUALIFICATIONS),
       preQualifications: preQualDoc?.toObject() ?? {},
     });
 

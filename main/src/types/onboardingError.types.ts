@@ -35,11 +35,12 @@ export type OnboardingApiResponse<T = unknown> = OnboardingApiSuccess<T> | Onboa
  */
 export enum ErrorModalType {
   SESSION_EXPIRED = "SESSION_EXPIRED",
-  NOT_FOUND = "NOT_FOUND", 
+  NOT_FOUND = "NOT_FOUND",
   NETWORK_ERROR = "NETWORK_ERROR",
   SERVER_ERROR = "SERVER_ERROR",
   RATE_LIMITED = "RATE_LIMITED",
-  GENERIC_ERROR = "GENERIC_ERROR"
+  GENERIC_ERROR = "GENERIC_ERROR",
+  CONFIRMATION = "CONFIRMATION",
 }
 
 /**

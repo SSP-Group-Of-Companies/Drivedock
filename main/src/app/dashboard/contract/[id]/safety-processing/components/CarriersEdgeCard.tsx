@@ -30,7 +30,7 @@ const ALLOWED_MIME = new Set<string>([EFileMimeType.JPEG, EFileMimeType.JPG, EFi
 
 const INPUT_ACCEPT = "image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
-const MAX_CERTS = 5;
+const MAX_CERTS = 15;
 
 export default function CarriersEdgeCard({ trackerId, driverEmail, carriersEdge, canEdit, onChange, highlight = false }: Props) {
   const user = useAuth();

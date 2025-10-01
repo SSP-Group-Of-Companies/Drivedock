@@ -2,6 +2,7 @@ import connectDB from "@/lib/utils/connectDB";
 import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import { guard } from "@/lib/utils/auth/authUtils";
+import { isInvitationApproved } from "@/lib/utils/onboardingUtils";
 
 export async function PATCH(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   try {
@@ -13,7 +14,7 @@ export async function PATCH(_req: Request, ctx: { params: Promise<{ id: string }
     const doc = await OnboardingTracker.findByIdAndUpdate(id, { $set: { terminated: false }, $unset: { terminationType: 1, terminationDate: 1 } }, { new: true, runValidators: true });
 
     if (!doc) return errorResponse(404, "Onboarding document not found");
-
+    if (!isInvitationApproved(doc)) return errorResponse(400, "driver not yet approved for onboarding process");
     return successResponse(200, "Onboarding document restored", {
       _id: String(doc._id),
       terminated: !!doc.terminated,

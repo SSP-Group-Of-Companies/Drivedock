@@ -145,6 +145,25 @@
     }
   },
 
+  "pendingApprovalPage": {
+    "pending": {
+      "title": "Candidature en attente d’approbation",
+      "subtitle": "Merci d’avoir commencé votre candidature avec SSP Group of Companies.",
+      "body1": "Nous avons bien reçu votre candidature. Notre équipe est en train d’examiner vos informations.",
+      "body2": "Une fois votre candidature approuvée, vous recevrez un courriel avec les prochaines étapes.",
+      "tip": "Vous pouvez fermer cette page et revenir plus tard, ou l’actualiser lorsque vous pensez avoir été approuvé. Veuillez aussi surveiller votre boîte de réception (ainsi que le dossier indésirable/spam) pour notre courriel.",
+      "returnHome": "Accueil",
+      "refresh": "Rafraîchir"
+    },
+    "approved": {
+      "title": "Candidature approuvée",
+      "subtitle": "Bonne nouvelle ! Votre candidature a été approuvée.",
+      "body1": "Vous pouvez maintenant passer à l’étape suivante de votre processus d’intégration.",
+      "body2": "Cliquez sur le bouton ci-dessous pour continuer votre candidature.",
+      "ctaResume": "Continuer ma candidature",
+      "ctaHome": "Accueil"
+    }
+  },
   "form": {
     "subtitle": "Toutes les informations doivent être exactes. La responsabilité incombe au candidat.",
 
@@ -249,6 +268,12 @@
           "removeLicense": "Supprimer le permis",
           "addAddress": "Ajouter une autre adresse",
           "removeAddress": "Supprimer l’adresse"
+        },
+        "confirmation": {
+          "title": "Veuillez confirmer",
+          "message": "Vous êtes sur le point de soumettre vos informations personnelles à SSP Group of Companies pour examen. Une fois envoyées, notre département Sécurité examinera votre demande. Si elle est approuvée, vous recevrez un courriel avec les instructions pour continuer votre processus d’intégration. Voulez-vous continuer ?",
+          "confirmLabel": "Soumettre",
+          "cancelLabel": "Retour"
         }
       },
       "page2": {
@@ -342,14 +367,14 @@
           "business": {
             "title": "Détails d’incorporation",
             "disclaimer": {
-            "text": "Si vous fournissez des détails d’incorporation, vous devez remplir tous les champs et téléverser tous les documents liés dans cette section. Cela inclut le numéro de TVH, le nom de l’entreprise et les photos requises (Incorporation, TVH)."
+              "text": "Si vous fournissez des détails d’incorporation, vous devez remplir tous les champs et téléverser tous les documents liés dans cette section. Cela inclut le numéro de TVH, le nom de l’entreprise et les photos requises (Incorporation, TVH)."
             }
           },
-        "banking": {
-          "title": "Coordonnées bancaires",
-          "requiredDisclaimer": "Les coordonnées bancaires sont obligatoires pour les candidats Société et Propriétaire‑exploitant. Téléversez une photo claire d’un chèque annulé ou d’un formulaire bancaire de dépôt direct indiquant votre nom, le numéro d’institution, le numéro de transit et le numéro de compte.",
-          "optionalDisclaimer": "Les coordonnées bancaires sont optionnelles pour les Propriétaires‑conducteurs. Si vous choisissez de les fournir maintenant, téléversez une photo claire d’un chèque annulé ou d’un formulaire bancaire de dépôt direct indiquant votre nom, le numéro d’institution, le numéro de transit et le numéro de compte afin que la paie puisse configurer votre dépôt direct."
-        },
+          "banking": {
+            "title": "Coordonnées bancaires",
+            "requiredDisclaimer": "Les coordonnées bancaires sont obligatoires pour les candidats Société et Propriétaire‑exploitant. Téléversez une photo claire d’un chèque annulé ou d’un formulaire bancaire de dépôt direct indiquant votre nom, le numéro d’institution, le numéro de transit et le numéro de compte.",
+            "optionalDisclaimer": "Les coordonnées bancaires sont optionnelles pour les Propriétaires‑conducteurs. Si vous choisissez de les fournir maintenant, téléversez une photo claire d’un chèque annulé ou d’un formulaire bancaire de dépôt direct indiquant votre nom, le numéro d’institution, le numéro de transit et le numéro de compte afin que la paie puisse configurer votre dépôt direct."
+          },
           "additionalInfo": {
             "title": "Renseignements supplémentaires"
           },
@@ -615,7 +640,7 @@
     "step3": {
       "title": "Politiques et consentements",
       "disclaimer": "En signant ci-dessous, vous acceptez l’ensemble du contrat présent et des contrats à venir. Veuillez lire attentivement tous les documents. Les informations que vous fournissez prérempliront automatiquement les champs requis.",
-      "sendToEmail": "M’envoyer les documents signés par courriel lorsque le processus de candidature sera terminé.",
+      "sendToEmail": "Envoyez-moi les documents à mon adresse e-mail lorsque le processus de demande est terminé.",
       "helper": {
         "drawOrUpload": "Veuillez dessiner votre signature ci-dessus ou téléverser une image de signature."
       },

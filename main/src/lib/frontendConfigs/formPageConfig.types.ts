@@ -14,12 +14,21 @@ export type BuildPayloadCtx = {
   effectiveTrackerId?: string;
 };
 
+export interface ConfirmationPopup {
+  show: boolean;
+  title: string;
+  message: string;
+  confirmLabel: string;
+  cancelLabel: string;
+}
+
 export interface FormPageConfig<T extends FieldValues> {
   validationFields: (values: T) => string[];
   buildPayload: (values: T, ctx: BuildPayloadCtx) => Record<string, unknown>;
   nextRoute: string; // fully resolved (no [id] tokens)
   submitSegment: string;
   validateBusinessRules?: (values: T) => string | null;
+  confirmationPopup?: ConfirmationPopup;
 }
 
 export type FormPageConfigFactory<T extends FieldValues> = (ctx: BuildPayloadCtx) => FormPageConfig<T>;
