@@ -18,10 +18,12 @@ import { makePage4Config } from "@/lib/frontendConfigs/applicationFormConfigs/pa
 // Sections (assume you already have or will create these)
 import CriminalRecordsSection from "./components/CriminalRecordsSection";
 import BusinessSection from "./components/BusinessSection";
+import BankingInfoSection from "@/app/onboarding/[id]/application-form/page-4/components/BankingInfoSection";
 import EligibilityDocsSection from "./components/EligibilityDocsSection";
 import FastCardSection from "./components/FastCardSection";
 import AdditionalInfoSection from "./components/AdditionalInfoSection";
 import { isCanadianCompany } from "@/constants/companies";
+import { EDriverType } from "@/types/preQualifications.types";
 
 // ---- helpers ----
 function formatDate(d?: string | Date | null) {
@@ -84,21 +86,26 @@ type Props = {
   trackerId: string;
   onboardingContext: IOnboardingTrackerContext;
   page4: IApplicationFormPage4 | null;
+  prequalificationData?: { driverType?: string } | null;
 };
 
-export default function Page4Client({ trackerId, onboardingContext, page4 }: Props) {
+export default function Page4Client({ trackerId, onboardingContext, page4, prequalificationData }: Props) {
   const defaultValues = useMemo(() => mapDefaults(page4), [page4]);
 
   // derive country from companyId
   const countryCode: ECountryCode = isCanadianCompany(onboardingContext.companyId) ? ECountryCode.CA : ECountryCode.US;
+
+  // Use DB prequalification driverType from GET; do not rely on local storage
+  const driverType: EDriverType | null = (prequalificationData?.driverType as EDriverType) ?? null;
 
   const schema = useMemo(
     () =>
       makeApplicationFormPage4Schema({
         countryCode,
         existing: page4 ?? undefined,
+        driverType,
       }),
-    [countryCode, page4]
+    [countryCode, page4, driverType]
   );
 
   const methods = useForm<ApplicationFormPage4Input>({
@@ -114,6 +121,7 @@ export default function Page4Client({ trackerId, onboardingContext, page4 }: Pro
       <form className="space-y-8" noValidate>
         <CriminalRecordsSection />
         <BusinessSection />
+        <BankingInfoSection />
         <EligibilityDocsSection countryCode={countryCode} />
         {countryCode === ECountryCode.CA && <FastCardSection isCanadian />}
         <AdditionalInfoSection />

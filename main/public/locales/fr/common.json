@@ -342,9 +342,14 @@
           "business": {
             "title": "Détails d’incorporation",
             "disclaimer": {
-              "text": "Si vous fournissez des détails d’incorporation, vous devez remplir tous les champs et téléverser tous les documents liés dans cette section. Cela inclut le numéro d’employé, le numéro de TVH, le numéro d’entreprise et les photos requises (Incorporation, TVH, Bancaire)."
+            "text": "Si vous fournissez des détails d’incorporation, vous devez remplir tous les champs et téléverser tous les documents liés dans cette section. Cela inclut le numéro de TVH, le nom de l’entreprise et les photos requises (Incorporation, TVH)."
             }
           },
+        "banking": {
+          "title": "Coordonnées bancaires",
+          "requiredDisclaimer": "Les coordonnées bancaires sont obligatoires pour les candidats Société et Propriétaire‑exploitant. Téléversez une photo claire d’un chèque annulé ou d’un formulaire bancaire de dépôt direct indiquant votre nom, le numéro d’institution, le numéro de transit et le numéro de compte.",
+          "optionalDisclaimer": "Les coordonnées bancaires sont optionnelles pour les Propriétaires‑conducteurs. Si vous choisissez de les fournir maintenant, téléversez une photo claire d’un chèque annulé ou d’un formulaire bancaire de dépôt direct indiquant votre nom, le numéro d’institution, le numéro de transit et le numéro de compte afin que la paie puisse configurer votre dépôt direct."
+        },
           "additionalInfo": {
             "title": "Renseignements supplémentaires"
           },

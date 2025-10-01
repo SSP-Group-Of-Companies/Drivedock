@@ -27,6 +27,7 @@ interface ImageGallerySectionProps {
   workAuthorizationType?: EWorkAuthorizationType;
   onStage: (changes: any) => void;
   countryCode: ECountryCode;
+  driverType?: string;
 }
 
 interface GalleryItem {
@@ -206,7 +207,6 @@ export default function ImageGallerySection({
       maxPhotos: PHOTO_LIMITS.banking,
       required: false,
       fieldKey: "bankingInfoPhotos",
-      businessValidation: true, // Mark for business validation
     },
 
     // Medical/Identity documents - country-specific
@@ -648,14 +648,13 @@ export default function ImageGallerySection({
     }
   };
 
-  // Business section validation helper
+  // Business section validation helper (reflect driver-type requirements)
   const getBusinessValidationStatus = () => {
     const hasBusinessData =
       (businessName && businessName.trim()) ||
       (hstNumber && hstNumber.trim()) ||
       (incorporatePhotos && incorporatePhotos.length > 0) ||
-      (hstPhotos && hstPhotos.length > 0) ||
-      (bankingInfoPhotos && bankingInfoPhotos.length > 0);
+      (hstPhotos && hstPhotos.length > 0);
 
     if (!hasBusinessData) return null; // No business data, no validation needed
 
@@ -668,9 +667,7 @@ export default function ImageGallerySection({
       incorporatePhotos &&
       incorporatePhotos.length > 0 &&
       hstPhotos &&
-      hstPhotos.length > 0 &&
-      bankingInfoPhotos &&
-      bankingInfoPhotos.length > 0;
+      hstPhotos.length > 0;
 
     if (!allFieldsFilled) {
       return {

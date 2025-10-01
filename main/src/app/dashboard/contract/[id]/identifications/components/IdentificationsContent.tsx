@@ -18,6 +18,7 @@ interface IdentificationsContentProps {
   onStage: (changes: any) => void;
   countryCode: ECountryCode;
   highlightTruckDetails?: boolean;
+  driverType?: string;
 }
 
 export default function IdentificationsContent({
@@ -29,6 +30,7 @@ export default function IdentificationsContent({
   onStage,
   countryCode,
   highlightTruckDetails = false,
+  driverType,
 }: IdentificationsContentProps) {
   // Extract data for components
 
@@ -114,6 +116,7 @@ export default function IdentificationsContent({
           workAuthorizationType={getCurrentValue("workAuthorizationType")}
           onStage={onStage}
           countryCode={countryCode}
+          driverType={driverType}
         />
       </div>
 

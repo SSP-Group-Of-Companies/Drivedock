@@ -22,19 +22,19 @@ export default function BusinessSection() {
 
   const incorporatePhotos = useWatch({ control, name: "incorporatePhotos" });
   const hstPhotos = useWatch({ control, name: "hstPhotos" });
-  const bankingInfoPhotos = useWatch({ control, name: "bankingInfoPhotos" });
+  // Banking info moved to its own section
 
   // If ALL business fields are cleared/empty, clear field-level errors immediately
   useEffect(() => {
     const isEmptyStr = (v?: string | null) => !v || v.trim().length === 0;
     const isEmptyArr = (v?: unknown[] | null) => !v || v.length === 0;
 
-    const allEmpty = isEmptyStr(hstNumber) && isEmptyStr(businessName) && isEmptyArr(incorporatePhotos) && isEmptyArr(hstPhotos) && isEmptyArr(bankingInfoPhotos);
+    const allEmpty = isEmptyStr(hstNumber) && isEmptyStr(businessName) && isEmptyArr(incorporatePhotos) && isEmptyArr(hstPhotos);
 
     if (allEmpty) {
-      clearErrors(["hstNumber", "businessName", "incorporatePhotos", "hstPhotos", "bankingInfoPhotos"]);
+      clearErrors(["hstNumber", "businessName", "incorporatePhotos", "hstPhotos"]);
     }
-  }, [hstNumber, businessName, incorporatePhotos, hstPhotos, bankingInfoPhotos, clearErrors]);
+  }, [hstNumber, businessName, incorporatePhotos, hstPhotos, clearErrors]);
 
   const rootMessage = (errors as any)?.root?.message as string | undefined;
 
@@ -43,16 +43,13 @@ export default function BusinessSection() {
       {/* root anchor for all-or-nothing error */}
       <span data-field="businessSection.root" className="sr-only" />
 
-      <h2 className="text-center text-lg font-semibold text-gray-800">{t("form.step2.page4.sections.business.title", "Incorporate Details")}</h2>
+      <h2 className="text-center text-lg font-semibold text-gray-800">{t("form.step2.page4.sections.business.title")}</h2>
 
       {/* Disclaimer (same design as CriminalRecords guidance) */}
       <div className="rounded-xl bg-gray-50/60 ring-1 ring-gray-100 p-4">
         <div className="text-sm text-gray-700 text-center">
           <p>
-            {t(
-              "form.step2.page4.sections.business.disclaimer.text",
-              "If you provide any incorporation detail, you must complete every field and upload all related documents in this section. This includes Employee Number, HST Number, Business Name, and the required photos (Incorporation, HST, Banking)."
-            )}
+            {t("form.step2.page4.sections.business.disclaimer.text")}
           </p>
         </div>
       </div>
@@ -61,7 +58,7 @@ export default function BusinessSection() {
         {/* Row 1: Business Name and HST Number */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700">{t("form.step2.page4.fields.businessName", "Business Name")}</label>
+            <label className="block text-sm font-medium text-gray-700">{t("form.step2.page4.fields.businessName")}</label>
             <input
               {...register("businessName")}
               data-field="businessName"
@@ -72,7 +69,7 @@ export default function BusinessSection() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">{t("form.step2.page4.fields.hstNumber", "HST Number")}</label>
+            <label className="block text-sm font-medium text-gray-700">{t("form.step2.page4.fields.hstNumber")}</label>
             <input
               {...register("hstNumber")}
               data-field="hstNumber"
@@ -89,8 +86,8 @@ export default function BusinessSection() {
         <div className="col-span-12 lg:col-span-6" data-field="incorporatePhotos">
           <OnboardingPhotoGroup
             name="incorporatePhotos"
-            label={t("form.step2.page4.fields.incorporatePhotos", "Incorporation Photos")}
-            description={t("form.step2.page4.fields.incorporatePhotosDescription", "Upload clear photos of your business incorporation documents (e.g., Articles of Incorporation, Certificate of Incorporation).")}
+            label={t("form.step2.page4.fields.incorporatePhotos")}
+            description={t("form.step2.page4.fields.incorporatePhotosDescription")}
             folder={ES3Folder.INCORPORATION_PHOTOS}
             maxPhotos={10}
           />
@@ -99,22 +96,14 @@ export default function BusinessSection() {
         <div className="col-span-12 lg:col-span-6" data-field="hstPhotos">
           <OnboardingPhotoGroup
             name="hstPhotos"
-            label={t("form.step2.page4.fields.hstPhotos", "HST Business Number Photos")}
-            description={t("form.step2.page4.fields.hstPhotosDescription", "Upload a photo of your HST/GST business number registration document (e.g., CRA registration letter).")}
+            label={t("form.step2.page4.fields.hstPhotos")}
+            description={t("form.step2.page4.fields.hstPhotosDescription")}
             folder={ES3Folder.HST_PHOTOS}
             maxPhotos={2}
           />
         </div>
 
-        <div className="col-span-12" data-field="bankingInfoPhotos">
-          <OnboardingPhotoGroup
-            name="bankingInfoPhotos"
-            label={t("form.step2.page4.fields.bankingInfoPhotos", "Banking Info Photos")}
-            description={t("form.step2.page4.fields.bankingInfoPhotosDescription", "Upload a photo of a void cheque or direct deposit form from your bank (must clearly show account number and institution details).")}
-            folder={ES3Folder.BANKING_INFO_PHOTOS}
-            maxPhotos={2}
-          />
-        </div>
+        {/* Banking Info moved to its own section */}
       </div>
 
       {rootMessage && <p className="text-red-500 text-sm text-center">{rootMessage}</p>}

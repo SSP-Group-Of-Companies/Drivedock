@@ -11,6 +11,7 @@ import { useDashboardLoading } from "@/store/useDashboardLoading";
 import DashboardFormWizard from "../components/DashboardFormWizard";
 import { useEditMode } from "../components/EditModeContext";
 import IdentificationsContent from "./components/IdentificationsContent";
+import type { PrequalificationsResponse } from "@/app/api/v1/admin/onboarding/[id]/prequalifications/types";
 import { COMPANIES } from "@/constants/companies";
 import { ECountryCode } from "@/types/shared.types";
 import StepNotCompletedMessage from "../components/StepNotCompletedMessage";
@@ -42,6 +43,28 @@ export default function IdentificationsClient({
   } = useIdentifications(trackerId);
   
   const updateMutation = useUpdateIdentifications(trackerId);
+  // Fetch prequalification data for driverType
+  const [prequalData, setPrequalData] = useState<PrequalificationsResponse | null>(null);
+  const [, setIsPrequalLoading] = useState(true);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setIsPrequalLoading(true);
+        const resp = await fetch(`/api/v1/admin/onboarding/${trackerId}/prequalifications`);
+        if (!resp.ok) throw new Error("Failed to load prequalifications");
+        const json = (await resp.json()) as PrequalificationsResponse;
+        if (!cancelled) setPrequalData(json);
+      } catch {
+        if (!cancelled) setPrequalData(null);
+      } finally {
+        if (!cancelled) setIsPrequalLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [trackerId]);
 
   // Staged changes (page-level) - like safety processing
   const [staged, setStaged] = useState<Record<string, any>>({});
@@ -267,6 +290,7 @@ export default function IdentificationsClient({
             return company?.countryCode || ECountryCode.CA;
           })()}
           highlightTruckDetails={shouldHighlightTruckDetails}
+          driverType={prequalData?.data?.preQualifications?.driverType}
         />
       </div>
     </motion.div>

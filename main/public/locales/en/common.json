@@ -359,8 +359,13 @@
           "business": {
             "title": "Incorporate Details",
             "disclaimer": {
-              "text": "If you provide any incorporation detail, you must complete every field and upload all related documents in this section. This includes Employee Number, HST Number, Business Name, and the required photos (Incorporation, HST, Banking)."
+              "text": "If you provide any incorporation detail, you must complete every field and upload all related documents in this section. This includes HST Number, Business Name, and the required photos (Incorporation, HST)."
             }
+          },
+          "banking": {
+            "title": "Banking Information",
+            "requiredDisclaimer": "Banking information is required for Company and Owner Operator applicants. Upload a clear photo of a void cheque or a bank-issued direct deposit form showing your name, institution number, transit number, and account number.",
+            "optionalDisclaimer": "Banking information is optional for Owner Drivers. If you choose to provide it now, upload a clear photo of a void cheque or a bank-issued direct deposit form that shows your name, institution number, transit number, and account number so payroll can set up your direct deposit."
           },
           "additionalInfo": {
             "title": "Additional Info"

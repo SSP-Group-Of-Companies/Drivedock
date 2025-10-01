@@ -1,6 +1,7 @@
 // src/lib/zodSchemas/applicationFormPage4.Schema.ts
 import { z } from "zod";
 import { ECountryCode } from "@/types/shared.types";
+import { EDriverType } from "@/types/preQualifications.types";
 import { IApplicationFormPage4, EPassportType, EWorkAuthorizationType } from "@/types/applicationForm.types";
 
 // Reuse your common helpers
@@ -77,10 +78,11 @@ export const truckDetailsSchema = z.object({
 type FactoryOpts = {
   countryCode: ECountryCode; // 'CA' | 'US'
   existing?: Partial<IApplicationFormPage4> | null; // page4 data returned by GET
+  driverType?: EDriverType | null; // from prequalifications when available
 };
 
 export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
-  const { countryCode } = opts ?? {};
+  const { countryCode, driverType } = opts ?? {};
   const isCanadian = countryCode === ECountryCode.CA;
   const isUS = countryCode === ECountryCode.US;
 
@@ -91,7 +93,10 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
     hstNumber: z
       .string()
       .optional()
-      .transform((v) => v?.trim() ?? ""),
+      .transform((v) => v?.trim() ?? "")
+      .refine((v) => !v || v.length >= 9, {
+        message: "HST number must be at least 9 characters.",
+      }),
     businessName: z
       .string()
       .optional()
@@ -144,10 +149,55 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
   type Out = z.infer<typeof base>;
 
   const schema = base
-    // Business all-or-nothing (unchanged)
+    // Business requiredness and AOI (banking removed)
+    .superRefine((data: Out, ctx) => {
+      // 1) If any business detail provided -> require all business leaves
+      const anyBusinessProvided =
+        !!data.businessName?.trim() ||
+        !!data.hstNumber?.trim() ||
+        (data.incorporatePhotos?.length ?? 0) > 0 ||
+        (data.hstPhotos?.length ?? 0) > 0;
+
+      if (anyBusinessProvided) {
+        if (!data.businessName?.trim()) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["businessName"], message: "Business name is required when any business detail is provided." });
+        }
+        if (!data.hstNumber?.trim()) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["hstNumber"], message: "HST number is required when any business detail is provided." });
+        }
+        if ((data.incorporatePhotos?.length ?? 0) < 1) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["incorporatePhotos"], message: "At least one Incorporate photo is required." });
+        }
+        if ((data.hstPhotos?.length ?? 0) < 1) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["hstPhotos"], message: "At least one HST photo is required." });
+        }
+        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["business.root"], message: "All business section fields must be provided if any are." });
+      }
+
+      // 2) Company/OwnerOperator -> business and banking become required even if none provided
+      const isCompanyOrOO = driverType === EDriverType.Company || driverType === EDriverType.OwnerOperator;
+      if (isCompanyOrOO) {
+        if (!data.businessName?.trim()) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["businessName"], message: "Business name is required." });
+        }
+        if (!data.hstNumber?.trim()) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["hstNumber"], message: "HST number is required." });
+        }
+        if ((data.incorporatePhotos?.length ?? 0) < 1) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["incorporatePhotos"], message: "At least one Incorporation photo is required." });
+        }
+        if ((data.hstPhotos?.length ?? 0) < 1) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["hstPhotos"], message: "At least one HST photo is required." });
+        }
+        if ((data.bankingInfoPhotos?.length ?? 0) < 1) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["bankingInfoPhotos"], message: "Banking info is required for Company and Owner Operator applicants." });
+        }
+      }
+    })
+    // Country-specific docs with passport type logic
     .superRefine((data: Out, ctx) => {
       const textProvided = !!data.businessName?.trim() || !!data.hstNumber?.trim();
-      const photosProvided = data.hstPhotos.length > 0 || data.incorporatePhotos.length > 0 || data.bankingInfoPhotos.length > 0;
+      const photosProvided = data.hstPhotos.length > 0 || data.incorporatePhotos.length > 0;
       if (!textProvided && !photosProvided) return;
 
       let hadError = false;
@@ -165,10 +215,6 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
       }
       if (data.hstPhotos.length === 0) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["hstPhotos"], message: "At least one HST photo is required." });
-        hadError = true;
-      }
-      if (data.bankingInfoPhotos.length === 0) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["bankingInfoPhotos"], message: "At least one Banking Info photo is required." });
         hadError = true;
       }
       if (hadError) {
