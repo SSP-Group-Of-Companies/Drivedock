@@ -24,8 +24,8 @@ export const photoSchema = z.object({
 
 // License Entry — photos optional here; first license requirement enforced below
 export const licenseEntrySchema = z.object({
-  licenseNumber: z.string().min(1, "License number is required"),
-  licenseStateOrProvince: z.string().min(1, "Province is required"),
+  licenseNumber: z.string().trim().min(1, "License number is required"),
+  licenseStateOrProvince: z.string().trim().min(1, "Province is required"),
   licenseType: z.nativeEnum(ELicenseType),
   licenseExpiry: dateYMD.refine(
     (date) => {
@@ -60,10 +60,10 @@ export const licenseEntrySchema = z.object({
 // Address Entry
 export const addressEntrySchema = z
   .object({
-    address: z.string().min(1, "Address is required"),
-    city: z.string().min(1, "City is required"),
-    stateOrProvince: z.string().min(1, "Province is required"),
-    postalCode: z.string().min(3, "Postal code is required"),
+    address: z.string().trim().min(1, "Address is required"),
+    city: z.string().trim().min(1, "City is required"),
+    stateOrProvince: z.string().trim().min(1, "Province is required"),
+    postalCode: z.string().trim().min(3, "Postal code is required"),
     from: dateYMD,
     to: dateYMD.refine(
       (date) => {
@@ -86,8 +86,8 @@ export const addressEntrySchema = z
 
 // Base schema without conditional fields
 const baseApplicationFormPage1Schema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
+  firstName: z.string().trim().min(1, "First name is required"),
+  lastName: z.string().trim().min(1, "Last name is required"),
 
   // Store only digits; server re-validates with Luhn/format anyway
   sin: z.string().refine((val) => /^\d{9}$/.test(val.replace(/\D/g, "")), {
@@ -144,13 +144,13 @@ const baseApplicationFormPage1Schema = z.object({
     message: "You must confirm that you can provide proof of age",
   }),
 
-  email: z.string().email().min(1, "Email is required"),
-  emergencyContactName: z.string().min(1, "Emergency contact name is required"),
+  email: z.string().trim().email().min(1, "Email is required"),
+  emergencyContactName: z.string().trim().min(1, "Emergency contact name is required"),
   emergencyContactPhone: phoneLoose,
 
-  birthCity: z.string().min(1, "City of birth is required"),
-  birthCountry: z.string().min(1, "Country of birth is required"),
-  birthStateOrProvince: z.string().min(1, "Province/State of birth is required"),
+  birthCity: z.string().trim().min(1, "City of birth is required"),
+  birthCountry: z.string().trim().min(1, "Country of birth is required"),
+  birthStateOrProvince: z.string().trim().min(1, "Province/State of birth is required"),
 
   licenses: z
     .array(licenseEntrySchema)

@@ -39,6 +39,7 @@ import {
 import { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
 import { buildOnboardingStepPath } from "@/lib/utils/onboardingUtils";
 import { getCompanyById } from "@/constants/companies";
+import { hasDeepChanges } from "@/lib/utils/deepCompare";
 
 /**
  * RHF form shape for this page.
@@ -190,6 +191,24 @@ export default function PreQualificationClient({
   // - Send PATCH to backend
   // - Navigate using onboardingContext.nextUrl from the server response
   const onSubmit = async (data: FormValues) => {
+    // If nothing changed vs defaults → no-op continue (GET-only navigation)
+    const isChanged = hasDeepChanges<FormValues>(
+      data,
+      (defaultValues ?? {}) as Partial<FormValues>,
+      { nullAsUndefined: true, emptyStringAsUndefined: true }
+    );
+    if (!isChanged) {
+      const next = trackerContext?.nextStep;
+      if (next) {
+        router.push(buildOnboardingStepPath(trackerContext!, next));
+        router.refresh();
+        return;
+      }
+      // Fallback: go to Page 1
+      router.push(`/onboarding/${trackerId}/application-form/page-1`);
+      router.refresh();
+      return;
+    }
     // Map RHF data to typed IPreQualifications object
     const transformed: IPreQualifications = {
       over23Local: data.over23Local === "form.yes",

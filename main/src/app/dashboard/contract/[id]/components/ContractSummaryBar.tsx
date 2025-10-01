@@ -641,7 +641,7 @@ export default function ContractSummaryBar({ trackerId }: Props) {
 
   /* ---------- Desktop (grid so the middle stays centered/roomy) ---------- */
   const DesktopRow = (
-    <div className="hidden xl:grid xl:grid-cols-[minmax(200px,1fr)_minmax(280px,400px)_auto] xl:items-center xl:gap-4 2xl:grid-cols-[minmax(250px,1fr)_minmax(300px,450px)_auto] 2xl:gap-6">
+    <div className="hidden xl:grid xl:grid-cols-[minmax(200px,1fr)_minmax(260px,400px)_auto] xl:items-center xl:gap-4 2xl:grid-cols-[minmax(250px,1fr)_minmax(300px,450px)_auto] 2xl:gap-6">
       {/* Left */}
       <div className="min-w-0 flex items-start gap-3">
         <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded">
@@ -733,7 +733,7 @@ export default function ContractSummaryBar({ trackerId }: Props) {
       </div>
 
       {/* Right */}
-      <div className="flex items-center justify-end gap-2">
+      <div className="min-w-0 flex flex-wrap items-center justify-end gap-2">
         {/* Company */}
         <div className="relative" ref={companyMenuRef}>
           <button
