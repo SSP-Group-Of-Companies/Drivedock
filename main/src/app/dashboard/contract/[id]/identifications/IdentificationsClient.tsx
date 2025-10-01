@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import UpdateSubmitBar from "../safety-processing/components/UpdateSubmitBar";
 import { useSearchParams } from "next/navigation";
 import { useContract } from "@/hooks/dashboard/contract/useContract";
 import { useIdentifications, useUpdateIdentifications } from "@/hooks/dashboard/contract/useIdentifications";
@@ -10,6 +11,7 @@ import { useDashboardLoading } from "@/store/useDashboardLoading";
 import DashboardFormWizard from "../components/DashboardFormWizard";
 import { useEditMode } from "../components/EditModeContext";
 import IdentificationsContent from "./components/IdentificationsContent";
+import type { PrequalificationsResponse } from "@/app/api/v1/admin/onboarding/[id]/prequalifications/types";
 import { COMPANIES } from "@/constants/companies";
 import { ECountryCode } from "@/types/shared.types";
 import StepNotCompletedMessage from "../components/StepNotCompletedMessage";
@@ -27,7 +29,7 @@ export default function IdentificationsClient({
   const { isVisible: isDashboardLoaderVisible } = useDashboardLoading();
   const [shouldRender, setShouldRender] = useState(false);
   const { isEditMode } = useEditMode();
-  const [saveMessage, setSaveMessage] = useState("");
+  // unified submit bar handles messaging
 
   // Check if we should highlight the Truck Details card
   const shouldHighlightTruckDetails = searchParams.get("highlight") === "truck-details";
@@ -41,6 +43,28 @@ export default function IdentificationsClient({
   } = useIdentifications(trackerId);
   
   const updateMutation = useUpdateIdentifications(trackerId);
+  // Fetch prequalification data for driverType
+  const [prequalData, setPrequalData] = useState<PrequalificationsResponse | null>(null);
+  const [, setIsPrequalLoading] = useState(true);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setIsPrequalLoading(true);
+        const resp = await fetch(`/api/v1/admin/onboarding/${trackerId}/prequalifications`);
+        if (!resp.ok) throw new Error("Failed to load prequalifications");
+        const json = (await resp.json()) as PrequalificationsResponse;
+        if (!cancelled) setPrequalData(json);
+      } catch {
+        if (!cancelled) setPrequalData(null);
+      } finally {
+        if (!cancelled) setIsPrequalLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [trackerId]);
 
   // Staged changes (page-level) - like safety processing
   const [staged, setStaged] = useState<Record<string, any>>({});
@@ -196,21 +220,15 @@ export default function IdentificationsClient({
 
     try {
       await updateMutation.mutateAsync(dataToSend);
-      setSaveMessage("Changes saved successfully!");
-      setTimeout(() => setSaveMessage(""), 3000);
       clearStaged();
     } catch (err) {
-      setSaveMessage(
-        err instanceof Error ? err.message : "Failed to save changes"
-      );
+      throw err instanceof Error ? err : new Error("Failed to save changes");
     }
   };
 
   // Handle discard
   const handleDiscard = () => {
     clearStaged();
-    setSaveMessage("Changes discarded");
-    setTimeout(() => setSaveMessage(""), 3000);
   };
 
   return (
@@ -255,67 +273,8 @@ export default function IdentificationsClient({
           </div>
         </div>
 
-        {/* Save Message and Controls */}
-        <div className="mb-6 space-y-4">
-          {saveMessage && (
-            <div
-              className={`p-4 rounded-lg text-sm font-medium ${
-                saveMessage.includes("successfully")
-                  ? "bg-green-100 text-green-800 border border-green-200"
-                  : "bg-red-100 text-red-800 border border-red-200"
-              }`}
-            >
-              {saveMessage}
-            </div>
-          )}
-
-          {/* Submit bar - always present but greyed out when not dirty */}
-          <div
-            className="sticky bottom-0 z-30 mt-2 -mx-2 sm:mx-0"
-            aria-live="polite"
-          >
-            <div
-              className="mx-2 rounded-xl border p-3 sm:flex sm:items-center sm:justify-between"
-              style={{
-                background: "var(--color-surface)",
-                borderColor: "var(--color-outline)",
-                boxShadow: "var(--elevation-2)",
-                opacity: hasUnsavedChanges ? 1 : 0.6,
-              }}
-            >
-              <div
-                className="text-sm"
-                style={{ color: "var(--color-on-surface-variant)" }}
-              >
-                {hasUnsavedChanges
-                  ? "You have unsaved changes."
-                  : "No changes to submit."}
-              </div>
-              <div className="mt-2 flex gap-2 sm:mt-0">
-                <button
-                  type="button"
-                  className="rounded-lg border px-3 py-1.5 text-sm"
-                  style={{ borderColor: "var(--color-outline)" }}
-                  onClick={handleDiscard}
-                  disabled={!hasUnsavedChanges || updateMutation.isPending}
-                >
-                  Discard
-                </button>
-                <button
-                  type="button"
-                  className="rounded-lg px-3 py-1.5 text-sm text-white disabled:opacity-50"
-                  style={{
-                    background: "var(--color-primary)",
-                  }}
-                  onClick={handleSave}
-                  disabled={!hasUnsavedChanges || updateMutation.isPending}
-                >
-                  {updateMutation.isPending ? "Submitting…" : "Submit changes"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Unified submit bar */}
+        <UpdateSubmitBar dirty={hasUnsavedChanges} busy={updateMutation.isPending} onSubmit={handleSave} onDiscard={handleDiscard} />
 
         <IdentificationsContent
           data={identificationsData.data}
@@ -331,6 +290,7 @@ export default function IdentificationsClient({
             return company?.countryCode || ECountryCode.CA;
           })()}
           highlightTruckDetails={shouldHighlightTruckDetails}
+          driverType={prequalData?.data?.preQualifications?.driverType}
         />
       </div>
     </motion.div>

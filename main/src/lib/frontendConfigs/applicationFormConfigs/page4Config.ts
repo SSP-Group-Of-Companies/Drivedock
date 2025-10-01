@@ -35,6 +35,7 @@ export function makePage4Config(trackerId: string): FormPageConfig<ApplicationFo
   return {
     validationFields: (values) => {
       const fields = [
+        "hasCriminalRecords",
         "criminalRecords",
         "deniedLicenseOrPermit",
         "suspendedOrRevoked",
@@ -88,7 +89,7 @@ export function makePage4Config(trackerId: string): FormPageConfig<ApplicationFo
       const payload = { 
         ...values,
         // Criminal Records: remove empty placeholders (same pattern as page 3)
-        criminalRecords: pruneCriminalRecordRows(values.criminalRecords),
+        criminalRecords: values.hasCriminalRecords ? pruneCriminalRecordRows(values.criminalRecords) : [],
       };
       
       if (!hasFast) delete (payload as any).fastCard; // <- drop empty object

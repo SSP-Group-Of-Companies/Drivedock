@@ -90,12 +90,24 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     // ---------------------------
     if (body.accidentHistory) {
       appFormDoc.set("page3.accidentHistory", body.accidentHistory);
+      appFormDoc.set(
+        "page3.hasAccidentHistory",
+        Array.isArray(body.accidentHistory) && body.accidentHistory.length > 0
+      );
     }
     if (body.trafficConvictions) {
       appFormDoc.set("page3.trafficConvictions", body.trafficConvictions);
+      appFormDoc.set(
+        "page3.hasTrafficConvictions",
+        Array.isArray(body.trafficConvictions) && body.trafficConvictions.length > 0
+      );
     }
     if (body.criminalRecords) {
       appFormDoc.set("page4.criminalRecords", body.criminalRecords);
+      appFormDoc.set(
+        "page4.hasCriminalRecords",
+        Array.isArray(body.criminalRecords) && body.criminalRecords.length > 0
+      );
     }
 
     // Validate ONLY affected pages (lets Mongoose run your per-page rules)
@@ -120,8 +132,11 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
     return successResponse(200, "Accident/Convictions/Criminal records updated", {
       onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_4, true),
+      hasAccidentHistory: appFormDoc.page3?.hasAccidentHistory,
       accidentHistory: appFormDoc.page3.accidentHistory,
+      hasTrafficConvictions: appFormDoc.page3?.hasTrafficConvictions,
       trafficConvictions: appFormDoc.page3.trafficConvictions,
+      hasCriminalRecords: appFormDoc.page4?.hasCriminalRecords,
       criminalRecords: appFormDoc.page4.criminalRecords,
     });
   } catch (error) {
@@ -164,8 +179,11 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
 
     return successResponse(200, "Accident/Convictions/Criminal records retrieved", {
       onboardingContext: buildTrackerContext(onboardingDoc, null, true),
+      hasAccidentHistory: appFormDoc.page3?.hasAccidentHistory,
       accidentHistory: appFormDoc.page3.accidentHistory,
+      hasTrafficConvictions: appFormDoc.page3?.hasTrafficConvictions,
       trafficConvictions: appFormDoc.page3.trafficConvictions,
+      hasCriminalRecords: appFormDoc.page4?.hasCriminalRecords,
       criminalRecords: appFormDoc.page4.criminalRecords,
     });
   } catch (error) {

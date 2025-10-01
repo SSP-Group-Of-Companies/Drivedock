@@ -52,18 +52,32 @@ export default async function Page3ServerWrapper({ params }: { params: Promise<{
   const trackerContextFromGet = data?.onboardingContext ?? null;
 
   // ---------- Normalization to RHF-friendly defaults ----------
+  const hasAccidentFlag = pageData && Object.prototype.hasOwnProperty.call(pageData, "hasAccidentHistory");
+  const hasTrafficFlag = pageData && Object.prototype.hasOwnProperty.call(pageData, "hasTrafficConvictions");
   const defaultValues: ApplicationFormPage3Schema = {
-    accidentHistory: normalizeArray(pageData?.accidentHistory, 4, () => ({
-      date: "",
-      natureOfAccident: "",
-      fatalities: 0,
-      injuries: 0,
-    })).map((item) => ({
-      ...item,
-      date: formatInputDate(item?.date),
-    })),
+    // If flag exists on the document (even if false), use it. Else derive from legacy data.
+    hasAccidentHistory: hasAccidentFlag
+      ? (pageData.hasAccidentHistory as boolean)
+      : (Array.isArray(pageData?.accidentHistory) && pageData.accidentHistory.length > 0
+          ? true
+          : (undefined as unknown as boolean)),
+    hasTrafficConvictions: hasTrafficFlag
+      ? (pageData.hasTrafficConvictions as boolean)
+      : (Array.isArray(pageData?.trafficConvictions) && pageData.trafficConvictions.length > 0
+          ? true
+          : (undefined as unknown as boolean)),
+    // Do not prefill 4 rows by default; start with 1 placeholder row
+    accidentHistory: normalizeArray(
+      (pageData?.accidentHistory || []).map((item: any) => ({
+        ...item,
+        // keep fatalities/injuries as-is; do not default to 0
+        date: formatInputDate(item?.date),
+      })),
+      1,
+      () => ({ date: "", natureOfAccident: "" })
+    ),
 
-    trafficConvictions: normalizeArray(pageData?.trafficConvictions, 4, () => ({
+    trafficConvictions: normalizeArray(pageData?.trafficConvictions, 1, () => ({
       date: "",
       location: "",
       charge: "",

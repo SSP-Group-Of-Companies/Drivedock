@@ -7,13 +7,14 @@ type Props = Readonly<{
   busy?: boolean;
   onSubmit: () => Promise<void> | void;
   onDiscard?: () => void;
+  suppressErrorMessage?: boolean; // when true, don't render the bar-level error (use external banner)
 }>;
 
 /**
  * Small sticky footer bar that activates when there are staged changes.
  * Automatically reloads the page after successful submission to show live updates.
  */
-export default function UpdateSubmitBar({ dirty, busy, onSubmit, onDiscard }: Props) {
+export default function UpdateSubmitBar({ dirty, busy, onSubmit, onDiscard, suppressErrorMessage }: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -53,8 +54,12 @@ export default function UpdateSubmitBar({ dirty, busy, onSubmit, onDiscard }: Pr
       <div
         className="mx-2 rounded-xl border p-3 sm:flex sm:items-center sm:justify-between"
         style={{
-          background: "var(--color-surface)",
-          borderColor: "var(--color-outline)",
+          background: errorMsg && !suppressErrorMessage
+            ? "var(--color-error-container, rgba(220, 38, 38, 0.08))"
+            : "var(--color-surface)",
+          borderColor: errorMsg && !suppressErrorMessage
+            ? "var(--color-error-border, rgba(220, 38, 38, 0.35))"
+            : "var(--color-outline)",
           boxShadow: "var(--elevation-2)",
           opacity: dirty ? 1 : 0.6,
         }}
@@ -63,12 +68,12 @@ export default function UpdateSubmitBar({ dirty, busy, onSubmit, onDiscard }: Pr
           className="text-sm"
           // When there's an error, emphasize and use a danger color.
           style={{
-            color: errorMsg ? "var(--color-error, #b00020)" : "var(--color-on-surface-variant)",
-            fontWeight: errorMsg ? 600 : 400,
+            color: errorMsg && !suppressErrorMessage ? "var(--color-error, #b91c1c)" : "var(--color-on-surface-variant)",
+            fontWeight: errorMsg && !suppressErrorMessage ? 600 : 400,
           }}
-          role={errorMsg ? "alert" : undefined}
+          role={errorMsg && !suppressErrorMessage ? "alert" : undefined}
         >
-          {errorMsg ? errorMsg : dirty ? "You have unsaved changes." : "No changes to submit."}
+          {errorMsg && !suppressErrorMessage ? errorMsg : dirty ? "You have unsaved changes." : "No changes to submit."}
         </div>
 
         <div className="mt-2 flex gap-2 sm:mt-0">

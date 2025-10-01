@@ -24,6 +24,7 @@ import { fetchServerPageData } from "@/lib/utils/fetchServerPageData";
 type Page4Result = {
   page4?: IApplicationFormPage4;
   onboardingContext?: IOnboardingTrackerContext;
+  prequalificationData?: { driverType?: string };
 };
 
 export default async function ApplicationFormPage4({ params }: { params: Promise<{ id: string }> }) {
@@ -45,5 +46,5 @@ export default async function ApplicationFormPage4({ params }: { params: Promise
   }
 
   // Client component performs detailed mapping/defaults
-  return <Page4Client trackerId={trackerId} onboardingContext={data.onboardingContext} page4={data.page4 ?? null} />;
+  return <Page4Client trackerId={trackerId} onboardingContext={data.onboardingContext} page4={data.page4 ?? null} prequalificationData={data.prequalificationData} />;
 }

@@ -355,7 +355,7 @@
               "dontDeclareTitle": "No declares lo siguiente:",
               "items": {
                 "item1": "Una condena por la que hayas recibido una suspensión de antecedentes (anteriormente indulto) de acuerdo con la Ley de Antecedentes Penales;",
-                "item2": "Una condena cuando eras un «joven» conforme a la Ley de Justicia Penal para Adolescentes;",
+                "item2": "Una condena cuando eras un ‘joven’ conforme a la Ley de Justicia Penal para Adolescentes;",
                 "item3": "Una absolución incondicional o condicional, conforme al artículo 730 del Código Penal;",
                 "item4": "Un delito por el cual no fuiste condenado;",
                 "item5": "Cualquier infracción provincial o municipal; y",
@@ -366,9 +366,14 @@
           "business": {
             "title": "Detalles de incorporación",
             "disclaimer": {
-              "text": "Si proporcionas algún detalle de incorporación, debes completar todos los campos y subir todos los documentos relacionados en esta sección. Esto incluye número de empleado, número de HST, número de empresa y las fotos requeridas (incorporación, HST, banca)."
+            "text": "Si proporcionas algún detalle de incorporación, debes completar todos los campos y subir todos los documentos relacionados en esta sección. Esto incluye el número de HST, el nombre de la empresa y las fotos requeridas (incorporación, HST)."
             }
           },
+        "banking": {
+          "title": "Información bancaria",
+          "requiredDisclaimer": "La información bancaria es obligatoria para solicitantes Empresa y Propietario‑operador. Sube una foto clara de un cheque anulado o de un formulario bancario de depósito directo que muestre tu nombre, número de institución, número de tránsito y número de cuenta.",
+          "optionalDisclaimer": "La información bancaria es opcional para Propietario‑conductor. Si decides proporcionarla ahora, sube una foto clara de un cheque anulado o de un formulario bancario de depósito directo que muestre tu nombre, número de institución, número de tránsito y número de cuenta, para que nómina pueda configurar tu depósito directo."
+        },
           "additionalInfo": {
             "title": "Información adicional"
           },

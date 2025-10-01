@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import UpdateSubmitBar from "../safety-processing/components/UpdateSubmitBar";
 import { useContract } from "@/hooks/dashboard/contract/useContract";
 import { useEmploymentHistory, useUpdateEmploymentHistory } from "@/hooks/dashboard/contract/useEmploymentHistory";
 import { useDashboardPageLoading } from "@/hooks/useDashboardPageLoading";
@@ -26,7 +27,7 @@ export default function EmploymentHistoryClient({
   const { isVisible: isDashboardLoaderVisible } = useDashboardLoading();
   const { isEditMode } = useEditMode();
   const [shouldRender, setShouldRender] = useState(false);
-  const [saveMessage, setSaveMessage] = useState("");
+  // unified submit bar handles messaging; no page-level banner
 
   // React Query hooks
   const { 
@@ -75,9 +76,7 @@ export default function EmploymentHistoryClient({
     if (staged.employments) {
       const employmentErrors = validateEmployments(staged.employments);
       if (employmentErrors.length > 0) {
-        setSaveMessage("Please fix employment validation errors before saving");
-        setTimeout(() => setSaveMessage(""), 5000);
-        return;
+        throw new Error("Please fix employment validation errors before saving");
       }
     }
 
@@ -110,15 +109,9 @@ export default function EmploymentHistoryClient({
 
     try {
       await updateMutation.mutateAsync(dataToSend);
-      setSaveMessage("Changes saved successfully!");
-      setTimeout(() => setSaveMessage(""), 3000);
       clearStaged();
     } catch (error) {
-      console.error("Save error:", error);
-      setSaveMessage(
-        error instanceof Error ? error.message : "Failed to save changes"
-      );
-      setTimeout(() => setSaveMessage(""), 5000);
+      throw error instanceof Error ? error : new Error("Failed to save changes");
     }
   };
 
@@ -197,67 +190,8 @@ export default function EmploymentHistoryClient({
           borderColor: "var(--color-outline)",
         }}
       >
-        {/* Save Message and Controls */}
-        <div className="mb-6 space-y-4">
-          {saveMessage && (
-            <div
-              className={`p-4 rounded-lg text-sm font-medium ${
-                saveMessage.includes("successfully")
-                  ? "bg-green-100 text-green-800 border border-green-200"
-                  : "bg-red-100 text-red-800 border border-red-200"
-              }`}
-            >
-              {saveMessage}
-            </div>
-          )}
-
-          {/* Submit bar - always present but greyed out when not dirty */}
-          <div
-            className="sticky bottom-0 z-30 mt-2 -mx-2 sm:mx-0"
-            aria-live="polite"
-          >
-            <div
-              className="mx-2 rounded-xl border p-3 sm:flex sm:items-center sm:justify-between"
-              style={{
-                background: "var(--color-surface)",
-                borderColor: "var(--color-outline)",
-                boxShadow: "var(--elevation-2)",
-                opacity: hasUnsavedChanges ? 1 : 0.6,
-              }}
-            >
-              <div
-                className="text-sm"
-                style={{ color: "var(--color-on-surface-variant)" }}
-              >
-                {hasUnsavedChanges
-                  ? "You have unsaved changes."
-                  : "No changes to submit."}
-              </div>
-              <div className="mt-2 flex gap-2 sm:mt-0">
-                <button
-                  type="button"
-                  className="rounded-lg border px-3 py-1.5 text-sm"
-                  style={{ borderColor: "var(--color-outline)" }}
-                  onClick={clearStaged}
-                  disabled={!hasUnsavedChanges || updateMutation.isPending}
-                >
-                  Discard
-                </button>
-                <button
-                  type="button"
-                  className="rounded-lg px-3 py-1.5 text-sm text-white disabled:opacity-50"
-                  style={{
-                    background: "var(--color-primary)",
-                  }}
-                  onClick={handleSave}
-                  disabled={!hasUnsavedChanges || updateMutation.isPending}
-                >
-                  {updateMutation.isPending ? "Submitting…" : "Submit changes"}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Unified submit bar */}
+        <UpdateSubmitBar dirty={hasUnsavedChanges} busy={updateMutation.isPending} onSubmit={handleSave} onDiscard={clearStaged} />
 
         {/* Edit Mode Status - Right Aligned */}
         <div className="flex justify-end mb-4">
