@@ -73,6 +73,8 @@ canadianHoursSchema.virtual("totalHours").get(function (this: ICanadianHoursOfSe
 // Page 3 Schema
 export const applicationFormPage3Schema = new Schema<IApplicationFormPage3>(
   {
+    hasAccidentHistory: { type: Boolean, required: [true, "Please answer if you have ever been involved in an accident"], default: false },
+    hasTrafficConvictions: { type: Boolean, required: [true, "Please answer if you have ever been convicted of a traffic offense"], default: false },
     accidentHistory: { type: [accidentEntrySchema], default: [], required: [true, "Accident history is required (can be empty)."] },
     trafficConvictions: { type: [convictionEntrySchema], default: [], required: [true, "Traffic convictions are required (can be empty)."] },
     education: { type: educationSchema, required: [true, "Education section is required."] },
@@ -84,6 +86,16 @@ export const applicationFormPage3Schema = new Schema<IApplicationFormPage3>(
 // ---------------------------------------------------
 // All-or-nothing row validation (unchanged)
 applicationFormPage3Schema.pre("validate", function (next) {
+  // If user indicated accidents, ensure at least one fully completed row exists
+  if ((this as any).hasAccidentHistory === true) {
+    const rows = Array.isArray(this.accidentHistory) ? this.accidentHistory : [];
+    const anyComplete = rows.some((a) => a && a.date && a.natureOfAccident && typeof a.fatalities === "number" && typeof a.injuries === "number");
+    if (!anyComplete) {
+      // invalidate parent path to surface a root-level error in API
+      this.invalidate("accidentHistory", "At least one report is needed when declared to have been involved in an accident");
+    }
+  }
+
   if (this.accidentHistory && Array.isArray(this.accidentHistory)) {
     this.accidentHistory.forEach((accident, index) => {
       if (!accident) return;
@@ -111,6 +123,15 @@ applicationFormPage3Schema.pre("validate", function (next) {
         if (!conviction.penalty) this.invalidate(`trafficConvictions.${index}.penalty`, "Penalty is required");
       }
     });
+  }
+
+  // Root-level enforcement when user says YES but provides no complete conviction row
+  if ((this as any).hasTrafficConvictions === true) {
+    const rows = Array.isArray(this.trafficConvictions) ? this.trafficConvictions : [];
+    const anyComplete = rows.some((c) => c && c.date && c.location && c.charge && c.penalty);
+    if (!anyComplete) {
+      this.invalidate("trafficConvictions", "At least one conviction is needed when declared to have traffic convictions");
+    }
   }
 
   next();

@@ -61,6 +61,15 @@ export default function CanadianHoursSection() {
 
         {/* Daily Hours */}
         <div>
+          {(() => {
+            const hoursErrors = (errors as any)?.canadianHoursOfService?.dailyHours as Array<any> | undefined;
+            const hasHoursError = Array.isArray(hoursErrors) && hoursErrors.some((e) => !!e?.hours);
+            return hasHoursError ? (
+              <div className="mb-3 text-center text-sm text-red-600" data-field="canadianHoursOfService.dailyHours.root">
+                {t("form.step2.page3.errors.canadianHoursRoot", "One or more hour entries are invalid. Please enter a value between 0 and 24.")}
+              </div>
+            ) : null;
+          })()}
           {isDesktop ? (
             /* ---------- DESKTOP TABLE ---------- */
             <div className="border border-gray-200 rounded-lg bg-gray-50 overflow-x-auto">
@@ -86,14 +95,15 @@ export default function CanadianHoursSection() {
                           min={0}
                           max={24}
                           step={0.25}
-                          className="h-10 w-10 mx-auto text-center bg-white border border-gray-300 rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          className={`h-10 w-10 mx-auto text-center bg-white border rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
+                            (errors.canadianHoursOfService?.dailyHours as any)?.[index]?.hours ? "border-red-500" : "border-gray-300"
+                          }`}
                           placeholder="0"
                           data-field={`canadianHoursOfService.dailyHours.${index}.hours`}
                           {...register(`canadianHoursOfService.dailyHours.${index}.hours` as const, {
                             setValueAs: (v) => (v === "" || v == null ? 0 : Number(v)),
                           })}
                         />
-                        {errors.canadianHoursOfService?.dailyHours?.[index]?.hours && <p className="text-red-500 text-xs mt-1">{errors.canadianHoursOfService.dailyHours[index]?.hours?.message}</p>}
                       </td>
                     ))}
                   </tr>
@@ -119,7 +129,9 @@ export default function CanadianHoursSection() {
                           min={0}
                           max={24}
                           step={0.25}
-                          className="w-full text-center bg-white border rounded-md focus:ring-sky-500 focus:outline-none focus:shadow-md text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          className={`w-full text-center bg-white border rounded-md focus:ring-sky-500 focus:outline-none focus:shadow-md text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
+                            (errors.canadianHoursOfService?.dailyHours as any)?.[index]?.hours ? "border-red-500" : "border-gray-300"
+                          }`}
                           placeholder="0"
                           data-field={`canadianHoursOfService.dailyHours.${index}.hours`}
                           {...register(`canadianHoursOfService.dailyHours.${index}.hours` as const, {

@@ -31,6 +31,7 @@ export default function AccidentCriminalClient() {
     trafficConvictions: ITrafficConvictionEntry[];
     criminalRecords: ICriminalRecordEntry[];
   } | null>(null);
+  // unified submit bar will display errors; no page-level banner
 
   const fetchData = useCallback(async () => {
     try {
@@ -70,6 +71,106 @@ export default function AccidentCriminalClient() {
     if (!staged) return;
 
     try {
+      // --------- Client-side pruning + validation to avoid server errors ---------
+      const isBlank = (s?: string) => !s || s.trim() === "";
+
+      const pruneAccidentRows = (rows: IAccidentEntry[] | undefined) => {
+        if (!Array.isArray(rows)) return [] as IAccidentEntry[];
+        return rows
+          .filter((r: any) => {
+            const dateEmpty = isBlank(r?.date as any);
+            const natureEmpty = isBlank(r?.natureOfAccident);
+            const fatalitiesMissing = !(typeof r?.fatalities === "number");
+            const injuriesMissing = !(typeof r?.injuries === "number");
+            return !(dateEmpty && natureEmpty && fatalitiesMissing && injuriesMissing);
+          })
+          .map((r: any) => ({
+            ...r,
+            date: isBlank(r?.date as any) ? undefined : (r.date as any),
+            natureOfAccident: isBlank(r?.natureOfAccident) ? undefined : r.natureOfAccident.trim(),
+          })) as IAccidentEntry[];
+      };
+
+      const pruneConvictionRows = (rows: ITrafficConvictionEntry[] | undefined) => {
+        if (!Array.isArray(rows)) return [] as ITrafficConvictionEntry[];
+        return rows
+          .filter((r) => !(isBlank(r?.date as any) && isBlank(r?.location) && isBlank(r?.charge) && isBlank(r?.penalty)))
+          .map((r) => ({
+            ...r,
+            date: isBlank(r.date as any) ? undefined : (r.date as any),
+            location: isBlank(r.location) ? undefined : r.location.trim(),
+            charge: isBlank(r.charge) ? undefined : r.charge.trim(),
+            penalty: isBlank(r.penalty) ? undefined : r.penalty.trim(),
+          })) as ITrafficConvictionEntry[];
+      };
+
+      const pruneCriminalRows = (rows: ICriminalRecordEntry[] | undefined) => {
+        if (!Array.isArray(rows)) return [] as ICriminalRecordEntry[];
+        return rows
+          .filter((r) => !(isBlank(r?.offense) && isBlank(r?.dateOfSentence as any) && isBlank(r?.courtLocation)))
+          .map((r) => ({
+            ...r,
+            offense: isBlank(r.offense) ? undefined : r.offense.trim(),
+            dateOfSentence: isBlank(r.dateOfSentence as any) ? undefined : (r.dateOfSentence as any),
+            courtLocation: isBlank(r.courtLocation) ? undefined : r.courtLocation.trim(),
+          })) as ICriminalRecordEntry[];
+      };
+
+      const isEmptyAccident = (a: any) => !a?.date && (!a?.natureOfAccident || a.natureOfAccident.trim() === "") && !(typeof a?.fatalities === "number") && !(typeof a?.injuries === "number");
+      const isEmptyConviction = (c: any) => (!c?.date) && (!c?.location || c.location.trim() === "") && (!c?.charge || c.charge.trim() === "") && (!c?.penalty || c.penalty.trim() === "");
+      const isEmptyCriminal = (r: any) => (!r?.offense || r.offense.trim() === "") && (!r?.dateOfSentence) && (!r?.courtLocation || r.courtLocation.trim() === "");
+
+      const validateAllOrNothing = () => {
+        // Accidents
+        for (const [i, a] of (staged.accidentHistory || []).entries()) {
+          if (isEmptyAccident(a)) {
+            return `Accident row ${i + 1}: row is empty. Remove it or complete all fields`;
+          }
+          const any = !!(a as any)?.date || (!!(a as any)?.natureOfAccident && (a as any).natureOfAccident.trim() !== "") || typeof (a as any)?.fatalities === "number" || typeof (a as any)?.injuries === "number";
+          if (any) {
+            if (!(a as any)?.date || isBlank((a as any)?.natureOfAccident) || (a as any)?.fatalities == null || (a as any)?.injuries == null) {
+              return `Accident row ${i + 1}: complete all fields`;
+            }
+          }
+        }
+        // Traffic
+        for (const [i, c] of (staged.trafficConvictions || []).entries()) {
+          if (isEmptyConviction(c)) {
+            return `Traffic conviction row ${i + 1}: row is empty. Remove it or complete all fields`;
+          }
+          const any = !!c.date || (!!c.location && c.location.trim() !== "") || (!!c.charge && c.charge.trim() !== "") || (!!c.penalty && c.penalty.trim() !== "");
+          if (any) {
+            if (!c.date || isBlank(c.location) || isBlank(c.charge) || isBlank(c.penalty)) {
+              return `Traffic conviction row ${i + 1}: complete all fields`;
+            }
+          }
+        }
+        // Criminal
+        for (const [i, r] of (staged.criminalRecords || []).entries()) {
+          if (isEmptyCriminal(r)) {
+            return `Criminal record row ${i + 1}: row is empty. Remove it or complete all fields`;
+          }
+          const any = isBlank(r.offense) === false || !!r.dateOfSentence || (isBlank(r.courtLocation) === false);
+          if (any) {
+            if (isBlank(r.offense) || !r.dateOfSentence || isBlank(r.courtLocation)) {
+              return `Criminal record row ${i + 1}: complete all fields`;
+            }
+          }
+        }
+        return null;
+      };
+
+      const validationError = validateAllOrNothing();
+      if (validationError) {
+        throw new Error(validationError);
+      }
+
+      const payload = {
+        accidentHistory: pruneAccidentRows(staged.accidentHistory),
+        trafficConvictions: pruneConvictionRows(staged.trafficConvictions),
+        criminalRecords: pruneCriminalRows(staged.criminalRecords),
+      };
+
       const response = await fetch(
         `/api/v1/admin/onboarding/${trackerId}/application-form/accident-criminal`,
         {
@@ -77,7 +178,7 @@ export default function AccidentCriminalClient() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(staged),
+          body: JSON.stringify(payload),
         }
       );
 
@@ -96,7 +197,14 @@ export default function AccidentCriminalClient() {
       // Invalidate contract context to update progress bar
       queryClient.invalidateQueries({ queryKey: ["contract-context", trackerId] });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save data");
+      const msg = err instanceof Error ? err.message : "Failed to save data";
+      // For any error, let the submit bar surface the message
+      const isRowValidation = /row\s+\d+\s*:/i.test(msg);
+      if (!isRowValidation) {
+        setError(msg);
+      }
+      // Re-throw so UpdateSubmitBar catches it and prevents reload
+      throw err instanceof Error ? err : new Error(msg);
     }
   };
 
@@ -260,6 +368,7 @@ function AccidentCriminalContent({
         <div className="xl:col-span-6">
           <AccidentReportSection
             data={staged?.accidentHistory || []}
+            initialHas={_data?.hasAccidentHistory}
             onStage={onStageAccidentHistory}
           />
         </div>
@@ -267,6 +376,7 @@ function AccidentCriminalContent({
         <div className="xl:col-span-6">
           <TrafficConvictionsSection
             data={staged?.trafficConvictions || []}
+            initialHas={_data?.hasTrafficConvictions}
             onStage={onStageTrafficConvictions}
           />
         </div>
@@ -274,6 +384,7 @@ function AccidentCriminalContent({
         <div className="xl:col-span-12">
           <CriminalRecordsSection
             data={staged?.criminalRecords || []}
+            initialHas={_data?.hasCriminalRecords}
             onStage={onStageCriminalRecords}
           />
         </div>

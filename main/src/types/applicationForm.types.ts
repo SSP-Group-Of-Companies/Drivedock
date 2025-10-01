@@ -209,7 +209,9 @@ export interface ICanadianHoursOfService {
   totalHours?: number; // Computed/virtual on server
 }
 export interface IApplicationFormPage3 {
+  hasAccidentHistory: boolean;
   accidentHistory: IAccidentEntry[];
+  hasTrafficConvictions: boolean;
   trafficConvictions: ITrafficConvictionEntry[];
   education: IEducation;
   canadianHoursOfService: ICanadianHoursOfService;
@@ -254,6 +256,7 @@ export interface ITruckDetails {
 
 export interface IApplicationFormPage4 {
   // Criminal Record Table
+  hasCriminalRecords?: boolean;
   criminalRecords: ICriminalRecordEntry[];
 
   // Incorporation / Business Details (if any of these provided, enforce all)

@@ -2,8 +2,8 @@
 
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Plus, Trash2, X } from "lucide-react";
-import { useFieldArray, useFormContext } from "react-hook-form";
+import { Trash2 } from "lucide-react";
+import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import useMounted from "@/hooks/useMounted";
 import { ApplicationFormPage4Schema } from "@/lib/zodSchemas/applicationFormPage4.Schema";
 
@@ -14,6 +14,8 @@ export default function CriminalRecordsSection() {
   const {
     control,
     register,
+    setValue,
+    clearErrors,
     formState: { errors },
   } = useFormContext<ApplicationFormPage4Schema>();
 
@@ -22,12 +24,7 @@ export default function CriminalRecordsSection() {
     name: "criminalRecords",
   });
 
-  // Ensure we always have at least one row
-  React.useEffect(() => {
-    if (fields.length === 0) {
-      append({ offense: "", dateOfSentence: "", courtLocation: "" });
-    }
-  }, [fields.length, append]);
+  const hasCriminalRecords = useWatch({ control, name: "hasCriminalRecords" });
 
   if (!mounted) return null;
 
@@ -93,8 +90,42 @@ export default function CriminalRecordsSection() {
         </div>
       </div>
 
+      {/* Yes/No gate */}
+      <div className="flex items-center justify-center gap-3 flex-wrap" data-field="hasCriminalRecords">
+        <span className="text-sm font-medium text-gray-800 text-center">{t("form.step2.page4.questions.hasCriminalRecords", "Have you ever been convicted of a criminal offense?")}</span>
+        <div className="inline-flex rounded-full border border-gray-200 overflow-hidden">
+          <button
+            type="button"
+            className={`px-4 py-1 text-sm ${hasCriminalRecords === true ? "bg-sky-600 text-white" : "bg-white text-gray-700"}`}
+            onClick={() => {
+              setValue("hasCriminalRecords", true, { shouldDirty: true, shouldValidate: true });
+              clearErrors(["hasCriminalRecords", "criminalRecords"]);
+            }}
+          >
+            {t("form.step1.questions.yes", "Yes")}
+          </button>
+          <button
+            type="button"
+            className={`px-4 py-1 text-sm border-l border-gray-300 ${hasCriminalRecords === false ? "bg-sky-600 text-white" : "bg-white text-gray-700"}`}
+            onClick={() => {
+              setValue("hasCriminalRecords", false, { shouldDirty: true, shouldValidate: true });
+              clearErrors(["hasCriminalRecords", "criminalRecords"]);
+            }}
+          >
+            {t("form.step1.questions.no", "No")}
+          </button>
+        </div>
+      </div>
+
+      {/* Root error */}
+      {((errors as any)?.hasCriminalRecords?.message || (errors as any)?.criminalRecords?.message) && (
+        <div className="mb-2 text-center text-sm text-red-600">
+          {(errors as any)?.hasCriminalRecords?.message || (errors as any)?.criminalRecords?.message}
+        </div>
+      )}
+
       {/* Desktop header — show only when there are rows */}
-      {hasRows && (
+      {hasCriminalRecords === true && hasRows && (
         <div className="hidden md:grid grid-cols-12 items-center px-2 py-2 text-sm font-medium text-gray-700 bg-gray-50 rounded-lg shadow-[0_1px_0_0_rgba(0,0,0,0.05)]">
           <div className="col-span-3">
             {t("form.step2.page4.fields.dateOfSentence")}
@@ -112,6 +143,7 @@ export default function CriminalRecordsSection() {
       )}
 
       {/* Rows */}
+      {hasCriminalRecords === true && (
       <div className="space-y-4 md:space-y-0">
         {fields.map((row, i) => {
           const rowErr = (errors.criminalRecords as any)?.[i] || {};
@@ -136,11 +168,11 @@ export default function CriminalRecordsSection() {
                 <button
                   type="button"
                   onClick={() => remove(i)}
-                  className="absolute -top-2 -right-2 inline-flex items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 p-1 shadow md:hidden"
+                  className="absolute -top-2 -right-2 inline-flex items-center justify-center rounded-full bg-white text-red-600 hover:text-red-700 p-1 shadow md:hidden"
                   aria-label={t("actions.remove") as string}
                   title={t("actions.remove") as string}
                 >
-                  <X className="h-4 w-4" />
+                  <Trash2 className="h-4 w-4" />
                 </button>
               )}
 
@@ -154,14 +186,10 @@ export default function CriminalRecordsSection() {
                   {...register(`criminalRecords.${i}.dateOfSentence`)}
                   data-field={`criminalRecords.${i}.dateOfSentence`}
                   className={`w-full rounded-md border px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 ${
-                    dateHasErr ? "border-red-300" : "border-gray-300"
+                    dateHasErr ? "border-red-500" : "border-gray-300"
                   }`}
                 />
-                {dateHasErr && (
-                  <p className="mt-1 text-xs text-red-600">
-                    {rowErr.dateOfSentence.message}
-                  </p>
-                )}
+                {/* border-only; no inline error */}
               </div>
 
               {/* Offense */}
@@ -173,15 +201,11 @@ export default function CriminalRecordsSection() {
                   {...register(`criminalRecords.${i}.offense`)}
                   data-field={`criminalRecords.${i}.offense`}
                   className={`w-full rounded-md border px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 ${
-                    offenseHasErr ? "border-red-300" : "border-gray-300"
+                    offenseHasErr ? "border-red-500" : "border-gray-300"
                   }`}
                   placeholder={t("form.placeholders.describe", "Describe...")}
                 />
-                {offenseHasErr && (
-                  <p className="mt-1 text-xs text-red-600">
-                    {rowErr.offense.message}
-                  </p>
-                )}
+                {/* border-only; no inline error */}
               </div>
 
               {/* Court Location */}
@@ -193,18 +217,14 @@ export default function CriminalRecordsSection() {
                   {...register(`criminalRecords.${i}.courtLocation`)}
                   data-field={`criminalRecords.${i}.courtLocation`}
                   className={`w-full rounded-md border px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-sky-500 ${
-                    courtHasErr ? "border-red-300" : "border-gray-300"
+                    courtHasErr ? "border-red-500" : "border-gray-300"
                   }`}
                   placeholder={t(
                     "form.placeholders.cityProvince",
                     "City, Province/State"
                   )}
                 />
-                {courtHasErr && (
-                  <p className="mt-1 text-xs text-red-600">
-                    {rowErr.courtLocation.message}
-                  </p>
-                )}
+                {/* border-only; no inline error */}
               </div>
 
               {/* Desktop remove — centered vertically - Only show if more than one row */}
@@ -213,7 +233,7 @@ export default function CriminalRecordsSection() {
                   <button
                     type="button"
                     onClick={() => remove(i)}
-                    className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2 py-2 text-gray-600 hover:bg-gray-50"
+                    className="inline-flex items-center gap-1 rounded-md border border-gray-200 px-2 py-2 text-red-600 hover:text-red-700"
                     title={t("actions.remove") as string}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -225,20 +245,23 @@ export default function CriminalRecordsSection() {
           );
         })}
       </div>
+      )}
 
       {/* Add Row */}
-      <div className="text-center">
-        <button
-          type="button"
-          onClick={() =>
-            append({ offense: "", dateOfSentence: "", courtLocation: "" })
-          }
-          className="inline-flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-4 py-2 font-medium text-blue-600 hover:bg-blue-100"
-        >
-          <Plus className="h-4 w-4" />
-          {t("actions.addRow")}
-        </button>
-      </div>
+      {hasCriminalRecords === true && (
+        <div className="text-center">
+          <button
+            type="button"
+            onClick={() => append({ offense: "", dateOfSentence: "", courtLocation: "" })}
+            disabled={fields.length >= 7}
+            className={`mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm shadow ${
+              fields.length >= 7 ? "bg-gray-200 text-gray-500 cursor-not-allowed" : "bg-sky-600 text-white hover:opacity-90"
+            }`}
+          >
+            {t("form.addMore", "Add another")}
+          </button>
+        </div>
+      )}
     </section>
   );
 }

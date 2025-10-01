@@ -2,7 +2,7 @@
 
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { useMemo, useState, useEffect, useRef } from "react";
-import { X } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { ApplicationFormPage3Schema } from "@/lib/zodSchemas/applicationFormPage3.schema";
@@ -13,6 +13,7 @@ export default function AccidentHistorySection() {
   const {
     control,
     register,
+    setValue,
     clearErrors,
     formState: { errors },
   } = useFormContext<ApplicationFormPage3Schema>();
@@ -26,14 +27,16 @@ export default function AccidentHistorySection() {
     keyName: "key",
   });
 
+  const hasAccidentHistory = useWatch({ control, name: "hasAccidentHistory" });
+
   const initialMobileVisible = useMemo(() => {
     const anyData = (idx: number) => {
       const fh: any = (control as any)?._formValues?.accidentHistory?.[idx];
       return (
         !!fh?.date ||
         !!fh?.natureOfAccident ||
-        Number(fh?.fatalities) > 0 ||
-        Number(fh?.injuries) > 0
+        typeof fh?.fatalities === "number" ||
+        typeof fh?.injuries === "number"
       );
     };
     const count = fields.reduce((acc, _f, i) => (anyData(i) ? i + 1 : acc), 0);
@@ -52,8 +55,8 @@ export default function AccidentHistorySection() {
       const allEmpty =
         !accident?.date?.trim() &&
         !accident?.natureOfAccident?.trim() &&
-        (!accident?.fatalities || accident.fatalities === 0) &&
-        (!accident?.injuries || accident.injuries === 0);
+        (accident?.fatalities == null) &&
+        (accident?.injuries == null);
 
       if (allEmpty && !clearedRowsRef.current.has(index)) {
         clearErrors([
@@ -80,8 +83,46 @@ export default function AccidentHistorySection() {
         {t("form.step2.page3.instructionsAccidentHistory")}
       </p>
 
-      <div className="overflow-x-auto">
-        {isDesktop ? (
+      {/* Boolean gate: Have you ever been involved in an accident? */}
+      <div className="mb-4" data-field="hasAccidentHistory">
+        <div className="flex items-center justify-center gap-3 flex-wrap">
+          <span className="text-sm font-medium text-gray-800 text-center">{t("form.step2.page3.questions.hasAccidentHistory", "Have you ever been involved in an accident?")}</span>
+          <div className="inline-flex rounded-full border border-gray-200 overflow-hidden">
+          <button
+            type="button"
+            className={`px-4 py-1 text-sm ${hasAccidentHistory === true ? "bg-sky-600 text-white" : "bg-white text-gray-700"}`}
+            onClick={() => {
+              setValue("hasAccidentHistory", true, { shouldDirty: true, shouldValidate: true });
+              clearErrors(["hasAccidentHistory", "accidentHistory"]);
+              setMobileVisibleCount(1);
+            }}
+          >
+            {t("form.step1.questions.yes", "Yes")}
+          </button>
+          <button
+            type="button"
+              className={`px-4 py-1 text-sm border-l border-gray-300 ${hasAccidentHistory === false ? "bg-sky-600 text-white" : "bg-white text-gray-700"}`}
+            onClick={() => {
+              setValue("hasAccidentHistory", false, { shouldDirty: true, shouldValidate: true });
+              clearErrors(["hasAccidentHistory", "accidentHistory"]);
+            }}
+          >
+            {t("form.step1.questions.no", "No")}
+          </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Root error messages */}
+      {((errors as any)?.hasAccidentHistory?.message || (errors as any)?.accidentHistory?.message) && (
+        <div className="mb-4 text-center text-sm text-red-600">
+          {(errors as any)?.hasAccidentHistory?.message || (errors as any)?.accidentHistory?.message}
+        </div>
+      )}
+
+      {hasAccidentHistory === true && (
+        <div className="overflow-x-auto" data-field="accidentHistory">
+          {isDesktop ? (
           /* ---------- DESKTOP TABLE (only rendered on desktop) ---------- */
           <table className="w-full text-sm border-collapse table">
             <thead>
@@ -111,21 +152,20 @@ export default function AccidentHistorySection() {
                   <td className="py-3 px-4">
                     <input
                       type="date"
-                      className="h-10 px-2 mt-1 text-center block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
+                      className={`h-10 px-2 mt-1 text-center block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md border ${
+                        (errors.accidentHistory as any)?.[index]?.date ? "border-red-500" : "border-gray-200"
+                      }`}
                       placeholder="YYYY-MM-DD"
                       data-field={`accidentHistory.${index}.date`}
                       {...register(`accidentHistory.${index}.date` as const)}
                     />
-                    {errors.accidentHistory?.[index]?.date && (
-                      <p className="text-red-500 text-xs mt-1">
-                        {errors.accidentHistory[index]?.date?.message}
-                      </p>
-                    )}
                   </td>
                   <td className="py-3 px-4">
                     <input
                       type="text"
-                      className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
+                      className={`py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md border ${
+                        (errors.accidentHistory as any)?.[index]?.natureOfAccident ? "border-red-500" : "border-gray-200"
+                      }`}
                       placeholder={
                         index === 0 ? "Rear-end collision on highway" : ""
                       }
@@ -134,62 +174,54 @@ export default function AccidentHistorySection() {
                         `accidentHistory.${index}.natureOfAccident` as const
                       )}
                     />
-                    {errors.accidentHistory?.[index]?.natureOfAccident && (
-                      <p className="text-red-500 text-xs mt-1">
-                        {
-                          errors.accidentHistory[index]?.natureOfAccident
-                            ?.message
-                        }
-                      </p>
-                    )}
                   </td>
                   <td className="py-3 px-4">
                     <input
                       type="number"
                       min={0}
-                      className="h-10 w-10 text-center p-0 rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className={`h-10 w-16 text-center p-0 rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none border ${
+                        (errors.accidentHistory as any)?.[index]?.fatalities ? "border-red-500" : "border-gray-200"
+                      }`}
                       placeholder={index === 0 ? "0" : ""}
                       data-field={`accidentHistory.${index}.fatalities`}
                       {...register(
                         `accidentHistory.${index}.fatalities` as const,
-                        {
-                          setValueAs: (v) =>
-                            v === "" || v == null ? 0 : Number(v),
-                        }
+                        { setValueAs: (v) => (v === "" || v == null ? undefined : Number(v)) }
                       )}
                     />
-                    {errors.accidentHistory?.[index]?.fatalities && (
-                      <p className="text-red-500 text-xs mt-1 text-center">
-                        {errors.accidentHistory[index]?.fatalities?.message}
-                      </p>
-                    )}
                   </td>
                   <td className="py-3 px-4">
                     <input
                       type="number"
                       min={0}
-                      className="h-10 w-10 text-center p-0 rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className={`h-10 w-16 text-center p-0 rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none border ${
+                        (errors.accidentHistory as any)?.[index]?.injuries ? "border-red-500" : "border-gray-200"
+                      }`}
                       placeholder={index === 0 ? "0" : ""}
                       data-field={`accidentHistory.${index}.injuries`}
                       {...register(
                         `accidentHistory.${index}.injuries` as const,
-                        {
-                          setValueAs: (v) =>
-                            v === "" || v == null ? 0 : Number(v),
-                        }
+                        { setValueAs: (v) => (v === "" || v == null ? undefined : Number(v)) }
                       )}
                     />
-                    {errors.accidentHistory?.[index]?.injuries && (
-                      <p className="text-red-500 text-xs mt-1 text-center">
-                        {errors.accidentHistory[index]?.injuries?.message}
-                      </p>
-                    )}
                   </td>
+                  {index > 0 && (
+                    <td className="py-3 px-2 text-right">
+                      <button
+                        type="button"
+                        aria-label={t("form.remove", "Remove")}
+                        className="inline-flex items-center text-red-600 hover:text-red-700"
+                        onClick={() => remove(index)}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
           </table>
-        ) : (
+          ) : (
           /* ---------- MOBILE STACK (only rendered on mobile) ---------- */
           <div className="space-y-4">
             {fields.slice(0, mobileVisibleCount).map((field, index) => (
@@ -201,13 +233,13 @@ export default function AccidentHistorySection() {
                   <button
                     type="button"
                     aria-label={t("form.remove", "Remove")}
-                    className="absolute top-2 right-2 text-gray-400 hover:text-red-600"
+                    className="absolute top-2 right-2 text-red-600 hover:text-red-700"
                     onClick={() => {
                       remove(index);
                       setMobileVisibleCount((c) => Math.max(1, c - 1));
                     }}
                   >
-                    <X size={16} />
+                    <Trash2 size={16} />
                   </button>
                 )}
                 <div>
@@ -216,7 +248,9 @@ export default function AccidentHistorySection() {
                   </label>
                   <input
                     type="date"
-                    className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
+                    className={`py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md border ${
+                      (errors.accidentHistory as any)?.[index]?.date ? "border-red-500" : "border-gray-200"
+                    }`}
                     data-field={`accidentHistory.${index}.date`}
                     {...register(`accidentHistory.${index}.date` as const)}
                   />
@@ -227,7 +261,9 @@ export default function AccidentHistorySection() {
                   </label>
                   <input
                     type="text"
-                    className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
+                    className={`py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md border ${
+                      (errors.accidentHistory as any)?.[index]?.natureOfAccident ? "border-red-500" : "border-gray-200"
+                    }`}
                     placeholder={index === 0 ? "Rear-end collision on highway" : ""}
                     data-field={`accidentHistory.${index}.natureOfAccident`}
                     {...register(
@@ -243,14 +279,13 @@ export default function AccidentHistorySection() {
                     <input
                       type="number"
                       min={0}
-                      className="w-full py-2 px-2 text-center rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className={`w-full py-2 px-2 text-center rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none border ${
+                        (errors.accidentHistory as any)?.[index]?.fatalities ? "border-red-500" : "border-gray-200"
+                      }`}
                       data-field={`accidentHistory.${index}.fatalities`}
                       {...register(
                         `accidentHistory.${index}.fatalities` as const,
-                        {
-                          setValueAs: (v) =>
-                            v === "" || v == null ? 0 : Number(v),
-                        }
+                        { setValueAs: (v) => (v === "" || v == null ? undefined : Number(v)) }
                       )}
                     />
                   </div>
@@ -261,14 +296,13 @@ export default function AccidentHistorySection() {
                     <input
                       type="number"
                       min={0}
-                      className="w-full py-2 px-2 text-center rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className={`w-full py-2 px-2 text-center rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none border ${
+                        (errors.accidentHistory as any)?.[index]?.injuries ? "border-red-500" : "border-gray-200"
+                      }`}
                       data-field={`accidentHistory.${index}.injuries`}
                       {...register(
                         `accidentHistory.${index}.injuries` as const,
-                        {
-                          setValueAs: (v) =>
-                            v === "" || v == null ? 0 : Number(v),
-                        }
+                        { setValueAs: (v) => (v === "" || v == null ? undefined : Number(v)) }
                       )}
                     />
                   </div>
@@ -279,22 +313,17 @@ export default function AccidentHistorySection() {
             <div className="flex justify-center">
               <button
                 type="button"
-                className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-sky-600 text-white text-sm shadow hover:opacity-90"
-                disabled={mobileVisibleCount >= 4}
+                className={`mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm shadow ${
+                  fields.length >= 4 ? "bg-gray-200 text-gray-500 cursor-not-allowed" : "bg-sky-600 text-white hover:opacity-90"
+                }`}
+                disabled={fields.length >= 4}
                 onClick={() => {
                   const maxRows = 4;
-                  const cappedExisting = Math.min(fields.length, maxRows);
-                  if (mobileVisibleCount < cappedExisting) {
-                    setMobileVisibleCount((c) => Math.min(maxRows, c + 1));
-                    return;
-                  }
                   if (fields.length < maxRows) {
                     append({
                       date: "",
                       natureOfAccident: "",
-                      fatalities: 0,
-                      injuries: 0,
-                    });
+                    } as any);
                     setMobileVisibleCount((c) => Math.min(maxRows, c + 1));
                   }
                 }}
@@ -303,8 +332,31 @@ export default function AccidentHistorySection() {
               </button>
             </div>
           </div>
-        )}
-      </div>
+          )}
+
+          {/* Desktop Add another */}
+          {isDesktop && (
+            <div className="flex justify-center mt-3">
+              <button
+                type="button"
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm shadow ${
+                  fields.length >= 4 ? "bg-gray-200 text-gray-500 cursor-not-allowed" : "bg-sky-600 text-white hover:opacity-90"
+                }`}
+                disabled={fields.length >= 4}
+                onClick={() => {
+                  const maxRows = 4;
+                  if (fields.length < maxRows) {
+                    append({ date: "", natureOfAccident: "" } as any);
+                    setMobileVisibleCount((c) => Math.min(maxRows, c + 1));
+                  }
+                }}
+              >
+                {t("form.addMore", "Add another")}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </section>
   );
 }

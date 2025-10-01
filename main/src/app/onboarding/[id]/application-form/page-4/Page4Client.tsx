@@ -32,6 +32,9 @@ function formatDate(d?: string | Date | null) {
 
 function mapDefaults(page4: IApplicationFormPage4 | null): ApplicationFormPage4Input {
   return {
+    hasCriminalRecords: page4 && Object.prototype.hasOwnProperty.call(page4, "hasCriminalRecords")
+      ? (page4.hasCriminalRecords as boolean)
+      : ((page4?.criminalRecords?.length ?? 0) > 0 ? true : (undefined as unknown as boolean)),
     criminalRecords:
       page4?.criminalRecords && page4.criminalRecords.length > 0
         ? page4.criminalRecords.map((r) => ({
@@ -39,7 +42,7 @@ function mapDefaults(page4: IApplicationFormPage4 | null): ApplicationFormPage4I
             dateOfSentence: formatDate(r.dateOfSentence),
             courtLocation: r.courtLocation || "",
           }))
-        : [{ offense: "", dateOfSentence: "", courtLocation: "" }], // Default empty row
+        : [{ offense: "", dateOfSentence: "", courtLocation: "" }],
 
     hstNumber: page4?.hstNumber ?? "",
     businessName: page4?.businessName ?? "",

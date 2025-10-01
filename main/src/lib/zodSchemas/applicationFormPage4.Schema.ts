@@ -85,6 +85,7 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
   const isUS = countryCode === ECountryCode.US;
 
   const base = z.object({
+    hasCriminalRecords: z.boolean().optional(),
     criminalRecords: z.array(criminalRecordEntrySchema).default([]),
 
     hstNumber: z
@@ -331,8 +332,33 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
       }
     })
 
-    // Criminal Records: all-or-nothing validation per row
+    // Criminal Records: root + all-or-nothing validation per row
     .superRefine((data: Out, ctx) => {
+      const hasCriminals = data.hasCriminalRecords === true;
+
+      if (data.hasCriminalRecords !== true && data.hasCriminalRecords !== false) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["hasCriminalRecords"],
+          message: "Please answer if you have ever been convicted of a criminal offense",
+        });
+      }
+
+      if (hasCriminals) {
+        const isRowComplete = (r?: (typeof data.criminalRecords)[number]) => !!r?.offense?.trim() && !!r?.dateOfSentence?.trim() && !!r?.courtLocation?.trim();
+        const anyComplete = Array.isArray(data.criminalRecords) && data.criminalRecords.some(isRowComplete);
+        if (!anyComplete) {
+          ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["criminalRecords"], message: "At least one record is needed when declared to have criminal offenses" });
+          // Surface first row field errors to drive borders/scroll
+          const idx = 0; const first = Array.isArray(data.criminalRecords) ? data.criminalRecords[idx] : undefined;
+          if (first) {
+            if (!first.offense?.trim()) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["criminalRecords", idx, "offense"], message: "required" });
+            if (!first.dateOfSentence?.trim()) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["criminalRecords", idx, "dateOfSentence"], message: "required" });
+            if (!first.courtLocation?.trim()) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["criminalRecords", idx, "courtLocation"], message: "required" });
+          }
+        }
+      }
+
       data.criminalRecords.forEach((record, index) => {
         // Check if any field in this row has data
         const hasAnyData = !!record.offense?.trim() || !!record.dateOfSentence?.trim() || !!record.courtLocation?.trim();

@@ -7,21 +7,32 @@ import { Plus, X } from "lucide-react";
 
 interface TrafficConvictionsSectionProps {
   data: ITrafficConvictionEntry[];
+  initialHas?: boolean | undefined;
   onStage: (trafficConvictions: ITrafficConvictionEntry[]) => void;
 }
 
 export default function TrafficConvictionsSection({
   data,
+  initialHas,
   onStage,
 }: TrafficConvictionsSectionProps) {
   const { isEditMode } = useEditMode();
   const [localData, setLocalData] = useState<ITrafficConvictionEntry[]>(data);
+  const [hasTrafficConvictions, setHasTrafficConvictions] = useState<boolean | undefined>(() =>
+    typeof initialHas === "boolean" ? initialHas : data.length > 0 ? true : undefined
+  );
 
   React.useEffect(() => {
     setLocalData(data);
-  }, [data]);
+    setHasTrafficConvictions((prev) =>
+      prev === undefined
+        ? (typeof initialHas === "boolean" ? initialHas : data.length > 0 ? true : undefined)
+        : prev
+    );
+  }, [data, initialHas]);
 
   const addConviction = () => {
+    if (hasTrafficConvictions !== true) setHasTrafficConvictions(true);
     const newConviction: ITrafficConvictionEntry = {
       date: "",
       location: "",
@@ -113,7 +124,51 @@ export default function TrafficConvictionsSection({
         </h2>
       </div>
 
-      {localData.length === 0 ? (
+      {/* Boolean gate */}
+      {isEditMode && (
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <span className="text-sm font-medium" style={{ color: "var(--color-on-surface)" }}>Have you ever been convicted of a traffic offense?</span>
+          <div className="inline-flex rounded-full border overflow-hidden shrink-0" style={{ borderColor: "var(--color-outline)" }}>
+            <button
+              type="button"
+              className="px-3 py-1 text-sm min-w-[44px]"
+              style={{
+                background: hasTrafficConvictions === true ? "var(--color-primary)" : "var(--color-surface)",
+                color: hasTrafficConvictions === true ? "var(--color-on-primary)" : "var(--color-on-surface)",
+              }}
+              onClick={() => {
+                if (hasTrafficConvictions !== true) {
+                  const ensure = localData.length > 0 ? localData : [{
+                    date: "",
+                    location: "",
+                    charge: "",
+                    penalty: "",
+                  } as ITrafficConvictionEntry];
+                  setHasTrafficConvictions(true);
+                  setLocalData(ensure);
+                  onStage(ensure);
+                }
+              }}
+            >
+              Yes
+            </button>
+            <button
+              type="button"
+              className="px-3 py-1 text-sm border-l min-w-[44px]"
+              style={{
+                borderColor: "var(--color-outline)",
+                background: hasTrafficConvictions === false ? "var(--color-primary)" : "var(--color-surface)",
+                color: hasTrafficConvictions === false ? "var(--color-on-primary)" : "var(--color-on-surface)",
+              }}
+              onClick={() => { setHasTrafficConvictions(false); setLocalData([]); onStage([]); }}
+            >
+              No
+            </button>
+          </div>
+        </div>
+      )}
+
+      {hasTrafficConvictions !== true ? (
         <div className="text-center py-8">
           <p style={{ color: "var(--color-on-surface-variant)" }}>
             No traffic convictions found.{" "}
@@ -238,7 +293,7 @@ export default function TrafficConvictionsSection({
         </div>
       )}
 
-      {isEditMode && (
+      {isEditMode && hasTrafficConvictions === true && (
         <button
           type="button"
           onClick={addConviction}

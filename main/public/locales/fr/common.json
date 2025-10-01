@@ -327,14 +327,14 @@
             "title": "Vérification du casier judiciaire",
             "subtitle": "Les candidats doivent déclarer toutes les condamnations pour des infractions relevant du droit fédéral canadien.",
             "guidance": {
-              "intro": "Veuillez lire attentivement ce qui suit avant de compléter cette section :",
-              "dontDeclareTitle": "Ne déclarez pas les éléments suivants :",
+              "intro": "Veuillez lire attentivement ce qui suit avant de compléter cette section:",
+              "dontDeclareTitle": "Ne déclarez pas les éléments suivants:",
               "items": {
-                "item1": "Une condamnation pour laquelle vous avez obtenu une suspension de casier (anciennement pardon) en vertu de la Loi sur le casier judiciaire ;",
-                "item2": "Une condamnation lorsque vous étiez un « adolescent » au sens de la Loi sur le système de justice pénale pour les adolescents ;",
-                "item3": "Une absolution inconditionnelle ou conditionnelle, conformément à l’article 730 du Code criminel ;",
-                "item4": "Une infraction pour laquelle vous n’avez pas été condamné ;",
-                "item5": "Toute infraction provinciale ou municipale ;",
+                "item1": "Une condamnation pour laquelle vous avez obtenu une suspension de casier (anciennement pardon) conformément à la Loi sur le casier judiciaire;",
+                "item2": "Une condamnation lorsque vous étiez un ‘adolescent’ au sens de la Loi sur le système de justice pénale pour les adolescents;",
+                "item3": "Une absolution inconditionnelle ou conditionnelle, conformément à l’article 730 du Code criminel;",
+                "item4": "Une infraction pour laquelle vous n’avez pas été condamné;",
+                "item5": "Toute infraction provinciale ou municipale;",
                 "item6": "Toute accusation traitée à l’extérieur du Canada."
               }
             }
