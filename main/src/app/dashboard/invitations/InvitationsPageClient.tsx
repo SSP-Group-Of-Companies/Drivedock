@@ -6,6 +6,7 @@ import { useAdminInvitationQueryState } from "@/hooks/dashboard/useAdminInvitati
 import InvitationsOperationBar from "./components/InvitationsOperationBar";
 import InvitationsDataGrid from "./components/InvitationsDataGrid";
 import { COMPANY_OPTIONS, APPLICATION_TYPE_OPTIONS } from "@/constants/dashboard/filters";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 export default function InvitationsPageClient() {
   const {
@@ -21,6 +22,27 @@ export default function InvitationsPageClient() {
   } = useInvitationList();
 
   const { setDriverName, setSort, setCompanyIds, setApplicationTypes, setPagination } = useAdminInvitationQueryState();
+
+  // Mirror Home/Terminated clear-all: remove all filters and search and reset page
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const clearFilters = () => {
+    const sp = new URLSearchParams(searchParams.toString());
+
+    [
+      "driverName",
+      "companyId",
+      "applicationType",
+      "createdAtFrom",
+      "createdAtTo",
+      "page",
+      "sort",
+    ].forEach((k) => sp.delete(k));
+
+    router.replace(`${pathname}?${sp.toString()}`, { scroll: false });
+  };
 
   if (isError) {
     return (
@@ -44,6 +66,7 @@ export default function InvitationsPageClient() {
         applicationTypeOptions={APPLICATION_TYPE_OPTIONS}
         onCompanyChange={setCompanyIds}
         onApplicationTypeChange={setApplicationTypes}
+        onClearAll={clearFilters}
       />
 
       <InvitationsDataGrid

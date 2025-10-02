@@ -182,7 +182,7 @@ export default function ContinueButton<T extends FieldValues>({ config, trackerI
       const errorManager = ErrorManager.getInstance();
 
       // Uses your new ErrorManager.showConfirm helper
-      (errorManager as any).showConfirm({
+      errorManager.showConfirm({
         title: popup.title,
         message: popup.message,
         confirmLabel: popup.confirmLabel,

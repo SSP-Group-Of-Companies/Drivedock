@@ -150,7 +150,7 @@ export interface IOnboardingTrackerContext extends TrackerContextBase {
  * Payload required to create a new onboarding session.
  */
 export interface ICreateOnboardingPayload {
-  applicationFormPage1: IApplicationFormPage1;
+  applicationFormPage1: IApplicationFormPage1 & { turnStileVerificationToken?: string };
   prequalifications: IPreQualifications;
   companyId: ECompanyId;
   applicationType?: ECompanyApplicationType;

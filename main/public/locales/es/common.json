@@ -166,7 +166,7 @@
   },
   "form": {
     "subtitle": "Toda la información debe responderse con veracidad. La responsabilidad recae en el solicitante.",
-    
+
     "lockedAfterApproval": {
       "prequal": "Esta página está bloqueada después de la aprobación.",
       "message": "Esta página está bloqueada después de la aprobación. Si alguna información es incorrecta, contacta al Departamento de Seguridad para actualizarla."
@@ -279,6 +279,13 @@
           "message": "Está a punto de enviar sus datos personales a SSP Group of Companies para su revisión. Una vez enviados, nuestro Departamento de Seguridad revisará su solicitud. Si es aprobada, recibirá un correo electrónico con las instrucciones para continuar su proceso de incorporación. ¿Desea continuar?",
           "confirmLabel": "Enviar",
           "cancelLabel": "Regresar"
+        },
+        "verification": {
+          "title": "Verifique que usted es humano",
+          "statusVerified": "Verificado",
+          "statusPrompt": "Por favor complete la verificación de arriba.",
+          "errorExpired": "La verificación ha expirado. Inténtelo de nuevo.",
+          "errorFailed": "La verificación falló. Inténtelo de nuevo."
         }
       },
       "page2": {

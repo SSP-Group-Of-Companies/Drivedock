@@ -166,7 +166,7 @@
   },
   "form": {
     "subtitle": "All information must be answered truthfully. Liability falls on the applicant.",
-    
+
     "lockedAfterApproval": {
       "prequal": "This page is locked after approval.",
       "message": "This page is locked after approval. If any information is incorrect, contact the Safety Department to update it."
@@ -285,6 +285,13 @@
           "message": "You are about to submit your personal details to SSP Group of Companies for review. Once submitted, our Safety Department will review your application. If approved, you will receive an email with instructions on how to continue your onboarding process. Do you want to proceed?",
           "confirmLabel": "Submit",
           "cancelLabel": "Go Back"
+        },
+        "verification": {
+          "title": "Verify you are human",
+          "statusVerified": "Verified",
+          "statusPrompt": "Please complete the verification above.",
+          "errorExpired": "Verification expired. Please verify again.",
+          "errorFailed": "Verification failed. Please try again."
         }
       },
       "page2": {
