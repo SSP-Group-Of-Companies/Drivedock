@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useOnboardingList } from "@/hooks/dashboard/useOnboardingList";
 import { useAdminOnboardingQueryState } from "@/hooks/dashboard/useAdminOnboardingQueryState";
 import DataOperationBar from "@/app/dashboard/components/operations/DataOperationBar";
@@ -32,6 +33,30 @@ export default function TerminatedPageClient() {
     setApplicationTypes,
     setPagination,
   } = useAdminOnboardingQueryState();
+
+  // Clear-all behavior should mirror the Home page but keep terminated=true
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const clearAllFilters = () => {
+    const sp = new URLSearchParams(searchParams.toString());
+
+    [
+      "driverName",
+      "companyId",
+      "applicationType",
+      "createdAtFrom",
+      "createdAtTo",
+      "completed",
+      "page",
+    ].forEach((k) => sp.delete(k));
+
+    // Always keep/restore terminated scope on this page
+    sp.set("terminated", "true");
+
+    router.replace(`${pathname}?${sp.toString()}`, { scroll: false });
+  };
 
   // Ensure we are scoped to terminated=true (once). Guarded by the no-op protection in setMany.
   useEffect(() => {
@@ -80,6 +105,7 @@ export default function TerminatedPageClient() {
         onApplicationTypeChange={setApplicationTypes}
         lockedTerminated //  keep the page scoped to terminated
         showCompletedToggle={false} // optional: hide completed on terminated view
+        onClearAll={clearAllFilters}
       />
 
       <DataGrid
