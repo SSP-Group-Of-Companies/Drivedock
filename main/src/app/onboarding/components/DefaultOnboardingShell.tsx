@@ -18,7 +18,7 @@ export default function DefaultOnboardingShell({ children }: { children: React.R
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-[100svh] sm:min-h-screen flex flex-col">
       {/* Full navbar (hidden when scrolled) */}
       <div className={isScrolled ? "hidden" : "block"}>
         <Navbar />
@@ -58,7 +58,7 @@ export default function DefaultOnboardingShell({ children }: { children: React.R
       </AnimatePresence>
 
       {/* Main body with the same background gradient used elsewhere */}
-      <main className="flex-1 relative bg-gradient-to-b from-slate-50 via-sky-100 to-sky-200 px-4 py-8 sm:px-8 flex items-center justify-center">{children}</main>
+      <main className="flex-1 relative bg-gradient-to-b from-slate-50 via-sky-100 to-sky-200 px-4 py-8 sm:px-8 flex items-center justify-center pb-[max(env(safe-area-inset-bottom),1rem)]">{children}</main>
 
       <Footer />
     </div>
