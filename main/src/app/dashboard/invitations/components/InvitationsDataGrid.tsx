@@ -128,24 +128,27 @@ export default function InvitationsDataGrid({ isLoading, isFetching, isDefinitel
           </thead>
 
           <tbody>
-            {isLoading && (
-              <tr>
-                <td colSpan={4} className="px-3 py-16 text-center" style={{ color: "var(--color-on-surface-variant)" }}>
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="h-10 w-10 animate-spin rounded-full border-3 border-transparent" style={{ borderTopColor: "var(--color-primary)", borderWidth: "3px" }} />
-                    <span className="text-sm font-medium">Loading records…</span>
-                  </div>
-                </td>
-              </tr>
-            )}
+            <AnimatePresence mode={isFetching ? undefined : "wait"}>
+              {/* Loading row */}
+              {isLoading && (
+                <motion.tr key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+                  <td colSpan={4} className="px-3 py-16 text-center" style={{ color: "var(--color-on-surface-variant)" }}>
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="h-10 w-10 animate-spin rounded-full border-3 border-transparent" style={{ borderTopColor: "var(--color-primary)", borderWidth: "3px" }} />
+                      <span className="text-sm font-medium">Loading records…</span>
+                    </div>
+                  </td>
+                </motion.tr>
+              )}
 
-            {isDefinitelyEmpty && !isLoading && (
-              <tr>
-                <td colSpan={4} className="px-3 py-10 text-center" style={{ color: "var(--color-on-surface-variant)" }}>
-                  No invitations found for this filter.
-                </td>
-              </tr>
-            )}
+              {/* Empty state */}
+              {isDefinitelyEmpty && !isLoading && !isFetching && (
+                <motion.tr key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+                  <td colSpan={4} className="px-3 py-10 text-center" style={{ color: "var(--color-on-surface-variant)" }}>
+                    No invitations found for this filter.
+                  </td>
+                </motion.tr>
+              )}
 
             {!isLoading &&
               !isDefinitelyEmpty &&
