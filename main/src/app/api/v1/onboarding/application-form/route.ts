@@ -21,6 +21,7 @@ import { createOnboardingSessionAndCookie } from "@/lib/utils/auth/onboardingSes
 import { attachCookies } from "@/lib/utils/auth/attachCookie";
 import { sendDriverPendingApprovalEmail } from "@/lib/mail/driver/sendDriverPendingApprovalEmail";
 import sendSafetyInvitationNotificationEmail from "@/lib/mail/safety/sendSafetyInvitationNotificationEmail";
+import { verifyTurnstileToken } from "@/lib/security/verifyTurnstile";
 
 export async function POST(req: NextRequest) {
   await connectDB();
@@ -30,6 +31,10 @@ export async function POST(req: NextRequest) {
 
   try {
     const { applicationFormPage1: page1, prequalifications, companyId, applicationType }: ICreateOnboardingPayload = await req.json();
+    const token = page1.turnStileVerificationToken;
+    if (!token) return errorResponse(400, `Turnstile verification failed`);
+    const verificationResult = await verifyTurnstileToken(token);
+    if (!verificationResult.ok) return errorResponse(400, `Turnstile verification failed`);
 
     if (!page1 || !prequalifications || !companyId) return errorResponse(400, "Missing required fields. 'page1', 'prequalifications', and 'companyId' are required.");
 

@@ -21,6 +21,7 @@ import LicenseSection from "../../[id]/(has-step)/application-form/page-1/compon
 import AddressSection from "../../[id]/(has-step)/application-form/page-1/components/AddressSection";
 import ContinueButton from "../../[id]/(has-step)/ContinueButton";
 import { usePrequalificationStore } from "@/store/usePrequalificationStore";
+import ApplicationFormTurnStileVerification from "../../[id]/(has-step)/application-form/page-1/components/ApplicationFormTurnStileVerification";
 
 const EMPTY_PHOTO = { s3Key: "", url: "", mimeType: "", sizeBytes: 0, originalName: "" };
 
@@ -39,7 +40,9 @@ export default function ApplicationFormPage1() {
   const { data: prequalificationData } = usePrequalificationStore();
 
   // Create dynamic schema based on prequalification data
-  const dynamicSchema = createApplicationFormPage1Schema(prequalificationData);
+  const dynamicSchema = createApplicationFormPage1Schema(prequalificationData, {
+    needsTurnStileVerificationToken: true,
+  });
 
   const methods = useForm<ApplicationFormPage1Schema>({
     resolver: zodResolver(dynamicSchema),
@@ -74,6 +77,7 @@ export default function ApplicationFormPage1() {
       ],
       // StrictMode-safe: exactly one address row initially
       addresses: [BLANK_ADDRESS],
+      turnStileVerificationToken: "",
     },
   });
 
@@ -88,6 +92,8 @@ export default function ApplicationFormPage1() {
         <PlaceOfBirth />
         <LicenseSection />
         <AddressSection />
+
+        <ApplicationFormTurnStileVerification />
 
         {/* Pass the factory directly. No trackerId here (POST flow). */}
         <ContinueButton<ApplicationFormPage1Schema> config={page1ConfigFactory} trackerId={undefined} />

@@ -50,8 +50,7 @@ export const licenseEntrySchema = z.object({
       return true;
     },
     {
-      message:
-        "License expiry date cannot be a past, current date, or within 30 days",
+      message: "License expiry date cannot be a past, current date, or within 30 days",
     }
   ),
   licenseFrontPhoto: z.union([photoSchema, z.undefined()]).optional(),
@@ -114,8 +113,7 @@ const baseApplicationFormPage1Schema = z
         return issueDate >= hundredYearsAgo;
       },
       {
-        message:
-          "SIN issue date cannot be in the future or more than 100 years ago",
+        message: "SIN issue date cannot be in the future or more than 100 years ago",
       }
     ),
 
@@ -148,18 +146,12 @@ const baseApplicationFormPage1Schema = z
     }),
 
     email: z.string().trim().email().min(1, "Email is required"),
-    emergencyContactName: z
-      .string()
-      .trim()
-      .min(1, "Emergency contact name is required"),
+    emergencyContactName: z.string().trim().min(1, "Emergency contact name is required"),
     emergencyContactPhone: phoneLoose,
 
     birthCity: z.string().trim().min(1, "City of birth is required"),
     birthCountry: z.string().trim().min(1, "Country of birth is required"),
-    birthStateOrProvince: z
-      .string()
-      .trim()
-      .min(1, "Province/State of birth is required"),
+    birthStateOrProvince: z.string().trim().min(1, "Province/State of birth is required"),
 
     licenses: z
       .array(licenseEntrySchema)
@@ -172,9 +164,7 @@ const baseApplicationFormPage1Schema = z
       .refine(
         (licenses) => {
           const first = licenses[0];
-          return Boolean(
-            first?.licenseFrontPhoto?.s3Key && first?.licenseFrontPhoto?.url
-          );
+          return Boolean(first?.licenseFrontPhoto?.s3Key && first?.licenseFrontPhoto?.url);
         },
         {
           message: "Front license photo is required for the first license",
@@ -184,9 +174,7 @@ const baseApplicationFormPage1Schema = z
       .refine(
         (licenses) => {
           const first = licenses[0];
-          return Boolean(
-            first?.licenseBackPhoto?.s3Key && first?.licenseBackPhoto?.url
-          );
+          return Boolean(first?.licenseBackPhoto?.s3Key && first?.licenseBackPhoto?.url);
         },
         {
           message: "Back license photo is required for the first license",
@@ -200,29 +188,24 @@ const baseApplicationFormPage1Schema = z
 
       // ✅ Server requires 5-year coverage — keep this to match backend
       .refine((addresses) => hasRecentAddressCoverage(addresses, 5), {
-        message:
-          "You must provide at least 5 years of address history. If you haven't lived in one place for 5 years, please add additional addresses.",
+        message: "You must provide at least 5 years of address history. If you haven't lived in one place for 5 years, please add additional addresses.",
         path: [],
       })
 
       .refine(
         (addresses) => {
           // No overlaps & no > 2yr gaps
-          const sorted = [...addresses].sort(
-            (a, b) => new Date(a.from).getTime() - new Date(b.from).getTime()
-          );
+          const sorted = [...addresses].sort((a, b) => new Date(a.from).getTime() - new Date(b.from).getTime());
           for (let i = 0; i < sorted.length - 1; i++) {
             const currEnd = new Date(sorted[i].to);
             const nextStart = new Date(sorted[i + 1].from);
-            const gapDays =
-              (nextStart.getTime() - currEnd.getTime()) / (1000 * 60 * 60 * 24);
+            const gapDays = (nextStart.getTime() - currEnd.getTime()) / (1000 * 60 * 60 * 24);
             if (currEnd > nextStart || gapDays > 730) return false;
           }
           return true;
         },
         {
-          message:
-            "Addresses cannot overlap and gaps between addresses cannot exceed 2 years",
+          message: "Addresses cannot overlap and gaps between addresses cannot exceed 2 years",
           path: [],
         }
       )
@@ -231,20 +214,13 @@ const baseApplicationFormPage1Schema = z
           // Most recent address ends within last 6 months
           const valid = addresses.filter((a) => a.to?.trim());
           if (!valid.length) return false;
-          const lastEnd = new Date(
-            valid
-              .sort(
-                (a, b) => new Date(a.to).getTime() - new Date(b.to).getTime()
-              )
-              .at(-1)!.to
-          );
+          const lastEnd = new Date(valid.sort((a, b) => new Date(a.to).getTime() - new Date(b.to).getTime()).at(-1)!.to);
           const sixMonthsAgo = new Date();
           sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
           return lastEnd >= sixMonthsAgo;
         },
         {
-          message:
-            "Your most recent address must extend to within the last 6 months",
+          message: "Your most recent address must extend to within the last 6 months",
           path: [],
         }
       ),
@@ -254,20 +230,26 @@ const baseApplicationFormPage1Schema = z
     if (digits(data.phoneCell) === digits(data.emergencyContactPhone)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message:
-          "Emergency contact phone must be different from your cell phone",
+        message: "Emergency contact phone must be different from your cell phone",
         path: ["emergencyContactPhone"],
       });
     }
   });
 
+/** -----------------------------------------------------------------------
+ * Schema factory with options
+ * ------------------------------------------------------------------------
+ * Pass `{ needsTurnStileVerificationToken: true }` to require a token.
+ */
+export type ApplicationFormPage1SchemaOptions = {
+  needsTurnStileVerificationToken?: boolean;
+};
+
 // Schema factory function that creates schema based on prequalification data
-export function createApplicationFormPage1Schema(
-  prequalificationData?: { statusInCanada?: string } | null
-) {
+export function createApplicationFormPage1Schema(prequalificationData?: { statusInCanada?: string } | null, options?: ApplicationFormPage1SchemaOptions) {
   const isWorkPermit = prequalificationData?.statusInCanada === "Work Permit";
 
-  return baseApplicationFormPage1Schema.safeExtend({
+  let schema = baseApplicationFormPage1Schema.safeExtend({
     sinExpiryDate: isWorkPermit
       ? dateYMD.refine(
           (date) => {
@@ -293,11 +275,22 @@ export function createApplicationFormPage1Schema(
           }
         ),
   });
+
+  // Make Turnstile token required when requested
+  if (options?.needsTurnStileVerificationToken) {
+    schema = schema.safeExtend({
+      turnStileVerificationToken: z.string().min(1, "Verification is required"),
+    });
+  }
+
+  return schema;
 }
 
 // Default schema (for backward compatibility)
 export const applicationFormPage1Schema = createApplicationFormPage1Schema();
 
-export type ApplicationFormPage1Schema = z.infer<
-  typeof applicationFormPage1Schema
->;
+// Important: the default inferred type won’t include the Turnstile field.
+// Add it as optional so the page can include it in defaultValues safely.
+export type ApplicationFormPage1Schema = z.infer<typeof applicationFormPage1Schema> & {
+  turnStileVerificationToken?: string;
+};

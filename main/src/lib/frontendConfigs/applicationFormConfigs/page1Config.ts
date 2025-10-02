@@ -55,6 +55,11 @@ export const page1ConfigFactory: FormPageConfigFactory<ApplicationFormPage1Schem
         "addresses"
       );
 
+      // ✅ On fresh POST (no tracker id), require Turnstile token client-side too
+      if (!id) {
+        fields.push("turnStileVerificationToken");
+      }
+
       // Validate each visible license row (ensure first has photos)
       values.licenses?.forEach((_lic, index) => {
         fields.push(`licenses.${index}.licenseNumber`, `licenses.${index}.licenseStateOrProvince`, `licenses.${index}.licenseExpiry`, `licenses.${index}.licenseType`);
@@ -89,17 +94,21 @@ export const page1ConfigFactory: FormPageConfigFactory<ApplicationFormPage1Schem
       const cleanedSin = values.sin?.replace(/\D/g, "") || "";
       const cleaned = { ...values, sin: cleanedSin };
 
-      // POST (new): include prequalifications + company/appType + page1 slice
+      // POST (new)
       if (!ctx2.isPatch) {
         return {
-          applicationFormPage1: cleaned,
+          applicationFormPage1: {
+            ...cleaned,
+            // include Turnstile token only for POST
+            turnStileVerificationToken: values.turnStileVerificationToken || "",
+          },
           prequalifications: ctx2.prequalifications,
           companyId: ctx2.companyId,
           ...(ctx2.companyId === ECompanyId.SSP_CA && ctx2.applicationType ? { applicationType: ctx2.applicationType } : {}),
         };
       }
 
-      // PATCH (resume)
+      // PATCH (resume) — no captcha required, do not send token
       return { page1: cleaned };
     },
 

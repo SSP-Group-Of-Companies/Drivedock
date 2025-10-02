@@ -166,7 +166,7 @@
   },
   "form": {
     "subtitle": "Toutes les informations doivent être exactes. La responsabilité incombe au candidat.",
-    
+
     "lockedAfterApproval": {
       "prequal": "Cette page est verrouillée après approbation.",
       "message": "Cette page est verrouillée après approbation. Si des informations sont incorrectes, contactez le Service de sécurité pour les mettre à jour."
@@ -279,6 +279,13 @@
           "message": "Vous êtes sur le point de soumettre vos informations personnelles à SSP Group of Companies pour examen. Une fois envoyées, notre département Sécurité examinera votre demande. Si elle est approuvée, vous recevrez un courriel avec les instructions pour continuer votre processus d’intégration. Voulez-vous continuer ?",
           "confirmLabel": "Soumettre",
           "cancelLabel": "Retour"
+        },
+        "verification": {
+          "title": "Vérifiez que vous êtes humain",
+          "statusVerified": "Vérifié",
+          "statusPrompt": "Veuillez compléter la vérification ci-dessus.",
+          "errorExpired": "La vérification a expiré. Veuillez réessayer.",
+          "errorFailed": "Échec de la vérification. Veuillez réessayer."
         }
       },
       "page2": {
