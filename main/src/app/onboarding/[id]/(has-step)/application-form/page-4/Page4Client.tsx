@@ -5,7 +5,10 @@ import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 // Zod
-import { makeApplicationFormPage4Schema, ApplicationFormPage4Input } from "@/lib/zodSchemas/applicationFormPage4.Schema";
+import {
+  makeApplicationFormPage4Schema,
+  ApplicationFormPage4Input,
+} from "@/lib/zodSchemas/applicationFormPage4.Schema";
 
 import { ECountryCode } from "@/types/shared.types";
 import { IApplicationFormPage4 } from "@/types/applicationForm.types";
@@ -32,7 +35,9 @@ function formatDate(d?: string | Date | null) {
   return isNaN(dt.getTime()) ? "" : dt.toISOString().split("T")[0];
 }
 
-function mapDefaults(page4: IApplicationFormPage4 | null): ApplicationFormPage4Input {
+function mapDefaults(
+  page4: IApplicationFormPage4 | null
+): ApplicationFormPage4Input {
   return {
     hasCriminalRecords:
       page4 && Object.prototype.hasOwnProperty.call(page4, "hasCriminalRecords")
@@ -92,14 +97,24 @@ type Props = {
   prequalificationData?: { driverType?: string } | null;
 };
 
-export default function Page4Client({ trackerId, onboardingContext, page4, prequalificationData }: Props) {
+export default function Page4Client({
+  trackerId,
+  onboardingContext,
+  page4,
+  prequalificationData,
+}: Props) {
   const defaultValues = useMemo(() => mapDefaults(page4), [page4]);
 
   // derive country from companyId
-  const countryCode: ECountryCode = isCanadianCompany(onboardingContext.companyId) ? ECountryCode.CA : ECountryCode.US;
+  const countryCode: ECountryCode = isCanadianCompany(
+    onboardingContext.companyId
+  )
+    ? ECountryCode.CA
+    : ECountryCode.US;
 
   // Use DB prequalification driverType from GET; do not rely on local storage
-  const driverType: EDriverType | null = (prequalificationData?.driverType as EDriverType) ?? null;
+  const driverType: EDriverType | null =
+    (prequalificationData?.driverType as EDriverType) ?? null;
 
   const schema = useMemo(
     () =>
@@ -128,7 +143,10 @@ export default function Page4Client({ trackerId, onboardingContext, page4, prequ
         <EligibilityDocsSection countryCode={countryCode} />
         {countryCode === ECountryCode.CA && <FastCardSection isCanadian />}
         <AdditionalInfoSection />
-        <ContinueButton<ApplicationFormPage4Input> config={config} trackerId={trackerId} />
+        <ContinueButton<ApplicationFormPage4Input>
+          config={config}
+          trackerId={trackerId}
+        />
       </form>
     </FormProvider>
   );

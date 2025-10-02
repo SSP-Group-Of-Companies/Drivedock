@@ -28,7 +28,10 @@
 
 import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { createApplicationFormPage1Schema, ApplicationFormPage1Schema } from "@/lib/zodSchemas/applicationFormPage1.schema";
+import {
+  createApplicationFormPage1Schema,
+  ApplicationFormPage1Schema,
+} from "@/lib/zodSchemas/applicationFormPage1.schema";
 
 import PersonalDetails from "./components/PersonalDetails";
 import PlaceOfBirth from "./components/PlaceOfBirth";
@@ -37,7 +40,8 @@ import AddressSection from "./components/AddressSection";
 import ContinueButton from "@/app/onboarding/[id]/(has-step)/ContinueButton";
 
 import { page1ConfigFactory } from "@/lib/frontendConfigs/applicationFormConfigs/page1Config";
-import { useEffect } from "react";
+import { useEffect, useId } from "react";
+import { useTranslation } from "react-i18next";
 import { useOnboardingTracker } from "@/store/useOnboardingTracker";
 import type { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
 
@@ -55,7 +59,14 @@ type Page1ClientProps = {
   } | null;
 };
 
-export default function Page1Client({ defaultValues, trackerId, trackerContextFromGet, prequalificationData }: Page1ClientProps) {
+export default function Page1Client({
+  defaultValues,
+  trackerId,
+  trackerContextFromGet,
+  prequalificationData,
+}: Page1ClientProps) {
+  const { t } = useTranslation("common");
+  
   // Normalize SIN to digits only for consistent formatting
   const cleanedDefaults: ApplicationFormPage1Schema = {
     ...defaultValues,
@@ -78,6 +89,10 @@ export default function Page1Client({ defaultValues, trackerId, trackerContextFr
     if (trackerContextFromGet) setTracker(trackerContextFromGet);
   }, [trackerContextFromGet, setTracker]);
 
+  const locked = !!trackerContextFromGet?.invitationApproved;
+  const lockedDescId = useId();
+  const lockedMessage = t("form.lockedAfterApproval.message", "This page is locked after approval. If any information is incorrect, contact the Safety Department to update it.");
+
   return (
     <FormProvider {...methods}>
       <form
@@ -86,10 +101,29 @@ export default function Page1Client({ defaultValues, trackerId, trackerContextFr
         onSubmit={(e) => e.preventDefault()}
         noValidate
       >
-        <PersonalDetails onboardingContext={trackerContextFromGet} prequalificationData={prequalificationData} />
-        <PlaceOfBirth />
-        <LicenseSection />
-        <AddressSection />
+        {locked && (
+          <p id={lockedDescId} className="text-sm font-semibold text-red-600 text-center bg-red-50 border border-red-200 rounded-lg px-4 py-2">
+            {lockedMessage}
+          </p>
+        )}
+        <div
+          aria-describedby={locked ? lockedDescId : undefined}
+          title={locked ? lockedMessage : undefined}
+        >
+          <fieldset
+            disabled={locked}
+            aria-disabled={locked}
+            className={`space-y-8 ${locked ? "opacity-60 cursor-not-allowed" : ""}`}
+          >
+            <PersonalDetails
+              onboardingContext={trackerContextFromGet}
+              prequalificationData={prequalificationData}
+            />
+            <PlaceOfBirth />
+            <LicenseSection />
+            <AddressSection />
+          </fieldset>
+        </div>
 
         <ContinueButton<ApplicationFormPage1Schema>
           // Provide a tracker-aware config at runtime (factory)
@@ -99,7 +133,8 @@ export default function Page1Client({ defaultValues, trackerId, trackerContextFr
               // When resuming, we already know the trackerId
               effectiveTrackerId: trackerId,
               // Provide status hint so validation knows when Work Permit is selected on PATCH
-              prequalificationStatusInCanada: prequalificationData?.statusInCanada,
+              prequalificationStatusInCanada:
+                prequalificationData?.statusInCanada,
             })
           }
           trackerId={trackerId}

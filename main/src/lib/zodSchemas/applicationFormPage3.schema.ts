@@ -55,7 +55,7 @@ export const canadianDailyHoursSchema = z.object({
 
 // Canadian Hours of Service Schema
 export const canadianHoursOfServiceSchema = z.object({
-  dayOneDate: z.string().min(1, "Date is required"),
+  dayOneDate: z.string().trim().min(1, "Date is required"),
   dailyHours: z
     .array(canadianDailyHoursSchema)
     .length(14, "Must have exactly 14 days"),

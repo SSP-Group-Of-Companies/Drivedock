@@ -166,6 +166,11 @@
   },
   "form": {
     "subtitle": "Toutes les informations doivent être exactes. La responsabilité incombe au candidat.",
+    
+    "lockedAfterApproval": {
+      "prequal": "Cette page est verrouillée après approbation.",
+      "message": "Cette page est verrouillée après approbation. Si des informations sont incorrectes, contactez le Service de sécurité pour les mettre à jour."
+    },
 
     "helpPopups": {
       "page2SafetySensitive": "Dans le cadre de notre processus de conformité réglementaire, veuillez confirmer les informations suivantes :\n\nConduite transfrontalière : Indiquez « Oui » si vous avez déjà conduit un véhicule commercial à travers la frontière États-Unis–Canada. Sinon, indiquez « Non ».\n\nDépistage conforme au DOT : Indiquez « Oui » si votre employeur précédent a réalisé des tests de dépistage d’alcool et de drogues conformément aux règlements du Department of Transportation (DOT) des États-Unis. Sinon, indiquez « Non ».\n\nVos réponses nous aident à assurer la conformité aux règlements applicables en matière de transport et de sécurité. Pour toute question, n’hésitez pas à nous contacter.",
