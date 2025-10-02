@@ -166,6 +166,11 @@
   },
   "form": {
     "subtitle": "All information must be answered truthfully. Liability falls on the applicant.",
+    
+    "lockedAfterApproval": {
+      "prequal": "This page is locked after approval.",
+      "message": "This page is locked after approval. If any information is incorrect, contact the Safety Department to update it."
+    },
 
     "helpPopups": {
       "page2SafetySensitive": "As part of our regulatory compliance process, please confirm the following information:\n\nCross-Border Driving: Please indicate \"Yes\" if you have previously operated a commercial vehicle across the U.S.–Canada border. If not, please indicate \"No.\"\n\nDOT-Regulated Drug Testing: Please indicate \"Yes\" if your previous employer conducted drug and alcohol testing in accordance with U.S. Department of Transportation (DOT) regulations. If not, please indicate \"No.\"\n\nYour responses help us ensure compliance with applicable transportation and safety regulations. If you have any questions or need clarification, feel free to reach out.",

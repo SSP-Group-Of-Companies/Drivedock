@@ -166,6 +166,11 @@
   },
   "form": {
     "subtitle": "Toda la información debe responderse con veracidad. La responsabilidad recae en el solicitante.",
+    
+    "lockedAfterApproval": {
+      "prequal": "Esta página está bloqueada después de la aprobación.",
+      "message": "Esta página está bloqueada después de la aprobación. Si alguna información es incorrecta, contacta al Departamento de Seguridad para actualizarla."
+    },
 
     "helpPopups": {
       "page2SafetySensitive": "Como parte de nuestro proceso de cumplimiento normativo, confirma la siguiente información:\n\nConducción transfronteriza: Indica «Sí» si anteriormente operaste un vehículo comercial a través de la frontera EE. UU.–Canadá. Si no, indica «No».\n\nPruebas reguladas por el DOT: Indica «Sí» si tu empleador anterior realizó pruebas de alcohol y drogas conforme a las regulaciones del Departamento de Transporte (DOT) de los EE. UU. Si no, indica «No».\n\nTus respuestas nos ayudan a garantizar el cumplimiento de las regulaciones aplicables de transporte y seguridad. Si tienes preguntas o necesitas aclaración, no dudes en contactarnos.",

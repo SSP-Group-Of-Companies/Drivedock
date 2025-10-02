@@ -41,6 +41,7 @@ import ContinueButton from "@/app/onboarding/[id]/(has-step)/ContinueButton";
 
 import { page1ConfigFactory } from "@/lib/frontendConfigs/applicationFormConfigs/page1Config";
 import { useEffect, useId } from "react";
+import { useTranslation } from "react-i18next";
 import { useOnboardingTracker } from "@/store/useOnboardingTracker";
 import type { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
 
@@ -64,6 +65,8 @@ export default function Page1Client({
   trackerContextFromGet,
   prequalificationData,
 }: Page1ClientProps) {
+  const { t } = useTranslation("common");
+  
   // Normalize SIN to digits only for consistent formatting
   const cleanedDefaults: ApplicationFormPage1Schema = {
     ...defaultValues,
@@ -88,7 +91,7 @@ export default function Page1Client({
 
   const locked = !!trackerContextFromGet?.invitationApproved;
   const lockedDescId = useId();
-  const lockedMessage = "This page is locked after approval. If anything is incorrect, contact the Safety Department to update it.";
+  const lockedMessage = t("form.lockedAfterApproval.message", "This page is locked after approval. If any information is incorrect, contact the Safety Department to update it.");
 
   return (
     <FormProvider {...methods}>

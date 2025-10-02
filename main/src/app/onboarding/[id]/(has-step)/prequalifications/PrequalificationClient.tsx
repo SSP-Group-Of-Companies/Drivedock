@@ -85,7 +85,7 @@ export default function PreQualificationClient({
   // Determine lock state after admin approval (prevent edits but allow navigation)
   const locked = !!trackerContext?.invitationApproved;
   const lockedDescId = useId();
-  const lockedMessage = "This page is locked after approval.";
+  const lockedMessage = t("form.lockedAfterApproval.prequal", "This page is locked after approval.");
 
   // Controls visibility/content of the flatbed training popup
   const [showFlatbedPopup, setShowFlatbedPopup] = useState<null | "yes" | "no">(
