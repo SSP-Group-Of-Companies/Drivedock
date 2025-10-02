@@ -21,7 +21,7 @@ import { makePage4Config } from "@/lib/frontendConfigs/applicationFormConfigs/pa
 // Sections (assume you already have or will create these)
 import CriminalRecordsSection from "./components/CriminalRecordsSection";
 import BusinessSection from "./components/BusinessSection";
-import BankingInfoSection from "./components/BankingInfoSection";
+import BankingInfoSection from "@/app/onboarding/[id]/(has-step)/application-form/page-4/components/BankingInfoSection";
 import EligibilityDocsSection from "./components/EligibilityDocsSection";
 import FastCardSection from "./components/FastCardSection";
 import AdditionalInfoSection from "./components/AdditionalInfoSection";

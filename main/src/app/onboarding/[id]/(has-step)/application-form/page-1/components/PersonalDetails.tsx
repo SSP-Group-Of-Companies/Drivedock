@@ -58,14 +58,11 @@ interface PersonalDetailsProps {
   prequalificationData?: {
     statusInCanada?: string;
   } | null;
-  /** When true, entire section becomes read-only */
-  disabled?: boolean;
 }
 
 export default function PersonalDetails({
   onboardingContext,
   prequalificationData,
-  disabled = false,
 }: PersonalDetailsProps) {
   const {
     register,
@@ -157,7 +154,6 @@ export default function PersonalDetails({
 
   const validateSIN = useCallback(
     async (sin: string) => {
-      if (disabled) return;
       if (sin.length !== 9) return;
       setSinValidationStatus("checking");
       setSinValidationMessage("");
@@ -182,7 +178,7 @@ export default function PersonalDetails({
         setSinValidationMessage("Error checking SIN availability");
       }
     },
-    [id, disabled]
+    [id]
   );
 
   const debouncedValidateSIN = useCallback(() => {
@@ -194,7 +190,6 @@ export default function PersonalDetails({
   }, [validateSIN])();
 
   const handleSINChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (disabled) return;
     const input = e.target.value;
     setDisplaySIN(input);
 
@@ -213,7 +208,6 @@ export default function PersonalDetails({
     field: "phoneHome" | "phoneCell" | "emergencyContactPhone",
     value: string
   ) => {
-    if (disabled) return;
     const raw = value.replace(/\D/g, "").slice(0, 10);
     setValue(field, raw, { shouldValidate: true });
   };
@@ -227,7 +221,6 @@ export default function PersonalDetails({
   };
 
   const handleSinPhotoUpload = async (file: File | null) => {
-    if (disabled) return;
     if (!file) {
       setValue("sinPhoto", EMPTY_PHOTO, { shouldValidate: true });
       setSinPhotoPreview(null);
@@ -263,7 +256,6 @@ export default function PersonalDetails({
   };
 
   const handleSinPhotoRemove = async () => {
-    if (disabled) return;
     setSinPhotoStatus("deleting");
     setSinPhotoMessage("");
 
@@ -291,11 +283,7 @@ export default function PersonalDetails({
   if (!mounted) return null;
 
   return (
-    <section
-      className={`space-y-6 border border-gray-200 p-6 rounded-lg bg-white/80 shadow-sm ${
-        disabled ? "opacity-70" : ""
-      }`}
-    >
+    <section className="space-y-6 border border-gray-200 p-6 rounded-lg bg-white/80 shadow-sm">
       {/* Hidden fields to prevent autocomplete - more aggressive approach */}
       <input
         type="text"
@@ -334,11 +322,7 @@ export default function PersonalDetails({
         {t("form.step2.page1.sections.personal")}
       </h2>
 
-      {/* Fieldset disables all controls inside (native behavior) */}
-      <fieldset
-        disabled={disabled}
-        className="grid grid-cols-1 md:grid-cols-2 gap-6"
-      >
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* First Name */}
         <TextInput
           name="firstName"
@@ -381,19 +365,16 @@ export default function PersonalDetails({
                 <button
                   key={option}
                   type="button"
-                  onClick={() => {
-                    if (disabled) return;
+                  onClick={() =>
                     setValue("gender", option as "male" | "female", {
                       shouldValidate: true,
-                    });
-                  }}
+                    })
+                  }
                   className={`w-full px-4 py-2 text-sm font-medium transition-all ${
                     isSelected
                       ? "bg-[#0071BC] text-white"
                       : "bg-white text-gray-800 hover:bg-gray-50"
-                  } ${idx > 0 ? "border-l border-gray-300" : ""} ${
-                    disabled ? "cursor-not-allowed" : ""
-                  }`}
+                  } ${idx > 0 ? "border-l border-gray-300" : ""}`}
                 >
                   {t(`form.step2.page1.fields.${option}`)}
                 </button>
@@ -431,7 +412,6 @@ export default function PersonalDetails({
             data-field="sin"
             data-lpignore="true"
             data-form-type="other"
-            disabled={disabled}
             className={`py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md pr-10 ${
               sinValidationStatus === "valid"
                 ? "border-green-500 focus:border-green-500"
@@ -440,20 +420,13 @@ export default function PersonalDetails({
                 : sinValidationStatus === "checking"
                 ? "border-yellow-500 focus:border-yellow-500"
                 : ""
-            } ${
-              disabled ? "cursor-not-allowed bg-gray-100 text-gray-600" : ""
             }`}
           />
 
           <button
             type="button"
-            onClick={() => !disabled && setShowSIN((prev) => !prev)}
-            className={`absolute right-3 top-9 ${
-              disabled
-                ? "text-gray-300 cursor-not-allowed"
-                : "text-gray-500 hover:text-gray-700"
-            } focus:outline-none`}
-            disabled={disabled}
+            onClick={() => setShowSIN((prev) => !prev)}
+            className="absolute right-3 top-9 text-gray-500 hover:text-gray-700 focus:outline-none"
           >
             {showSIN ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
@@ -466,12 +439,36 @@ export default function PersonalDetails({
             </div>
           )}
           {sinValidationStatus === "valid" && (
-            <p className="text-green-600 text-sm mt-1">
+            <p className="text-green-600 text-sm mt-1 flex items-center">
+              <svg
+                className="w-4 h-4 mr-1"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clipRule="evenodd"
+                />
+              </svg>
               {sinValidationMessage}
             </p>
           )}
           {sinValidationStatus === "invalid" && (
-            <p className="text-red-500 text-sm mt-1">{sinValidationMessage}</p>
+            <p className="text-red-500 text-sm mt-1 flex items-center">
+              <svg
+                className="w-4 h-4 mr-1"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              {sinValidationMessage}
+            </p>
           )}
           {errors.sin && (
             <p className="text-red-500 text-sm mt-1">
@@ -555,15 +552,10 @@ export default function PersonalDetails({
                 type="button"
                 onClick={handleSinPhotoRemove}
                 disabled={
-                  disabled ||
                   sinPhotoStatus === "uploading" ||
                   sinPhotoStatus === "deleting"
                 }
-                className={`absolute top-2 right-2 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs ${
-                  disabled
-                    ? "bg-red-300 cursor-not-allowed"
-                    : "bg-red-500 hover:bg-red-600"
-                }`}
+                className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
               >
                 <X size={12} />
               </button>
@@ -571,20 +563,9 @@ export default function PersonalDetails({
           ) : (
             <label
               htmlFor="sinPhoto"
-              className={`cursor-pointer flex flex-col items-center justify-center h-10 px-4 mt-1 w-full text-sm text-gray-600 border-2 border-dashed border-gray-300 rounded-lg transition-all duration-200 group
-              ${
-                disabled
-                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  : "bg-gray-50 hover:bg-gray-100 hover:border-gray-400"
-              }`}
+              className="cursor-pointer flex flex-col items-center justify-center h-10 px-4 mt-1 w-full text-sm text-gray-600 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 hover:border-gray-400 transition-all duration-200 group"
             >
-              <Camera
-                className={`w-4 h-4 ${
-                  disabled
-                    ? "text-gray-300"
-                    : "text-gray-400 group-hover:text-gray-600"
-                }`}
-              />
+              <Camera className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
               <span className="font-medium text-gray-400 text-xs">
                 {t("form.step2.page1.fields.sinPhotoDesc")}
               </span>
@@ -598,7 +579,6 @@ export default function PersonalDetails({
             onChange={(e) => handleSinPhotoUpload(e.target.files?.[0] || null)}
             data-field="sinPhoto"
             className="hidden"
-            disabled={disabled}
           />
           {sinPhotoStatus !== "uploading" && errors.sinPhoto && (
             <p className="text-red-500 text-sm mt-1">
@@ -681,9 +661,8 @@ export default function PersonalDetails({
             <input
               type="checkbox"
               {...register("canProvideProofOfAge")}
-              disabled={!dobValue || disabled}
               data-field="canProvideProofOfAge"
-              className="appearance-none w-6 h-6 border-2 border-gray-300 rounded-md bg-white focus:outline-none transition-all duration-150 cursor-pointer focus:shadow-[0_0_0_3px_rgba(56,189,248,0.25)] checked:shadow-[0_0_0_3px_rgba(56,189,248,0.25)] checked:bg-white relative disabled:cursor-not-allowed disabled:bg-gray-100"
+              className="appearance-none w-6 h-6 border-2 border-gray-300 rounded-md bg-white focus:outline-none transition-all duration-150 cursor-pointer focus:shadow-[0_0_0_3px_rgba(56,189,248,0.25)] checked:shadow-[0_0_0_3px_rgba(56,189,248,0.25)] checked:bg-white relative"
             />
             {canProvideProofChecked && dobValue && (
               <svg
@@ -722,7 +701,6 @@ export default function PersonalDetails({
           value={getDisplayPhone(phoneHomeRaw)}
           onChange={(v) => handlePhoneChange("phoneHome", v)}
           error={errors.phoneHome}
-          disabled={disabled}
         />
 
         {/* Phone: Cell */}
@@ -732,7 +710,6 @@ export default function PersonalDetails({
           value={getDisplayPhone(phoneCellRaw)}
           onChange={(v) => handlePhoneChange("phoneCell", v)}
           error={errors.phoneCell}
-          disabled={disabled}
         />
 
         {/* Emergency Contact */}
@@ -749,9 +726,8 @@ export default function PersonalDetails({
           value={getDisplayPhone(emergencyPhoneRaw)}
           onChange={(v) => handlePhoneChange("emergencyContactPhone", v)}
           error={errors.emergencyContactPhone}
-          disabled={disabled}
         />
-      </fieldset>
+      </div>
     </section>
   );
 }

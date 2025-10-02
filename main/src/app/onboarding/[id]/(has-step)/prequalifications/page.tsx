@@ -133,7 +133,6 @@ export default async function PrequalificationsPage({
       defaultValues={defaultValues}
       trackerId={trackerId}
       trackerContext={trackerContext}
-      disabled
     />
   );
 }

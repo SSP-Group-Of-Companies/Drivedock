@@ -6,8 +6,6 @@
  * ------------------------------------------------------------------------
  * - Prefers company from trackerContext (getSelectedCompany(companyId))
  *   and falls back to useCompanySelection() when missing.
- * - NEW: accepts a `disabled` prop to render all inputs read-only/disabled
- *   while keeping the Next button functional.
  * ========================================================================
  */
 
@@ -56,15 +54,12 @@ type Props = {
   defaultValues: FormValues;
   trackerId: string;
   trackerContext?: IOnboardingTrackerContext | null;
-  /** When true, renders all inputs read-only/disabled; Next button still works */
-  disabled?: boolean;
 };
 
 export default function PreQualificationClient({
   defaultValues,
   trackerId,
   trackerContext,
-  disabled = false,
 }: Props) {
   const mounted = useMounted(); // Prevent SSR/CSR mismatch
   const { t } = useTranslation("common");
@@ -195,17 +190,15 @@ export default function PreQualificationClient({
     }
   }, [statusInCanada, setValue, previousStatus]);
 
-  const allAnswered = useMemo(() => {
-    return Object.keys(watchAllFields).every((key) => {
-      // Only enforce answered state for fields currently shown on screen
-      const isFieldRendered = [
-        ...finalFilteredQuestions,
-        ...categoryQuestions,
-      ].some((q) => q.name === key);
-      // Answered if non-empty (booleans: "form.yes"/"form.no"; categories: enum value)
-      return !isFieldRendered || watchAllFields[key] !== "";
-    });
-  }, [watchAllFields, finalFilteredQuestions]);
+  const allAnswered = Object.keys(watchAllFields).every((key) => {
+    // Only enforce answered state for fields currently shown on screen
+    const isFieldRendered = [
+      ...finalFilteredQuestions,
+      ...categoryQuestions,
+    ].some((q) => q.name === key);
+    // Answered if non-empty (booleans: "form.yes"/"form.no"; categories: enum value)
+    return !isFieldRendered || watchAllFields[key] !== "";
+  });
 
   // Submit handler (PATCH):
   // - Convert RHF string values to IPreQualifications
@@ -216,10 +209,7 @@ export default function PreQualificationClient({
     const isChanged = hasDeepChanges<FormValues>(
       data,
       (defaultValues ?? {}) as Partial<FormValues>,
-      {
-        nullAsUndefined: true,
-        emptyStringAsUndefined: true,
-      }
+      { nullAsUndefined: true, emptyStringAsUndefined: true }
     );
     if (!isChanged) {
       const next = trackerContext?.nextStep;
@@ -233,7 +223,6 @@ export default function PreQualificationClient({
       router.refresh();
       return;
     }
-
     // Map RHF data to typed IPreQualifications object
     const transformed: IPreQualifications = {
       over23Local: data.over23Local === "form.yes",
@@ -324,49 +313,42 @@ export default function PreQualificationClient({
   // Only render after mount to avoid hydration mismatch issues with SSR
   if (!mounted) return null;
 
-  // Utility: when disabled, prevent any changes and interactions locally
-  const makeSafeOnChange =
-    (originalOnChange: (value: string) => void, qName?: string) =>
-    (val: string) => {
-      if (disabled) return; // block edits when disabled
-      // Intercept flatbed popup trigger only when not disabled
-      if (qName === "flatbedExperience") {
-        if (val === "form.yes") setShowFlatbedPopup("yes");
-        else if (val === "form.no") setShowFlatbedPopup("no");
-        else setShowFlatbedPopup(null);
-      }
-      originalOnChange(val);
-    };
-
   return (
     <>
-      <div className="space-y-6" aria-disabled={disabled}>
+      <div className="space-y-6">
         {/* Eligibility questions (mostly booleans) */}
-        <div
-          className={`space-y-4 ${
-            disabled ? "opacity-60 pointer-events-none select-none" : ""
-          }`}
-        >
+        <div className="space-y-4">
           {finalFilteredQuestions.map((q) => (
             <Controller
               key={q.name}
               control={control}
               name={q.name}
-              render={({ field }) => (
-                <QuestionGroup
-                  // For US companies, substitute the label for the legal-work question
-                  question={
-                    q.name === "legalRightToWorkCanada" &&
-                    effectiveCompany?.countryCode === "US"
-                      ? t("form.step1.questions.legalRightToWorkUS")
-                      : t(q.label)
+              render={({ field }) => {
+                // Intercept changes to trigger the flatbed popup
+                const handleChange = (val: string) => {
+                  field.onChange(val);
+                  if (q.name === "flatbedExperience") {
+                    if (val === "form.yes") setShowFlatbedPopup("yes");
+                    else if (val === "form.no") setShowFlatbedPopup("no");
+                    else setShowFlatbedPopup(null);
                   }
-                  options={q.options} // Centralized options (Yes/No or single-Yes)
-                  value={field.value} // Controlled value
-                  onChange={makeSafeOnChange(field.onChange, q.name)} // No-op when disabled
-                  disabled={disabled}
-                />
-              )}
+                };
+
+                return (
+                  <QuestionGroup
+                    // For US companies, substitute the label for the legal-work question
+                    question={
+                      q.name === "legalRightToWorkCanada" &&
+                      effectiveCompany?.countryCode === "US"
+                        ? t("form.step1.questions.legalRightToWorkUS")
+                        : t(q.label)
+                    }
+                    options={q.options} // Centralized options (Yes/No or single-Yes)
+                    value={field.value} // Controlled value
+                    onChange={handleChange} // Controlled onChange
+                  />
+                );
+              }}
             />
           ))}
         </div>
@@ -376,11 +358,7 @@ export default function PreQualificationClient({
           {t("form.step1.questions.categories")}
         </h2>
 
-        <div
-          className={`space-y-4 ${
-            disabled ? "opacity-60 pointer-events-none select-none" : ""
-          }`}
-        >
+        <div className="space-y-4">
           {categoryQuestions.map((q) => (
             <Controller
               key={q.name}
@@ -391,19 +369,16 @@ export default function PreQualificationClient({
                   question={t(q.label)} // i18n label
                   options={q.options} // enum-backed options (value is enum)
                   value={field.value} // enum value as string
-                  onChange={makeSafeOnChange(field.onChange, q.name)} // No-op when disabled
-                  disabled={disabled}
+                  onChange={field.onChange}
                 />
               )}
             />
           ))}
         </div>
 
-        {/* Next button – enabled only when all visible questions are answered
-            NOTE: `disabled` prop should NOT block the Next button. */}
+        {/* Next button – enabled only when all visible questions are answered */}
         <div className="flex justify-center">
           <button
-            // keep original enablement logic; do not tie to `disabled`
             disabled={!allAnswered}
             onClick={handleSubmit(onSubmit)}
             className={`px-8 py-2 mt-4 rounded-full font-semibold transition-all shadow-md flex items-center gap-2 cursor-pointer active:translate-y-[1px] active:shadow ${
@@ -418,8 +393,8 @@ export default function PreQualificationClient({
         </div>
       </div>
 
-      {/* Flatbed informational popup – content driven by i18n (suppressed when disabled) */}
-      {!disabled && showFlatbedPopup && (
+      {/* Flatbed informational popup – content driven by i18n */}
+      {showFlatbedPopup && (
         <FlatbedPopup
           type={showFlatbedPopup}
           onClose={() => setShowFlatbedPopup(null)}

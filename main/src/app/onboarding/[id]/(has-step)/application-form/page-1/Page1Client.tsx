@@ -53,10 +53,9 @@ type Page1ClientProps = {
   prequalificationData?: {
     statusInCanada?: string;
   } | null;
-  disabled?: boolean;
 };
 
-export default function Page1Client({ defaultValues, trackerId, trackerContextFromGet, prequalificationData, disabled }: Page1ClientProps) {
+export default function Page1Client({ defaultValues, trackerId, trackerContextFromGet, prequalificationData }: Page1ClientProps) {
   // Normalize SIN to digits only for consistent formatting
   const cleanedDefaults: ApplicationFormPage1Schema = {
     ...defaultValues,
@@ -87,10 +86,10 @@ export default function Page1Client({ defaultValues, trackerId, trackerContextFr
         onSubmit={(e) => e.preventDefault()}
         noValidate
       >
-        <PersonalDetails onboardingContext={trackerContextFromGet} prequalificationData={prequalificationData} disabled={disabled} />
-        <PlaceOfBirth disabled={disabled} />
-        <LicenseSection disabled={disabled} />
-        <AddressSection disabled={disabled} />
+        <PersonalDetails onboardingContext={trackerContextFromGet} prequalificationData={prequalificationData} />
+        <PlaceOfBirth />
+        <LicenseSection />
+        <AddressSection />
 
         <ContinueButton<ApplicationFormPage1Schema>
           // Provide a tracker-aware config at runtime (factory)

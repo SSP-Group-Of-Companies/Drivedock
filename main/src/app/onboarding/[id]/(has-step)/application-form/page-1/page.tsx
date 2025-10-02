@@ -163,7 +163,6 @@ export default async function Page1ServerWrapper({
       trackerId={trackerId}
       trackerContextFromGet={data?.onboardingContext}
       prequalificationData={data?.prequalificationData}
-      disabled
     />
   );
 }

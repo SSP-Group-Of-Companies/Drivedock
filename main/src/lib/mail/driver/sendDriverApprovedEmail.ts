@@ -67,7 +67,7 @@ export async function sendDriverApprovedEmail(req: NextRequest, { trackerId, com
                     <tr>
                       <td style="padding:14px 16px; font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif; font-size:14px; color:#0f172a;">
                         <p style="margin:0 0 10px 0;">
-                          Click the button below to go to the homepage, then <strong>resume your application by entering your SIN</strong>.
+                          Click the button below to go to the homepage, then <strong>resume your application by clicking the Resume button</strong>.
                         </p>
                         <p style="margin:0; font-size:12px; color:#64748b;">
                           Onboarding ID (for reference): ${escapeHtml(trackerId)}
