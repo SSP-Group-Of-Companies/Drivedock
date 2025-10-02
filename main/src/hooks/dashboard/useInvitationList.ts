@@ -10,17 +10,16 @@ export function useInvitationList() {
   const q = useQuery<InvitationListResult>({
     queryKey: ["admin-invitations-list", apiParams],
     queryFn: ({ signal }) => fetchInvitationList(apiParams, { signal }),
-    // Keep prior rows during refetch to avoid blank table while searching
-    placeholderData: (prev) => prev as InvitationListResult | undefined,
+    placeholderData: undefined,
     refetchOnMount: "always",
     staleTime: 0,
     retry: 2,
   });
 
-  // Preserve previous data while fetching new data
   const isFetching = q.isFetching;
-  const safeData: InvitationListResult | null = (q.data as InvitationListResult | undefined) ?? null;
-  const isLoading = !safeData && isFetching;
+  const shouldShowData = !isFetching && q.data;
+  const safeData = shouldShowData ? q.data : null;
+  const isLoading = isFetching || !safeData;
 
   return {
     data: safeData,
