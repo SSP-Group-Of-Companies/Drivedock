@@ -10,7 +10,7 @@
  */
 
 import { useForm, Controller } from "react-hook-form";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useId } from "react";
 
 import {
   preQualificationQuestions,
@@ -81,6 +81,11 @@ export default function PreQualificationClient({
 
   const { setTracker } = useOnboardingTracker(); // Hydrate tracker into Zustand
   const { show, hide } = useGlobalLoading();
+
+  // Determine lock state after admin approval (prevent edits but allow navigation)
+  const locked = !!trackerContext?.invitationApproved;
+  const lockedDescId = useId();
+  const lockedMessage = "This page is locked after approval.";
 
   // Controls visibility/content of the flatbed training popup
   const [showFlatbedPopup, setShowFlatbedPopup] = useState<null | "yes" | "no">(
@@ -316,8 +321,17 @@ export default function PreQualificationClient({
   return (
     <>
       <div className="space-y-6">
+        {locked && (
+          <p id={lockedDescId} className="text-sm font-semibold text-red-600 text-center bg-red-50 border border-red-200 rounded-lg px-4 py-2">
+            {lockedMessage}
+          </p>
+        )}
         {/* Eligibility questions (mostly booleans) */}
-        <div className="space-y-4">
+        <div
+          className="space-y-4"
+          aria-describedby={locked ? lockedDescId : undefined}
+          title={locked ? lockedMessage : undefined}
+        >
           {finalFilteredQuestions.map((q) => (
             <Controller
               key={q.name}
@@ -346,6 +360,7 @@ export default function PreQualificationClient({
                     options={q.options} // Centralized options (Yes/No or single-Yes)
                     value={field.value} // Controlled value
                     onChange={handleChange} // Controlled onChange
+                    disabled={locked}
                   />
                 );
               }}
@@ -358,7 +373,11 @@ export default function PreQualificationClient({
           {t("form.step1.questions.categories")}
         </h2>
 
-        <div className="space-y-4">
+        <div
+          className="space-y-4"
+          aria-describedby={locked ? lockedDescId : undefined}
+          title={locked ? lockedMessage : undefined}
+        >
           {categoryQuestions.map((q) => (
             <Controller
               key={q.name}
@@ -370,6 +389,7 @@ export default function PreQualificationClient({
                   options={q.options} // enum-backed options (value is enum)
                   value={field.value} // enum value as string
                   onChange={field.onChange}
+                  disabled={locked}
                 />
               )}
             />

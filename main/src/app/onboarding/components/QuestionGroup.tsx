@@ -38,7 +38,14 @@ const defaultOptions: Option[] = [
   { labelKey: "form.step1.questions.no", value: "form.no" },
 ];
 
-export default function QuestionGroup({ question, value, onChange, options = defaultOptions, helpContent, disabled = false }: QuestionGroupProps) {
+export default function QuestionGroup({
+  question,
+  value,
+  onChange,
+  options = defaultOptions,
+  helpContent,
+  disabled = false,
+}: QuestionGroupProps) {
   const mounted = useMounted();
   const { t } = useTranslation("common");
 
@@ -49,7 +56,13 @@ export default function QuestionGroup({ question, value, onChange, options = def
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
         {/* Question prompt + optional help */}
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          <p className={`font-medium text-sm break-words ${disabled ? "text-gray-400" : "text-gray-800"}`}>{question}</p>
+          <p
+            className={`font-medium text-sm break-words ${
+              disabled ? "text-gray-400" : "text-gray-800"
+            }`}
+          >
+            {question}
+          </p>
           {helpContent && <FormHelpPopUps content={helpContent} />}
         </div>
 
@@ -58,13 +71,16 @@ export default function QuestionGroup({ question, value, onChange, options = def
           role="radiogroup"
           aria-label={typeof question === "string" ? question : undefined}
           aria-disabled={disabled || undefined}
-          className={`inline-flex w-full sm:w-auto sm:flex-shrink-0 rounded-full border overflow-hidden ${disabled ? "border-gray-200 opacity-70" : "border-gray-300"}`}
+          className={`inline-flex w-full sm:w-auto sm:flex-shrink-0 rounded-full border overflow-hidden ${
+            disabled ? "border-gray-200 opacity-70" : "border-gray-300"
+          }`}
         >
           {options.map(({ labelKey, value: optValue }, idx) => {
             const isSelected = value === optValue;
 
             // Shared classes with disabled styling
-            const baseBtn = "w-full sm:w-auto px-4 py-1.5 text-sm font-medium transition-all focus:outline-none";
+            const baseBtn =
+              "w-full sm:w-auto px-4 py-1.5 text-sm font-medium transition-all focus:outline-none";
             const stateClasses = disabled
               ? isSelected
                 ? "bg-[#e6eef6] text-gray-500 cursor-not-allowed"
@@ -72,7 +88,12 @@ export default function QuestionGroup({ question, value, onChange, options = def
               : isSelected
               ? "bg-[#0071BC] text-white"
               : "bg-white text-gray-800 hover:bg-red-50";
-            const divider = idx > 0 ? (disabled ? "border-l border-gray-200" : "border-l border-gray-300") : "";
+            const divider =
+              idx > 0
+                ? disabled
+                  ? "border-l border-gray-200"
+                  : "border-l border-gray-300"
+                : "";
 
             return (
               <button
