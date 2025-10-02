@@ -100,5 +100,5 @@ export default async function PrequalificationsPage({ params }: { params: Promis
   const defaultValues = transformToFormValues(prequalData);
 
   // Render client component with hydrated defaults and tracker info
-  return <PreQualificationClient defaultValues={defaultValues} trackerId={trackerId} trackerContext={trackerContext} disabled />;
+  return <PreQualificationClient defaultValues={defaultValues} trackerId={trackerId} trackerContext={trackerContext} />;
 }
