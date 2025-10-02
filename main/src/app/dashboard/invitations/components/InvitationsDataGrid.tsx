@@ -161,7 +161,7 @@ export default function InvitationsDataGrid({ isLoading, isFetching, isDefinitel
           </thead>
 
           <tbody>
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode={isFetching ? undefined : "wait"}>
               {/* Loading row */}
               {isLoading && (
                 <motion.tr key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
@@ -175,7 +175,7 @@ export default function InvitationsDataGrid({ isLoading, isFetching, isDefinitel
               )}
 
               {/* Empty state */}
-              {isDefinitelyEmpty && !isLoading && (
+              {isDefinitelyEmpty && !isLoading && !isFetching && (
                 <motion.tr key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
                   <td colSpan={4} className="px-3 py-10 text-center" style={{ color: "var(--color-on-surface-variant)" }}>
                     No invitations found for this filter.
