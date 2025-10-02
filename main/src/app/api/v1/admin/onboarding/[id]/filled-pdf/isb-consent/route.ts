@@ -21,6 +21,7 @@ import { buildIsbConsentPayload, applyIsbConsentPayloadToForm } from "@/lib/pdf/
 import { drawPdfImage } from "@/lib/pdf/utils/drawPdfImage";
 import { loadImageBytesFromAsset } from "@/lib/utils/s3Upload";
 import { getSafetyAdminServerById } from "@/lib/assets/safetyAdmins/safetyAdmins.server";
+import { isInvitationApproved } from "@/lib/utils/onboardingUtils";
 
 /* ------------------------------ helpers ------------------------------ */
 
@@ -57,6 +58,7 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     // Onboarding
     const onboarding = await OnboardingTracker.findById(onboardingId).lean();
     if (!onboarding) return errorResponse(404, "Onboarding document not found");
+    if (!isInvitationApproved(onboarding)) return errorResponse(400, "driver not yet approved for onboarding process");
     if (!onboarding.status?.completed) return errorResponse(400, "Onboarding is not completed yet");
 
     // Company

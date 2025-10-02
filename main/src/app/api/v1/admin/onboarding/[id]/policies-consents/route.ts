@@ -9,7 +9,7 @@ import { guard } from "@/lib/utils/auth/authUtils";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import PoliciesConsents from "@/mongoose/models/PoliciesConsents";
 
-import { buildTrackerContext, hasCompletedStep } from "@/lib/utils/onboardingUtils";
+import { buildTrackerContext, hasCompletedStep, isInvitationApproved } from "@/lib/utils/onboardingUtils";
 import { EStepPath } from "@/types/onboardingTracker.types";
 
 /**
@@ -30,14 +30,9 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
     }
 
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
-    if (!onboardingDoc) {
-      return errorResponse(404, "Onboarding document not found");
-    }
-
-    // Admin view is allowed only after the driver has completed the step
-    if (!hasCompletedStep(onboardingDoc, EStepPath.POLICIES_CONSENTS)) {
-      return errorResponse(401, "driver hasn't completed this step yet");
-    }
+    if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
+    if (!isInvitationApproved(onboardingDoc)) return errorResponse(400, "driver not yet approved for onboarding process");
+    if (!hasCompletedStep(onboardingDoc, EStepPath.POLICIES_CONSENTS)) return errorResponse(401, "driver hasn't completed this step yet");
 
     const policiesId = onboardingDoc.forms?.policiesConsents;
     if (!policiesId) {

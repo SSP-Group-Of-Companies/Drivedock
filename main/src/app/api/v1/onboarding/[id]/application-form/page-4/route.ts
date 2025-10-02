@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { AppError, errorResponse, successResponse } from "@/lib/utils/apiResponse";
 import connectDB from "@/lib/utils/connectDB";
 import { IApplicationFormPage4 } from "@/types/applicationForm.types";
-import { advanceProgress, buildTrackerContext, hasReachedStep, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
+import { advanceProgress, buildTrackerContext, hasReachedStep, isInvitationApproved, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
 import { deleteS3Objects, finalizeAsset, finalizeAssetVector, buildFinalDest } from "@/lib/utils/s3Upload";
 import { COMPANIES } from "@/constants/companies";
 import { EStepPath } from "@/types/onboardingTracker.types";
@@ -12,8 +12,11 @@ import { S3_TEMP_FOLDER } from "@/constants/aws";
 import { parseJsonBody } from "@/lib/utils/reqParser";
 import { ES3Folder } from "@/types/aws.types";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
+import PreQualifications from "@/mongoose/models/Prequalifications";
+import { EDriverType } from "@/types/preQualifications.types";
 import { requireOnboardingSession } from "@/lib/utils/auth/onboardingSession";
 import { attachCookies } from "@/lib/utils/auth/attachCookie";
+// duplicates removed
 
 /** ======== helpers ======== */
 const hasKey = <T extends object>(o: T, k: keyof any) => Object.prototype.hasOwnProperty.call(o, k);
@@ -56,18 +59,18 @@ function forbidNonEmpty(body: any, key: keyof IApplicationFormPage4, label: stri
 
 /** business section presence detectors (in body) */
 function businessKeysPresentInBody(b: Partial<IApplicationFormPage4>) {
-  const keys: (keyof IApplicationFormPage4)[] = ["businessName", "hstNumber", "incorporatePhotos", "bankingInfoPhotos", "hstPhotos"];
+  // Banking removed from Business section
+  const keys: (keyof IApplicationFormPage4)[] = ["businessName", "hstNumber", "incorporatePhotos", "hstPhotos"];
   return keys.some((k) => hasKey(b, k));
 }
 
 function isBusinessClearIntent(b: Partial<IApplicationFormPage4>) {
   const emptyStrings = (!hasKey(b, "businessName") || !isNonEmptyString(b.businessName)) && (!hasKey(b, "hstNumber") || !isNonEmptyString(b.hstNumber));
 
-  const emptyPhotos =
-    (!hasKey(b, "incorporatePhotos") || len(b.incorporatePhotos) === 0) && (!hasKey(b, "bankingInfoPhotos") || len(b.bankingInfoPhotos) === 0) && (!hasKey(b, "hstPhotos") || len(b.hstPhotos) === 0);
+  const emptyPhotos = (!hasKey(b, "incorporatePhotos") || len(b.incorporatePhotos) === 0) && (!hasKey(b, "hstPhotos") || len(b.hstPhotos) === 0);
 
-  // Clear intent only if ALL keys are present AND all are empty
-  const allKeysPresent = hasKey(b, "businessName") && hasKey(b, "hstNumber") && hasKey(b, "incorporatePhotos") && hasKey(b, "bankingInfoPhotos") && hasKey(b, "hstPhotos");
+  // Clear intent only if ALL business keys are present AND all are empty (banking excluded)
+  const allKeysPresent = hasKey(b, "businessName") && hasKey(b, "hstNumber") && hasKey(b, "incorporatePhotos") && hasKey(b, "hstPhotos");
 
   return allKeysPresent && emptyStrings && emptyPhotos;
 }
@@ -85,7 +88,6 @@ function validateBusinessAllOrNothing(b: Partial<IApplicationFormPage4>) {
   requireKey("businessName", "businessName");
   requireKey("hstNumber", "hstNumber");
   requireKey("incorporatePhotos", "incorporatePhotos");
-  requireKey("bankingInfoPhotos", "bankingInfoPhotos");
   requireKey("hstPhotos", "hstPhotos");
 
   if (missing.length) {
@@ -95,14 +97,13 @@ function validateBusinessAllOrNothing(b: Partial<IApplicationFormPage4>) {
   // strings non-empty
   if (!isNonEmptyString(b.businessName)) throw new AppError(400, "businessName is required in Business section.");
   if (!isNonEmptyString(b.hstNumber)) throw new AppError(400, "hstNumber is required in Business section.");
+  if ((b.hstNumber?.trim().length ?? 0) < 9) throw new AppError(400, "hstNumber must be at least 9 characters.");
 
   // photos within limits
   const inc = len(b.incorporatePhotos);
-  const bank = len(b.bankingInfoPhotos);
   const hst = len(b.hstPhotos);
 
   if (inc < 1 || inc > 10) throw new AppError(400, `incorporatePhotos must have 1–10 photos. You sent ${inc}.`);
-  if (bank < 1 || bank > 2) throw new AppError(400, `bankingInfoPhotos must have 1–2 photos. You sent ${bank}.`);
   if (hst < 1 || hst > 2) throw new AppError(400, `hstPhotos must have 1–2 photos. You sent ${hst}.`);
 
   return { mode: "validate" as const };
@@ -116,6 +117,8 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     if (!isValidObjectId(id)) return errorResponse(400, "Invalid onboarding ID");
 
     const { tracker: onboardingDoc, refreshCookie } = await requireOnboardingSession(id);
+
+    if (!isInvitationApproved(onboardingDoc)) return errorResponse(401, "pending approval");
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) return errorResponse(404, "ApplicationForm not linked");
@@ -160,7 +163,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     } else {
       // Canadian drivers: passport type determines requirements
       expectCountExact(body, "passportPhotos", 2, "Passport photos");
-      
+
       // Only require PR/Permit/Citizenship for non-Canadian passports
       if (body.passportType === "others") {
         expectCountRange(body, "prPermitCitizenshipPhotos", 1, 2, "PR/Permit/Citizenship photos");
@@ -173,7 +176,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     // =========================
     if (isCanadian) {
       expectCountExact(body, "healthCardPhotos", 2, "Health card photos");
-      
+
       // US Visa only required for cross-border work authorization
       if (body.passportType === "others" && body.workAuthorizationType === "cross_border") {
         expectCountRange(body, "usVisaPhotos", 1, 2, "US visa photos");
@@ -197,6 +200,23 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     // =========================
     const prev = appFormDoc.page4; // keep previous to handle deletion on explicit clear
     const bizDecision = validateBusinessAllOrNothing(body);
+
+    // =========================
+    // 3.5) Banking requiredness based on driverType from PreQualifications
+    // =========================
+    try {
+      const preQualId = onboardingDoc.forms?.preQualification;
+      if (preQualId) {
+        const preQualDoc = await PreQualifications.findById(preQualId);
+        const driverType = preQualDoc?.driverType as EDriverType | undefined;
+        if (driverType === EDriverType.Company || driverType === EDriverType.OwnerOperator) {
+          // For these applicants, require banking info photos to be present in body
+          expectCountRange(body, "bankingInfoPhotos", 1, 2, "Banking info photos");
+        }
+      }
+    } catch {
+      // fallthrough: if we cannot determine, leave to FE validation
+    }
 
     // =========================
     // 4) FAST Card section
@@ -356,9 +376,22 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
       return errorResponse(403, "Please complete previous steps first");
     }
 
+    // Pull DB prequalification driverType
+    let prequalificationData: { driverType?: EDriverType } | undefined;
+    try {
+      const preQualId = onboardingDoc.forms?.preQualification;
+      if (preQualId) {
+        const preQualDoc = await PreQualifications.findById(preQualId);
+        if (preQualDoc) {
+          prequalificationData = { driverType: preQualDoc.driverType as EDriverType };
+        }
+      }
+    } catch {}
+
     const res = successResponse(200, "Page 4 data retrieved", {
       onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_4),
       page4: appFormDoc.page4,
+      prequalificationData,
     });
 
     return attachCookies(res, refreshCookie);

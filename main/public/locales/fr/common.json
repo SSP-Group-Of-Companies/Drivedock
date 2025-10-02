@@ -145,8 +145,32 @@
     }
   },
 
+  "pendingApprovalPage": {
+    "pending": {
+      "title": "Candidature en attente d’approbation",
+      "subtitle": "Merci d’avoir commencé votre candidature avec SSP Group of Companies.",
+      "body1": "Nous avons bien reçu votre candidature. Notre équipe est en train d’examiner vos informations.",
+      "body2": "Une fois votre candidature approuvée, vous recevrez un courriel avec les prochaines étapes.",
+      "tip": "Vous pouvez fermer cette page et revenir plus tard, ou l’actualiser lorsque vous pensez avoir été approuvé. Veuillez aussi surveiller votre boîte de réception (ainsi que le dossier indésirable/spam) pour notre courriel.",
+      "returnHome": "Accueil",
+      "refresh": "Rafraîchir"
+    },
+    "approved": {
+      "title": "Candidature approuvée",
+      "subtitle": "Bonne nouvelle ! Votre candidature a été approuvée.",
+      "body1": "Vous pouvez maintenant passer à l’étape suivante de votre processus d’intégration.",
+      "body2": "Cliquez sur le bouton ci-dessous pour continuer votre candidature.",
+      "ctaResume": "Continuer ma candidature",
+      "ctaHome": "Accueil"
+    }
+  },
   "form": {
     "subtitle": "Toutes les informations doivent être exactes. La responsabilité incombe au candidat.",
+    
+    "lockedAfterApproval": {
+      "prequal": "Cette page est verrouillée après approbation.",
+      "message": "Cette page est verrouillée après approbation. Si des informations sont incorrectes, contactez le Service de sécurité pour les mettre à jour."
+    },
 
     "helpPopups": {
       "page2SafetySensitive": "Dans le cadre de notre processus de conformité réglementaire, veuillez confirmer les informations suivantes :\n\nConduite transfrontalière : Indiquez « Oui » si vous avez déjà conduit un véhicule commercial à travers la frontière États-Unis–Canada. Sinon, indiquez « Non ».\n\nDépistage conforme au DOT : Indiquez « Oui » si votre employeur précédent a réalisé des tests de dépistage d’alcool et de drogues conformément aux règlements du Department of Transportation (DOT) des États-Unis. Sinon, indiquez « Non ».\n\nVos réponses nous aident à assurer la conformité aux règlements applicables en matière de transport et de sécurité. Pour toute question, n’hésitez pas à nous contacter.",
@@ -249,6 +273,12 @@
           "removeLicense": "Supprimer le permis",
           "addAddress": "Ajouter une autre adresse",
           "removeAddress": "Supprimer l’adresse"
+        },
+        "confirmation": {
+          "title": "Veuillez confirmer",
+          "message": "Vous êtes sur le point de soumettre vos informations personnelles à SSP Group of Companies pour examen. Une fois envoyées, notre département Sécurité examinera votre demande. Si elle est approuvée, vous recevrez un courriel avec les instructions pour continuer votre processus d’intégration. Voulez-vous continuer ?",
+          "confirmLabel": "Soumettre",
+          "cancelLabel": "Retour"
         }
       },
       "page2": {
@@ -327,14 +357,14 @@
             "title": "Vérification du casier judiciaire",
             "subtitle": "Les candidats doivent déclarer toutes les condamnations pour des infractions relevant du droit fédéral canadien.",
             "guidance": {
-              "intro": "Veuillez lire attentivement ce qui suit avant de compléter cette section :",
-              "dontDeclareTitle": "Ne déclarez pas les éléments suivants :",
+              "intro": "Veuillez lire attentivement ce qui suit avant de compléter cette section:",
+              "dontDeclareTitle": "Ne déclarez pas les éléments suivants:",
               "items": {
-                "item1": "Une condamnation pour laquelle vous avez obtenu une suspension de casier (anciennement pardon) en vertu de la Loi sur le casier judiciaire ;",
-                "item2": "Une condamnation lorsque vous étiez un « adolescent » au sens de la Loi sur le système de justice pénale pour les adolescents ;",
-                "item3": "Une absolution inconditionnelle ou conditionnelle, conformément à l’article 730 du Code criminel ;",
-                "item4": "Une infraction pour laquelle vous n’avez pas été condamné ;",
-                "item5": "Toute infraction provinciale ou municipale ;",
+                "item1": "Une condamnation pour laquelle vous avez obtenu une suspension de casier (anciennement pardon) conformément à la Loi sur le casier judiciaire;",
+                "item2": "Une condamnation lorsque vous étiez un ‘adolescent’ au sens de la Loi sur le système de justice pénale pour les adolescents;",
+                "item3": "Une absolution inconditionnelle ou conditionnelle, conformément à l’article 730 du Code criminel;",
+                "item4": "Une infraction pour laquelle vous n’avez pas été condamné;",
+                "item5": "Toute infraction provinciale ou municipale;",
                 "item6": "Toute accusation traitée à l’extérieur du Canada."
               }
             }
@@ -342,8 +372,13 @@
           "business": {
             "title": "Détails d’incorporation",
             "disclaimer": {
-              "text": "Si vous fournissez des détails d’incorporation, vous devez remplir tous les champs et téléverser tous les documents liés dans cette section. Cela inclut le numéro d’employé, le numéro de TVH, le numéro d’entreprise et les photos requises (Incorporation, TVH, Bancaire)."
+              "text": "Si vous fournissez des détails d’incorporation, vous devez remplir tous les champs et téléverser tous les documents liés dans cette section. Cela inclut le numéro de TVH, le nom de l’entreprise et les photos requises (Incorporation, TVH)."
             }
+          },
+          "banking": {
+            "title": "Coordonnées bancaires",
+            "requiredDisclaimer": "Les coordonnées bancaires sont obligatoires pour les candidats Société et Propriétaire‑exploitant. Téléversez une photo claire d’un chèque annulé ou d’un formulaire bancaire de dépôt direct indiquant votre nom, le numéro d’institution, le numéro de transit et le numéro de compte.",
+            "optionalDisclaimer": "Les coordonnées bancaires sont optionnelles pour les Propriétaires‑conducteurs. Si vous choisissez de les fournir maintenant, téléversez une photo claire d’un chèque annulé ou d’un formulaire bancaire de dépôt direct indiquant votre nom, le numéro d’institution, le numéro de transit et le numéro de compte afin que la paie puisse configurer votre dépôt direct."
           },
           "additionalInfo": {
             "title": "Renseignements supplémentaires"
@@ -610,7 +645,7 @@
     "step3": {
       "title": "Politiques et consentements",
       "disclaimer": "En signant ci-dessous, vous acceptez l’ensemble du contrat présent et des contrats à venir. Veuillez lire attentivement tous les documents. Les informations que vous fournissez prérempliront automatiquement les champs requis.",
-      "sendToEmail": "M’envoyer les documents signés par courriel lorsque le processus de candidature sera terminé.",
+      "sendToEmail": "Envoyez-moi les documents à mon adresse e-mail lorsque le processus de demande est terminé.",
       "helper": {
         "drawOrUpload": "Veuillez dessiner votre signature ci-dessus ou téléverser une image de signature."
       },
@@ -710,25 +745,39 @@
 
   "resume": {
     "title": "Reprendre votre candidature",
-    "description": "Entrez votre NAS/SSN pour poursuivre votre intégration là où vous vous êtes arrêté.",
+    "description": "Saisissez votre NAS pour reprendre votre intégration là où vous vous êtes arrêté.",
+    "description_sin_only": "Saisissez votre NAS et nous vous enverrons un code de vérification à l’adresse enregistrée. Entrez ensuite ce code pour continuer votre intégration.",
     "placeholder": "999-888-777",
-    "success": "Correspondance trouvée ! Redirection...",
-    "error": "Aucune candidature trouvée pour ce NAS.",
+    "codePlaceholder": "ex. 123456",
+    "codeInstruction": "Entrez le code à 6 chiffres envoyé à votre e-mail",
+    "sendCode": "Envoyer le code",
+    "verifyCode": "Vérifier et continuer",
+    "resend": "Renvoyer le code",
+    "success": "Correspondance trouvée ! Redirection…",
+    "error": "Aucune demande trouvée pour ce NAS.",
     "cancel": "Annuler",
     "continue": "Continuer",
-    "loading": "Chargement...",
-    "loadingCta": "Reprise en cours...",
+    "loading": "Chargement…",
+    "loadingCta": "Reprise…",
+    "loadingCtaSend": "Envoi…",
+    "loadingCtaVerify": "Vérification…",
+    "codeSentHint": "Code de vérification envoyé à : {{email}}",
+    "resendCooldown": "Renvoyer le code ({{s}} s)",
+    "sinChangedNeedsNewCode": "Le NAS a changé — veuillez envoyer un nouveau code de vérification pour ce NAS.",
     "validation": {
       "enterSin": "Veuillez saisir votre NAS",
-      "sinLength": "Le NAS doit comporter exactement 9 chiffres"
+      "sinLength": "Le NAS doit comporter exactement 9 chiffres",
+      "codeRequired": "Veuillez saisir votre code de vérification",
+      "codeFormat": "Le code doit comporter 6 chiffres"
     },
     "errors": {
       "invalidResponse": "Réponse invalide du serveur",
       "generic": "Impossible de reprendre la candidature. Veuillez réessayer.",
-      "resumeInfoMissing": "Informations de reprise manquantes"
+      "resumeInfoMissing": "Informations de reprise manquantes",
+      "rateLimited": "Veuillez patienter {{s}} secondes avant de demander un nouveau code.",
+      "codeForDifferentSin": "Veuillez d’abord demander un code pour le NAS actuel."
     }
   },
-
   "infoPopUp": {
     "modalTitle": "Fonctionnement",
     "close": "Fermer",

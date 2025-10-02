@@ -19,6 +19,8 @@ import { isValidEmail, isValidPhoneNumber, isValidDOB, isValidSIN, isValidSINIss
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
 import { createOnboardingSessionAndCookie } from "@/lib/utils/auth/onboardingSession";
 import { attachCookies } from "@/lib/utils/auth/attachCookie";
+import { sendDriverPendingApprovalEmail } from "@/lib/mail/driver/sendDriverPendingApprovalEmail";
+import sendSafetyInvitationNotificationEmail from "@/lib/mail/safety/sendSafetyInvitationNotificationEmail";
 
 export async function POST(req: NextRequest) {
   await connectDB();
@@ -45,6 +47,7 @@ export async function POST(req: NextRequest) {
     if (page1.phoneHome && !isValidPhoneNumber(page1.phoneHome)) return errorResponse(400, "Invalid home phone");
     if (!isValidPhoneNumber(page1.phoneCell)) return errorResponse(400, "Invalid cell phone");
     if (!isValidPhoneNumber(page1.emergencyContactPhone)) return errorResponse(400, "Invalid emergency contact phone");
+    if (page1.phoneCell === page1.emergencyContactPhone) return errorResponse(400, "cell phone and emergency contact phone cannot be the same");
     if (!isValidDOB(page1.dob)) return errorResponse(400, "Invalid DOB");
     if (!isValidSINIssueDate(page1.sinIssueDate)) return errorResponse(400, "Invalid SIN issue date");
     if (!isValidGender(page1.gender)) return errorResponse(400, "Invalid gender");
@@ -59,9 +62,31 @@ export async function POST(req: NextRequest) {
     if (!firstLicense.licenseFrontPhoto || !firstLicense.licenseBackPhoto) return errorResponse(400, "First license must include both front and back photos");
 
     if (company.countryCode === ECountryCode.CA) {
-      const { canCrossBorderUSA, hasFASTCard } = prequalifications;
+      const { canCrossBorderUSA, hasFASTCard, statusInCanada } = prequalifications;
       if (typeof canCrossBorderUSA !== "boolean") return errorResponse(400, "'canCrossBorderUSA' is required for Canadian applicants");
-      if (typeof hasFASTCard !== "boolean") return errorResponse(400, "'hasFASTCard' is required for Canadian applicants");
+      if (!statusInCanada) return errorResponse(400, "'statusInCanada' is required for Canadian applicants");
+
+      // Only validate FAST card fields if they were provided (conditional logic)
+      if (hasFASTCard !== undefined && typeof hasFASTCard !== "boolean") {
+        return errorResponse(400, "'hasFASTCard' must be a boolean when provided");
+      }
+      if (prequalifications.eligibleForFASTCard !== undefined && typeof prequalifications.eligibleForFASTCard !== "boolean") {
+        return errorResponse(400, "'eligibleForFASTCard' must be a boolean when provided");
+      }
+
+      // Validate SIN expiry date for Work Permit holders
+      if (statusInCanada === "Work Permit") {
+        if (!page1.sinExpiryDate) {
+          return errorResponse(400, "SIN expiry date is required for Work Permit holders");
+        }
+        // Validate that expiry date is in the future
+        const expiryDate = new Date(page1.sinExpiryDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (expiryDate <= today) {
+          return errorResponse(400, "SIN expiry date must be in the future");
+        }
+      }
     }
 
     const sinHash = hashString(sin);
@@ -77,6 +102,7 @@ export async function POST(req: NextRequest) {
         completedStep: EStepPath.PRE_QUALIFICATIONS,
         completed: false,
       },
+      invitationApproved: false,
       companyId,
       ...(companyId === ECompanyId.SSP_CA && { applicationType }),
       forms: {},
@@ -154,6 +180,27 @@ export async function POST(req: NextRequest) {
       preQualifications: preQualDoc.toObject(),
       applicationForm: updatedForm?.toObject({ virtuals: true }),
     });
+
+    try {
+      // send notification email to safety team
+      await sendSafetyInvitationNotificationEmail(req, {
+        trackerId: String(onboardingDoc._id),
+        companyId,
+        firstName: page1.firstName,
+        lastName: page1.lastName,
+        email: page1.email,
+        phone: page1.phoneCell,
+      });
+    } catch (err: any) {
+      console.warn("sending email to safety failed", err);
+    }
+
+    try {
+      // send notification email to driver
+      await sendDriverPendingApprovalEmail(req, { trackerId: onboardingDoc.id, companyId, firstName: page1.firstName, lastName: page1.lastName, toEmail: page1.email });
+    } catch (err: any) {
+      console.warn("sending email to driver failed", err);
+    }
 
     return attachCookies(res, setCookie);
   } catch (error) {

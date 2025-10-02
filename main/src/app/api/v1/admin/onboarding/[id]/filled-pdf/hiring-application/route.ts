@@ -25,6 +25,7 @@ import { EDriverApplicationFillableFormFields as F } from "@/lib/pdf/hiring-appl
 import { ESafetyAdminId } from "@/constants/safetyAdmins";
 import { ECompanyId } from "@/constants/companies";
 import { getSafetyAdminServerById } from "@/lib/assets/safetyAdmins/safetyAdmins.server";
+import { isInvitationApproved } from "@/lib/utils/onboardingUtils";
 
 // ----------------------------------------------------------------------
 
@@ -52,6 +53,7 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     // ------- Load Onboarding (fail fast if missing)
     const onboarding = await OnboardingTracker.findById(onboardingId).lean();
     if (!onboarding) return errorResponse(404, "Onboarding document not found");
+    if (!isInvitationApproved(onboarding)) return errorResponse(400, "driver not yet approved for onboarding process");
     if (!onboarding.status.completed) return errorResponse(400, "Onboarding is not yet completed");
 
     const companyId = onboarding.companyId as ECompanyId | undefined;
@@ -188,34 +190,34 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     // Page 2
     pushDraw(1, F.ACKNOWLEDGEMENT_SIGNATURE, driverSignatureBytes);
 
-    // Page 5
-    pushDraw(4, F.HOS_SIGNATURE, driverSignatureBytes);
-
     // Page 6
-    pushDraw(5, F.DECLARATION_SIGNATURE, driverSignatureBytes);
-    pushDraw(5, F.COMPLIANCE_DRIVER_SIGNATURE, driverSignatureBytes);
+    pushDraw(5, F.HOS_SIGNATURE, driverSignatureBytes);
 
     // Page 7
-    pushDraw(6, F.DRIVER_RIGHTS_SIGNATURE, driverSignatureBytes);
+    pushDraw(6, F.DECLARATION_SIGNATURE, driverSignatureBytes);
+    pushDraw(6, F.COMPLIANCE_DRIVER_SIGNATURE, driverSignatureBytes);
 
-    // Page 8 (driver + witness)
-    pushDraw(7, F.MEDICAL_DECLARATION_SIGNATURE, driverSignatureBytes);
-    pushDraw(7, F.MEDICAL_DECLARATION_WITNESS_SIGNATURE, adminSignatureBytes);
+    // Page 8
+    pushDraw(7, F.DRIVER_RIGHTS_SIGNATURE, driverSignatureBytes);
 
-    // Page 9
-    pushDraw(8, F.DRUG_NOTICE_DRIVER_SIGNATURE, driverSignatureBytes);
+    // Page 9 (driver + witness)
+    pushDraw(8, F.MEDICAL_DECLARATION_SIGNATURE, driverSignatureBytes);
+    pushDraw(8, F.MEDICAL_DECLARATION_WITNESS_SIGNATURE, adminSignatureBytes);
 
-    // Page 10 (driver + witness + two additional driver sigs)
-    pushDraw(9, F.DRUG_RECEIPT_SIGNATURE, driverSignatureBytes);
-    pushDraw(9, F.DRUG_RECEIPT_WITNESS_SIGNATURE, adminSignatureBytes);
-    pushDraw(9, F.TRAILER_SEAL_SIGNATURE, driverSignatureBytes);
-    pushDraw(9, F.TRAILER_CERTIFICATION_SIGNATURE, driverSignatureBytes);
+    // Page 10
+    pushDraw(9, F.DRUG_NOTICE_DRIVER_SIGNATURE, driverSignatureBytes);
 
-    // Page 12
-    pushDraw(11, F.COMP_ACK_SIGNATURE, driverSignatureBytes);
+    // Page 11 (driver + witness + two additional driver sigs)
+    pushDraw(10, F.DRUG_RECEIPT_SIGNATURE, driverSignatureBytes);
+    pushDraw(10, F.DRUG_RECEIPT_WITNESS_SIGNATURE, adminSignatureBytes);
+    pushDraw(10, F.TRAILER_SEAL_SIGNATURE, driverSignatureBytes);
+    pushDraw(10, F.TRAILER_CERTIFICATION_SIGNATURE, driverSignatureBytes);
+
+    // Page 13
+    pushDraw(12, F.COMP_ACK_SIGNATURE, driverSignatureBytes);
     const hasAccidentalInsurance = application.page4?.hasAccidentalInsurance === true;
     if (hasAccidentalInsurance) {
-      pushDraw(11, F.INSURANCE_SIGNATURE, driverSignatureBytes);
+      pushDraw(12, F.INSURANCE_SIGNATURE, driverSignatureBytes);
     }
 
     // Perform all the queued draws

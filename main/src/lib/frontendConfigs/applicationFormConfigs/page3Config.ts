@@ -60,6 +60,13 @@ export const page3ConfigFactory: FormPageConfigFactory<ApplicationFormPage3Schem
   return {
     validationFields: (values) => {
       const fields: string[] = [
+        // Accident flag must be answered
+        "hasAccidentHistory",
+        // Also validate the parent to allow root-level Zod errors to surface
+        "accidentHistory",
+        // Traffic flag and parent
+        "hasTrafficConvictions",
+        "trafficConvictions",
         // Education
         "education.gradeSchool",
         "education.college",
@@ -70,14 +77,28 @@ export const page3ConfigFactory: FormPageConfigFactory<ApplicationFormPage3Schem
         "canadianHoursOfService.dailyHours",
       ];
 
-      // Include all accident and traffic conviction fields for validation
-      values.accidentHistory?.forEach((_, index) => {
-        fields.push(`accidentHistory.${index}.date`, `accidentHistory.${index}.natureOfAccident`, `accidentHistory.${index}.fatalities`, `accidentHistory.${index}.injuries`);
-      });
+      // Include accident rows only if user answered YES
+      if (values.hasAccidentHistory) {
+        values.accidentHistory?.forEach((_, index) => {
+          fields.push(
+            `accidentHistory.${index}.date`,
+            `accidentHistory.${index}.natureOfAccident`,
+            `accidentHistory.${index}.fatalities`,
+            `accidentHistory.${index}.injuries`
+          );
+        });
+      }
 
-      values.trafficConvictions?.forEach((_, index) => {
-        fields.push(`trafficConvictions.${index}.date`, `trafficConvictions.${index}.location`, `trafficConvictions.${index}.charge`, `trafficConvictions.${index}.penalty`);
-      });
+      if (values.hasTrafficConvictions) {
+        values.trafficConvictions?.forEach((_, index) => {
+          fields.push(
+            `trafficConvictions.${index}.date`,
+            `trafficConvictions.${index}.location`,
+            `trafficConvictions.${index}.charge`,
+            `trafficConvictions.${index}.penalty`
+          );
+        });
+      }
 
       values.canadianHoursOfService?.dailyHours?.forEach((_day, index) => {
         fields.push(`canadianHoursOfService.dailyHours.${index}.hours`);
@@ -90,11 +111,17 @@ export const page3ConfigFactory: FormPageConfigFactory<ApplicationFormPage3Schem
 
     buildPayload: (values) => {
       const page3 = {
-        // Accidents: remove empty placeholders + strip ids + trim
-        accidentHistory: pruneAccidentRows(values.accidentHistory),
+        hasAccidentHistory: !!values.hasAccidentHistory,
+        hasTrafficConvictions: !!values.hasTrafficConvictions,
+        // Accidents: if user answered NO, always send empty array
+        accidentHistory: values.hasAccidentHistory
+          ? pruneAccidentRows(values.accidentHistory)
+          : [],
 
-        // Traffic convictions: remove empty placeholders + strip ids + trim
-        trafficConvictions: pruneConvictionRows(values.trafficConvictions),
+        // Traffic convictions: gate by flag
+        trafficConvictions: values.hasTrafficConvictions
+          ? pruneConvictionRows(values.trafficConvictions)
+          : [],
 
         // Education: pass-through
         education: {

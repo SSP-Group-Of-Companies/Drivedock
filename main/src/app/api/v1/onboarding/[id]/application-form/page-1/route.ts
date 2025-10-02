@@ -1,16 +1,39 @@
 // app/api/v1/onboarding/[id]/application-form/page-1/route.ts
 import { NextRequest } from "next/server";
-import { decryptString, encryptString, hashString } from "@/lib/utils/cryptoUtils";
+import {
+  decryptString,
+  encryptString,
+  hashString,
+} from "@/lib/utils/cryptoUtils";
 import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
 import connectDB from "@/lib/utils/connectDB";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
-import { isValidSIN, isValidPhoneNumber, isValidEmail, isValidDOB, isValidSINIssueDate, isValidGender } from "@/lib/utils/validationUtils";
+import PreQualifications from "@/mongoose/models/Prequalifications";
+import {
+  isValidSIN,
+  isValidPhoneNumber,
+  isValidEmail,
+  isValidDOB,
+  isValidSINIssueDate,
+  isValidGender,
+} from "@/lib/utils/validationUtils";
 import { hasRecentAddressCoverage } from "@/lib/utils/hasMinimumAddressDuration";
-import { advanceProgress, buildTrackerContext, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
-import { deleteS3Objects, finalizeAsset, buildFinalDest } from "@/lib/utils/s3Upload";
+import {
+  advanceProgress,
+  buildTrackerContext,
+  nextResumeExpiry,
+} from "@/lib/utils/onboardingUtils";
+import {
+  deleteS3Objects,
+  finalizeAsset,
+  buildFinalDest,
+} from "@/lib/utils/s3Upload";
 import { ES3Folder } from "@/types/aws.types";
 import { S3_TEMP_FOLDER } from "@/constants/aws";
-import { IApplicationFormPage1, ILicenseEntry } from "@/types/applicationForm.types";
+import {
+  IApplicationFormPage1,
+  ILicenseEntry,
+} from "@/types/applicationForm.types";
 import { EStepPath } from "@/types/onboardingTracker.types";
 import { isValidObjectId } from "mongoose";
 import { parseJsonBody } from "@/lib/utils/reqParser";
@@ -18,8 +41,17 @@ import ApplicationForm from "@/mongoose/models/ApplicationForm";
 import { requireOnboardingSession } from "@/lib/utils/auth/onboardingSession";
 import { attachCookies } from "@/lib/utils/auth/attachCookie";
 
-export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+// disabled updating application-form/page1 by driver according to business logic
+const disalbeUpdatingApplicationPage1 = true;
+
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
+    if (disalbeUpdatingApplicationPage1)
+      return errorResponse(401, "unauthorized");
+
     await connectDB();
     const { id: onboardingId } = await params;
 
@@ -27,7 +59,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return errorResponse(400, "Invalid onboarding ID");
     }
 
-    const { tracker: onboardingDoc, refreshCookie } = await requireOnboardingSession(onboardingId);
+    const { tracker: onboardingDoc, refreshCookie } =
+      await requireOnboardingSession(onboardingId);
 
     const oldSin = decryptString(onboardingDoc.sinEncrypted);
 
@@ -41,13 +74,46 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (!isValidSIN(newSin)) return errorResponse(400, "Invalid SIN");
 
     if (!isValidEmail(page1.email)) return errorResponse(400, "Invalid email");
-    if (page1.phoneHome && !isValidPhoneNumber(page1.phoneHome)) return errorResponse(400, "Invalid home phone");
-    if (!isValidPhoneNumber(page1.phoneCell)) return errorResponse(400, "Invalid cell phone");
-    if (!isValidPhoneNumber(page1.emergencyContactPhone)) return errorResponse(400, "Invalid emergency contact phone");
-    if (!isValidDOB(page1.dob)) return errorResponse(400, "Invalid date of birth");
-    if (!isValidSINIssueDate(page1.sinIssueDate)) return errorResponse(400, "Invalid SIN issue date");
-    if (!isValidGender(page1.gender)) return errorResponse(400, "Invalid gender");
-    if (!hasRecentAddressCoverage(page1.addresses)) return errorResponse(400, "Address history must cover 5 years");
+    if (page1.phoneHome && !isValidPhoneNumber(page1.phoneHome))
+      return errorResponse(400, "Invalid home phone");
+    if (!isValidPhoneNumber(page1.phoneCell))
+      return errorResponse(400, "Invalid cell phone");
+    if (!isValidPhoneNumber(page1.emergencyContactPhone))
+      return errorResponse(400, "Invalid emergency contact phone");
+    if (page1.phoneCell === page1.emergencyContactPhone)
+      return errorResponse(
+        400,
+        "cell phone and emergency contact phone cannot be the same"
+      );
+    if (!isValidDOB(page1.dob))
+      return errorResponse(400, "Invalid date of birth");
+    if (!isValidSINIssueDate(page1.sinIssueDate))
+      return errorResponse(400, "Invalid SIN issue date");
+    if (!isValidGender(page1.gender))
+      return errorResponse(400, "Invalid gender");
+    if (!hasRecentAddressCoverage(page1.addresses))
+      return errorResponse(400, "Address history must cover 5 years");
+
+    // Validate SIN expiry date for Work Permit holders
+    const preQualId = onboardingDoc.forms?.preQualification;
+    if (preQualId) {
+      const preQualDoc = await PreQualifications.findById(preQualId);
+      if (preQualDoc && preQualDoc.statusInCanada === "Work Permit") {
+        if (!page1.sinExpiryDate) {
+          return errorResponse(
+            400,
+            "SIN expiry date is required for Work Permit holders"
+          );
+        }
+        // Validate that expiry date is in the future
+        const expiryDate = new Date(page1.sinExpiryDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (expiryDate <= today) {
+          return errorResponse(400, "SIN expiry date must be in the future");
+        }
+      }
+    }
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) return errorResponse(404, "ApplicationForm not linked");
@@ -64,7 +130,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return errorResponse(400, "First license must be of type AZ");
     }
     if (!firstLicense.licenseFrontPhoto || !firstLicense.licenseBackPhoto) {
-      return errorResponse(400, "First license must include both front and back photos");
+      return errorResponse(
+        400,
+        "First license must include both front and back photos"
+      );
     }
 
     const sinChanged = oldSin !== newSin;
@@ -74,14 +143,19 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     // check if there's already an application with the same sin
     if (sinChanged) {
-      const existingOnboarding = await OnboardingTracker.findOne({ sinHash: sinHash });
-      if (existingOnboarding) return errorResponse(400, "application with this sin already exists");
+      const existingOnboarding = await OnboardingTracker.findOne({
+        sinHash: sinHash,
+      });
+      if (existingOnboarding)
+        return errorResponse(400, "application with this sin already exists");
     }
 
     // ----------------------------------------------------------------
     // Phase 1 — Write *only page1* subtree, validate *only page1*
     // ----------------------------------------------------------------
-    const tempLicenses: ILicenseEntry[] = page1.licenses.map((lic) => ({ ...lic }));
+    const tempLicenses: ILicenseEntry[] = page1.licenses.map((lic) => ({
+      ...lic,
+    }));
     const tempSinPhoto = page1.sinPhoto;
 
     // keep previous keys for diff-based deletion later
@@ -113,16 +187,28 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     // finalize license photos
     for (const lic of tempLicenses) {
       if (lic.licenseFrontPhoto) {
-        lic.licenseFrontPhoto = await finalizeAsset(lic.licenseFrontPhoto, destLic);
+        lic.licenseFrontPhoto = await finalizeAsset(
+          lic.licenseFrontPhoto,
+          destLic
+        );
       }
       if (lic.licenseBackPhoto) {
-        lic.licenseBackPhoto = await finalizeAsset(lic.licenseBackPhoto, destLic);
+        lic.licenseBackPhoto = await finalizeAsset(
+          lic.licenseBackPhoto,
+          destLic
+        );
       }
     }
 
     // Ensure first license still has both sides after finalize
-    if (!tempLicenses[0].licenseFrontPhoto || !tempLicenses[0].licenseBackPhoto) {
-      return errorResponse(400, "First license must include both front and back photos");
+    if (
+      !tempLicenses[0].licenseFrontPhoto ||
+      !tempLicenses[0].licenseBackPhoto
+    ) {
+      return errorResponse(
+        400,
+        "First license must include both front and back photos"
+      );
     }
 
     // ----------------------------------------------------------------
@@ -141,11 +227,19 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const newSinKey = page1.sinPhoto?.s3Key;
     const newLicenseKeys = collectLicenseKeys(tempLicenses);
 
-    const prevKeys = new Set<string>([...(prevSinPhotoKey ? [prevSinPhotoKey] : []), ...prevLicenseKeys]);
+    const prevKeys = new Set<string>([
+      ...(prevSinPhotoKey ? [prevSinPhotoKey] : []),
+      ...prevLicenseKeys,
+    ]);
 
-    const newKeys = new Set<string>([...(newSinKey ? [newSinKey] : []), ...newLicenseKeys]);
+    const newKeys = new Set<string>([
+      ...(newSinKey ? [newSinKey] : []),
+      ...newLicenseKeys,
+    ]);
 
-    const removedFinalKeys = [...prevKeys].filter((k) => !newKeys.has(k) && !k.startsWith(`${S3_TEMP_FOLDER}/`));
+    const removedFinalKeys = [...prevKeys].filter(
+      (k) => !newKeys.has(k) && !k.startsWith(`${S3_TEMP_FOLDER}/`)
+    );
 
     if (removedFinalKeys.length) {
       try {
@@ -162,12 +256,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       onboardingDoc.sinHash = sinHash;
       onboardingDoc.sinEncrypted = sinEncrypted;
     }
-    onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.APPLICATION_PAGE_1);
+    onboardingDoc.status = advanceProgress(
+      onboardingDoc,
+      EStepPath.APPLICATION_PAGE_1
+    );
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();
     await onboardingDoc.save();
 
     const res = successResponse(200, "ApplicationForm Page 1 updated", {
-      onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_1),
+      onboardingContext: buildTrackerContext(
+        onboardingDoc,
+        EStepPath.APPLICATION_PAGE_1
+      ),
       page1: appFormDoc.page1,
     });
 
@@ -178,7 +278,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 }
 
-export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+export const GET = async (
+  _: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) => {
   try {
     await connectDB();
 
@@ -188,7 +291,8 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
       return errorResponse(400, "Not a valid onboarding tracker ID");
     }
 
-    const { tracker: onboardingDoc, refreshCookie } = await requireOnboardingSession(onboardingId);
+    const { tracker: onboardingDoc, refreshCookie } =
+      await requireOnboardingSession(onboardingId);
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) {
@@ -204,9 +308,25 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
       return errorResponse(404, "Page 1 of the application form not found");
     }
 
+    // Get prequalification data to determine if user has Work Permit status
+    const preQualId = onboardingDoc.forms?.preQualification;
+    let prequalificationData = null;
+    if (preQualId) {
+      const preQualDoc = await PreQualifications.findById(preQualId);
+      if (preQualDoc) {
+        prequalificationData = {
+          statusInCanada: preQualDoc.statusInCanada,
+        };
+      }
+    }
+
     const res = successResponse(200, "Page 1 data retrieved", {
-      onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_1),
+      onboardingContext: buildTrackerContext(
+        onboardingDoc,
+        EStepPath.APPLICATION_PAGE_1
+      ),
       page1: appFormDoc.page1,
+      prequalificationData,
     });
 
     return attachCookies(res, refreshCookie);

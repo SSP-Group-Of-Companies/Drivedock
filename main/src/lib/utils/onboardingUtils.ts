@@ -270,6 +270,7 @@ export function buildTrackerContext(tracker: IOnboardingTrackerDoc | IOnboarding
     applicationType: tracker.applicationType,
     needsFlatbedTraining: opts.needsFlatbedTraining,
     status: tracker.status,
+    invitationApproved: tracker.invitationApproved,
     completionLocation: tracker.completionLocation,
     locationPermissionGranted: tracker.locationPermissionGranted,
     prevStep,
@@ -293,6 +294,8 @@ export function buildTrackerContext(tracker: IOnboardingTrackerDoc | IOnboarding
  *   → "/onboarding/64f3a8.../application-form/page-2"
  */
 export function buildOnboardingStepPath(tracker: IOnboardingTrackerDoc | IOnboardingTrackerContext, defaultStep?: EStepPath): string {
+  if (tracker.status?.completed === true) return `/onboarding/${tracker.id}/completed`;
+  if (!tracker.invitationApproved) return `/onboarding/${tracker.id}/pending-approval`;
   const step = defaultStep || tracker.status.currentStep;
   return `/onboarding/${tracker.id}/${step}`;
 }
@@ -378,4 +381,11 @@ export function handleBackNavigation(pathname: string, trackerId: string | undef
  */
 export function nextResumeExpiry(now = Date.now()): Date {
   return new Date(now + Number(FORM_RESUME_EXPIRES_AT_IN_MILSEC));
+}
+
+/**
+ * Check if application invitation is approved
+ */
+export function isInvitationApproved(tracker: IOnboardingTrackerDoc): boolean {
+  return tracker.invitationApproved === true;
 }

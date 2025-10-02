@@ -95,6 +95,7 @@ export interface IApplicationFormPage1 {
   sin?: string; // Client-provided on POST only
   sinEncrypted: string; // Server-computed; client should omit
   sinIssueDate: string | Date; // YYYY-MM-DD (client) or Date (server)
+  sinExpiryDate?: string | Date; // YYYY-MM-DD (client) or Date (server) - Optional, only for Work Permit holders
   gender: EGender;
   sinPhoto: IFileAsset;
   dob: string | Date; // YYYY-MM-DD (client) or Date (server)
@@ -208,7 +209,9 @@ export interface ICanadianHoursOfService {
   totalHours?: number; // Computed/virtual on server
 }
 export interface IApplicationFormPage3 {
+  hasAccidentHistory: boolean;
   accidentHistory: IAccidentEntry[];
+  hasTrafficConvictions: boolean;
   trafficConvictions: ITrafficConvictionEntry[];
   education: IEducation;
   canadianHoursOfService: ICanadianHoursOfService;
@@ -253,6 +256,7 @@ export interface ITruckDetails {
 
 export interface IApplicationFormPage4 {
   // Criminal Record Table
+  hasCriminalRecords?: boolean;
   criminalRecords: ICriminalRecordEntry[];
 
   // Incorporation / Business Details (if any of these provided, enforce all)

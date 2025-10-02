@@ -9,12 +9,14 @@ import { guard } from "@/lib/utils/auth/authUtils";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
 
-import { buildTrackerContext, advanceProgress, nextResumeExpiry, onboardingExpired, hasCompletedStep } from "@/lib/utils/onboardingUtils";
+import { buildTrackerContext, advanceProgress, nextResumeExpiry, hasCompletedStep, isInvitationApproved } from "@/lib/utils/onboardingUtils";
 
 import { deleteS3Objects, finalizeAsset, finalizeAssetVector, buildFinalDest } from "@/lib/utils/s3Upload";
 import { parseJsonBody } from "@/lib/utils/reqParser";
 
 import { COMPANIES } from "@/constants/companies";
+import PreQualifications from "@/mongoose/models/Prequalifications";
+import { EDriverType } from "@/types/preQualifications.types";
 import { S3_TEMP_FOLDER } from "@/constants/aws";
 
 import { ES3Folder } from "@/types/aws.types";
@@ -44,11 +46,11 @@ type PatchBody = {
 
   healthCardPhotos?: IFileAsset[];
   medicalCertificationPhotos?: IFileAsset[];
-  
+
   // Passport type selection (Canadian companies only)
   passportType?: IApplicationFormPage4["passportType"];
   workAuthorizationType?: IApplicationFormPage4["workAuthorizationType"];
-  
+
   passportPhotos?: IFileAsset[];
   prPermitCitizenshipPhotos?: IFileAsset[];
   usVisaPhotos?: IFileAsset[];
@@ -99,18 +101,19 @@ function forbidPresence(b: PatchBody, key: keyof IApplicationFormPage4, label: s
 
 /** Business section presence in BODY (any of the 5 keys appears) */
 function businessKeysPresentInBody(b: PatchBody) {
-  return hasKey(b, "businessName") || hasKey(b, "hstNumber") || hasKey(b, "incorporatePhotos") || hasKey(b, "bankingInfoPhotos") || hasKey(b, "hstPhotos");
+  // Banking no longer part of Business all-or-nothing
+  return hasKey(b, "businessName") || hasKey(b, "hstNumber") || hasKey(b, "incorporatePhotos") || hasKey(b, "hstPhotos");
 }
 
 /** Business clear intent: ALL five keys present and all empty */
 function isBusinessClearIntent(b: PatchBody) {
-  const allKeysPresent = hasKey(b, "businessName") && hasKey(b, "hstNumber") && hasKey(b, "incorporatePhotos") && hasKey(b, "bankingInfoPhotos") && hasKey(b, "hstPhotos");
+  const allKeysPresent = hasKey(b, "businessName") && hasKey(b, "hstNumber") && hasKey(b, "incorporatePhotos") && hasKey(b, "hstPhotos");
 
   if (!allKeysPresent) return false;
 
   const emptyStrings = (!b.businessName || b.businessName.trim() === "") && (!b.hstNumber || b.hstNumber.trim() === "");
 
-  const emptyPhotos = alen(b.incorporatePhotos) === 0 && alen(b.bankingInfoPhotos) === 0 && alen(b.hstPhotos) === 0;
+  const emptyPhotos = alen(b.incorporatePhotos) === 0 && alen(b.hstPhotos) === 0;
 
   return emptyStrings && emptyPhotos;
 }
@@ -128,20 +131,18 @@ function validateBusinessAllOrNothingOnBody(b: PatchBody) {
   req("businessName");
   req("hstNumber");
   req("incorporatePhotos");
-  req("bankingInfoPhotos");
   req("hstPhotos");
 
   if (missing.length) throw new AppError(400, `Business section is partial. Missing: ${missing.join(", ")}. Provide all fields or clear all.`);
 
   if (!isNonEmptyString(b.businessName)) throw new AppError(400, "businessName is required in Business section.");
   if (!isNonEmptyString(b.hstNumber)) throw new AppError(400, "hstNumber is required in Business section.");
+  if ((b.hstNumber?.trim().length ?? 0) < 9) throw new AppError(400, "hstNumber must be at least 9 characters.");
 
   const inc = alen(b.incorporatePhotos);
-  const bank = alen(b.bankingInfoPhotos);
   const hst = alen(b.hstPhotos);
 
   if (inc < 1 || inc > 10) throw new AppError(400, `incorporatePhotos must have 1–10 photos. You sent ${inc}.`);
-  if (bank < 1 || bank > 2) throw new AppError(400, `bankingInfoPhotos must have 1–2 photos. You sent ${bank}.`);
   if (hst < 1 || hst > 2) throw new AppError(400, `hstPhotos must have 1–2 photos. You sent ${hst}.`);
 
   return { mode: "validate" as const };
@@ -158,7 +159,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
     if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
-    if (onboardingExpired(onboardingDoc)) return errorResponse(400, "Onboarding session expired");
+    if (!isInvitationApproved(onboardingDoc)) return errorResponse(400, "driver not yet approved for onboarding process");
 
     // Admin path: require Page 4 completed first
     if (!hasCompletedStep(onboardingDoc, EStepPath.APPLICATION_PAGE_4)) {
@@ -225,7 +226,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       // Canadian drivers: passport type determines requirements
       requirePresence(body, "passportPhotos", "Passport photos");
       expectCountExact(body, "passportPhotos", 2, "Passport photos");
-      
+
       // Only require PR/Permit/Citizenship for non-Canadian passports
       if (body.passportType === "others") {
         requirePresence(body, "prPermitCitizenshipPhotos", "PR/Permit/Citizenship photos");
@@ -237,13 +238,13 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     if (isCanadian) {
       requirePresence(body, "healthCardPhotos", "Health card photos");
       expectCountExact(body, "healthCardPhotos", 2, "Health card photos");
-      
+
       // US Visa only required for cross-border work authorization
       if (body.passportType === "others" && body.workAuthorizationType === "cross_border") {
         requirePresence(body, "usVisaPhotos", "US visa photos");
         expectCountRange(body, "usVisaPhotos", 1, 2, "US visa photos");
       }
-      
+
       // STRICT: even an empty medicalCertificationPhotos key is disallowed
       forbidPresence(body, "medicalCertificationPhotos", "Medical certification photos");
     } else if (isUS) {
@@ -274,6 +275,29 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     {
       // Business all-or-nothing on BODY (only if they touched business keys)
       const bizDecision = validateBusinessAllOrNothingOnBody(body);
+
+      // Driver-type requiredness from DB: enforce business + banking for Company/Owner Operator
+      try {
+        const preQualId = onboardingDoc.forms?.preQualification as any;
+        if (preQualId) {
+          const preQualDoc = await PreQualifications.findById(preQualId);
+          const driverType = preQualDoc?.driverType as EDriverType | undefined;
+          if (driverType === EDriverType.Company || driverType === EDriverType.OwnerOperator) {
+            // Business required
+            requirePresence(body, "businessName", "Business name");
+            if (!isNonEmptyString(body.businessName)) throw new AppError(400, "Business name is required for this applicant.");
+            requirePresence(body, "hstNumber", "HST number");
+            if (!isNonEmptyString(body.hstNumber)) throw new AppError(400, "HST number is required for this applicant.");
+            expectCountRange(body, "incorporatePhotos", 1, 10, "Incorporation photos");
+            expectCountRange(body, "hstPhotos", 1, 2, "HST photos");
+
+            // Banking required
+            expectCountRange(body, "bankingInfoPhotos", 1, 2, "Banking info photos");
+          }
+        }
+      } catch {
+        // If driver type can't be determined, leave as-is
+      }
 
       // Fast card: if present at all, it must be complete (number+expiry+front+back)
       if (hasKey(body, "fastCard")) {
@@ -330,6 +354,27 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
         // Optional truck details
         ...(hasKey(body, "truckDetails") ? { truckDetails: body.truckDetails } : {}),
       };
+
+      // Final-state enforcement based on driverType (protects against partial bodies)
+      try {
+        const preQualId = onboardingDoc.forms?.preQualification as any;
+        if (preQualId) {
+          const preQualDoc = await PreQualifications.findById(preQualId);
+          const driverType = preQualDoc?.driverType as EDriverType | undefined;
+          if (driverType === EDriverType.Company || driverType === EDriverType.OwnerOperator) {
+            const nameOk = isNonEmptyString(nextP4.businessName);
+            const hstOk = isNonEmptyString(nextP4.hstNumber);
+            const incOk = (nextP4.incorporatePhotos?.length ?? 0) >= 1;
+            const hstPhotosOk = (nextP4.hstPhotos?.length ?? 0) >= 1;
+            const bankingOk = (nextP4.bankingInfoPhotos?.length ?? 0) >= 1;
+            if (!nameOk || !hstOk || !incOk || !hstPhotosOk || !bankingOk) {
+              throw new AppError(400, "For Company/Owner Operator, business and banking info are required.");
+            }
+          }
+        }
+      } catch (e) {
+        if (e instanceof AppError) throw e;
+      }
 
       if (bizDecision.mode === "clear") {
         nextP4.businessName = "";
@@ -505,11 +550,11 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       bankingInfoPhotos: appFormDoc.page4.bankingInfoPhotos,
       healthCardPhotos: appFormDoc.page4.healthCardPhotos,
       medicalCertificationPhotos: appFormDoc.page4.medicalCertificationPhotos,
-      
+
       // Passport type selection (Canadian companies only)
       passportType: appFormDoc.page4.passportType,
       workAuthorizationType: appFormDoc.page4.workAuthorizationType,
-      
+
       passportPhotos: appFormDoc.page4.passportPhotos,
       prPermitCitizenshipPhotos: appFormDoc.page4.prPermitCitizenshipPhotos,
       usVisaPhotos: appFormDoc.page4.usVisaPhotos,
@@ -532,8 +577,7 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
 
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
     if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
-
-    if (onboardingExpired(onboardingDoc)) return errorResponse(400, "Onboarding session expired");
+    if (!isInvitationApproved(onboardingDoc)) return errorResponse(400, "driver not yet approved for onboarding process");
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) return errorResponse(404, "ApplicationForm not linked");
@@ -558,11 +602,11 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
       bankingInfoPhotos: appFormDoc.page4.bankingInfoPhotos,
       healthCardPhotos: appFormDoc.page4.healthCardPhotos,
       medicalCertificationPhotos: appFormDoc.page4.medicalCertificationPhotos,
-      
+
       // Passport type selection (Canadian companies only)
       passportType: appFormDoc.page4.passportType,
       workAuthorizationType: appFormDoc.page4.workAuthorizationType,
-      
+
       passportPhotos: appFormDoc.page4.passportPhotos,
       prPermitCitizenshipPhotos: appFormDoc.page4.prPermitCitizenshipPhotos,
       usVisaPhotos: appFormDoc.page4.usVisaPhotos,

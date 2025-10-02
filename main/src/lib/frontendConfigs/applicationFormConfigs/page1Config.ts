@@ -9,6 +9,7 @@
 import { BuildPayloadCtx, FormPageConfig, FormPageConfigFactory } from "@/lib/frontendConfigs/formPageConfig.types";
 import { ApplicationFormPage1Schema } from "@/lib/zodSchemas/applicationFormPage1.schema";
 import { ECompanyId } from "@/constants/companies";
+import { t } from "i18next";
 
 export const page1ConfigFactory: FormPageConfigFactory<ApplicationFormPage1Schema> = (ctx: BuildPayloadCtx): FormPageConfig<ApplicationFormPage1Schema> => {
   const id = ctx.effectiveTrackerId; // undefined on true fresh POST (first submit)
@@ -22,7 +23,16 @@ export const page1ConfigFactory: FormPageConfigFactory<ApplicationFormPage1Schem
         "sin",
         "sinIssueDate",
         "gender",
-        // include nested photo keys so RHF can surface specific errors
+      ];
+
+      // Add sinExpiryDate only for Work Permit holders
+      const status = ctx.prequalifications?.statusInCanada || ctx.prequalificationStatusInCanada;
+      if (status === "Work Permit") {
+        fields.push("sinExpiryDate");
+      }
+
+      // include nested photo keys so RHF can surface specific errors
+      fields.push(
         "sinPhoto.s3Key",
         "sinPhoto.url",
         "sinPhoto.mimeType",
@@ -42,8 +52,8 @@ export const page1ConfigFactory: FormPageConfigFactory<ApplicationFormPage1Schem
 
         // Root collections for any superRefine banner placement
         "licenses",
-        "addresses",
-      ];
+        "addresses"
+      );
 
       // Validate each visible license row (ensure first has photos)
       values.licenses?.forEach((_lic, index) => {
@@ -92,6 +102,16 @@ export const page1ConfigFactory: FormPageConfigFactory<ApplicationFormPage1Schem
       // PATCH (resume)
       return { page1: cleaned };
     },
+
+    confirmationPopup: !id
+      ? {
+          show: true,
+          title: t("form.step2.page1.confirmation.title"),
+          message: t("form.step2.page1.confirmation.message"),
+          confirmLabel: t("form.step2.page1.confirmation.confirmLabel"),
+          cancelLabel: t("form.step2.page1.confirmation.cancelLabel"),
+        }
+      : undefined,
 
     // Fully resolved fallback; on POST we still prefer server nextUrl
     nextRoute: id ? `/onboarding/${id}/application-form/page-2` : "/onboarding", // harmless fallback for first-time POST (no id yet)

@@ -1,7 +1,7 @@
 // src/lib/onboarding/errorManager.ts
 "use client";
 
-import { OnboardingApiError, ErrorModalData } from "@/types/onboardingError.types";
+import { OnboardingApiError, ErrorModalData, ErrorModalType } from "@/types/onboardingError.types";
 import { EEApiErrorType } from "@/types/apiError.types";
 import { ErrorMessageMapper } from "./errorMessages";
 import { SessionManager } from "./sessionManager";
@@ -37,7 +37,7 @@ export class ErrorManager {
    */
   handleApiError(error: OnboardingApiError): void {
     if (!this.messageMapper) {
-      console.error('ErrorManager not initialized with translation function');
+      console.error("ErrorManager not initialized with translation function");
       return;
     }
 
@@ -65,7 +65,7 @@ export class ErrorManager {
     SessionManager.getInstance().markSessionInactive();
 
     const modalData = this.messageMapper.mapError(EEApiErrorType.SESSION_REQUIRED, {
-      reason: 'SESSION_NOT_FOUND_OR_REVOKED_OR_EXPIRED'
+      reason: "SESSION_NOT_FOUND_OR_REVOKED_OR_EXPIRED",
     });
     this.showModal(modalData);
   }
@@ -76,7 +76,7 @@ export class ErrorManager {
   handleUnexpectedError(error: unknown): void {
     if (!this.messageMapper) return;
 
-    const message = error instanceof Error ? error.message : 'An unexpected error occurred';
+    const message = error instanceof Error ? error.message : "An unexpected error occurred";
     const modalData = this.messageMapper.mapError(undefined, undefined, message);
     this.showModal(modalData);
   }
@@ -99,18 +99,16 @@ export class ErrorManager {
    * Shows error modal
    */
   showModal(modalData: ErrorModalData): void {
-    // Override retry/close/try again actions
-    if (modalData.primaryAction.label.toLowerCase().includes('retry') || 
-        modalData.primaryAction.label.toLowerCase().includes('close') ||
-        modalData.primaryAction.label.toLowerCase().includes('try again')) {
-      modalData.primaryAction.action = () => {
-        this.hideModal();
-        if (this.retryCallback) {
-          this.retryCallback();
-        }
-      };
+    // Only auto-override for error-like modals
+    if (modalData.type !== ErrorModalType.CONFIRMATION) {
+      const label = modalData.primaryAction.label.toLowerCase();
+      if (label.includes("retry") || label.includes("close") || label.includes("try again")) {
+        modalData.primaryAction.action = () => {
+          this.hideModal();
+          if (this.retryCallback) this.retryCallback();
+        };
+      }
     }
-
     this.currentModal = modalData;
     this.notifyModalListeners();
   }
@@ -143,9 +141,35 @@ export class ErrorManager {
    * Notifies all modal listeners
    */
   private notifyModalListeners(): void {
-    this.modalListeners.forEach(listener => listener(this.currentModal));
+    this.modalListeners.forEach((listener) => listener(this.currentModal));
   }
 
+  showConfirm(params: { title: string; message: string; confirmLabel: string; cancelLabel: string; onConfirm: () => void; onCancel?: () => void; canClose?: boolean }): void {
+    const modalData = {
+      type: ErrorModalType.CONFIRMATION,
+      title: params.title,
+      message: params.message,
+      primaryAction: {
+        label: params.confirmLabel,
+        action: () => {
+          this.hideModal();
+          params.onConfirm();
+        },
+      },
+      secondaryAction: {
+        label: params.cancelLabel,
+        action: () => {
+          this.hideModal();
+          params.onCancel?.();
+        },
+      },
+      canClose: params.canClose ?? true,
+    } as ErrorModalData;
+
+    // Directly set, do NOT run the auto-override branch used for errors.
+    this.currentModal = modalData;
+    this.notifyModalListeners();
+  }
 }
 
 // Export singleton instance

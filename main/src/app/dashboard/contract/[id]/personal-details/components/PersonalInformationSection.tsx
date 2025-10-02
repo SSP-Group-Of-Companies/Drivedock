@@ -13,9 +13,12 @@ interface PersonalInformationSectionProps {
   isEditMode: boolean;
   staged: any;
   onStage: (changes: any) => void;
+  prequalificationData?: {
+    statusInCanada?: string;
+  };
 }
 
-export default function PersonalInformationSection({ data, isEditMode, staged, onStage }: PersonalInformationSectionProps) {
+export default function PersonalInformationSection({ data, isEditMode, staged, onStage, prequalificationData }: PersonalInformationSectionProps) {
   const [showSIN, setShowSIN] = useState(false);
 
   // Upload/Delete UI state
@@ -349,6 +352,41 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
               </div>
             )}
           </div>
+
+          {/* SIN Expiry Date - Only for Work Permit holders */}
+          {prequalificationData?.statusInCanada === "Work Permit" && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium" style={{ color: "var(--color-on-surface-variant)" }}>
+                SIN Expiry Date
+              </label>
+              {isEditMode ? (
+                <input
+                  type="date"
+                  value={formatInputDate(formData.sinExpiryDate) || ""}
+                  onChange={(e) => updateField("sinExpiryDate", e.target.value)}
+                  required={prequalificationData?.statusInCanada === "Work Permit"}
+                  className="w-full p-3 rounded-lg border text-sm transition-colors"
+                  style={{
+                    background: "var(--color-surface)",
+                    borderColor: "var(--color-outline)",
+                    color: "var(--color-on-surface)",
+                  }}
+                />
+              ) : (
+                <div
+                  className="p-3 rounded-lg border"
+                  style={{
+                    background: "var(--color-surface)",
+                    borderColor: "var(--color-outline)",
+                  }}
+                >
+                  <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
+                    {formatDisplayDate(formData.sinExpiryDate)}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="space-y-2">
             <label className="text-sm font-medium" style={{ color: "var(--color-on-surface-variant)" }}>

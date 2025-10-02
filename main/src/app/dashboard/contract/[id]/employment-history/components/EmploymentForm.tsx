@@ -161,21 +161,6 @@ export default function EmploymentForm({
           </h3>
         </div>
 
-        {/* Add Employment Button - Right Aligned */}
-        {isEditMode && (
-          <button
-            type="button"
-            onClick={addEmployment}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-            style={{
-              background: "var(--color-primary)",
-              color: "var(--color-on-primary)",
-            }}
-          >
-            <Plus className="w-4 h-4" />
-            Add Employment
-          </button>
-        )}
       </div>
 
       {/* Validation Errors Display */}
@@ -218,6 +203,7 @@ export default function EmploymentForm({
       <div className="space-y-6">
         {employments.map((employment: IEmploymentEntry, index: number) => {
           const blocks = [];
+          const isLastEntry = index === employments.length - 1;
 
           // Add the employment card
           blocks.push(
@@ -1387,6 +1373,24 @@ export default function EmploymentForm({
                   </>
                 )}
               </div>
+
+              {/* Add Employment Button - Only on last entry */}
+              {isEditMode && isLastEntry && employments.length < 8 && (
+                <div className="pt-4 border-t" style={{ borderColor: "var(--color-outline)" }}>
+                  <button
+                    type="button"
+                    onClick={addEmployment}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors mx-auto"
+                    style={{
+                      background: "var(--color-primary)",
+                      color: "var(--color-on-primary)",
+                    }}
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add Employment
+                  </button>
+                </div>
+              )}
             </div>
           );
 

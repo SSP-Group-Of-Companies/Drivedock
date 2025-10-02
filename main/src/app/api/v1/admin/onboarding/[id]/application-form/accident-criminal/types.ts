@@ -5,8 +5,11 @@ export interface AccidentCriminalResponse {
   message: string;
   data: {
     onboardingContext: any;
+    hasAccidentHistory?: boolean;
     accidentHistory: IAccidentEntry[];
+    hasTrafficConvictions?: boolean;
     trafficConvictions: ITrafficConvictionEntry[];
+    hasCriminalRecords?: boolean;
     criminalRecords: ICriminalRecordEntry[];
   };
 }

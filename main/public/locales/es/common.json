@@ -145,8 +145,32 @@
     }
   },
 
+  "pendingApprovalPage": {
+    "pending": {
+      "title": "Solicitud pendiente de aprobación",
+      "subtitle": "Gracias por iniciar su solicitud con SSP Group of Companies.",
+      "body1": "Hemos recibido su solicitud. Nuestro equipo está revisando su información.",
+      "body2": "Una vez que su solicitud sea aprobada, recibirá un correo electrónico con los siguientes pasos.",
+      "tip": "Puede cerrar esta página y volver más tarde, o actualizarla cuando crea que ya ha sido aprobada. Por favor revise también su bandeja de entrada (y la carpeta de spam/correo no deseado) para nuestro correo.",
+      "returnHome": "Inicio",
+      "refresh": "Actualizar"
+    },
+    "approved": {
+      "title": "Solicitud aprobada",
+      "subtitle": "¡Buenas noticias! Su solicitud ha sido aprobada.",
+      "body1": "Ahora puede continuar con el siguiente paso de su proceso de incorporación.",
+      "body2": "Haga clic en el botón de abajo para continuar su solicitud.",
+      "ctaResume": "Continuar mi solicitud",
+      "ctaHome": "Inicio"
+    }
+  },
   "form": {
     "subtitle": "Toda la información debe responderse con veracidad. La responsabilidad recae en el solicitante.",
+    
+    "lockedAfterApproval": {
+      "prequal": "Esta página está bloqueada después de la aprobación.",
+      "message": "Esta página está bloqueada después de la aprobación. Si alguna información es incorrecta, contacta al Departamento de Seguridad para actualizarla."
+    },
 
     "helpPopups": {
       "page2SafetySensitive": "Como parte de nuestro proceso de cumplimiento normativo, confirma la siguiente información:\n\nConducción transfronteriza: Indica «Sí» si anteriormente operaste un vehículo comercial a través de la frontera EE. UU.–Canadá. Si no, indica «No».\n\nPruebas reguladas por el DOT: Indica «Sí» si tu empleador anterior realizó pruebas de alcohol y drogas conforme a las regulaciones del Departamento de Transporte (DOT) de los EE. UU. Si no, indica «No».\n\nTus respuestas nos ayudan a garantizar el cumplimiento de las regulaciones aplicables de transporte y seguridad. Si tienes preguntas o necesitas aclaración, no dudes en contactarnos.",
@@ -249,6 +273,12 @@
           "removeLicense": "Eliminar licencia",
           "addAddress": "Agregar otra dirección",
           "removeAddress": "Eliminar dirección"
+        },
+        "confirmation": {
+          "title": "Por favor confirme",
+          "message": "Está a punto de enviar sus datos personales a SSP Group of Companies para su revisión. Una vez enviados, nuestro Departamento de Seguridad revisará su solicitud. Si es aprobada, recibirá un correo electrónico con las instrucciones para continuar su proceso de incorporación. ¿Desea continuar?",
+          "confirmLabel": "Enviar",
+          "cancelLabel": "Regresar"
         }
       },
       "page2": {
@@ -331,7 +361,7 @@
               "dontDeclareTitle": "No declares lo siguiente:",
               "items": {
                 "item1": "Una condena por la que hayas recibido una suspensión de antecedentes (anteriormente indulto) de acuerdo con la Ley de Antecedentes Penales;",
-                "item2": "Una condena cuando eras un «joven» conforme a la Ley de Justicia Penal para Adolescentes;",
+                "item2": "Una condena cuando eras un ‘joven’ conforme a la Ley de Justicia Penal para Adolescentes;",
                 "item3": "Una absolución incondicional o condicional, conforme al artículo 730 del Código Penal;",
                 "item4": "Un delito por el cual no fuiste condenado;",
                 "item5": "Cualquier infracción provincial o municipal; y",
@@ -342,8 +372,13 @@
           "business": {
             "title": "Detalles de incorporación",
             "disclaimer": {
-              "text": "Si proporcionas algún detalle de incorporación, debes completar todos los campos y subir todos los documentos relacionados en esta sección. Esto incluye número de empleado, número de HST, número de empresa y las fotos requeridas (incorporación, HST, banca)."
+              "text": "Si proporcionas algún detalle de incorporación, debes completar todos los campos y subir todos los documentos relacionados en esta sección. Esto incluye el número de HST, el nombre de la empresa y las fotos requeridas (incorporación, HST)."
             }
+          },
+          "banking": {
+            "title": "Información bancaria",
+            "requiredDisclaimer": "La información bancaria es obligatoria para solicitantes Empresa y Propietario‑operador. Sube una foto clara de un cheque anulado o de un formulario bancario de depósito directo que muestre tu nombre, número de institución, número de tránsito y número de cuenta.",
+            "optionalDisclaimer": "La información bancaria es opcional para Propietario‑conductor. Si decides proporcionarla ahora, sube una foto clara de un cheque anulado o de un formulario bancario de depósito directo que muestre tu nombre, número de institución, número de tránsito y número de cuenta, para que nómina pueda configurar tu depósito directo."
           },
           "additionalInfo": {
             "title": "Información adicional"
@@ -610,7 +645,7 @@
     "step3": {
       "title": "Políticas y consentimientos",
       "disclaimer": "Al firmar a continuación, aceptas todo el contrato aquí y los contratos futuros. Lee todos los documentos con atención. La información que proporciones rellenará automáticamente los campos requeridos.",
-      "sendToEmail": "Envíenme los documentos firmados a mi correo cuando el proceso de solicitud esté completo.",
+      "sendToEmail": "Envíame los documentos a mi correo electrónico cuando se complete el proceso de solicitud.",
       "helper": {
         "drawOrUpload": "Dibuja tu firma arriba o sube una imagen de firma."
       },
@@ -708,26 +743,40 @@
   },
 
   "resume": {
-    "title": "Reanudar tu solicitud",
-    "description": "Ingresa tu SIN/SSN para continuar tu incorporación desde donde te quedaste.",
+    "title": "Reanudar su solicitud",
+    "description": "Ingrese su SIN/SSN para continuar su incorporación desde donde la dejó.",
+    "description_sin_only": "Ingrese su SIN/SSN y le enviaremos un código de verificación al correo registrado. Luego ingrese el código para continuar con su incorporación.",
     "placeholder": "999-888-777",
-    "success": "¡Coincidencia encontrada! Redirigiendo...",
+    "codePlaceholder": "p. ej., 123456",
+    "codeInstruction": "Ingrese el código de 6 dígitos enviado a su correo",
+    "sendCode": "Enviar código",
+    "verifyCode": "Verificar y continuar",
+    "resend": "Reenviar código",
+    "success": "¡Coincidencia encontrada! Redirigiendo…",
     "error": "No se encontró una solicitud para ese SIN.",
     "cancel": "Cancelar",
     "continue": "Continuar",
-    "loading": "Cargando...",
-    "loadingCta": "Reanudando...",
+    "loading": "Cargando…",
+    "loadingCta": "Reanudando…",
+    "loadingCtaSend": "Enviando…",
+    "loadingCtaVerify": "Verificando…",
+    "codeSentHint": "Código de verificación enviado a: {{email}}",
+    "resendCooldown": "Reenviar código ({{s}} s)",
+    "sinChangedNeedsNewCode": "El SIN ha cambiado: envíe un nuevo código de verificación para este SIN.",
     "validation": {
-      "enterSin": "Ingresa tu SIN",
-      "sinLength": "El SIN debe tener exactamente 9 dígitos"
+      "enterSin": "Ingrese su SIN",
+      "sinLength": "El SIN debe tener exactamente 9 dígitos",
+      "codeRequired": "Ingrese su código de verificación",
+      "codeFormat": "El código debe tener 6 dígitos"
     },
     "errors": {
-      "invalidResponse": "Respuesta no válida del servidor",
-      "generic": "No se pudo reanudar la solicitud. Inténtalo de nuevo.",
-      "resumeInfoMissing": "Falta información de reanudación"
+      "invalidResponse": "Respuesta inválida del servidor",
+      "generic": "No se pudo reanudar la solicitud. Inténtelo de nuevo.",
+      "resumeInfoMissing": "Faltan datos para reanudar",
+      "rateLimited": "Espere {{s}} segundos antes de solicitar un nuevo código.",
+      "codeForDifferentSin": "Solicite primero un código para el SIN actual."
     }
   },
-
   "infoPopUp": {
     "modalTitle": "Cómo funciona",
     "close": "Cerrar",

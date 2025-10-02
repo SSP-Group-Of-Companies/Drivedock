@@ -145,8 +145,32 @@
     }
   },
 
+  "pendingApprovalPage": {
+    "pending": {
+      "title": "Application Pending Approval",
+      "subtitle": "Thank you for starting your application with SSP Group of Companies.",
+      "body1": "We have received your application. Our team is currently reviewing your information.",
+      "body2": "Once your application is approved, you will receive an email with the next steps.",
+      "tip": "You can close this page now and check back later, or refresh once you believe you’ve been approved. Also keep an eye on your inbox (and spam/junk folder) for our email.",
+      "returnHome": "Home",
+      "refresh": "Refresh"
+    },
+    "approved": {
+      "title": "Application Approved",
+      "subtitle": "Great news! Your application has been approved.",
+      "body1": "You can proceed to the next step of your onboarding now.",
+      "body2": "Click the button below to continue your application.",
+      "ctaResume": "Continue your application",
+      "ctaHome": "Home"
+    }
+  },
   "form": {
     "subtitle": "All information must be answered truthfully. Liability falls on the applicant.",
+    
+    "lockedAfterApproval": {
+      "prequal": "This page is locked after approval.",
+      "message": "This page is locked after approval. If any information is incorrect, contact the Safety Department to update it."
+    },
 
     "helpPopups": {
       "page2SafetySensitive": "As part of our regulatory compliance process, please confirm the following information:\n\nCross-Border Driving: Please indicate \"Yes\" if you have previously operated a commercial vehicle across the U.S.–Canada border. If not, please indicate \"No.\"\n\nDOT-Regulated Drug Testing: Please indicate \"Yes\" if your previous employer conducted drug and alcohol testing in accordance with U.S. Department of Transportation (DOT) regulations. If not, please indicate \"No.\"\n\nYour responses help us ensure compliance with applicable transportation and safety regulations. If you have any questions or need clarification, feel free to reach out.",
@@ -164,8 +188,13 @@
         "noUnpardonedCriminalRecord": "Do you have any criminal record for which pardon has not been granted?",
         "legalRightToWorkCanada": "Do you have legal right to work in Canada?",
         "legalRightToWorkUS": "Do you have legal right to work in the US?",
+        "statusInCanada": "What is your status in Canada?",
+        "pr": "Permanent Resident (PR)",
+        "citizenship": "Canadian Citizen",
+        "workPermit": "Work Permit",
         "canCrossBorderUSA": "Can you cross borders into USA?",
         "hasFASTCard": "Do you have a FAST card?",
+        "eligibleForFASTCard": "Are you eligible for a FAST card?",
 
         "categories": "Categories",
         "driverType": "Which type of driver are you?",
@@ -214,6 +243,7 @@
           "lastName": "Last Name",
           "sin": "SIN (Social Insurance Number)",
           "sinIssueDate": "SIN Issue Date",
+          "sinExpiryDate": "SIN Expiry Date",
           "gender": "Gender",
           "male": "Male",
           "female": "Female",
@@ -249,6 +279,12 @@
           "removeLicense": "Remove License",
           "addAddress": "Add Another Address",
           "removeAddress": "Remove Address"
+        },
+        "confirmation": {
+          "title": "Please Confirm",
+          "message": "You are about to submit your personal details to SSP Group of Companies for review. Once submitted, our Safety Department will review your application. If approved, you will receive an email with instructions on how to continue your onboarding process. Do you want to proceed?",
+          "confirmLabel": "Submit",
+          "cancelLabel": "Go Back"
         }
       },
       "page2": {
@@ -353,8 +389,13 @@
           "business": {
             "title": "Incorporate Details",
             "disclaimer": {
-              "text": "If you provide any incorporation detail, you must complete every field and upload all related documents in this section. This includes Employee Number, HST Number, Business Name, and the required photos (Incorporation, HST, Banking)."
+              "text": "If you provide any incorporation detail, you must complete every field and upload all related documents in this section. This includes HST Number, Business Name, and the required photos (Incorporation, HST)."
             }
+          },
+          "banking": {
+            "title": "Banking Information",
+            "requiredDisclaimer": "Banking information is required for Company and Owner Operator applicants. Upload a clear photo of a void cheque or a bank-issued direct deposit form showing your name, institution number, transit number, and account number.",
+            "optionalDisclaimer": "Banking information is optional for Owner Drivers. If you choose to provide it now, upload a clear photo of a void cheque or a bank-issued direct deposit form that shows your name, institution number, transit number, and account number so payroll can set up your direct deposit."
           },
           "additionalInfo": {
             "title": "Additional Info"
@@ -621,7 +662,7 @@
     "step3": {
       "title": "Policies & Consents",
       "disclaimer": "By signing below, you agree to all the contract here and future contracts. Please read all documents carefully. Your provided information will automatically prefill required fields.",
-      "sendToEmail": "Send me the signed documents to my email when the application process is complete.",
+      "sendToEmail": "Send me the documents to my email when the application process is complete.",
       "helper": {
         "drawOrUpload": "Please draw your signature above or upload a signature image."
       },
@@ -721,24 +762,38 @@
   "resume": {
     "title": "Resume Your Application",
     "description": "Enter your SIN/SSN to continue your onboarding from where you stopped.",
+    "description_sin_only": "Enter your SIN/SSN and we’ll email a verification code to the address on file. Then enter the code to continue your onboarding.",
     "placeholder": "999-888-777",
+    "codePlaceholder": "e.g. 123456",
+    "codeInstruction": "Enter the 6-digit code sent to your email",
+    "sendCode": "Send Code",
+    "verifyCode": "Verify & Continue",
+    "resend": "Resend code",
     "success": "Match found! Redirecting...",
     "error": "No application found for that SIN.",
     "cancel": "Cancel",
     "continue": "Continue",
     "loading": "Loading...",
     "loadingCta": "Resuming...",
+    "loadingCtaSend": "Sending...",
+    "loadingCtaVerify": "Verifying...",
+    "codeSentHint": "Verification code sent to: {{email}}",
+    "resendCooldown": "Resend code ({{s}}s)",
+    "sinChangedNeedsNewCode": "SIN changed — please send a new verification code for this SIN.",
     "validation": {
       "enterSin": "Please enter your SIN",
-      "sinLength": "SIN must be exactly 9 digits"
+      "sinLength": "SIN must be exactly 9 digits",
+      "codeRequired": "Please enter your verification code",
+      "codeFormat": "The code must be 6 digits"
     },
     "errors": {
       "invalidResponse": "Invalid response from server",
       "generic": "Could not resume application. Please try again.",
-      "resumeInfoMissing": "Resume info missing"
+      "resumeInfoMissing": "Resume info missing",
+      "rateLimited": "Please wait {{s}} seconds before requesting a new code.",
+      "codeForDifferentSin": "Please request a code for the current SIN first."
     }
   },
-
   "infoPopUp": {
     "modalTitle": "How it works",
     "close": "Close",

@@ -62,6 +62,7 @@ const fastCardSchema = new Schema<IFastCard>({
 // Page 4 Schema (ALL asset arrays are images-only by business rule)
 export const applicationFormPage4Schema = new Schema<IApplicationFormPage4>(
   {
+    hasCriminalRecords: { type: Boolean, default: false },
     // Criminal Records
     criminalRecords: {
       type: [criminalRecordEntrySchema],

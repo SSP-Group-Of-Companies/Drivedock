@@ -5,7 +5,7 @@ import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import { parseJsonBody } from "@/lib/utils/reqParser";
 import { getCompanyById, needsFlatbedTraining } from "@/constants/companies";
-import { buildTrackerContext, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
+import { buildTrackerContext, isInvitationApproved, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
 import { readMongooseRefField } from "@/lib/utils/mongooseRef";
 import { IPreQualificationsDoc } from "@/types/preQualifications.types";
 import { guard } from "@/lib/utils/auth/authUtils";
@@ -18,6 +18,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
 
     const onboardingDoc = await OnboardingTracker.findById(id).populate("forms.preQualification");
     if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
+    if (!isInvitationApproved(onboardingDoc)) return errorResponse(400, "driver not yet approved for onboarding process");
     if (onboardingDoc.terminated) return errorResponse(400, "Onboarding document terminated");
 
     const { companyId } = await parseJsonBody(req);
