@@ -14,7 +14,10 @@
 import { useForm, Controller } from "react-hook-form";
 import { useEffect, useState, useMemo } from "react";
 
-import { preQualificationQuestions, categoryQuestions } from "@/constants/form-questions/preQualification";
+import {
+  preQualificationQuestions,
+  categoryQuestions,
+} from "@/constants/form-questions/preQualification";
 import { useTranslation } from "react-i18next";
 import { useProtectedRouter } from "@/hooks/onboarding/useProtectedRouter";
 import { ArrowRight } from "lucide-react";
@@ -28,7 +31,13 @@ import { useOnboardingTracker } from "@/store/useOnboardingTracker";
 import { useGlobalLoading } from "@/store/useGlobalLoading";
 import { apiClient } from "@/lib/onboarding/apiClient";
 import { ErrorManager } from "@/lib/onboarding/errorManager";
-import { EDriverType, EHaulPreference, ETeamStatus, EStatusInCanada, IPreQualifications } from "@/types/preQualifications.types";
+import {
+  EDriverType,
+  EHaulPreference,
+  ETeamStatus,
+  EStatusInCanada,
+  IPreQualifications,
+} from "@/types/preQualifications.types";
 import { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
 import { buildOnboardingStepPath } from "@/lib/utils/onboardingUtils";
 import { getCompanyById } from "@/constants/companies";
@@ -51,7 +60,12 @@ type Props = {
   disabled?: boolean;
 };
 
-export default function PreQualificationClient({ defaultValues, trackerId, trackerContext, disabled = false }: Props) {
+export default function PreQualificationClient({
+  defaultValues,
+  trackerId,
+  trackerContext,
+  disabled = false,
+}: Props) {
   const mounted = useMounted(); // Prevent SSR/CSR mismatch
   const { t } = useTranslation("common");
   const router = useProtectedRouter();
@@ -63,7 +77,9 @@ export default function PreQualificationClient({ defaultValues, trackerId, track
   //    This ensures the "resume" path uses the persisted company choice.
   const effectiveCompany = useMemo(() => {
     if (trackerContext?.companyId) {
-      return getCompanyById(trackerContext.companyId) ?? selectedCompany ?? null;
+      return (
+        getCompanyById(trackerContext.companyId) ?? selectedCompany ?? null
+      );
     }
     return selectedCompany ?? null;
   }, [trackerContext?.companyId, selectedCompany]);
@@ -72,7 +88,9 @@ export default function PreQualificationClient({ defaultValues, trackerId, track
   const { show, hide } = useGlobalLoading();
 
   // Controls visibility/content of the flatbed training popup
-  const [showFlatbedPopup, setShowFlatbedPopup] = useState<null | "yes" | "no">(null);
+  const [showFlatbedPopup, setShowFlatbedPopup] = useState<null | "yes" | "no">(
+    null
+  );
 
   // On first render or when trackerContext changes, sync it into Zustand
   useEffect(() => {
@@ -84,7 +102,13 @@ export default function PreQualificationClient({ defaultValues, trackerId, track
     if (!effectiveCompany) return preQualificationQuestions;
     if (effectiveCompany.countryCode === "US") {
       // Hide Canada-only questions for US company
-      return preQualificationQuestions.filter((q) => q.name !== "canCrossBorderUSA" && q.name !== "hasFASTCard" && q.name !== "statusInCanada" && q.name !== "eligibleForFASTCard");
+      return preQualificationQuestions.filter(
+        (q) =>
+          q.name !== "canCrossBorderUSA" &&
+          q.name !== "hasFASTCard" &&
+          q.name !== "statusInCanada" &&
+          q.name !== "eligibleForFASTCard"
+      );
     }
     return preQualificationQuestions;
   }, [effectiveCompany]);
@@ -111,12 +135,18 @@ export default function PreQualificationClient({ defaultValues, trackerId, track
     let questions = [...filteredPreQualificationQuestions];
 
     // Only show FAST card question if user has selected PR or Citizenship
-    if (statusInCanada !== EStatusInCanada.PR && statusInCanada !== EStatusInCanada.Citizenship) {
+    if (
+      statusInCanada !== EStatusInCanada.PR &&
+      statusInCanada !== EStatusInCanada.Citizenship
+    ) {
       questions = questions.filter((q) => q.name !== "hasFASTCard");
     }
 
     // Only show eligible for FAST card question if user is PR/Citizen AND answered "no" to FAST card
-    if (statusInCanada === EStatusInCanada.PR || statusInCanada === EStatusInCanada.Citizenship) {
+    if (
+      statusInCanada === EStatusInCanada.PR ||
+      statusInCanada === EStatusInCanada.Citizenship
+    ) {
       if (watchAllFields.hasFASTCard === "form.no") {
         // Keep eligibleForFASTCard question
       } else {
@@ -129,7 +159,12 @@ export default function PreQualificationClient({ defaultValues, trackerId, track
     }
 
     return questions;
-  }, [filteredPreQualificationQuestions, effectiveCompany, statusInCanada, watchAllFields.hasFASTCard]);
+  }, [
+    filteredPreQualificationQuestions,
+    effectiveCompany,
+    statusInCanada,
+    watchAllFields.hasFASTCard,
+  ]);
 
   // Track previous status to only clear fields when user actually changes
   const [previousStatus, setPreviousStatus] = useState<string | null>(null);
@@ -148,7 +183,10 @@ export default function PreQualificationClient({ defaultValues, trackerId, track
         // Clear FAST card fields when Work Permit is selected
         setValue("hasFASTCard", "");
         setValue("eligibleForFASTCard", "");
-      } else if (statusInCanada === EStatusInCanada.PR || statusInCanada === EStatusInCanada.Citizenship) {
+      } else if (
+        statusInCanada === EStatusInCanada.PR ||
+        statusInCanada === EStatusInCanada.Citizenship
+      ) {
         // Clear both FAST card fields when switching to PR/Citizen (user must make fresh choice)
         setValue("hasFASTCard", "");
         setValue("eligibleForFASTCard", "");
@@ -160,7 +198,10 @@ export default function PreQualificationClient({ defaultValues, trackerId, track
   const allAnswered = useMemo(() => {
     return Object.keys(watchAllFields).every((key) => {
       // Only enforce answered state for fields currently shown on screen
-      const isFieldRendered = [...finalFilteredQuestions, ...categoryQuestions].some((q) => q.name === key);
+      const isFieldRendered = [
+        ...finalFilteredQuestions,
+        ...categoryQuestions,
+      ].some((q) => q.name === key);
       // Answered if non-empty (booleans: "form.yes"/"form.no"; categories: enum value)
       return !isFieldRendered || watchAllFields[key] !== "";
     });
@@ -172,18 +213,14 @@ export default function PreQualificationClient({ defaultValues, trackerId, track
   // - Navigate using onboardingContext.nextUrl from the server response
   const onSubmit = async (data: FormValues) => {
     // If nothing changed vs defaults → no-op continue (GET-only navigation)
-<<<<<<< HEAD:main/src/app/onboarding/[id]/prequalifications/PrequalificationClient.tsx
     const isChanged = hasDeepChanges<FormValues>(
       data,
       (defaultValues ?? {}) as Partial<FormValues>,
-      { nullAsUndefined: true, emptyStringAsUndefined: true }
+      {
+        nullAsUndefined: true,
+        emptyStringAsUndefined: true,
+      }
     );
-=======
-    const isChanged = hasDeepChanges<FormValues>(data, (defaultValues ?? {}) as Partial<FormValues>, {
-      nullAsUndefined: true,
-      emptyStringAsUndefined: true,
-    });
->>>>>>> fff3270cd312d743a2f3f92899e83c246bd2a98b:main/src/app/onboarding/[id]/(has-step)/prequalifications/PrequalificationClient.tsx
     if (!isChanged) {
       const next = trackerContext?.nextStep;
       if (next) {
@@ -196,19 +233,18 @@ export default function PreQualificationClient({ defaultValues, trackerId, track
       router.refresh();
       return;
     }
-<<<<<<< HEAD:main/src/app/onboarding/[id]/prequalifications/PrequalificationClient.tsx
-=======
 
->>>>>>> fff3270cd312d743a2f3f92899e83c246bd2a98b:main/src/app/onboarding/[id]/(has-step)/prequalifications/PrequalificationClient.tsx
     // Map RHF data to typed IPreQualifications object
     const transformed: IPreQualifications = {
       over23Local: data.over23Local === "form.yes",
       over25CrossBorder: data.over25CrossBorder === "form.yes",
       canDriveManual: data.canDriveManual === "form.yes",
-      experienceDrivingTractorTrailer: data.experienceDrivingTractorTrailer === "form.yes",
+      experienceDrivingTractorTrailer:
+        data.experienceDrivingTractorTrailer === "form.yes",
       faultAccidentIn3Years: data.faultAccidentIn3Years === "form.yes",
       zeroPointsOnAbstract: data.zeroPointsOnAbstract === "form.yes",
-      noUnpardonedCriminalRecord: data.noUnpardonedCriminalRecord === "form.yes",
+      noUnpardonedCriminalRecord:
+        data.noUnpardonedCriminalRecord === "form.yes",
       legalRightToWorkCanada: data.legalRightToWorkCanada === "form.yes",
       // Category fields are enum values, so we can assert:
       driverType: data.driverType as EDriverType,
@@ -230,7 +266,8 @@ export default function PreQualificationClient({ defaultValues, trackerId, track
         transformed.hasFASTCard = data.hasFASTCard === "form.yes";
       }
       if (data.eligibleForFASTCard !== undefined) {
-        transformed.eligibleForFASTCard = data.eligibleForFASTCard === "form.yes";
+        transformed.eligibleForFASTCard =
+          data.eligibleForFASTCard === "form.yes";
       }
     }
 
@@ -245,7 +282,10 @@ export default function PreQualificationClient({ defaultValues, trackerId, track
       });
 
       // PATCH to backend for this tracker using API client
-      const response = await apiClient.patch(`/api/v1/onboarding/${trackerId}/prequalifications`, transformed);
+      const response = await apiClient.patch(
+        `/api/v1/onboarding/${trackerId}/prequalifications`,
+        transformed
+      );
 
       // Clear retry callback after response
       errorManager.clearRetryCallback();
@@ -257,7 +297,9 @@ export default function PreQualificationClient({ defaultValues, trackerId, track
       }
 
       // Expect onboardingContext.nextUrl to be returned for navigation
-      const onboardingContext: IOnboardingTrackerContext = (response.data as any)?.onboardingContext;
+      const onboardingContext: IOnboardingTrackerContext = (
+        response.data as any
+      )?.onboardingContext;
       const nextStep = onboardingContext?.nextStep;
 
       if (!onboardingContext || !nextStep) {
@@ -283,22 +325,28 @@ export default function PreQualificationClient({ defaultValues, trackerId, track
   if (!mounted) return null;
 
   // Utility: when disabled, prevent any changes and interactions locally
-  const makeSafeOnChange = (originalOnChange: (value: string) => void, qName?: string) => (val: string) => {
-    if (disabled) return; // block edits when disabled
-    // Intercept flatbed popup trigger only when not disabled
-    if (qName === "flatbedExperience") {
-      if (val === "form.yes") setShowFlatbedPopup("yes");
-      else if (val === "form.no") setShowFlatbedPopup("no");
-      else setShowFlatbedPopup(null);
-    }
-    originalOnChange(val);
-  };
+  const makeSafeOnChange =
+    (originalOnChange: (value: string) => void, qName?: string) =>
+    (val: string) => {
+      if (disabled) return; // block edits when disabled
+      // Intercept flatbed popup trigger only when not disabled
+      if (qName === "flatbedExperience") {
+        if (val === "form.yes") setShowFlatbedPopup("yes");
+        else if (val === "form.no") setShowFlatbedPopup("no");
+        else setShowFlatbedPopup(null);
+      }
+      originalOnChange(val);
+    };
 
   return (
     <>
       <div className="space-y-6" aria-disabled={disabled}>
         {/* Eligibility questions (mostly booleans) */}
-        <div className={`space-y-4 ${disabled ? "opacity-60 pointer-events-none select-none" : ""}`}>
+        <div
+          className={`space-y-4 ${
+            disabled ? "opacity-60 pointer-events-none select-none" : ""
+          }`}
+        >
           {finalFilteredQuestions.map((q) => (
             <Controller
               key={q.name}
@@ -307,7 +355,12 @@ export default function PreQualificationClient({ defaultValues, trackerId, track
               render={({ field }) => (
                 <QuestionGroup
                   // For US companies, substitute the label for the legal-work question
-                  question={q.name === "legalRightToWorkCanada" && effectiveCompany?.countryCode === "US" ? t("form.step1.questions.legalRightToWorkUS") : t(q.label)}
+                  question={
+                    q.name === "legalRightToWorkCanada" &&
+                    effectiveCompany?.countryCode === "US"
+                      ? t("form.step1.questions.legalRightToWorkUS")
+                      : t(q.label)
+                  }
                   options={q.options} // Centralized options (Yes/No or single-Yes)
                   value={field.value} // Controlled value
                   onChange={makeSafeOnChange(field.onChange, q.name)} // No-op when disabled
@@ -319,9 +372,15 @@ export default function PreQualificationClient({ defaultValues, trackerId, track
         </div>
 
         {/* Category questions (enums) */}
-        <h2 className="text-xl text-center font-bold text-gray-800">{t("form.step1.questions.categories")}</h2>
+        <h2 className="text-xl text-center font-bold text-gray-800">
+          {t("form.step1.questions.categories")}
+        </h2>
 
-        <div className={`space-y-4 ${disabled ? "opacity-60 pointer-events-none select-none" : ""}`}>
+        <div
+          className={`space-y-4 ${
+            disabled ? "opacity-60 pointer-events-none select-none" : ""
+          }`}
+        >
           {categoryQuestions.map((q) => (
             <Controller
               key={q.name}
@@ -360,7 +419,12 @@ export default function PreQualificationClient({ defaultValues, trackerId, track
       </div>
 
       {/* Flatbed informational popup – content driven by i18n (suppressed when disabled) */}
-      {!disabled && showFlatbedPopup && <FlatbedPopup type={showFlatbedPopup} onClose={() => setShowFlatbedPopup(null)} />}
+      {!disabled && showFlatbedPopup && (
+        <FlatbedPopup
+          type={showFlatbedPopup}
+          onClose={() => setShowFlatbedPopup(null)}
+        />
+      )}
     </>
   );
 }

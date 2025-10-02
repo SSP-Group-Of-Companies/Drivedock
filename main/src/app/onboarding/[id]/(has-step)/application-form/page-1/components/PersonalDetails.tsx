@@ -34,10 +34,14 @@ const formatPhoneNumber = (value: string) => {
   const cleaned = value.replace(/\D/g, "");
   if (cleaned.length <= 3) return cleaned;
   if (cleaned.length <= 6) return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
-  return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6, 10)}`;
+  return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(
+    6,
+    10
+  )}`;
 };
 
-const getDisplayPhone = (value: string) => (value ? formatPhoneNumber(value) : "");
+const getDisplayPhone = (value: string) =>
+  value ? formatPhoneNumber(value) : "";
 
 const calculateAge = (dob: string) => {
   if (!dob) return null;
@@ -58,7 +62,11 @@ interface PersonalDetailsProps {
   disabled?: boolean;
 }
 
-export default function PersonalDetails({ onboardingContext, prequalificationData, disabled = false }: PersonalDetailsProps) {
+export default function PersonalDetails({
+  onboardingContext,
+  prequalificationData,
+  disabled = false,
+}: PersonalDetailsProps) {
   const {
     register,
     setValue,
@@ -82,22 +90,30 @@ export default function PersonalDetails({ onboardingContext, prequalificationDat
   const sinPhoto = useWatch({ control, name: "sinPhoto" });
   const phoneHomeRaw = useWatch({ control, name: "phoneHome" }) || "";
   const phoneCellRaw = useWatch({ control, name: "phoneCell" }) || "";
-  const emergencyPhoneRaw = useWatch({ control, name: "emergencyContactPhone" }) || "";
+  const emergencyPhoneRaw =
+    useWatch({ control, name: "emergencyContactPhone" }) || "";
 
   const [showSIN, setShowSIN] = useState(false);
   const sinPhotoS3Key = sinPhoto?.s3Key || "";
   const sinPhotoUrl = sinPhoto?.url || "";
-  const [sinPhotoPreview, setSinPhotoPreview] = useState<string | null>(sinPhotoUrl || null);
+  const [sinPhotoPreview, setSinPhotoPreview] = useState<string | null>(
+    sinPhotoUrl || null
+  );
 
-  const [sinValidationStatus, setSinValidationStatus] = useState<"idle" | "checking" | "valid" | "invalid">("idle");
-  const [sinPhotoStatus, setSinPhotoStatus] = useState<"idle" | "uploading" | "deleting" | "error">("idle");
+  const [sinValidationStatus, setSinValidationStatus] = useState<
+    "idle" | "checking" | "valid" | "invalid"
+  >("idle");
+  const [sinPhotoStatus, setSinPhotoStatus] = useState<
+    "idle" | "uploading" | "deleting" | "error"
+  >("idle");
   const [sinPhotoMessage, setSinPhotoMessage] = useState("");
   const [sinValidationMessage, setSinValidationMessage] = useState("");
 
   const calculatedAge = dobValue ? calculateAge(dobValue) : null;
 
   // Check if user has Work Permit status from prequalification data
-  const hasWorkPermitStatus = prequalificationData?.statusInCanada === "Work Permit";
+  const hasWorkPermitStatus =
+    prequalificationData?.statusInCanada === "Work Permit";
 
   // Clear company selection when resuming an application to prevent conflicts
   useEffect(() => {
@@ -110,22 +126,34 @@ export default function PersonalDetails({ onboardingContext, prequalificationDat
   const getSINLabel = () => {
     // ALWAYS prioritize onboarding context if it exists (for resumed applications)
     if (onboardingContext?.companyId) {
-      const company = COMPANIES.find((c) => c.id === onboardingContext.companyId);
+      const company = COMPANIES.find(
+        (c) => c.id === onboardingContext.companyId
+      );
       if (company) {
-        return company.countryCode === ECountryCode.US ? "SSN (Social Security Number)" : "SIN (Social Insurance Number)";
+        return company.countryCode === ECountryCode.US
+          ? "SSN (Social Security Number)"
+          : "SIN (Social Insurance Number)";
       }
     }
 
     // Only use selected company if we have NO onboarding context (truly new application)
     if (selectedCompany && !onboardingContext) {
-      return selectedCompany.countryCode === ECountryCode.US ? "SSN (Social Security Number)" : "SIN (Social Insurance Number)";
+      return selectedCompany.countryCode === ECountryCode.US
+        ? "SSN (Social Security Number)"
+        : "SIN (Social Insurance Number)";
     }
 
     // Final fallback to translation
     return t("form.step2.page1.fields.sin");
   };
 
-  const [displaySIN, setDisplaySIN] = useState(() => (sinValue ? sinValue.replace(/^(\d{3})(\d)/, "$1-$2").replace(/^(\d{3})-(\d{3})(\d)/, "$1-$2-$3") : ""));
+  const [displaySIN, setDisplaySIN] = useState(() =>
+    sinValue
+      ? sinValue
+          .replace(/^(\d{3})(\d)/, "$1-$2")
+          .replace(/^(\d{3})-(\d{3})(\d)/, "$1-$2-$3")
+      : ""
+  );
 
   const validateSIN = useCallback(
     async (sin: string) => {
@@ -181,13 +209,22 @@ export default function PersonalDetails({ onboardingContext, prequalificationDat
     }
   };
 
-  const handlePhoneChange = (field: "phoneHome" | "phoneCell" | "emergencyContactPhone", value: string) => {
+  const handlePhoneChange = (
+    field: "phoneHome" | "phoneCell" | "emergencyContactPhone",
+    value: string
+  ) => {
     if (disabled) return;
     const raw = value.replace(/\D/g, "").slice(0, 10);
     setValue(field, raw, { shouldValidate: true });
   };
 
-  const EMPTY_PHOTO = { s3Key: "", url: "", mimeType: "", sizeBytes: 0, originalName: "" };
+  const EMPTY_PHOTO = {
+    s3Key: "",
+    url: "",
+    mimeType: "",
+    sizeBytes: 0,
+    originalName: "",
+  };
 
   const handleSinPhotoUpload = async (file: File | null) => {
     if (disabled) return;
@@ -212,7 +249,8 @@ export default function PersonalDetails({ onboardingContext, prequalificationDat
       setValue("sinPhoto", result, { shouldValidate: true });
 
       const reader = new FileReader();
-      reader.onload = (ev) => setSinPhotoPreview(String(ev.target?.result || ""));
+      reader.onload = (ev) =>
+        setSinPhotoPreview(String(ev.target?.result || ""));
       reader.readAsDataURL(file);
 
       setSinPhotoStatus("idle");
@@ -253,30 +291,89 @@ export default function PersonalDetails({ onboardingContext, prequalificationDat
   if (!mounted) return null;
 
   return (
-    <section className={`space-y-6 border border-gray-200 p-6 rounded-lg bg-white/80 shadow-sm ${disabled ? "opacity-70" : ""}`}>
+    <section
+      className={`space-y-6 border border-gray-200 p-6 rounded-lg bg-white/80 shadow-sm ${
+        disabled ? "opacity-70" : ""
+      }`}
+    >
       {/* Hidden fields to prevent autocomplete - more aggressive approach */}
-      <input type="text" style={{ display: "none" }} autoComplete="new-password" tabIndex={-1} />
-      <input type="email" style={{ display: "none" }} autoComplete="new-password" tabIndex={-1} />
-      <input type="password" style={{ display: "none" }} autoComplete="new-password" tabIndex={-1} />
-      <input type="text" name="fake-username" style={{ display: "none" }} autoComplete="username" tabIndex={-1} />
-      <input type="password" name="fake-password" style={{ display: "none" }} autoComplete="current-password" tabIndex={-1} />
+      <input
+        type="text"
+        style={{ display: "none" }}
+        autoComplete="new-password"
+        tabIndex={-1}
+      />
+      <input
+        type="email"
+        style={{ display: "none" }}
+        autoComplete="new-password"
+        tabIndex={-1}
+      />
+      <input
+        type="password"
+        style={{ display: "none" }}
+        autoComplete="new-password"
+        tabIndex={-1}
+      />
+      <input
+        type="text"
+        name="fake-username"
+        style={{ display: "none" }}
+        autoComplete="username"
+        tabIndex={-1}
+      />
+      <input
+        type="password"
+        name="fake-password"
+        style={{ display: "none" }}
+        autoComplete="current-password"
+        tabIndex={-1}
+      />
 
-      <h2 className="text-center text-lg font-semibold text-gray-800">{t("form.step2.page1.sections.personal")}</h2>
+      <h2 className="text-center text-lg font-semibold text-gray-800">
+        {t("form.step2.page1.sections.personal")}
+      </h2>
 
       {/* Fieldset disables all controls inside (native behavior) */}
-      <fieldset disabled={disabled} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <fieldset
+        disabled={disabled}
+        className="grid grid-cols-1 md:grid-cols-2 gap-6"
+      >
         {/* First Name */}
-        <TextInput name="firstName" label={t("form.step2.page1.fields.firstName")} placeholder="John" error={errors.firstName} register={register} autoComplete="new-password" />
+        <TextInput
+          name="firstName"
+          label={t("form.step2.page1.fields.firstName")}
+          placeholder="John"
+          error={errors.firstName}
+          register={register}
+          autoComplete="new-password"
+        />
 
         {/* Last Name */}
-        <TextInput name="lastName" label={t("form.step2.page1.fields.lastName")} placeholder="Deo" error={errors.lastName} register={register} autoComplete="new-password" />
+        <TextInput
+          name="lastName"
+          label={t("form.step2.page1.fields.lastName")}
+          placeholder="Deo"
+          error={errors.lastName}
+          register={register}
+          autoComplete="new-password"
+        />
 
         {/* Email Address */}
-        <TextInput name="email" label={t("form.step2.page1.fields.email")} placeholder="john@gmail.com" error={errors.email} register={register} autoComplete="new-password" />
+        <TextInput
+          name="email"
+          label={t("form.step2.page1.fields.email")}
+          placeholder="john@gmail.com"
+          error={errors.email}
+          register={register}
+          autoComplete="new-password"
+        />
 
         {/* Gender Selection */}
         <div data-field="gender">
-          <label className="block text-sm font-medium text-gray-700 mb-2">{t("form.step2.page1.fields.gender")}</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            {t("form.step2.page1.fields.gender")}
+          </label>
           <div className="inline-flex w-full rounded-full border border-gray-300 overflow-hidden">
             {["male", "female"].map((option, idx) => {
               const isSelected = genderValue === option;
@@ -286,23 +383,35 @@ export default function PersonalDetails({ onboardingContext, prequalificationDat
                   type="button"
                   onClick={() => {
                     if (disabled) return;
-                    setValue("gender", option as "male" | "female", { shouldValidate: true });
+                    setValue("gender", option as "male" | "female", {
+                      shouldValidate: true,
+                    });
                   }}
-                  className={`w-full px-4 py-2 text-sm font-medium transition-all ${isSelected ? "bg-[#0071BC] text-white" : "bg-white text-gray-800 hover:bg-gray-50"} ${
-                    idx > 0 ? "border-l border-gray-300" : ""
-                  } ${disabled ? "cursor-not-allowed" : ""}`}
+                  className={`w-full px-4 py-2 text-sm font-medium transition-all ${
+                    isSelected
+                      ? "bg-[#0071BC] text-white"
+                      : "bg-white text-gray-800 hover:bg-gray-50"
+                  } ${idx > 0 ? "border-l border-gray-300" : ""} ${
+                    disabled ? "cursor-not-allowed" : ""
+                  }`}
                 >
                   {t(`form.step2.page1.fields.${option}`)}
                 </button>
               );
             })}
           </div>
-          {errors.gender && <p className="text-red-500 text-sm mt-1">{errors.gender.message?.toString()}</p>}
+          {errors.gender && (
+            <p className="text-red-500 text-sm mt-1">
+              {errors.gender.message?.toString()}
+            </p>
+          )}
         </div>
 
         {/* SIN Number */}
         <div className="relative">
-          <label className="block text-sm font-medium text-gray-700">{getSINLabel()}</label>
+          <label className="block text-sm font-medium text-gray-700">
+            {getSINLabel()}
+          </label>
 
           <input
             type={showSIN ? "text" : "password"}
@@ -331,13 +440,19 @@ export default function PersonalDetails({ onboardingContext, prequalificationDat
                 : sinValidationStatus === "checking"
                 ? "border-yellow-500 focus:border-yellow-500"
                 : ""
-            } ${disabled ? "cursor-not-allowed bg-gray-100 text-gray-600" : ""}`}
+            } ${
+              disabled ? "cursor-not-allowed bg-gray-100 text-gray-600" : ""
+            }`}
           />
 
           <button
             type="button"
             onClick={() => !disabled && setShowSIN((prev) => !prev)}
-            className={`absolute right-3 top-9 ${disabled ? "text-gray-300 cursor-not-allowed" : "text-gray-500 hover:text-gray-700"} focus:outline-none`}
+            className={`absolute right-3 top-9 ${
+              disabled
+                ? "text-gray-300 cursor-not-allowed"
+                : "text-gray-500 hover:text-gray-700"
+            } focus:outline-none`}
             disabled={disabled}
           >
             {showSIN ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -350,14 +465,26 @@ export default function PersonalDetails({ onboardingContext, prequalificationDat
               Checking SIN availability...
             </div>
           )}
-          {sinValidationStatus === "valid" && <p className="text-green-600 text-sm mt-1">{sinValidationMessage}</p>}
-          {sinValidationStatus === "invalid" && <p className="text-red-500 text-sm mt-1">{sinValidationMessage}</p>}
-          {errors.sin && <p className="text-red-500 text-sm mt-1">{errors.sin.message?.toString()}</p>}
+          {sinValidationStatus === "valid" && (
+            <p className="text-green-600 text-sm mt-1">
+              {sinValidationMessage}
+            </p>
+          )}
+          {sinValidationStatus === "invalid" && (
+            <p className="text-red-500 text-sm mt-1">{sinValidationMessage}</p>
+          )}
+          {errors.sin && (
+            <p className="text-red-500 text-sm mt-1">
+              {errors.sin.message?.toString()}
+            </p>
+          )}
         </div>
 
         {/* SIN Issue Date */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">{t("form.step2.page1.fields.sinIssueDate")}</label>
+          <label className="block text-sm font-medium text-gray-700">
+            {t("form.step2.page1.fields.sinIssueDate")}
+          </label>
           <input
             {...register("sinIssueDate")}
             type="date"
@@ -369,18 +496,28 @@ export default function PersonalDetails({ onboardingContext, prequalificationDat
             })()}
             min={(() => {
               const today = new Date();
-              const minDate = new Date(today.getFullYear() - 100, today.getMonth(), today.getDate());
+              const minDate = new Date(
+                today.getFullYear() - 100,
+                today.getMonth(),
+                today.getDate()
+              );
               return minDate.toISOString().split("T")[0];
             })()}
             className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
           />
-          {errors.sinIssueDate && <p className="text-red-500 text-sm mt-1">{errors.sinIssueDate.message?.toString()}</p>}
+          {errors.sinIssueDate && (
+            <p className="text-red-500 text-sm mt-1">
+              {errors.sinIssueDate.message?.toString()}
+            </p>
+          )}
         </div>
 
         {/* SIN Expiry Date - Only for Work Permit holders */}
         {hasWorkPermitStatus && (
           <div>
-            <label className="block text-sm font-medium text-gray-700">{t("form.step2.page1.fields.sinExpiryDate")}</label>
+            <label className="block text-sm font-medium text-gray-700">
+              {t("form.step2.page1.fields.sinExpiryDate")}
+            </label>
             <input
               {...register("sinExpiryDate")}
               type="date"
@@ -392,22 +529,40 @@ export default function PersonalDetails({ onboardingContext, prequalificationDat
               })()}
               className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
             />
-            {errors.sinExpiryDate && <p className="text-red-500 text-sm mt-1">{errors.sinExpiryDate.message?.toString()}</p>}
+            {errors.sinExpiryDate && (
+              <p className="text-red-500 text-sm mt-1">
+                {errors.sinExpiryDate.message?.toString()}
+              </p>
+            )}
           </div>
         )}
 
         {/* SIN Photo Upload - Full Width */}
         <div className="md:col-span-2" data-field="sinPhoto">
-          <label className="block text-sm font-medium text-gray-700 mb-1">{t("form.step2.page1.fields.sinPhoto")}</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {t("form.step2.page1.fields.sinPhoto")}
+          </label>
           {sinPhotoPreview || sinPhotoUrl ? (
             <div className="relative">
-              <Image src={sinPhotoPreview || sinPhotoUrl || ""} alt="SIN Card Preview" width={400} height={128} className="w-full h-32 object-cover rounded-lg border border-gray-300" />
+              <Image
+                src={sinPhotoPreview || sinPhotoUrl || ""}
+                alt="SIN Card Preview"
+                width={400}
+                height={128}
+                className="w-full h-32 object-cover rounded-lg border border-gray-300"
+              />
               <button
                 type="button"
                 onClick={handleSinPhotoRemove}
-                disabled={disabled || sinPhotoStatus === "uploading" || sinPhotoStatus === "deleting"}
+                disabled={
+                  disabled ||
+                  sinPhotoStatus === "uploading" ||
+                  sinPhotoStatus === "deleting"
+                }
                 className={`absolute top-2 right-2 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs ${
-                  disabled ? "bg-red-300 cursor-not-allowed" : "bg-red-500 hover:bg-red-600"
+                  disabled
+                    ? "bg-red-300 cursor-not-allowed"
+                    : "bg-red-500 hover:bg-red-600"
                 }`}
               >
                 <X size={12} />
@@ -417,10 +572,22 @@ export default function PersonalDetails({ onboardingContext, prequalificationDat
             <label
               htmlFor="sinPhoto"
               className={`cursor-pointer flex flex-col items-center justify-center h-10 px-4 mt-1 w-full text-sm text-gray-600 border-2 border-dashed border-gray-300 rounded-lg transition-all duration-200 group
-              ${disabled ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-gray-50 hover:bg-gray-100 hover:border-gray-400"}`}
+              ${
+                disabled
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-gray-50 hover:bg-gray-100 hover:border-gray-400"
+              }`}
             >
-              <Camera className={`w-4 h-4 ${disabled ? "text-gray-300" : "text-gray-400 group-hover:text-gray-600"}`} />
-              <span className="font-medium text-gray-400 text-xs">{t("form.step2.page1.fields.sinPhotoDesc")}</span>
+              <Camera
+                className={`w-4 h-4 ${
+                  disabled
+                    ? "text-gray-300"
+                    : "text-gray-400 group-hover:text-gray-600"
+                }`}
+              />
+              <span className="font-medium text-gray-400 text-xs">
+                {t("form.step2.page1.fields.sinPhotoDesc")}
+              </span>
             </label>
           )}
           <input
@@ -433,7 +600,11 @@ export default function PersonalDetails({ onboardingContext, prequalificationDat
             className="hidden"
             disabled={disabled}
           />
-          {sinPhotoStatus !== "uploading" && errors.sinPhoto && <p className="text-red-500 text-sm mt-1">{errors.sinPhoto.message?.toString()}</p>}
+          {sinPhotoStatus !== "uploading" && errors.sinPhoto && (
+            <p className="text-red-500 text-sm mt-1">
+              {errors.sinPhoto.message?.toString()}
+            </p>
+          )}
           {sinPhotoStatus === "uploading" && (
             <div className="text-yellow-600 text-sm mt-1 flex items-center">
               <p className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-600 mr-2"></p>
@@ -446,13 +617,19 @@ export default function PersonalDetails({ onboardingContext, prequalificationDat
               Deleting...
             </div>
           )}
-          {sinPhotoStatus === "error" && <p className="text-red-500 text-sm mt-1">{sinPhotoMessage}</p>}
-          {!errors.sinPhoto && sinPhotoStatus === "idle" && sinPhotoMessage && <p className="text-green-600 text-sm mt-1">{sinPhotoMessage}</p>}
+          {sinPhotoStatus === "error" && (
+            <p className="text-red-500 text-sm mt-1">{sinPhotoMessage}</p>
+          )}
+          {!errors.sinPhoto && sinPhotoStatus === "idle" && sinPhotoMessage && (
+            <p className="text-green-600 text-sm mt-1">{sinPhotoMessage}</p>
+          )}
         </div>
 
         {/* Date of Birth */}
         <div>
-          <label className="block text-sm font-medium text-gray-700">{t("form.step2.page1.fields.dob")}</label>
+          <label className="block text-sm font-medium text-gray-700">
+            {t("form.step2.page1.fields.dob")}
+          </label>
           <input
             {...register("dob")}
             type="date"
@@ -460,24 +637,42 @@ export default function PersonalDetails({ onboardingContext, prequalificationDat
             data-field="dob"
             max={(() => {
               const today = new Date();
-              const maxDate = new Date(today.getFullYear() - 23, today.getMonth(), today.getDate());
+              const maxDate = new Date(
+                today.getFullYear() - 23,
+                today.getMonth(),
+                today.getDate()
+              );
               return maxDate.toISOString().split("T")[0];
             })()}
             min={(() => {
               const today = new Date();
-              const minDate = new Date(today.getFullYear() - 100, today.getMonth(), today.getDate());
+              const minDate = new Date(
+                today.getFullYear() - 100,
+                today.getMonth(),
+                today.getDate()
+              );
               return minDate.toISOString().split("T")[0];
             })()}
             className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
           />
           {calculatedAge !== null && (
-            <p className={`text-sm mt-1 ${calculatedAge >= 23 && calculatedAge <= 100 ? "text-green-600" : "text-red-500"}`}>
+            <p
+              className={`text-sm mt-1 ${
+                calculatedAge >= 23 && calculatedAge <= 100
+                  ? "text-green-600"
+                  : "text-red-500"
+              }`}
+            >
               Age: {calculatedAge} years old
               {calculatedAge < 23 && " (Must be at least 23 years old)"}
               {calculatedAge > 100 && " (Age cannot exceed 100 years)"}
             </p>
           )}
-          {errors.dob && <p className="text-red-500 text-sm mt-1">{errors.dob.message?.toString()}</p>}
+          {errors.dob && (
+            <p className="text-red-500 text-sm mt-1">
+              {errors.dob.message?.toString()}
+            </p>
+          )}
         </div>
 
         {/* Can Provide Proof of Age */}
@@ -491,13 +686,33 @@ export default function PersonalDetails({ onboardingContext, prequalificationDat
               className="appearance-none w-6 h-6 border-2 border-gray-300 rounded-md bg-white focus:outline-none transition-all duration-150 cursor-pointer focus:shadow-[0_0_0_3px_rgba(56,189,248,0.25)] checked:shadow-[0_0_0_3px_rgba(56,189,248,0.25)] checked:bg-white relative disabled:cursor-not-allowed disabled:bg-gray-100"
             />
             {canProvideProofChecked && dobValue && (
-              <svg className="absolute w-6 h-6 pointer-events-none left-0 top-0" viewBox="0 0 24 24" fill="none">
-                <path d="M20 6L9 17L4 12" stroke="#0071BC" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <svg
+                className="absolute w-6 h-6 pointer-events-none left-0 top-0"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <path
+                  d="M20 6L9 17L4 12"
+                  stroke="#0071BC"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             )}
-            <label className={`text-sm font-medium ${dobValue ? "text-gray-700" : "text-gray-400"}`}>{t("form.step2.page1.fields.canProvideProof")}</label>
+            <label
+              className={`text-sm font-medium ${
+                dobValue ? "text-gray-700" : "text-gray-400"
+              }`}
+            >
+              {t("form.step2.page1.fields.canProvideProof")}
+            </label>
           </div>
-          {errors.canProvideProofOfAge && <p className="text-red-500 text-sm mt-1">{errors.canProvideProofOfAge.message?.toString()}</p>}
+          {errors.canProvideProofOfAge && (
+            <p className="text-red-500 text-sm mt-1">
+              {errors.canProvideProofOfAge.message?.toString()}
+            </p>
+          )}
         </div>
 
         {/* Phone: Home */}
@@ -521,7 +736,12 @@ export default function PersonalDetails({ onboardingContext, prequalificationDat
         />
 
         {/* Emergency Contact */}
-        <TextInput name="emergencyContactName" label={t("form.step2.page1.fields.emergencyContactName")} error={errors.emergencyContactName} register={register} />
+        <TextInput
+          name="emergencyContactName"
+          label={t("form.step2.page1.fields.emergencyContactName")}
+          error={errors.emergencyContactName}
+          register={register}
+        />
 
         <PhoneInput
           name="emergencyContactPhone"
