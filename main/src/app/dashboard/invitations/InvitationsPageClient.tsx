@@ -22,6 +22,11 @@ export default function InvitationsPageClient() {
 
   const { setDriverName, setSort, setCompanyIds, setApplicationTypes, setPagination } = useAdminInvitationQueryState();
 
+  const clearFilters = () => {
+    setCompanyIds(undefined);
+    setApplicationTypes(undefined);
+  };
+
   if (isError) {
     return (
       <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
@@ -44,6 +49,7 @@ export default function InvitationsPageClient() {
         applicationTypeOptions={APPLICATION_TYPE_OPTIONS}
         onCompanyChange={setCompanyIds}
         onApplicationTypeChange={setApplicationTypes}
+        onClearAll={clearFilters}
       />
 
       <InvitationsDataGrid
