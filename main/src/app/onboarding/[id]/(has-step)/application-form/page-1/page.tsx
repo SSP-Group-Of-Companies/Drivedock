@@ -144,5 +144,5 @@ export default async function Page1ServerWrapper({ params }: { params: Promise<{
       }
     : EMPTY_DEFAULTS;
 
-  return <Page1Client defaultValues={defaultValues} trackerId={trackerId} trackerContextFromGet={data?.onboardingContext} prequalificationData={data?.prequalificationData} disabled />;
+  return <Page1Client defaultValues={defaultValues} trackerId={trackerId} trackerContextFromGet={data?.onboardingContext} prequalificationData={data?.prequalificationData} />;
 }
