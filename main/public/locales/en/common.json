@@ -757,24 +757,38 @@
   "resume": {
     "title": "Resume Your Application",
     "description": "Enter your SIN/SSN to continue your onboarding from where you stopped.",
+    "description_sin_only": "Enter your SIN/SSN and we’ll email a verification code to the address on file. Then enter the code to continue your onboarding.",
     "placeholder": "999-888-777",
+    "codePlaceholder": "e.g. 123456",
+    "codeInstruction": "Enter the 6-digit code sent to your email",
+    "sendCode": "Send Code",
+    "verifyCode": "Verify & Continue",
+    "resend": "Resend code",
     "success": "Match found! Redirecting...",
     "error": "No application found for that SIN.",
     "cancel": "Cancel",
     "continue": "Continue",
     "loading": "Loading...",
     "loadingCta": "Resuming...",
+    "loadingCtaSend": "Sending...",
+    "loadingCtaVerify": "Verifying...",
+    "codeSentHint": "Verification code sent to: {{email}}",
+    "resendCooldown": "Resend code ({{s}}s)",
+    "sinChangedNeedsNewCode": "SIN changed — please send a new verification code for this SIN.",
     "validation": {
       "enterSin": "Please enter your SIN",
-      "sinLength": "SIN must be exactly 9 digits"
+      "sinLength": "SIN must be exactly 9 digits",
+      "codeRequired": "Please enter your verification code",
+      "codeFormat": "The code must be 6 digits"
     },
     "errors": {
       "invalidResponse": "Invalid response from server",
       "generic": "Could not resume application. Please try again.",
-      "resumeInfoMissing": "Resume info missing"
+      "resumeInfoMissing": "Resume info missing",
+      "rateLimited": "Please wait {{s}} seconds before requesting a new code.",
+      "codeForDifferentSin": "Please request a code for the current SIN first."
     }
   },
-
   "infoPopUp": {
     "modalTitle": "How it works",
     "close": "Close",

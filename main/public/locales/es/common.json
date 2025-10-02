@@ -738,26 +738,40 @@
   },
 
   "resume": {
-    "title": "Reanudar tu solicitud",
-    "description": "Ingresa tu SIN/SSN para continuar tu incorporación desde donde te quedaste.",
+    "title": "Reanudar su solicitud",
+    "description": "Ingrese su SIN/SSN para continuar su incorporación desde donde la dejó.",
+    "description_sin_only": "Ingrese su SIN/SSN y le enviaremos un código de verificación al correo registrado. Luego ingrese el código para continuar con su incorporación.",
     "placeholder": "999-888-777",
-    "success": "¡Coincidencia encontrada! Redirigiendo...",
+    "codePlaceholder": "p. ej., 123456",
+    "codeInstruction": "Ingrese el código de 6 dígitos enviado a su correo",
+    "sendCode": "Enviar código",
+    "verifyCode": "Verificar y continuar",
+    "resend": "Reenviar código",
+    "success": "¡Coincidencia encontrada! Redirigiendo…",
     "error": "No se encontró una solicitud para ese SIN.",
     "cancel": "Cancelar",
     "continue": "Continuar",
-    "loading": "Cargando...",
-    "loadingCta": "Reanudando...",
+    "loading": "Cargando…",
+    "loadingCta": "Reanudando…",
+    "loadingCtaSend": "Enviando…",
+    "loadingCtaVerify": "Verificando…",
+    "codeSentHint": "Código de verificación enviado a: {{email}}",
+    "resendCooldown": "Reenviar código ({{s}} s)",
+    "sinChangedNeedsNewCode": "El SIN ha cambiado: envíe un nuevo código de verificación para este SIN.",
     "validation": {
-      "enterSin": "Ingresa tu SIN",
-      "sinLength": "El SIN debe tener exactamente 9 dígitos"
+      "enterSin": "Ingrese su SIN",
+      "sinLength": "El SIN debe tener exactamente 9 dígitos",
+      "codeRequired": "Ingrese su código de verificación",
+      "codeFormat": "El código debe tener 6 dígitos"
     },
     "errors": {
-      "invalidResponse": "Respuesta no válida del servidor",
-      "generic": "No se pudo reanudar la solicitud. Inténtalo de nuevo.",
-      "resumeInfoMissing": "Falta información de reanudación"
+      "invalidResponse": "Respuesta inválida del servidor",
+      "generic": "No se pudo reanudar la solicitud. Inténtelo de nuevo.",
+      "resumeInfoMissing": "Faltan datos para reanudar",
+      "rateLimited": "Espere {{s}} segundos antes de solicitar un nuevo código.",
+      "codeForDifferentSin": "Solicite primero un código para el SIN actual."
     }
   },
-
   "infoPopUp": {
     "modalTitle": "Cómo funciona",
     "close": "Cerrar",

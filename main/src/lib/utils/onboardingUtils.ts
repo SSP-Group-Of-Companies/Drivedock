@@ -294,6 +294,7 @@ export function buildTrackerContext(tracker: IOnboardingTrackerDoc | IOnboarding
  *   → "/onboarding/64f3a8.../application-form/page-2"
  */
 export function buildOnboardingStepPath(tracker: IOnboardingTrackerDoc | IOnboardingTrackerContext, defaultStep?: EStepPath): string {
+  if (tracker.status?.completed === true) return `/onboarding/${tracker.id}/completed`;
   if (!tracker.invitationApproved) return `/onboarding/${tracker.id}/pending-approval`;
   const step = defaultStep || tracker.status.currentStep;
   return `/onboarding/${tracker.id}/${step}`;

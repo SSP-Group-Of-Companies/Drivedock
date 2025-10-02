@@ -740,25 +740,39 @@
 
   "resume": {
     "title": "Reprendre votre candidature",
-    "description": "Entrez votre NAS/SSN pour poursuivre votre intégration là où vous vous êtes arrêté.",
+    "description": "Saisissez votre NAS pour reprendre votre intégration là où vous vous êtes arrêté.",
+    "description_sin_only": "Saisissez votre NAS et nous vous enverrons un code de vérification à l’adresse enregistrée. Entrez ensuite ce code pour continuer votre intégration.",
     "placeholder": "999-888-777",
-    "success": "Correspondance trouvée ! Redirection...",
-    "error": "Aucune candidature trouvée pour ce NAS.",
+    "codePlaceholder": "ex. 123456",
+    "codeInstruction": "Entrez le code à 6 chiffres envoyé à votre e-mail",
+    "sendCode": "Envoyer le code",
+    "verifyCode": "Vérifier et continuer",
+    "resend": "Renvoyer le code",
+    "success": "Correspondance trouvée ! Redirection…",
+    "error": "Aucune demande trouvée pour ce NAS.",
     "cancel": "Annuler",
     "continue": "Continuer",
-    "loading": "Chargement...",
-    "loadingCta": "Reprise en cours...",
+    "loading": "Chargement…",
+    "loadingCta": "Reprise…",
+    "loadingCtaSend": "Envoi…",
+    "loadingCtaVerify": "Vérification…",
+    "codeSentHint": "Code de vérification envoyé à : {{email}}",
+    "resendCooldown": "Renvoyer le code ({{s}} s)",
+    "sinChangedNeedsNewCode": "Le NAS a changé — veuillez envoyer un nouveau code de vérification pour ce NAS.",
     "validation": {
       "enterSin": "Veuillez saisir votre NAS",
-      "sinLength": "Le NAS doit comporter exactement 9 chiffres"
+      "sinLength": "Le NAS doit comporter exactement 9 chiffres",
+      "codeRequired": "Veuillez saisir votre code de vérification",
+      "codeFormat": "Le code doit comporter 6 chiffres"
     },
     "errors": {
       "invalidResponse": "Réponse invalide du serveur",
       "generic": "Impossible de reprendre la candidature. Veuillez réessayer.",
-      "resumeInfoMissing": "Informations de reprise manquantes"
+      "resumeInfoMissing": "Informations de reprise manquantes",
+      "rateLimited": "Veuillez patienter {{s}} secondes avant de demander un nouveau code.",
+      "codeForDifferentSin": "Veuillez d’abord demander un code pour le NAS actuel."
     }
   },
-
   "infoPopUp": {
     "modalTitle": "Fonctionnement",
     "close": "Fermer",

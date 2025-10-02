@@ -78,17 +78,19 @@ export async function middleware(req: NextRequest) {
 
       const { completed, invitationApproved, sessionOk } = guard;
 
+      // 🔒 Global rule: ALL onboarding pages require a session
+      // (including /completed and /pending-approval)
+      if (!sessionOk) {
+        const url = req.nextUrl.clone();
+        url.pathname = "/";
+        return NextResponse.redirect(url);
+      }
+
       // =========================
       // NOT APPROVED YET
       // =========================
       if (!invitationApproved) {
-        // No session → home
-        if (!sessionOk) {
-          const url = req.nextUrl.clone();
-          url.pathname = "/";
-          return NextResponse.redirect(url);
-        }
-        // Has session → force [id]/pending-approval from ANY subpath
+        // Has session (enforced above) → force [id]/pending-approval from ANY subpath
         if (subPath !== "pending-approval") {
           return NextResponse.redirect(new URL(`/onboarding/${trackerId}/pending-approval`, req.url));
         }
@@ -100,12 +102,12 @@ export async function middleware(req: NextRequest) {
       // APPROVED
       // =========================
 
-      // If on [id]/pending-approval and HAS session: allow staying (client shows success/links)
+      // If on [id]/pending-approval:
+      // - If application is COMPLETED → redirect to completed
+      // - Else (approved but not completed) → allow (client shows success/links)
       if (subPath === "pending-approval") {
-        if (!sessionOk) {
-          const url = req.nextUrl.clone();
-          url.pathname = "/";
-          return NextResponse.redirect(url);
+        if (completed) {
+          return NextResponse.redirect(new URL(`/onboarding/${trackerId}/completed`, req.url));
         }
         return NextResponse.next();
       }
@@ -115,17 +117,7 @@ export async function middleware(req: NextRequest) {
         return NextResponse.redirect(new URL(`/onboarding/${trackerId}/completed`, req.url));
       }
 
-      // Session required for all non-completed pages
-      if (subPath !== "completed" && !sessionOk) {
-        const url = req.nextUrl.clone();
-        url.pathname = "/";
-        return NextResponse.redirect(url);
-      }
-
-      // (Optional) If you still want to gently push users forward after approval:
-      // - We let them browse any valid step URL. If you prefer auto-forwarding,
-      //   you can compute `targetPath` via buildOnboardingStepPath(tracker...) and redirect.
-      //   Keeping behavior as-is per your latest requirement.
+      // All other approved, not-completed pages → allow (session already required)
     }
 
     // Allow onboarding routes to continue (API routes enforce validity)

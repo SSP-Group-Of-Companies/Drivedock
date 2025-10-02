@@ -86,7 +86,7 @@ export default function PendingApprovalClient({ onboardingContext }: PendingAppr
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
               onClick={handleResume}
-              className="px-8 py-2.5 bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 text-white font-semibold rounded-full shadow-lg hover:opacity-90 transition-all duration-200 transform hover:scale-105"
+              className="px-8 py-2.5 bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 text-white font-semibold rounded-full shadow-lg hover:opacity-90 transition-all duration-200 transform hover:scale-105 cursor-pointer"
             >
               {t("pendingApprovalPage.approved.ctaResume")}
             </motion.button>
