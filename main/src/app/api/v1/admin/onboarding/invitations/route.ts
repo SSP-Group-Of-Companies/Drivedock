@@ -313,6 +313,7 @@ export async function GET(req: NextRequest) {
           invitationApproved: 1,
           terminated: 1,
           forms: 1,
+          preApprovalCountryCode: 1,
           itemSummary: 1,
         },
       },

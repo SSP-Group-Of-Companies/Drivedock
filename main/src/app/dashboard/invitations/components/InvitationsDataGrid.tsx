@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import type { DashboardInvitationItem } from "@/types/adminDashboard.types";
 import CountryFlag from "@/app/dashboard/components/table/atoms/CountryFlag";
-import CompanyBadge from "@/app/dashboard/components/table/atoms/CompanyBadge";
 import { Eye } from "lucide-react";
 
 /* -------- shared helpers (copied from DataGrid for visual parity) -------- */
@@ -152,7 +151,7 @@ export default function InvitationsDataGrid({ isLoading, isFetching, isDefinitel
                 Contact
               </th>
               <th className="hidden px-3 py-3 text-left font-medium sm:table-cell" style={{ borderBottom: "1px solid var(--color-outline)" }}>
-                Company
+                Country
               </th>
               <th className="px-2 py-3 text-center font-medium sm:px-3" style={{ borderBottom: "1px solid var(--color-outline)" }}>
                 Actions
@@ -212,16 +211,10 @@ export default function InvitationsDataGrid({ isLoading, isFetching, isDefinitel
                       </div>
                     </td>
 
-                    {/* Company (desktop) */}
+                    {/* Country (desktop) */}
                     <td className="hidden px-3 py-4 sm:table-cell align-middle" style={{ borderBottom: "1px solid var(--color-outline)" }}>
-                      <div className="flex items-center gap-5">
-                        <CompanyBadge companyId={it.companyId} size="xl" />
-                        <CountryFlag companyId={it.companyId} size="md" className="opacity-60" />
-                        {!it.companyId && (
-                          <span className="text-xs px-2 py-0.5 rounded-md" style={{ background: "var(--color-primary-container)", color: "var(--color-on-primary-container)" }}>
-                            Unassigned
-                          </span>
-                        )}
+                      <div className="flex items-center">
+                        <CountryFlag companyId={it.companyId} countryCode={(it as any).preApprovalCountryCode} size="md" />
                       </div>
                     </td>
 

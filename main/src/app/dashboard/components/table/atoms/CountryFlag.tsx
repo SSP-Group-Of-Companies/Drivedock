@@ -1,13 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import {
-  flagSrcFor,
-  resolveCompanyMeta,
-} from "@/constants/dashboard/companies";
+import { flagSrcFor, resolveCompanyMeta } from "@/constants/dashboard/companies";
+import { ECountryCode } from "@/types/shared.types";
 
 type Props = Readonly<{
   companyId?: string;
+  countryCode?: ECountryCode;
   /** visual size of the flag */
   size?: "xs" | "sm" | "md";
   className?: string;
@@ -24,14 +23,10 @@ const COUNTRY_NAME: Record<string, string> = {
   CA: "Canada",
 };
 
-export default function CountryFlag({
-  companyId,
-  size = "sm",
-  className,
-}: Props) {
-  const { countryCode } = resolveCompanyMeta(companyId);
-  const src = flagSrcFor(countryCode);
-  const label = COUNTRY_NAME[countryCode ?? ""] ?? "Country";
+export default function CountryFlag({ companyId, countryCode, size = "sm", className }: Props) {
+  const code = countryCode ?? resolveCompanyMeta(companyId).countryCode;
+  const src = flagSrcFor(code);
+  const label = COUNTRY_NAME[code ?? ""] ?? "Country";
 
   return (
     <span

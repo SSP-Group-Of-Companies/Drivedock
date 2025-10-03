@@ -1,5 +1,6 @@
 // src/types/adminDashboard.types.ts
 import { IOnboardingTracker } from "@/types/onboardingTracker.types";
+import { ECountryCode } from "@/types/shared.types";
 import { EDrugTestStatus } from "@/types/drugTest.types";
 
 export type DashboardOnboardingItemSummary = {
@@ -28,4 +29,5 @@ export type DashboardOnboardingItem = Pick<
 export type DashboardInvitationItem = Pick<IOnboardingTracker, "companyId" | "applicationType" | "createdAt" | "updatedAt" | "invitationApproved" | "terminated" | "forms"> & {
   _id: string;
   itemSummary: DashboardInvitationItemSummary;
+  preApprovalCountryCode?: ECountryCode;
 };
