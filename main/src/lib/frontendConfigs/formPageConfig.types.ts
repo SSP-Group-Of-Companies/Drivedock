@@ -9,6 +9,7 @@ export type BuildPayloadCtx = {
   prequalificationStatusInCanada?: string;
   companyId?: string;
   applicationType?: string;
+  countryCode?: string; // CA | US
   tracker?: IOnboardingTrackerContext | null;
   isPatch?: boolean;
   effectiveTrackerId?: string;

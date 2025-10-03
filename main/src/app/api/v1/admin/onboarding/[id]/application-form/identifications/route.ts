@@ -276,22 +276,26 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       // Business all-or-nothing on BODY (only if they touched business keys)
       const bizDecision = validateBusinessAllOrNothingOnBody(body);
 
-      // Driver-type requiredness from DB: enforce business + banking for Company/Owner Operator
+      // Driver-type requiredness from DB:
+      //  - Owner Operator: Business is required
+      //  - Company OR Owner Operator: Banking is required
       try {
         const preQualId = onboardingDoc.forms?.preQualification as any;
         if (preQualId) {
           const preQualDoc = await PreQualifications.findById(preQualId);
           const driverType = preQualDoc?.driverType as EDriverType | undefined;
-          if (driverType === EDriverType.Company || driverType === EDriverType.OwnerOperator) {
-            // Business required
+          if (driverType === EDriverType.OwnerOperator) {
+            // Business required for Owner Operator
             requirePresence(body, "businessName", "Business name");
             if (!isNonEmptyString(body.businessName)) throw new AppError(400, "Business name is required for this applicant.");
             requirePresence(body, "hstNumber", "HST number");
             if (!isNonEmptyString(body.hstNumber)) throw new AppError(400, "HST number is required for this applicant.");
             expectCountRange(body, "incorporatePhotos", 1, 10, "Incorporation photos");
             expectCountRange(body, "hstPhotos", 1, 2, "HST photos");
+          }
 
-            // Banking required
+          if (driverType === EDriverType.Company || driverType === EDriverType.OwnerOperator) {
+            // Banking required for Company & Owner Operator
             expectCountRange(body, "bankingInfoPhotos", 1, 2, "Banking info photos");
           }
         }
@@ -361,14 +365,20 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
         if (preQualId) {
           const preQualDoc = await PreQualifications.findById(preQualId);
           const driverType = preQualDoc?.driverType as EDriverType | undefined;
+          const bankingOk = (nextP4.bankingInfoPhotos?.length ?? 0) >= 1;
           if (driverType === EDriverType.Company || driverType === EDriverType.OwnerOperator) {
+            if (!bankingOk) {
+              throw new AppError(400, "Banking info is required for this applicant.");
+            }
+          }
+
+          if (driverType === EDriverType.OwnerOperator) {
             const nameOk = isNonEmptyString(nextP4.businessName);
             const hstOk = isNonEmptyString(nextP4.hstNumber);
             const incOk = (nextP4.incorporatePhotos?.length ?? 0) >= 1;
             const hstPhotosOk = (nextP4.hstPhotos?.length ?? 0) >= 1;
-            const bankingOk = (nextP4.bankingInfoPhotos?.length ?? 0) >= 1;
-            if (!nameOk || !hstOk || !incOk || !hstPhotosOk || !bankingOk) {
-              throw new AppError(400, "For Company/Owner Operator, business and banking info are required.");
+            if (!nameOk || !hstOk || !incOk || !hstPhotosOk) {
+              throw new AppError(400, "Business info is required for Owner Operator.");
             }
           }
         }

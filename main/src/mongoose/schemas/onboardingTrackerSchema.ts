@@ -77,11 +77,19 @@ const onboardingTrackerSchema = new Schema<IOnboardingTrackerDoc>(
     },
     companyId: {
       type: String,
-      required: [true, "Company id is required"],
+      required: false, // assigned at approval time
       enum: {
         values: Object.values(ECompanyId),
         message: `company id can only be one of ${Object.values(ECompanyId)}`,
       },
+    },
+    preApprovalCountryCode: {
+      type: String,
+      enum: {
+        values: ["CA", "US"],
+        message: `preApprovalCountryCode must be CA or US`,
+      },
+      required: [true, "preApprovalCountryCode is required before approval"],
     },
     forms: {
       preQualification: { type: Schema.Types.ObjectId, ref: PreQualifications },

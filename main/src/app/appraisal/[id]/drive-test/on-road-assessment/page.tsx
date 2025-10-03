@@ -57,7 +57,7 @@ export default async function OnRoadAssessmentPage({ params }: { params: Promise
   // can show the flatbed training toggle?
   const companyId = data!.onboardingContext.companyId;
   const applicationType = data!.onboardingContext.applicationType;
-  const showFlatbedToggle = canHaveFlatbedTraining(companyId, applicationType);
+  const showFlatbedToggle = companyId ? canHaveFlatbedTraining(companyId, applicationType) : false;
 
   // Build RHF defaultValues
   const baseSections = makeOnRoadSections();

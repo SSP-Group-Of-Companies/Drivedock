@@ -31,10 +31,13 @@ import Image from "next/image";
 
 //components & hooks
 import useMounted from "@/hooks/useMounted";
+import { useCountrySelection } from "@/hooks/useCountrySelection";
+import { ECountryCode } from "@/types/shared.types";
 
 export default function ConsentChecklist() {
   const mounted = useMounted();
   const { t } = useTranslation("common");
+  const { selectedCountryCode, setSelectedCountryCode } = useCountrySelection();
 
   // Prevent rendering until mounted to avoid hydration mismatch
   if (!mounted) return null;
@@ -43,8 +46,25 @@ export default function ConsentChecklist() {
     <div className="space-y-6 mb-6">
       {/* Two Column Layout with better visual balance */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
+        <div className="lg:col-span-2 -mt-2 mb-2 text-center text-sm" style={{ color: "var(--color-on-surface-variant)" }}>
+          {t("start.tapToSelectCountry", "Tap a card to select your country.")}
+        </div>
         {/* Canada Section */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+        <button
+          type="button"
+          onClick={() => setSelectedCountryCode(ECountryCode.CA)}
+          className={`relative text-left bg-white rounded-lg border p-6 shadow-sm transition ring-2 ${
+            selectedCountryCode === ECountryCode.CA ? "border-blue-500 ring-blue-200" : "border-gray-200 ring-transparent"
+          }`}
+          aria-pressed={selectedCountryCode === ECountryCode.CA}
+        >
+          <span className="sr-only">Select Canada</span>
+          {selectedCountryCode === ECountryCode.CA && (
+            <span className="absolute top-2 right-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium" style={{ background: "#e7f5ee", color: "#137a4b", border: "1px solid #bde5cf" }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 6L9 17L4 12" stroke="#137a4b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              {t("start.selected", "Selected")}
+            </span>
+          )}
           <div className="flex items-center justify-center mb-4">
             <div className="overflow-hidden ">
               <Image
@@ -158,10 +178,24 @@ export default function ConsentChecklist() {
               </ul>
             </div>
           </div>
-        </div>
+        </button>
 
         {/* USA Section */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+        <button
+          type="button"
+          onClick={() => setSelectedCountryCode(ECountryCode.US)}
+          className={`relative text-left bg-white rounded-lg border p-6 shadow-sm transition ring-2 ${
+            selectedCountryCode === ECountryCode.US ? "border-blue-500 ring-blue-200" : "border-gray-200 ring-transparent"
+          }`}
+          aria-pressed={selectedCountryCode === ECountryCode.US}
+        >
+          <span className="sr-only">Select USA</span>
+          {selectedCountryCode === ECountryCode.US && (
+            <span className="absolute top-2 right-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium" style={{ background: "#e7f5ee", color: "#137a4b", border: "1px solid #bde5cf" }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 6L9 17L4 12" stroke="#137a4b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              {t("start.selected", "Selected")}
+            </span>
+          )}
           <div className="flex items-center justify-center mb-4">
             <div className="overflow-hidden">
               <Image
@@ -251,7 +285,7 @@ export default function ConsentChecklist() {
               </ul>
             </div>
           </div>
-        </div>
+        </button>
       </div>
     </div>
   );

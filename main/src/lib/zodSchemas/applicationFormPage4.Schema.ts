@@ -174,9 +174,13 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
         ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["business.root"], message: "All business section fields must be provided if any are." });
       }
 
-      // 2) Company/OwnerOperator -> business and banking become required even if none provided
-      const isCompanyOrOO = driverType === EDriverType.Company || driverType === EDriverType.OwnerOperator;
-      if (isCompanyOrOO) {
+      // 2) Driver-type based requiredness
+      //    - Owner Operator: Business section is required (all-or-nothing if any provided still applies above)
+      //    - Company OR Owner Operator: Banking photos required
+      const isCompany = driverType === EDriverType.Company;
+      const isOwnerOperator = driverType === EDriverType.OwnerOperator;
+
+      if (isOwnerOperator) {
         if (!data.businessName?.trim()) {
           ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["businessName"], message: "Business name is required." });
         }
@@ -189,8 +193,11 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
         if ((data.hstPhotos?.length ?? 0) < 1) {
           ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["hstPhotos"], message: "At least one HST photo is required." });
         }
+      }
+
+      if (isCompany || isOwnerOperator) {
         if ((data.bankingInfoPhotos?.length ?? 0) < 1) {
-          ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["bankingInfoPhotos"], message: "Banking info is required for Company and Owner Operator applicants." });
+          ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["bankingInfoPhotos"], message: "Banking info is required for this applicant." });
         }
       }
     })

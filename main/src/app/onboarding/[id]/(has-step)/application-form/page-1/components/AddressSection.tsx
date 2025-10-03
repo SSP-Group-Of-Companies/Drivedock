@@ -7,7 +7,8 @@ import { Upload } from "lucide-react";
 
 import useMounted from "@/hooks/useMounted";
 import { ApplicationFormPage1Schema } from "@/lib/zodSchemas/applicationFormPage1.schema";
-import { useCompanySelection } from "@/hooks/frontendHooks/useCompanySelection";
+import { useCountrySelection } from "@/hooks/useCountrySelection";
+import { ECountryCode } from "@/types/shared.types";
 
 // Narrow the valid address field names
 type AddressFieldName = "address" | "city" | "stateOrProvince" | "postalCode" | "from" | "to";
@@ -46,7 +47,7 @@ function getAddressesRootErrorMessage(errors: any): string | undefined {
 export default function AddressSection() {
   const mounted = useMounted();
   const { t } = useTranslation("common");
-  const { selectedCompany } = useCompanySelection();
+  const { selectedCountryCode } = useCountrySelection();
 
   const {
     register,
@@ -99,7 +100,7 @@ export default function AddressSection() {
     return () => clearTimeout(timeoutId);
   }, [hasSubmitted, watchedAddresses, trigger]);
 
-  const getPostalCodeLabel = () => (selectedCompany?.countryCode === "US" ? t("form.step2.page1.fields.zipCode") : t("form.step2.page1.fields.postalCode"));
+  const getPostalCodeLabel = () => (selectedCountryCode === ECountryCode.US ? t("form.step2.page1.fields.zipCode") : t("form.step2.page1.fields.postalCode"));
 
   const handleAdd = () => {
     append({

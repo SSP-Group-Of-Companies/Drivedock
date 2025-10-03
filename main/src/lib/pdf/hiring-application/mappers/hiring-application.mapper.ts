@@ -771,7 +771,7 @@ export function buildHiringApplicationFieldMap({ onboarding, application, prequa
   /* =========================
    * Page 12 - Acknowledgement & Insurance
    * ========================= */
-  const contractorName = application.page4?.businessName || getCompanyById(onboarding.companyId)?.name || "N/A";
+  const contractorName = application.page4?.businessName || (onboarding.companyId ? getCompanyById(onboarding.companyId)?.name : undefined) || "N/A";
 
   Object.assign(map, {
     [F.COMP_ACK_DRIVER_NAME]: name,

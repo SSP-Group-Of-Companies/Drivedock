@@ -24,9 +24,11 @@ export default function PoliciesContent({ data }: PoliciesContentProps) {
       </div>
 
       {/* Policies PDF Grid */}
-      <PoliciesPdfGrid 
-        companyId={onboardingContext.companyId}
-      />
+      {onboardingContext.companyId ? (
+        <PoliciesPdfGrid 
+          companyId={onboardingContext.companyId}
+        />
+      ) : null}
 
       {/* Disclaimer */}
       <div className="rounded-lg p-4" style={{

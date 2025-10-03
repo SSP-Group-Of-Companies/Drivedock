@@ -103,7 +103,9 @@ export const page1ConfigFactory: FormPageConfigFactory<ApplicationFormPage1Schem
             turnStileVerificationToken: values.turnStileVerificationToken || "",
           },
           prequalifications: ctx2.prequalifications,
-          companyId: ctx2.companyId,
+          // Company is assigned later. Send countryCode for server-side validation.
+          countryCode: ctx2.countryCode,
+          // Keep app type if present (may be used later; server can ignore at creation)
           ...(ctx2.companyId === ECompanyId.SSP_CA && ctx2.applicationType ? { applicationType: ctx2.applicationType } : {}),
         };
       }
