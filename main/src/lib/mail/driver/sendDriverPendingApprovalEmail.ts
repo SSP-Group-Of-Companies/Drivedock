@@ -7,7 +7,7 @@ import { COMPANIES, type ECompanyId } from "@/constants/companies";
 import { escapeHtml } from "@/lib/mail/utils";
 
 type Args = {
-  trackerId: string;
+  trackerId: string; // kept for parity with callers, even though we no longer deep-link to /pending-approval
   companyId: ECompanyId;
   firstName: string;
   lastName: string;
@@ -21,14 +21,18 @@ type Args = {
 /**
  * Sends the driver a confirmation that their application was received
  * and is awaiting admin approval (Invitations flow).
+ *
+ * NOTE: We do NOT include a direct pending-approval link anymore because it
+ * requires an active driver session. Instead, we link to the homepage and
+ * instruct the driver to use the "Resume" flow (SIN -> code via email).
  */
-export async function sendDriverPendingApprovalEmail(req: NextRequest, { trackerId, companyId, firstName, lastName, toEmail, phone, subject, saveToSentItems = true }: Args) {
+export async function sendDriverPendingApprovalEmail(req: NextRequest, { companyId, firstName, lastName, toEmail, phone, subject, saveToSentItems = true }: Args) {
   const origin = resolveBaseUrlFromRequest(req);
   const company = COMPANIES.find((c) => c.id === companyId);
   const companyLabel = company?.name ?? String(companyId);
 
   const fullName = `${firstName} ${lastName}`.trim();
-  const pendingLink = `${origin}/onboarding/${trackerId}/pending-approval`; // public “waiting” page
+  const homeLink = origin; // open the homepage; driver will click "Resume" there
 
   const finalSubject = subject ?? `[DriveDock] Application received — Pending approval (${companyLabel})`;
 
@@ -86,7 +90,10 @@ export async function sendDriverPendingApprovalEmail(req: NextRequest, { tracker
                           }
                         </table>
                         <p style="margin:12px 0 0 0; font-size:13px; color:#475569;">
-                          We’ll email you once you’re approved. Until then, you can check your status here:
+                          We’ll email you once you’re approved.
+                          To check your status at any time:
+                          <strong>open the homepage</strong>, click <strong>“Resume”</strong>, enter your <strong>SIN/SSN</strong>,
+                          and then enter the <strong>verification code</strong> we send to your email.
                         </p>
                       </td>
                     </tr>
@@ -96,9 +103,9 @@ export async function sendDriverPendingApprovalEmail(req: NextRequest, { tracker
 
               <tr>
                 <td align="left" style="padding:14px 24px 0 24px;">
-                  <a class="button" href="${pendingLink}"
+                  <a class="button" href="${homeLink}"
                      style="display:inline-block; text-decoration:none; background:#0a66c2; color:#ffffff; padding:12px 16px; border-radius:8px; font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif; font-size:14px; border:1px solid #0a66c2;">
-                    View status →
+                    Open Home →
                   </a>
                 </td>
               </tr>
@@ -116,7 +123,18 @@ export async function sendDriverPendingApprovalEmail(req: NextRequest, { tracker
   </html>
   `.trim();
 
-  const text = [`We’ve received your application for ${companyLabel}.`, `Status: Pending approval`, ``, `Check status: ${pendingLink}`].filter(Boolean).join("\n");
+  const text = [
+    `We’ve received your application for ${companyLabel}.`,
+    `Status: Pending approval`,
+    ``,
+    `How to check your status:`,
+    `1) Open the homepage: ${homeLink}`,
+    `2) Click "Resume"`,
+    `3) Enter your SIN/SSN`,
+    `4) Enter the verification code we email to you`,
+  ]
+    .filter(Boolean)
+    .join("\n");
 
   await sendMailAppOnly({
     from: OUTBOUND_SENDER_EMAIL,

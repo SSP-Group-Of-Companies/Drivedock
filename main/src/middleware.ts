@@ -23,13 +23,6 @@ export async function middleware(req: NextRequest) {
       return NextResponse.next();
     }
 
-    // Old global pending-approval path → always send home
-    if (pathname === "/onboarding/pending-approval") {
-      const url = req.nextUrl.clone();
-      url.pathname = "/";
-      return NextResponse.redirect(url);
-    }
-
     // Parse /onboarding/:id[/...]
     const segments = pathname.split("/").filter(Boolean); // ["onboarding", ":id", maybe "subpath"...]
     const trackerId = segments[1];
@@ -58,8 +51,11 @@ export async function middleware(req: NextRequest) {
         const guardUrl = `${origin}/api/v1/onboarding/${trackerId}/guard`;
         const guardRes = await fetch(guardUrl, {
           cache: "no-store",
-          headers: { cookie: req.headers.get("cookie") ?? "" }, // forward cookies
+          // Forward cookies if present; the rule below allows completed access without session,
+          // but the guard endpoint should still be able to tell us if it's completed.
+          headers: { cookie: req.headers.get("cookie") ?? "" },
         });
+
         guardOk = guardRes.ok;
         if (guardOk) {
           const json = await guardRes.json();
@@ -69,7 +65,7 @@ export async function middleware(req: NextRequest) {
         // network error — treat as not ok
       }
 
-      // Guard failed → home
+      // Guard failed → home (we can't confidently evaluate completion/session)
       if (!guardOk || !guard) {
         const url = req.nextUrl.clone();
         url.pathname = "/";
@@ -78,17 +74,36 @@ export async function middleware(req: NextRequest) {
 
       const { completed, invitationApproved, sessionOk } = guard;
 
-      // 🔒 Global rule: ALL onboarding pages require a session
-      // (including /completed and /pending-approval)
+      // =========================================================
+      // NEW RULE: Completed pages don't need session
+      // - If onboarding is completed:
+      //   * Any subpath → redirect to /completed (canonical)
+      //   * If already on /completed → allow (no session required)
+      // =========================================================
+      if (completed) {
+        if (subPath === "completed") {
+          // Already on the canonical completed page → allow access w/o session
+          return NextResponse.next();
+        }
+        // Force canonical /completed when done
+        return NextResponse.redirect(new URL(`/onboarding/${trackerId}/completed`, req.url));
+      }
+
+      // =========================
+      // NOT COMPLETED YET
+      // =========================
+
+      // 🔒 Global rule for NOT-COMPLETED: ALL onboarding pages require a session
+      // (including /completed and /pending-approval when not completed)
       if (!sessionOk) {
         const url = req.nextUrl.clone();
         url.pathname = "/";
         return NextResponse.redirect(url);
       }
 
-      // =========================
+      // -------------------------
       // NOT APPROVED YET
-      // =========================
+      // -------------------------
       if (!invitationApproved) {
         // Has session (enforced above) → force [id]/pending-approval from ANY subpath
         if (subPath !== "pending-approval") {
@@ -98,26 +113,17 @@ export async function middleware(req: NextRequest) {
         return NextResponse.next();
       }
 
-      // =========================
-      // APPROVED
-      // =========================
+      // -------------------------
+      // APPROVED (but not completed)
+      // -------------------------
 
-      // If on [id]/pending-approval:
-      // - If application is COMPLETED → redirect to completed
-      // - Else (approved but not completed) → allow (client shows success/links)
+      // If on [id]/pending-approval and approved but not completed:
+      // allow (client shows success/links)
       if (subPath === "pending-approval") {
-        if (completed) {
-          return NextResponse.redirect(new URL(`/onboarding/${trackerId}/completed`, req.url));
-        }
         return NextResponse.next();
       }
 
-      // Completed → always land on completed page (unless already there)
-      if (completed && subPath !== "completed") {
-        return NextResponse.redirect(new URL(`/onboarding/${trackerId}/completed`, req.url));
-      }
-
-      // All other approved, not-completed pages → allow (session already required)
+      // Otherwise, for approved & not completed, allow access to the rest.
     }
 
     // Allow onboarding routes to continue (API routes enforce validity)
