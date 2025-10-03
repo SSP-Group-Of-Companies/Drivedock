@@ -1,153 +1,179 @@
 "use client";
 
-import React from "react";
-import { IFlatbedTraining } from "@/types/flatbedTraining.types";
-import { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
+import React, { useMemo, useState, useId } from "react";
+import type { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
+import type { IFileAsset } from "@/types/shared.types";
+import FlatbedCertificateCard from "./FlatbedCertificateCard";
+import FileGalleryDialog, { type GalleryItem } from "@/app/dashboard/components/dialogs/FileGalleryDialog";
+import { deleteTempFile } from "@/lib/utils/s3Upload";
+
+type FlatbedView = {
+  flatbedCertificate?: IFileAsset;
+  completed: boolean;
+};
 
 interface FlatbedTrainingContentProps {
-  flatbedTraining: IFlatbedTraining | null;
+  trackerId: string;
   onboardingContext: IOnboardingTrackerContext;
-  staged: Record<string, any>;
-  onStage: (changes: any) => void;
+  view: FlatbedView; // merged (server + staged)
+  onStage: (changes: Partial<FlatbedView>) => void;
   isEditMode: boolean;
+  completedAtLoad: boolean; // 👈 new: server truth at initial load
 }
 
-export default function FlatbedTrainingContent({
-  flatbedTraining,
-  onboardingContext,
-  staged,
-  onStage,
-  isEditMode,
-}: FlatbedTrainingContentProps) {
+export default function FlatbedTrainingContent({ trackerId, onboardingContext, view, onStage, isEditMode, completedAtLoad }: FlatbedTrainingContentProps) {
   const applicable = Boolean(onboardingContext?.needsFlatbedTraining);
-  const alreadyCompleted = Boolean(flatbedTraining?.completed);
+  const canEdit = isEditMode;
 
-  // Use staged value if available, otherwise use existing value
-  const completed =
-    staged.completed !== undefined ? staged.completed : alreadyCompleted;
+  const headerId = useId();
 
-  const handleToggleCompleted = () => {
-    if (alreadyCompleted || !isEditMode) return;
-    // Stage the change - this will trigger the save/discard bar to appear
-    onStage({ completed: !completed });
-  };
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [galleryError, setGalleryError] = useState<string | null>(null);
+
+  const cert = view.flatbedCertificate;
+  const hasCert = !!cert;
+
+  const galleryItems: GalleryItem[] = useMemo(
+    () =>
+      cert?.url
+        ? [
+            {
+              url: String(cert.url),
+              name: cert.originalName || "Flatbed Certificate",
+              mimeType: (cert.mimeType || "").toLowerCase(),
+              uploadedAt: (cert as any)?.uploadedAt,
+            },
+          ]
+        : [],
+    [cert]
+  );
+
+  async function handleDeleteFromGallery(_: number, _item: GalleryItem) {
+    if (view.completed || !hasCert) return; // block when completed
+    setGalleryError(null);
+    try {
+      await deleteTempFile(cert);
+      onStage({ flatbedCertificate: undefined });
+    } catch (e: any) {
+      setGalleryError(e?.message || "Failed to delete the temporary file from S3.");
+    }
+  }
+
+  if (!applicable) {
+    return (
+      <section className="rounded-xl border p-4" style={{ background: "var(--color-card)", borderColor: "var(--color-outline)" }}>
+        <header className="mb-2 flex items-center justify-between">
+          <h2 id={headerId} className="text-base font-semibold">
+            Flatbed Training
+          </h2>
+        </header>
+        <div className="rounded-lg border p-3 text-sm" style={{ background: "var(--color-surface)", borderColor: "var(--color-outline-variant)", color: "var(--color-on-surface)" }}>
+          Flatbed training is <strong>not applicable</strong> for this applicant.
+        </div>
+      </section>
+    );
+  }
+
+  // ✅ Toggle rule:
+  // - If completedAtLoad === true → cannot toggle at all
+  // - If completedAtLoad === false → can toggle freely before submit
+  // - For UX parity with Safety, prevent checking when no cert
+  const checkboxDisabled = !canEdit || completedAtLoad || (!hasCert && !view.completed);
 
   return (
-    <div className="space-y-4">
-      {/* Flatbed Training Section Header */}
-      <div className="flex items-center gap-3 pb-2 border-b" style={{ borderColor: "var(--color-outline)" }}>
-        <div 
-          className="w-1 h-8 rounded-full"
-          style={{ background: "var(--color-info)" }}
-        />
-        <h2 className="text-xl font-bold" style={{ color: "var(--color-on-surface)" }}>
+    <section className="rounded-xl border p-3 sm:p-4" style={{ background: "var(--color-card)", borderColor: "var(--color-outline)" }} aria-labelledby={headerId}>
+      <header className="mb-3 flex items-center justify-between">
+        <h2 id={headerId} className="text-base font-semibold">
           Flatbed Training
         </h2>
-      </div>
-
-      {/* Main card with toggle */}
-      <section
-        className="rounded-xl border p-4"
-        style={{
-          background: "var(--color-card)",
-          borderColor: "var(--color-outline)",
-        }}
-      >
-        {/* Description and completion status */}
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <p
-              className="text-sm"
-              style={{ color: "var(--color-on-surface-variant)" }}
-            >
-              Mark the Driver Flatbed Training as completed when applicable.
-            </p>
-          </div>
-          {completed && (
-            <span
-              className="rounded-full px-3 py-1 text-xs font-medium"
-              style={{
-                background: "var(--color-success-container)",
-                color: "var(--color-success-on-container)",
-              }}
-            >
-              Flatbed Training Completed
+        <div className="flex items-center gap-2">
+          {view.completed && (
+            <span className="rounded-full px-2 py-0.5 text-xs" style={{ background: "var(--color-success-container)", color: "var(--color-success-on-container)" }}>
+              Flatbed Complete
             </span>
           )}
+          <span className="text-xs opacity-70">Certificate: {hasCert ? "1/1" : "0/1"}</span>
         </div>
-        {/* Not applicable state */}
-        {!applicable ? (
-          <div
-            className="rounded-lg border p-3 text-sm"
-            style={{
-              background: "var(--color-surface)",
-              borderColor: "var(--color-outline-variant)",
-              color: "var(--color-on-surface)",
-            }}
-          >
-            Flatbed training is <strong>not applicable</strong> for this
-            applicant.
-          </div>
-        ) : (
-          <>
-            {/* Toggle row */}
-            <div
-              className="flex items-center justify-between rounded-xl border p-3"
-              style={{ borderColor: "var(--color-outline-variant)" }}
-            >
-              <div className="space-y-0.5">
-                <div className="text-sm font-medium">Completed</div>
-                <div
-                  className="text-xs"
-                  style={{ color: "var(--color-on-surface-variant)" }}
-                >
-                  {alreadyCompleted
-                    ? "Already completed — further changes are disabled."
-                    : !isEditMode
-                    ? "Enable edit mode to toggle completion status."
-                    : "Turn on to confirm readiness, then save changes."}
-                </div>
-              </div>
+      </header>
 
-              {/* Switch (accessible); locked when already completed or edit mode is off */}
-              <button
-                type="button"
-                role="switch"
-                aria-checked={completed}
-                aria-disabled={alreadyCompleted || !isEditMode}
-                onClick={handleToggleCompleted}
-                disabled={alreadyCompleted || !isEditMode}
-                className="relative inline-flex h-7 w-12 items-center rounded-full transition-colors"
-                style={{
-                  background: completed
-                    ? "var(--color-primary)"
-                    : "var(--color-outline-variant)",
-                  opacity: alreadyCompleted || !isEditMode ? 0.7 : 1,
-                }}
-                title={
-                  alreadyCompleted
-                    ? "Flatbed training already completed"
-                    : !isEditMode
-                    ? "Edit mode must be enabled to toggle"
-                    : completed
-                    ? "Turn off"
-                    : "Turn on"
-                }
-              >
-                <span
-                  className="inline-block h-5 w-5 transform rounded-full bg-white transition-transform"
-                  style={{
-                    boxShadow: "var(--elevation-1)",
-                    transform: completed
-                      ? "translateX(22px)"
-                      : "translateX(2px)",
-                  }}
-                />
-              </button>
-            </div>
-          </>
-        )}
-      </section>
-    </div>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div className="rounded-xl border p-3 sm:p-4 space-y-3" style={{ borderColor: "var(--color-outline-variant)" }}>
+          <p className="text-sm" style={{ color: "var(--color-on-surface-variant)" }}>
+            {completedAtLoad ? (
+              <>Completed — flatbed training is completed and status cannot be changed. You may replace the certificate but not delete it.</>
+            ) : (
+              <>Upload certificate. {view.completed ? "While completed, you may replace it but not delete it." : "You can delete it before completion."}</>
+            )}
+          </p>
+
+          <button
+            type="button"
+            className="block w-full rounded-xl px-4 py-5 text-center text-base font-semibold shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ background: "var(--color-primary-container)", color: "var(--color-primary-on-container)", border: "1px solid var(--color-outline-variant)" }}
+            onClick={() => setGalleryOpen(true)}
+            disabled={!hasCert}
+            title={hasCert ? "Open certificate" : "No certificate yet"}
+          >
+            View Certificate
+          </button>
+        </div>
+
+        <FlatbedCertificateCard
+          trackerId={trackerId}
+          file={cert}
+          canEdit={canEdit}
+          completed={view.completed}
+          onSelect={(file) => onStage({ flatbedCertificate: file })}
+          onClear={() => onStage({ flatbedCertificate: undefined })}
+        />
+      </div>
+
+      <div className="mt-3 flex items-center justify-between rounded-xl border px-3 py-2" style={{ borderColor: "var(--color-outline-variant)" }}>
+        <label
+          className={`inline-flex items-center gap-2 text-sm ${checkboxDisabled ? "opacity-60" : ""}`}
+          title={completedAtLoad ? "Already completed on load; cannot change" : !hasCert && !view.completed ? "Upload a certificate first" : "Toggle completion"}
+        >
+          <input
+            type="checkbox"
+            className="h-4 w-4"
+            disabled={checkboxDisabled}
+            checked={!!view.completed}
+            onChange={(e) => {
+              const next = e.currentTarget.checked;
+              // If loaded as not completed, allow toggling both ways pre-submit.
+              onStage({ completed: !!next });
+            }}
+          />
+          <span>Mark as completed</span>
+        </label>
+
+        <div className="text-xs opacity-70">
+          {completedAtLoad
+            ? "You can replace the certificate."
+            : view.completed
+            ? "Ready — will mark as completed on submit."
+            : hasCert
+            ? "Check “Mark as completed” to enable submit."
+            : "Upload a certificate, then check “Mark as completed”."}
+        </div>
+      </div>
+
+      <FileGalleryDialog
+        open={galleryOpen}
+        items={galleryItems}
+        initialIndex={0}
+        title="Flatbed Certificate"
+        onClose={() => setGalleryOpen(false)}
+        onDelete={
+          !view.completed
+            ? (index, item) => {
+                setGalleryError(null);
+                void handleDeleteFromGallery(index, item);
+              }
+            : undefined
+        }
+        errorMessage={galleryError}
+      />
+    </section>
   );
 }

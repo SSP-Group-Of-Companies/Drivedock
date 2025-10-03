@@ -15,6 +15,7 @@ const IMAGES_AND_DOCS = [EFileMimeType.JPEG, EFileMimeType.JPG, EFileMimeType.PN
 const FOLDER_ALLOWED_MIME: Partial<Record<ES3Folder, readonly EFileMimeType[]>> = {
   [ES3Folder.DRUG_TEST_DOCS]: IMAGES_AND_DOCS,
   [ES3Folder.CARRIERS_EDGE_CERTIFICATES]: IMAGES_AND_DOCS,
+  [ES3Folder.FLATBED_TRAINING_CERTIFICATES]: IMAGES_AND_DOCS,
 };
 
 const MAX_FILE_SIZES_MB: Partial<Record<ES3Folder, number>> = {
@@ -26,6 +27,7 @@ const MAX_FILE_SIZES_MB: Partial<Record<ES3Folder, number>> = {
   [ES3Folder.DRUG_TEST_DOCS]: DEFAULT_FILE_SIZE_LIMIT_MB,
   [ES3Folder.CARRIERS_EDGE_CERTIFICATES]: DEFAULT_FILE_SIZE_LIMIT_MB,
   [ES3Folder.DRIVE_TEST]: DEFAULT_FILE_SIZE_LIMIT_MB,
+  [ES3Folder.FLATBED_TRAINING_CERTIFICATES]: DEFAULT_FILE_SIZE_LIMIT_MB,
 };
 
 /** Mimetype → extension mapping */

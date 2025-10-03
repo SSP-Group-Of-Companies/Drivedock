@@ -17,6 +17,7 @@ export enum ES3Folder {
   DRUG_TEST_DOCS = "drug-test-docs",
   CARRIERS_EDGE_CERTIFICATES = "carriers-edge-certificates",
   DRIVE_TEST = "drive-test",
+  FLATBED_TRAINING_CERTIFICATES = "flatbed-training-certificates",
 }
 
 export interface IPresignRequest {
