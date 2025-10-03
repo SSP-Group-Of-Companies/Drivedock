@@ -1,8 +1,48 @@
 // src/app/dashboard/invitations/[id]/components/ApproveRejectBar.tsx
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import ConfirmModal from "./ConfirmModal";
+import { COMPANIES, ECompanyId } from "@/constants/companies";
+
+function CompanySelect({ value, onChange }: { value?: string; onChange: (v: string) => void }) {
+  const options = useMemo(() => COMPANIES.map((c) => ({ id: c.id, name: c.name })), []);
+  return (
+    <select
+      className="rounded-md border px-2 py-1 text-sm w-full"
+      style={{ borderColor: "var(--color-outline)", background: "var(--color-surface)", color: "var(--color-on-surface)" }}
+      value={value || ""}
+      onChange={(e) => onChange(e.target.value)}
+    >
+      <option value="" disabled>
+        Select company
+      </option>
+      {options.map((o) => (
+        <option key={o.id} value={o.id}>
+          {o.name}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+function ApplicationTypeSelect({ value, onChange, visible }: { value?: string; onChange: (v: string) => void; visible: boolean }) {
+  if (!visible) return null;
+  return (
+    <select
+      className="rounded-md border px-2 py-1 text-sm w-full"
+      style={{ borderColor: "var(--color-outline)", background: "var(--color-surface)", color: "var(--color-on-surface)" }}
+      value={value || ""}
+      onChange={(e) => onChange(e.target.value)}
+    >
+      <option value="" disabled>
+        Select application type
+      </option>
+      <option value="FLAT_BED">Flatbed</option>
+      <option value="DRY_VAN">Dry Van</option>
+    </select>
+  );
+}
 
 export default function ApproveRejectBar({
   busy,
@@ -10,11 +50,14 @@ export default function ApproveRejectBar({
   onReject,
 }: {
   busy: "approve" | "reject" | null;
-  onApprove: () => Promise<void> | void;
+  onApprove: (opts: { companyId: string; applicationType?: string }) => Promise<void> | void;
   onReject: (reason?: string) => Promise<void> | void;
 }) {
   const [approveOpen, setApproveOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
+  const [companyId, setCompanyId] = useState<string>("");
+  const [applicationType, setApplicationType] = useState<string>("");
+  const showAppType = companyId === ECompanyId.SSP_CA;
 
   return (
     <>
@@ -35,7 +78,13 @@ export default function ApproveRejectBar({
           </p>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+          <div className="w-64">
+            <CompanySelect value={companyId} onChange={setCompanyId} />
+          </div>
+          <div className="w-56">
+            <ApplicationTypeSelect visible={showAppType} value={applicationType} onChange={setApplicationType} />
+          </div>
           <button
             type="button"
             onClick={() => setRejectOpen(true)}
@@ -48,7 +97,7 @@ export default function ApproveRejectBar({
           <button
             type="button"
             onClick={() => setApproveOpen(true)}
-            disabled={busy === "reject" || busy === "approve"}
+            disabled={busy === "reject" || busy === "approve" || !companyId || (showAppType && !applicationType)}
             className="rounded-lg px-3 py-2 text-sm text-white disabled:opacity-60"
             style={{ background: "var(--color-success)" }}
           >
@@ -67,7 +116,7 @@ export default function ApproveRejectBar({
         busy={busy === "approve"}
         onClose={() => setApproveOpen(false)}
         onConfirm={async () => {
-          await onApprove();
+          await onApprove({ companyId, applicationType: showAppType ? applicationType || undefined : undefined });
           setApproveOpen(false);
         }}
       />

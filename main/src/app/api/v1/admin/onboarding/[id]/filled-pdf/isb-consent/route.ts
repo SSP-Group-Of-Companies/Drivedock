@@ -62,7 +62,7 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     if (!onboarding.status?.completed) return errorResponse(400, "Onboarding is not completed yet");
 
     // Company
-    const company = getCompanyById(onboarding.companyId);
+    const company = onboarding.companyId ? getCompanyById(onboarding.companyId) : null;
     if (!company) return errorResponse(400, "Company not recognized");
 
     // Application form (page1 + page4)

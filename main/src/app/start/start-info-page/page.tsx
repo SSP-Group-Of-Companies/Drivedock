@@ -45,6 +45,7 @@ import { useLanguageStore } from "@/hooks/useLanguageStore";
 import { ArrowRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import Footer from "@/components/shared/Footer";
+import { useCountrySelection } from "@/hooks/useCountrySelection";
 import WatermarkBackground from "@/components/shared/WatermarkBackground";
 
 export default function StartPage() {
@@ -58,6 +59,7 @@ export default function StartPage() {
 function StartPageContent() {
   const router = useRouter();
   const { language } = useLanguageStore();
+  const { selectedCountryCode } = useCountrySelection();
   const [agreed, setAgreed] = useState(false);
   const { t } = useTranslation("common", { useSuspense: false });
 
@@ -67,12 +69,12 @@ function StartPageContent() {
     setMounted(true);
   }, []);
 
-  // Continue button only enabled when user has picked a language & agreed to terms
-  const canProceed = language && agreed;
+  // Continue button only enabled when language, consent, and country selected
+  const canProceed = Boolean(language && agreed && selectedCountryCode);
 
   const handleContinue = () => {
     if (canProceed) {
-      router.push("/start/company");
+      router.push("/onboarding/prequalifications");
     }
   };
 
@@ -106,7 +108,12 @@ function StartPageContent() {
           <h2 className="text-lg font-semibold mb-1">
             {t("start.beforeYouBegin")}
           </h2>
-          <p className="text-sm text-gray-600 mb-4">{t("start.ensureDoc")}</p>
+          <p className="text-sm text-gray-600 mb-4">
+            {t(
+              "start.ensureDocWithCountryHint",
+              "Please ensure you have the documents listed below to complete this application process. Click one of the cards below to select your region (Canada or USA). The Continue button will unlock after you select a country and agree to the terms."
+            )}
+          </p>
 
           {/* Checklist of conditions */}
           <ConsentChecklist />

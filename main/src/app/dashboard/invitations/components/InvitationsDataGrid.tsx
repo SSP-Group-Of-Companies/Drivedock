@@ -217,6 +217,11 @@ export default function InvitationsDataGrid({ isLoading, isFetching, isDefinitel
                       <div className="flex items-center gap-5">
                         <CompanyBadge companyId={it.companyId} size="xl" />
                         <CountryFlag companyId={it.companyId} size="md" className="opacity-60" />
+                        {!it.companyId && (
+                          <span className="text-xs px-2 py-0.5 rounded-md" style={{ background: "var(--color-primary-container)", color: "var(--color-on-primary-container)" }}>
+                            Unassigned
+                          </span>
+                        )}
                       </div>
                     </td>
 

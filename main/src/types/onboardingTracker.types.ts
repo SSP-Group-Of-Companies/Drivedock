@@ -9,6 +9,7 @@ import { IApplicationFormPage1 } from "./applicationForm.types";
 import { IPreQualifications } from "./preQualifications.types";
 import { ECompanyApplicationType } from "@/constants/companies";
 import { ECompanyId } from "@/constants/companies";
+import { ECountryCode } from "@/types/shared.types";
 
 /**
  * Enum of all valid onboarding step routes/paths.
@@ -95,7 +96,8 @@ export interface IOnboardingTracker {
 
   locationPermissionGranted?: boolean; // Tracks if user has granted location permission
 
-  companyId: string;
+  companyId?: string;
+  preApprovalCountryCode?: ECountryCode; // CA | US, chosen by applicant pre-approval
 
   forms: {
     preQualification?: ObjectId;
@@ -152,6 +154,9 @@ export interface IOnboardingTrackerContext extends TrackerContextBase {
 export interface ICreateOnboardingPayload {
   applicationFormPage1: IApplicationFormPage1 & { turnStileVerificationToken?: string };
   prequalifications: IPreQualifications;
-  companyId: ECompanyId;
+  // Pre-approval: country-only
+  countryCode: ECountryCode;
+  // Legacy support (ignored at creation):
+  companyId?: ECompanyId;
   applicationType?: ECompanyApplicationType;
 }

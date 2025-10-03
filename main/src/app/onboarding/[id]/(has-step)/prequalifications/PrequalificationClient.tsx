@@ -24,7 +24,7 @@ import { ArrowRight } from "lucide-react";
 import useMounted from "@/hooks/useMounted";
 import QuestionGroup from "@/app/onboarding/components/QuestionGroup";
 import FlatbedPopup from "@/app/onboarding/components/FlatbedPopup";
-import { useCompanySelection } from "@/hooks/frontendHooks/useCompanySelection";
+import { useCountrySelection } from "@/hooks/useCountrySelection";
 import { useOnboardingTracker } from "@/store/useOnboardingTracker";
 import { useGlobalLoading } from "@/store/useGlobalLoading";
 import { apiClient } from "@/lib/onboarding/apiClient";
@@ -39,6 +39,7 @@ import {
 import { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
 import { buildOnboardingStepPath } from "@/lib/utils/onboardingUtils";
 import { getCompanyById } from "@/constants/companies";
+import { ECountryCode } from "@/types/shared.types";
 import { hasDeepChanges } from "@/lib/utils/deepCompare";
 
 /**
@@ -65,19 +66,15 @@ export default function PreQualificationClient({
   const { t } = useTranslation("common");
   const router = useProtectedRouter();
 
-  // 1) Pull currently selected company from UI (fallback)
-  const { selectedCompany } = useCompanySelection();
-
-  // 2) Prefer company from trackerContext if available; else fallback to UI selection
-  //    This ensures the "resume" path uses the persisted company choice.
-  const effectiveCompany = useMemo(() => {
+  // Pull selected country for pre-approval cases
+  const { selectedCountryCode } = useCountrySelection();
+  const effectiveCountry: ECountryCode | null = useMemo(() => {
     if (trackerContext?.companyId) {
-      return (
-        getCompanyById(trackerContext.companyId) ?? selectedCompany ?? null
-      );
+      const comp = getCompanyById(trackerContext.companyId);
+      return (comp?.countryCode as ECountryCode) || null;
     }
-    return selectedCompany ?? null;
-  }, [trackerContext?.companyId, selectedCompany]);
+    return (selectedCountryCode as ECountryCode) || null;
+  }, [trackerContext?.companyId, selectedCountryCode]);
 
   const { setTracker } = useOnboardingTracker(); // Hydrate tracker into Zustand
   const { show, hide } = useGlobalLoading();
@@ -99,8 +96,8 @@ export default function PreQualificationClient({
 
   // Conditionally exclude Canada-only questions for US companies
   const filteredPreQualificationQuestions = useMemo(() => {
-    if (!effectiveCompany) return preQualificationQuestions;
-    if (effectiveCompany.countryCode === "US") {
+    if (!effectiveCountry) return preQualificationQuestions;
+    if (effectiveCountry === ECountryCode.US) {
       // Hide Canada-only questions for US company
       return preQualificationQuestions.filter(
         (q) =>
@@ -111,7 +108,7 @@ export default function PreQualificationClient({
       );
     }
     return preQualificationQuestions;
-  }, [effectiveCompany]);
+  }, [effectiveCountry]);
 
   // Initialize RHF with defaults; validate on change for button enablement
   const { control, handleSubmit, watch, setValue } = useForm<FormValues>({
@@ -127,7 +124,7 @@ export default function PreQualificationClient({
 
   // Apply conditional filtering based on status in Canada
   const finalFilteredQuestions = useMemo(() => {
-    if (!effectiveCompany || effectiveCompany.countryCode === "US") {
+    if (!effectiveCountry || effectiveCountry === ECountryCode.US) {
       return filteredPreQualificationQuestions;
     }
 
@@ -161,7 +158,7 @@ export default function PreQualificationClient({
     return questions;
   }, [
     filteredPreQualificationQuestions,
-    effectiveCompany,
+    effectiveCountry,
     statusInCanada,
     watchAllFields.hasFASTCard,
   ]);
@@ -251,7 +248,7 @@ export default function PreQualificationClient({
     };
 
     // Append Canada-only fields if they exist on this form (i.e., not US)
-    if (effectiveCompany?.countryCode !== "US") {
+    if (effectiveCountry !== ECountryCode.US) {
       transformed.canCrossBorderUSA = data.canCrossBorderUSA === "form.yes";
       transformed.statusInCanada = data.statusInCanada as EStatusInCanada;
 
@@ -352,8 +349,7 @@ export default function PreQualificationClient({
                   <QuestionGroup
                     // For US companies, substitute the label for the legal-work question
                     question={
-                      q.name === "legalRightToWorkCanada" &&
-                      effectiveCompany?.countryCode === "US"
+                      q.name === "legalRightToWorkCanada" && effectiveCountry === ECountryCode.US
                         ? t("form.step1.questions.legalRightToWorkUS")
                         : t(q.label)
                     }

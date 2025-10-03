@@ -105,10 +105,8 @@ export default function Page4Client({
 }: Props) {
   const defaultValues = useMemo(() => mapDefaults(page4), [page4]);
 
-  // derive country from companyId
-  const countryCode: ECountryCode = isCanadianCompany(
-    onboardingContext.companyId
-  )
+  // derive country from companyId; default to US if unknown
+  const countryCode: ECountryCode = onboardingContext.companyId && isCanadianCompany(onboardingContext.companyId)
     ? ECountryCode.CA
     : ECountryCode.US;
 

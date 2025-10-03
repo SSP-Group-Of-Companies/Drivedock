@@ -27,7 +27,7 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     const newCompany = getCompanyById(companyId);
     if (!newCompany) return errorResponse(400, "invalid company id");
 
-    const currentCompany = getCompanyById(onboardingDoc.companyId);
+    const currentCompany = onboardingDoc.companyId ? getCompanyById(onboardingDoc.companyId) : null;
 
     if (!currentCompany) return errorResponse(400, "invalid company id in existing onboarding document");
 

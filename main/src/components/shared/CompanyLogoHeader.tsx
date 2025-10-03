@@ -30,7 +30,7 @@
 
 "use client";
 
-import { useCompanySelection } from "@/hooks/frontendHooks/useCompanySelection";
+// Company logo should only show when tracker context provides companyId
 import Image from "next/image";
 import { COMPANIES } from "@/constants/companies";
 import type { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
@@ -41,12 +41,8 @@ type Props = {
 };
 
 export default function CompanyLogoHeader({ logoOnly = false, onboardingContext }: Props) {
-  const { selectedCompany } = useCompanySelection();
-
-  // Get company from onboarding context (for resumed applications) or selected company (for new applications)
-  const company = onboardingContext?.companyId 
-    ? COMPANIES.find(c => c.id === onboardingContext.companyId)
-    : selectedCompany;
+  // Only use company from context; no fallback to client-side selection
+  const company = onboardingContext?.companyId ? COMPANIES.find(c => c.id === onboardingContext.companyId) : undefined;
 
   // If no company is available, render nothing
   if (!company) return null;

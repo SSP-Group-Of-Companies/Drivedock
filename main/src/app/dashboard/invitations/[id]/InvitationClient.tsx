@@ -63,12 +63,14 @@ export default function InvitationClient({ trackerId }: { trackerId: string }) {
 
   const companyId = useMemo(() => payload?.onboardingContext?.companyId, [payload]);
 
-  const approve = async () => {
+  const approve = async ({ companyId, applicationType }: { companyId: string; applicationType?: string }) => {
     setBusy("approve");
     setError(null);
     try {
       const res = await fetch(`/api/v1/admin/onboarding/${trackerId}/invitation`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ companyId, applicationType }),
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json?.message || "Failed to approve invitation");

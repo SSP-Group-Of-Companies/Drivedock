@@ -38,6 +38,7 @@ export default function DefaultOnboardingShell({ children }: { children: React.R
               {/* Desktop */}
               <div className="hidden md:flex items-center justify-between w-full">
                 <div className="flex items-center h-full">
+                  {/* Logo renders only when context has companyId; no fallback */}
                   <CompanyLogoHeader logoOnly />
                 </div>
                 <div className="flex items-center gap-2 ml-auto h-full">

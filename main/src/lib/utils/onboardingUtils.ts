@@ -24,7 +24,7 @@ export function getFlowOpts(src: MaybeFlatbed): FlowOpts {
  * Pre-onboarding routes (not part of main step flow).
  * Used for flow reconstruction in back-navigation.
  */
-const START_FLOW = ["/start/start-info-page", "/start/company"] as const;
+const START_FLOW = ["/start/start-info-page"] as const;
 
 /**
  * Canonical base flow for onboarding (without flatbed).
@@ -361,8 +361,9 @@ export function handleBackNavigation(pathname: string, trackerId: string | undef
 
   // handle edge cases for unconventional pathnames not matching with step flow
   if (currentIndex <= 0) {
-    // if on application-form, go back to prequalifications
-    if (pathname === "/onboarding/application-form") return router.push(fullFlow[2]);
+    // If on the no-id application-form root, go back to prequalifications
+    // fullFlow indices: [0] /start/start-info-page, [1] /onboarding/prequalifications, [2] /onboarding/application-form/page-1
+    if (pathname === "/onboarding/application-form") return router.push(fullFlow[1]);
 
     // else go to homepage
     return router.push("/");

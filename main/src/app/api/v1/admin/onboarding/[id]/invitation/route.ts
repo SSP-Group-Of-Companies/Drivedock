@@ -11,6 +11,9 @@ import ApplicationForm from "@/mongoose/models/ApplicationForm";
 import OnboardingSession from "@/mongoose/models/OnboardingSession";
 
 import { buildTrackerContext, isInvitationApproved } from "@/lib/utils/onboardingUtils";
+import { getCompanyById, needsFlatbedTraining, ECompanyId as CompanyEnum, ECompanyApplicationType } from "@/constants/companies";
+import { readMongooseRefField } from "@/lib/utils/mongooseRef";
+import type { IPreQualificationsDoc } from "@/types/preQualifications.types";
 import { deleteS3Objects } from "@/lib/utils/s3Upload";
 
 import type { IApplicationFormDoc, IApplicationFormPage1, ILicenseEntry } from "@/types/applicationForm.types";
@@ -126,16 +129,51 @@ export const POST = async (req: NextRequest, { params }: { params: Promise<{ id:
     const { id } = await params;
     if (!isValidObjectId(id)) return errorResponse(400, "not a valid id");
 
-    const onboardingDoc = await OnboardingTracker.findById(id);
+    const onboardingDoc = await OnboardingTracker.findById(id).populate("forms.preQualification");
     if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
 
     // Must be pending approval
     if (isInvitationApproved(onboardingDoc)) return errorResponse(400, "this application is not pending approval");
 
+    // Parse selection from body
+    let payload: any = {};
+    try {
+      payload = await req.json().catch(() => ({}));
+    } catch {}
+    const companyId = String(payload.companyId || "").trim();
+    const applicationType = payload.applicationType as ECompanyApplicationType | undefined;
+
+    if (!companyId) return errorResponse(400, "companyId is required to approve");
+    const sel = getCompanyById(companyId);
+    if (!sel) return errorResponse(400, "invalid company id");
+
+    // Validate country consistency with pre-approval selection (if present)
+    const preCountry = onboardingDoc.get("preApprovalCountryCode") as string | undefined;
+    if (preCountry && sel.countryCode !== preCountry) {
+      return errorResponse(400, "Selected company country does not match applicant's chosen country");
+    }
+    // Backfill preApprovalCountryCode if missing (old data)
+    if (!preCountry) {
+      (onboardingDoc as any).preApprovalCountryCode = sel.countryCode;
+    }
+
+    // SSP-CA requires applicationType
+    if (companyId === CompanyEnum.SSP_CA && (!applicationType || !Object.values(ECompanyApplicationType).includes(applicationType))) {
+      return errorResponse(400, "applicationType is required for SSP-Canada");
+    }
+
     // Gather driver info BEFORE save (email & names)
     const driverInfo = await getDriverEmailPayload(id);
 
     // Update DB
+    onboardingDoc.companyId = companyId;
+    if (companyId === CompanyEnum.SSP_CA) (onboardingDoc as any).applicationType = applicationType;
+
+    // Recompute flatbed training requirement
+    const preQualification = readMongooseRefField<IPreQualificationsDoc>(onboardingDoc.forms?.preQualification as any);
+    const flatbedExperience = preQualification?.flatbedExperience ?? false;
+    onboardingDoc.needsFlatbedTraining = needsFlatbedTraining(companyId, (onboardingDoc as any).applicationType, flatbedExperience);
+
     onboardingDoc.invitationApproved = true;
     await onboardingDoc.save();
 

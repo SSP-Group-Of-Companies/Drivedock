@@ -14,10 +14,9 @@ import { useState, ReactNode } from "react";
 import useMounted from "@/hooks/useMounted";
 import { usePrequalificationStore } from "@/store/usePrequalificationStore";
 import { useOnboardingTracker } from "@/store/useOnboardingTracker";
-import { useCompanySelection } from "@/hooks/frontendHooks/useCompanySelection";
+import { useCountrySelection } from "@/hooks/useCountrySelection";
 import { useGlobalLoading } from "@/store/useGlobalLoading";
 import { useFormErrorScroll } from "@/hooks/useFormErrorScroll";
-import { COMPANIES, ECompanyApplicationType } from "@/constants/companies";
 import { submitFormStep } from "@/lib/frontendUtils/submitFormStep";
 import { ErrorManager } from "@/lib/onboarding/errorManager";
 import type { BuildPayloadCtx, FormPageConfig, FormPageConfigFactory } from "@/lib/frontendConfigs/formPageConfig.types";
@@ -44,7 +43,7 @@ export default function ContinueButton<T extends FieldValues>({ config, trackerI
 
   const { data: prequalifications, clearData } = usePrequalificationStore();
   const { tracker, setTracker } = useOnboardingTracker();
-  const { selectedCompany, clearSelectedCompany } = useCompanySelection();
+  const { selectedCountryCode } = useCountrySelection();
   const { handleFormError } = useFormErrorScroll<T>();
 
   const [submitting, setSubmitting] = useState(false);
@@ -79,7 +78,6 @@ export default function ContinueButton<T extends FieldValues>({ config, trackerI
         if (!trackerContext?.id) throw new Error("Tracker not returned from POST");
         setTracker(trackerContext);
         clearData();
-        clearSelectedCompany();
         router.push(nextUrl ?? resolvedConfig.nextRoute);
       } else {
         if (trackerContext) setTracker(trackerContext);
@@ -105,8 +103,7 @@ export default function ContinueButton<T extends FieldValues>({ config, trackerI
 
     const ctx: BuildPayloadCtx = {
       prequalifications: prequalifications ?? undefined,
-      companyId: selectedCompany?.id,
-      applicationType: selectedCompany?.type as ECompanyApplicationType | undefined,
+      countryCode: selectedCountryCode as any,
       tracker,
       isPatch: !isPost,
       effectiveTrackerId,
@@ -148,26 +145,26 @@ export default function ContinueButton<T extends FieldValues>({ config, trackerI
           title: t("errors.generic.title", "Error"),
           message: "Prequalification data is missing. Please restart the application.",
           primaryAction: {
-            label: "Restart Application",
+            label: "Back to Start",
             action: () => {
-              window.location.href = "/start/company";
+              window.location.href = "/start";
             },
           },
           canClose: false,
         });
         return;
       }
-      const companyId = selectedCompany?.id;
-      if (!companyId || !COMPANIES.some((c) => c.id === companyId)) {
+      // Company is no longer required on initial POST
+      if (!selectedCountryCode) {
         const errorManager = ErrorManager.getInstance();
         errorManager.showModal({
           type: "GENERIC_ERROR" as any,
           title: t("errors.generic.title", "Error"),
-          message: "Invalid company selection. Please restart the application.",
+          message: "Country not selected. Please start again and choose a country.",
           primaryAction: {
-            label: "Restart Application",
+            label: "Back to Start",
             action: () => {
-              window.location.href = "/start/company";
+              window.location.href = "/start";
             },
           },
           canClose: false,

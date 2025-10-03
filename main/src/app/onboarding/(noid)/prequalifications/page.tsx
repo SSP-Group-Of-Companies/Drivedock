@@ -48,7 +48,8 @@ import { EDriverType, EHaulPreference, ETeamStatus, EStatusInCanada, IPreQualifi
 import QuestionGroup from "@/app/onboarding/components/QuestionGroup";
 import FlatbedPopup from "@/app/onboarding/components/FlatbedPopup";
 import { usePrequalificationStore } from "@/store/usePrequalificationStore";
-import { useCompanySelection } from "@/hooks/frontendHooks/useCompanySelection";
+import { useCountrySelection } from "@/hooks/useCountrySelection";
+import { ECountryCode } from "@/types/shared.types";
 import { preQualificationQuestions, categoryQuestions } from "@/constants/form-questions/preQualification";
 import useMounted from "@/hooks/useMounted";
 
@@ -68,8 +69,8 @@ export default function PreQualificationPage() {
   // Zustand store providing persisted prequalification data
   const { data: prequalData, setData } = usePrequalificationStore();
 
-  // Currently selected company (determines US/CA question visibility)
-  const { selectedCompany } = useCompanySelection();
+  // Selected country (pre-approval) determines US/CA visibility
+  const { selectedCountryCode } = useCountrySelection();
 
   // Local UI state controlling the flatbed info popup (null → hidden)
   const [showFlatbedPopup, setShowFlatbedPopup] = useState<null | "yes" | "no">(null);
@@ -80,8 +81,8 @@ export default function PreQualificationPage() {
    * - Otherwise: show all pre-qualification questions.
    */
   const filteredPreQualificationQuestions = useMemo(() => {
-    if (!selectedCompany) return preQualificationQuestions;
-    if (selectedCompany.countryCode === "US") {
+    if (!selectedCountryCode) return preQualificationQuestions;
+    if (selectedCountryCode === ECountryCode.US) {
       return preQualificationQuestions.filter((q) => 
         q.name !== "canCrossBorderUSA" && 
         q.name !== "hasFASTCard" && 
@@ -90,7 +91,7 @@ export default function PreQualificationPage() {
       );
     }
     return preQualificationQuestions;
-  }, [selectedCompany]);
+  }, [selectedCountryCode]);
 
   /**
    * Compute initial RHF values:
@@ -146,7 +147,7 @@ export default function PreQualificationPage() {
   
   // Apply conditional filtering based on status in Canada
   const finalFilteredQuestions = useMemo(() => {
-    if (!selectedCompany || selectedCompany.countryCode === "US") {
+    if (!selectedCountryCode || selectedCountryCode === ECountryCode.US) {
       return filteredPreQualificationQuestions;
     }
     
@@ -172,7 +173,7 @@ export default function PreQualificationPage() {
     }
     
     return questions;
-  }, [filteredPreQualificationQuestions, selectedCompany, statusInCanada, watchAllFields.hasFASTCard]);
+  }, [filteredPreQualificationQuestions, selectedCountryCode, statusInCanada, watchAllFields.hasFASTCard]);
 
   // Track previous status to only clear fields when user actually changes
   const [previousStatus, setPreviousStatus] = useState<string | null>(null);
@@ -238,8 +239,8 @@ export default function PreQualificationPage() {
       completed: true,
     };
 
-    // Canada-specific fields (only attach for non-US companies)
-    if (selectedCompany?.countryCode !== "US") {
+    // Canada-specific fields (only attach for CA)
+    if (selectedCountryCode !== ECountryCode.US) {
       typedPrequal.canCrossBorderUSA = data.canCrossBorderUSA === "form.yes";
       typedPrequal.statusInCanada = data.statusInCanada as EStatusInCanada;
       
@@ -274,10 +275,7 @@ export default function PreQualificationPage() {
               name={q.name}
               render={({ field }) => (
                 <QuestionGroup
-                  question={
-                    // If user is in the US company context, swap the label to the US variant
-                    q.name === "legalRightToWorkCanada" && selectedCompany?.countryCode === "US" ? t("form.step1.questions.legalRightToWorkUS") : t(q.label)
-                  }
+                  question={q.name === "legalRightToWorkCanada" && selectedCountryCode === ECountryCode.US ? t("form.step1.questions.legalRightToWorkUS") : t(q.label)}
                   options={q.options} // Options come from constants (typed; i18n labelKeys)
                   value={field.value} // Current RHF value for this field
                   onChange={field.onChange} // Update RHF state

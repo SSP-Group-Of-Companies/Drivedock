@@ -35,7 +35,7 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
     if (!onboardingDoc.status?.completed) return errorResponse(400, "Onboarding is not completed yet");
 
     // ----- Company
-    const companyName = getCompanyById(onboardingDoc.companyId)?.name;
+    const companyName = onboardingDoc.companyId ? getCompanyById(onboardingDoc.companyId)?.name : undefined;
     if (!companyName) return errorResponse(400, "Company not recognized");
 
     // ----- Applicant name (print) from ApplicationForm.page1
