@@ -61,7 +61,7 @@ export default function OnboardingLayoutClientShell({ children, showStepInfo = t
   const titleStep = activeMacro || 1;
 
   return (
-    <div className="onboarding min-h-[100dvh] flex flex-col">
+    <div className="onboarding min-h-[100dvh] sm:min-h-screen flex flex-col">
       {/* Top navbar hidden on scroll */}
       <div className={isScrolled ? "hidden" : "block"}>
         <Navbar needsFlatbedTraining={!!ctx?.needsFlatbedTraining} />

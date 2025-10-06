@@ -37,7 +37,7 @@ export default function Footer() {
   if (!mounted) return null;
 
   return (
-    <footer className="w-full bg-gray-900 text-gray-400 py-3">
+    <footer className="w-full bg-gray-900 text-gray-400 py-3" style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}>
       <div className="max-w-4xl mx-auto px-4 text-center text-sm">
         {/* Company name and rights notice */}
         <p className="font-medium text-white">
