@@ -5,7 +5,6 @@ import connectDB from "@/lib/utils/connectDB";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import PreQualifications from "@/mongoose/models/Prequalifications";
 import { finalizeAsset } from "@/lib/utils/s3Upload";
-import { ECompanyId } from "@/constants/companies";
 import { EStepPath, IOnboardingTrackerDoc } from "@/types/onboardingTracker.types";
 import { ILicenseEntry } from "@/types/applicationForm.types";
 import { HydratedDocument } from "mongoose";
@@ -187,7 +186,6 @@ export async function POST(req: NextRequest) {
       // send notification email to safety team
       await sendSafetyInvitationNotificationEmail(req, {
         trackerId: String(onboardingDoc._id),
-        companyId: undefined as unknown as ECompanyId,
         firstName: page1.firstName,
         lastName: page1.lastName,
         email: page1.email,

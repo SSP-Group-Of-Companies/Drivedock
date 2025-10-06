@@ -3,12 +3,10 @@ import type { NextRequest } from "next/server";
 import { sendMailAppOnly } from "@/lib/mail/mailer";
 import { OUTBOUND_SENDER_EMAIL } from "@/config/env";
 import { resolveBaseUrlFromRequest } from "@/lib/utils/urlHelper.server";
-import { COMPANIES, ECompanyId } from "@/constants/companies";
 import { escapeHtml } from "../utils";
 
 type Args = {
   trackerId: string;
-  companyId: ECompanyId;
   firstName: string;
   lastName: string;
   email?: string;
@@ -21,18 +19,13 @@ type Args = {
  * Safety notification for a newly submitted application (Invitation).
  * The applicant is pending approval and visible under Dashboard → Invitations.
  */
-export default async function sendSafetyInvitationNotificationEmail(req: NextRequest, { trackerId, companyId, firstName, lastName, email, phone, subject, saveToSentItems = true }: Args) {
+export default async function sendSafetyInvitationNotificationEmail(req: NextRequest, { trackerId, firstName, lastName, email, phone, subject, saveToSentItems = true }: Args) {
   const origin = resolveBaseUrlFromRequest(req);
-  const company = COMPANIES.find((c) => c.id === companyId);
-  const companyLabel = company?.name ?? String(companyId);
-
-  const fullName = `${firstName} ${lastName}`;
+  const fullName = `${firstName} ${lastName}`.trim();
   const link = `${origin}/dashboard/invitations/${encodeURIComponent(trackerId)}`;
 
-  // Wording updated to reflect "Invitation/Pending approval"
-  const finalSubject = subject ?? `[DriveDock] New application awaiting approval — ${companyLabel}: ${fullName}`;
-
-  const preheader = `Invitation created • Pending approval • ${fullName} • ${companyLabel}`;
+  const finalSubject = subject ?? `[DriveDock] New application awaiting approval — ${fullName}`;
+  const preheader = `Invitation created • Pending approval • ${fullName}`;
 
   const html = `
   <!doctype html>
@@ -92,10 +85,6 @@ export default async function sendSafetyInvitationNotificationEmail(req: NextReq
                                     : ""
                                 }
                                 <tr>
-                                  <td style="padding:6px 0; width:140px; font-weight:600; color:#334155; font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif;">Company</td>
-                                  <td style="padding:6px 0; color:#0f172a; font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif;">${escapeHtml(companyLabel)}</td>
-                                </tr>
-                                <tr>
                                   <td style="padding:6px 0; width:140px; font-weight:600; color:#334155; font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif;">Onboarding ID</td>
                                   <td style="padding:6px 0; color:#0f172a; font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif;">${escapeHtml(trackerId)}</td>
                                 </tr>
@@ -137,7 +126,6 @@ export default async function sendSafetyInvitationNotificationEmail(req: NextReq
     `Name: ${fullName}`,
     email ? `Email: ${email}` : null,
     phone ? `Phone: ${phone}` : null,
-    `Company: ${companyLabel}`,
     `Onboarding ID: ${trackerId}`,
     ``,
     `Review invitation: ${link}`,
