@@ -109,8 +109,10 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
     if (!preQualDoc) return errorResponse(404, "prequalifications document not found");
     if (!appFormDoc?.page1) return errorResponse(404, "personalDetails of the application form not found");
 
+    // Include preApprovalCountryCode explicitly so admin UI can country-filter prequal view
+    const ctx = buildTrackerContext(onboardingDoc, null, true);
     return successResponse(200, "Invitation review data retrieved", {
-      onboardingContext: buildTrackerContext(onboardingDoc, null, true),
+      onboardingContext: { ...ctx, preApprovalCountryCode: (onboardingDoc as any).preApprovalCountryCode },
       preQualifications: preQualDoc.toObject(),
       personalDetails: appFormDoc.page1,
     });
