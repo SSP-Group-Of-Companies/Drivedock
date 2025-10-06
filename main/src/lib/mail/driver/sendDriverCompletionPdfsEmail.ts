@@ -120,7 +120,7 @@ function escapeHtml(str: string) {
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-export async function sendCompletionPdfsEmail({ to, companyId, from = OUTBOUND_SENDER_EMAIL, subject, html, saveToSentItems = true }: Args) {
+export async function sendDriverCompletionPdfsEmail({ to, companyId, from = OUTBOUND_SENDER_EMAIL, subject, html, saveToSentItems = true }: Args) {
   const refs = getPoliciesPdfsForCompanyServer(companyId);
 
   const attachments: GraphAttachment[] = refs

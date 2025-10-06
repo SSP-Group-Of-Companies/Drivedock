@@ -1,3 +1,4 @@
+// src/lib/mail/mailer.ts
 import { ClientSecretCredential } from "@azure/identity";
 import { AZURE_AD_CLIENT_ID, AZURE_AD_CLIENT_SECRET, AZURE_AD_TENANT_ID } from "@/config/env";
 
@@ -13,9 +14,12 @@ async function getAccessToken(): Promise<string> {
 }
 
 export type GraphAttachment = {
-  name: string;
-  contentType: string; // e.g., "application/pdf"
-  base64: string; // contentBytes
+  name: string; // e.g., "ssp-email-banner.jpg"
+  contentType: string; // e.g., "image/jpeg", "application/pdf"
+  base64: string; // contentBytes (base64 without data: prefix)
+  /** If provided with isInline=true, enables <img src="cid:..."> */
+  contentId?: string; // e.g., "ssp-email-banner"
+  isInline?: boolean; // true for inline (CID) images
 };
 
 export async function sendMailAppOnly(params: {
@@ -46,6 +50,8 @@ export async function sendMailAppOnly(params: {
       name: a.name,
       contentType: a.contentType,
       contentBytes: a.base64,
+      ...(a.contentId ? { contentId: a.contentId } : {}),
+      ...(a.isInline ? { isInline: true } : {}),
     }));
   }
 

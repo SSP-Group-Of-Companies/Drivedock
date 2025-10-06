@@ -1,4 +1,7 @@
+// src/lib/mail/driver/sendResumeVerificationCodeEmail.ts
 import type { NextRequest } from "next/server";
+import { promises as fs } from "fs";
+import { join } from "path";
 import { sendMailAppOnly } from "@/lib/mail/mailer";
 import { OUTBOUND_SENDER_EMAIL } from "@/config/env";
 import { COMPANIES, type ECompanyId } from "@/constants/companies";
@@ -15,7 +18,7 @@ type Args = {
   saveToSentItems?: boolean;
 };
 
-export async function sendResumeVerificationCodeEmail(req: NextRequest, { companyId, firstName = "", lastName = "", toEmail, code, subject, saveToSentItems = true }: Args) {
+export async function sendDriverResumeVerificationCodeEmail(req: NextRequest, { companyId, firstName = "", lastName = "", toEmail, code, subject, saveToSentItems = true }: Args) {
   const origin = resolveBaseUrlFromRequest(req);
   const company = COMPANIES.find((c) => c.id === companyId);
   const companyLabel = company?.name ?? String(companyId);
@@ -24,6 +27,34 @@ export async function sendResumeVerificationCodeEmail(req: NextRequest, { compan
   const finalSubject = subject ?? `[DriveDock] Your verification code for ${companyLabel}`;
   const preheader = `Use this code to resume your application: ${code}`;
   const homepageLink = `${origin}/`;
+
+  // --- Inline SSP footer banner (CID) ---
+  const bannerCid = "ssp-email-banner";
+  const bannerPath = join(process.cwd(), "src/public/assets/banners/ssp-email-banner.jpg");
+
+  let bannerAttachment:
+    | {
+        name: string;
+        contentType: string;
+        base64: string;
+        contentId: string;
+        isInline: true;
+      }
+    | undefined;
+
+  try {
+    const bytes = await fs.readFile(bannerPath);
+    bannerAttachment = {
+      name: "ssp-email-banner.jpg",
+      contentType: "image/jpeg",
+      base64: bytes.toString("base64"),
+      contentId: bannerCid,
+      isInline: true,
+    };
+  } catch {
+    // Non-fatal if asset isn't present in some envs
+    bannerAttachment = undefined;
+  }
 
   const html = `
   <!doctype html>
@@ -89,10 +120,22 @@ export async function sendResumeVerificationCodeEmail(req: NextRequest, { compan
               </tr>
 
               <tr>
-                <td style="padding:18px 24px 20px 24px;font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:12px;color:#64748b;border-top:1px solid #f1f3f5;">
+                <td style="padding:18px 24px 12px 24px;font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:12px;color:#64748b;border-top:1px solid #f1f3f5;">
                   This message was sent automatically by DriveDock.
                 </td>
               </tr>
+
+              <!-- SSP Footer -->
+              <tr>
+                <td style="padding:16px 24px 24px 24px;font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:12px;color:#334155;">
+                  <p style="margin:0 0 12px 0;">
+                    We do door to door to Mexico. For any quotes please email
+                    <a href="mailto:logistics@sspgroup.com" style="color:#0a66c2; text-decoration:none;">logistics@sspgroup.com</a>
+                  </p>
+                  ${bannerAttachment ? `<img src="cid:${bannerCid}" alt="SSP Email Banner" style="max-width:560px; border-radius:6px; display:block;" />` : ``}
+                </td>
+              </tr>
+
             </table>
           </td>
         </tr>
@@ -108,6 +151,8 @@ export async function sendResumeVerificationCodeEmail(req: NextRequest, { compan
     `Enter this code in the window where you requested it.`,
     `If you closed that window, go to the homepage, open Resume, enter your SIN/SSN, and request a new code.`,
     `Homepage: ${homepageLink}`,
+    ``,
+    `We do door to door to Mexico. For any quotes please email logistics@sspgroup.com`,
   ].join("\n");
 
   await sendMailAppOnly({
@@ -117,5 +162,16 @@ export async function sendResumeVerificationCodeEmail(req: NextRequest, { compan
     html,
     text,
     saveToSentItems,
+    attachments: bannerAttachment
+      ? [
+          {
+            name: bannerAttachment.name,
+            contentType: bannerAttachment.contentType,
+            base64: bannerAttachment.base64,
+            contentId: bannerAttachment.contentId,
+            isInline: true,
+          },
+        ]
+      : undefined,
   });
 }

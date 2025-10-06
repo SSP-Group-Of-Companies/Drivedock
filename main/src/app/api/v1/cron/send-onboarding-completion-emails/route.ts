@@ -8,7 +8,7 @@ import connectDB from "@/lib/utils/connectDB";
 import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
-import { sendCompletionPdfsEmail } from "@/lib/mail/sendCompletionPdfsEmail";
+import { sendDriverCompletionPdfsEmail } from "@/lib/mail/driver/sendDriverCompletionPdfsEmail";
 import { ECompanyId } from "@/constants/companies";
 import { EEmailStatus } from "@/types/onboardingTracker.types";
 import { CRON_SECRET } from "@/config/env";
@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
       if (!claimed) continue; // already claimed elsewhere
 
       try {
-        await sendCompletionPdfsEmail({ to: t.email, companyId: claimed.companyId as ECompanyId });
+        await sendDriverCompletionPdfsEmail({ to: t.email, companyId: claimed.companyId as ECompanyId });
 
         await OnboardingTracker.updateOne(
           { _id: claimed._id },

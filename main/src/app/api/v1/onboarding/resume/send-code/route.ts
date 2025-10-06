@@ -7,7 +7,7 @@ import { onboardingExpired, buildTrackerContext } from "@/lib/utils/onboardingUt
 import { clearOnboardingCookieHeader } from "@/lib/utils/auth/onboardingSession";
 
 import OnboardingVerificationCode from "@/mongoose/models/OnboardingVerificationCode";
-import { sendResumeVerificationCodeEmail } from "@/lib/mail/driver/sendResumeVerificationCodeEmail";
+import { sendDriverResumeVerificationCodeEmail } from "@/lib/mail/driver/sendDriverResumeVerificationCodeEmail";
 import type { ECompanyId } from "@/constants/companies";
 import { getTrackerAndDriverEmailBySinHash } from "@/lib/utils/resumeHelpers.server";
 import { EEApiErrorType } from "@/types/apiError.types";
@@ -99,7 +99,7 @@ export const POST = async (req: NextRequest) => {
 
     // Send email (best-effort)
     try {
-      await sendResumeVerificationCodeEmail(req, {
+      await sendDriverResumeVerificationCodeEmail(req, {
         companyId: tracker.companyId as ECompanyId,
         firstName,
         lastName,
