@@ -80,13 +80,18 @@ export default function OnboardingLayoutClientShell({ children, showStepInfo = t
             <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2 sm:px-6 lg:px-8">
               {/* Desktop */}
               <div className="hidden md:flex items-center justify-between w-full">
-                <div className="flex items-center h-full">
-                  <CompanyLogoHeader logoOnly onboardingContext={ctx} />
+                {/* Left: Company logo or reserved spacer to keep right side pinned */}
+                <div className="flex items-center h-full min-w-[160px] justify-start">
+                  {ctx?.companyId ? (
+                    <CompanyLogoHeader logoOnly onboardingContext={ctx} />
+                  ) : (
+                    <div className="h-12 w-[160px]" aria-hidden="true" />
+                  )}
                 </div>
 
                 <div className="flex-1 flex justify-center items-center">{showStepInfo && <FormWizardNav isCompletedPage={isCompletedPage} />}</div>
 
-                <div className="flex items-center gap-2 ml-auto h-full">
+                <div className="flex items-center gap-2 ml-auto h-full justify-end">
                   <LanguageDropdown />
                   <button
                     onClick={handleBackClick}
@@ -102,8 +107,11 @@ export default function OnboardingLayoutClientShell({ children, showStepInfo = t
               {/* Mobile */}
               <div className="md:hidden w-full">
                 <div className="flex items-center justify-between mb-2">
-                  <CompanyLogoHeader logoOnly onboardingContext={ctx} />
-                  <div className="flex items-center gap-2">
+                  {/* Left: logo or reserved spacer to maintain right alignment */}
+                  <div className="flex items-center h-full min-w-[120px]">
+                    {ctx?.companyId ? <CompanyLogoHeader logoOnly onboardingContext={ctx} /> : <div className="h-10 w-[120px]" aria-hidden="true" />}
+                  </div>
+                  <div className="flex items-center gap-2 justify-end">
                     <LanguageDropdown />
                     <button
                       onClick={handleBackClick}
