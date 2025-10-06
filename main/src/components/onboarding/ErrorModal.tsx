@@ -3,7 +3,7 @@
 
 import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
 import { AlertTriangle, X, WifiOff } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+// Animations disabled for mobile Safari stability
 import { ErrorModalData, ErrorModalType } from "@/types/onboardingError.types";
 
 interface ErrorModalProps {
@@ -45,31 +45,21 @@ export default function ErrorModal({ modal, onClose }: ErrorModalProps) {
   };
 
   return (
-    <AnimatePresence>
+    <>
       {modal && (
         <Dialog open={true} onClose={handleClose} className="relative z-50">
-          {/* Overlay. Avoid backdrop-blur on iOS Safari which can misplace the backdrop when browser UI shows/hides. */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/40 sm:bg-black/30 sm:backdrop-blur-sm"
-            aria-hidden="true"
-          />
+          {/* Overlay (no blur on mobile) */}
+          <div className="fixed inset-0 bg-black/40 sm:bg-black/30 sm:backdrop-blur-sm" aria-hidden="true" />
 
-          <div className="fixed inset-0 flex items-center justify-center p-4" style={{ 
-            minHeight: '100dvh', // Dynamic viewport height for mobile
-            paddingTop: 'env(safe-area-inset-top)',
-            paddingBottom: 'env(safe-area-inset-bottom)'
-          }}>
-            <motion.div
-              initial={{ y: 20, opacity: 0, scale: 0.95 }}
-              animate={{ y: 0, opacity: 1, scale: 1 }}
-              exit={{ y: 20, opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.2 }}
-              className="w-full max-w-lg ios-modal-fix"
-            >
+          <div
+            className="fixed inset-0 flex items-center justify-center p-4"
+            style={{
+              minHeight: "100dvh",
+              paddingTop: "env(safe-area-inset-top)",
+              paddingBottom: "env(safe-area-inset-bottom)",
+            }}
+          >
+            <div className="w-full max-w-lg ios-modal-fix">
               <DialogPanel className="relative transform overflow-hidden rounded-2xl bg-white px-4 pb-4 pt-5 text-left shadow-2xl sm:my-8 sm:w-full sm:p-6">
                 {/* Close button - only show if modal can be closed */}
                 {modal.canClose && (
@@ -124,10 +114,10 @@ export default function ErrorModal({ modal, onClose }: ErrorModalProps) {
                   )}
                 </div>
               </DialogPanel>
-            </motion.div>
+            </div>
           </div>
         </Dialog>
       )}
-    </AnimatePresence>
+    </>
   );
 }
