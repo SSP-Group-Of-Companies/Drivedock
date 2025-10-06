@@ -147,7 +147,7 @@ export default function ContinueButton<T extends FieldValues>({ config, trackerI
           primaryAction: {
             label: "Back to Start",
             action: () => {
-              window.location.href = "/start";
+              window.location.href = "/start/start-info-page";
             },
           },
           canClose: false,
@@ -164,7 +164,7 @@ export default function ContinueButton<T extends FieldValues>({ config, trackerI
           primaryAction: {
             label: "Back to Start",
             action: () => {
-              window.location.href = "/start";
+              window.location.href = "/start/start-info-page";
             },
           },
           canClose: false,

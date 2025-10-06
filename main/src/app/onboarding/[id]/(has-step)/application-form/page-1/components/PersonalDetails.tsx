@@ -516,7 +516,7 @@ export default function PersonalDetails({
         )}
 
         {/* SIN Photo Upload - Full Width */}
-        <div className="md:col-span-2" data-field="sinPhoto">
+        <div className="md:col-span-2" data-field="sinPhoto.s3Key">
           <label className="block text-sm font-medium text-gray-700 mb-1">
             {t("form.step2.page1.fields.sinPhoto")}
           </label>
@@ -563,7 +563,7 @@ export default function PersonalDetails({
           />
           {sinPhotoStatus !== "uploading" && errors.sinPhoto && (
             <p className="text-red-500 text-sm mt-1">
-              {errors.sinPhoto.message?.toString()}
+              {errors.sinPhoto.message?.toString() || "SIN photo is required"}
             </p>
           )}
           {sinPhotoStatus === "uploading" && (
