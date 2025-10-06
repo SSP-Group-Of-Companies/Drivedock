@@ -31,13 +31,10 @@ export const page1ConfigFactory: FormPageConfigFactory<ApplicationFormPage1Schem
         fields.push("sinExpiryDate");
       }
 
-      // include nested photo keys so RHF can surface specific errors
+      // Validate SIN photo as a single registered field to ensure Zod runs on mobile/desktop
+      // (nested keys may be skipped if not individually registered with RHF)
       fields.push(
-        "sinPhoto.s3Key",
-        "sinPhoto.url",
-        "sinPhoto.mimeType",
-        "sinPhoto.sizeBytes",
-        "sinPhoto.originalName",
+        "sinPhoto",
         "dob",
         "phoneCell",
         "canProvideProofOfAge",
