@@ -9,7 +9,7 @@ import { resolveBaseUrlFromRequest } from "@/lib/utils/urlHelper.server";
 import { escapeHtml } from "@/lib/mail/utils";
 
 type Args = {
-  companyId: ECompanyId;
+  companyId?: ECompanyId;
   firstName?: string;
   lastName?: string;
   toEmail: string;
@@ -21,10 +21,10 @@ type Args = {
 export async function sendDriverResumeVerificationCodeEmail(req: NextRequest, { companyId, firstName = "", lastName = "", toEmail, code, subject, saveToSentItems = true }: Args) {
   const origin = resolveBaseUrlFromRequest(req);
   const company = COMPANIES.find((c) => c.id === companyId);
-  const companyLabel = company?.name ?? String(companyId);
+  const companyLabel = company?.name ?? String(companyId) ?? undefined;
 
   const fullName = `${firstName} ${lastName}`.trim();
-  const finalSubject = subject ?? `[DriveDock] Your verification code for ${companyLabel}`;
+  const finalSubject = subject ?? `[DriveDock] Your verification code ${companyLabel ? `for ${companyLabel}` : ""}`;
   const preheader = `Use this code to resume your application: ${code}`;
   const homepageLink = `${origin}/`;
 
@@ -81,7 +81,7 @@ export async function sendDriverResumeVerificationCodeEmail(req: NextRequest, { 
                 <td style="padding:20px 24px 8px 24px;font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#0f172a;">
                   <h1 style="margin:0 0 8px 0;font-size:18px;line-height:24px;">Your verification code</h1>
                   <p style="margin:0;font-size:13px;color:#475569;">
-                    ${fullName ? `Hi ${escapeHtml(fullName)}, ` : ""}use the code below to resume your application for <strong>${escapeHtml(companyLabel)}</strong>.
+                    ${fullName ? `Hi ${escapeHtml(fullName)}, ` : ""}use the code below to resume your application${companyLabel ? ` for <strong>${escapeHtml(companyLabel)}</strong>.` : ""}.
                   </p>
                 </td>
               </tr>
