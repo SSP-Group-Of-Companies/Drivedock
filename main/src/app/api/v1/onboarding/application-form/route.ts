@@ -6,29 +6,15 @@ import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import PreQualifications from "@/mongoose/models/Prequalifications";
 import { finalizeAsset } from "@/lib/utils/s3Upload";
 import { ECompanyId } from "@/constants/companies";
-import {
-  EStepPath,
-  IOnboardingTrackerDoc,
-} from "@/types/onboardingTracker.types";
+import { EStepPath, IOnboardingTrackerDoc } from "@/types/onboardingTracker.types";
 import { ILicenseEntry } from "@/types/applicationForm.types";
 import { HydratedDocument } from "mongoose";
 import { hasRecentAddressCoverage } from "@/lib/utils/hasMinimumAddressDuration";
-import {
-  advanceProgress,
-  buildTrackerContext,
-  nextResumeExpiry,
-} from "@/lib/utils/onboardingUtils";
+import { advanceProgress, buildTrackerContext, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
 import { S3_SUBMISSIONS_FOLDER, S3_TEMP_FOLDER } from "@/constants/aws";
 import { ES3Folder } from "@/types/aws.types";
 import { ECountryCode, ELicenseType } from "@/types/shared.types";
-import {
-  isValidEmail,
-  isValidPhoneNumber,
-  isValidDOB,
-  isValidSIN,
-  isValidSINIssueDate,
-  isValidGender,
-} from "@/lib/utils/validationUtils";
+import { isValidEmail, isValidPhoneNumber, isValidDOB, isValidSIN, isValidSINIssueDate, isValidGender } from "@/lib/utils/validationUtils";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
 import { createOnboardingSessionAndCookie } from "@/lib/utils/auth/onboardingSession";
 import { attachCookies } from "@/lib/utils/auth/attachCookie";
@@ -49,93 +35,50 @@ export async function POST(req: NextRequest) {
     const token = page1.turnStileVerificationToken;
     if (!token) return errorResponse(400, `Turnstile verification failed`);
     const verificationResult = await verifyTurnstileToken(token);
-    if (!verificationResult.ok)
-      return errorResponse(400, `Turnstile verification failed`);
+    if (!verificationResult.ok) return errorResponse(400, `Turnstile verification failed`);
 
-    if (!page1 || !prequalifications)
-      return errorResponse(
-        400,
-        "Missing required fields. 'page1' and 'prequalifications' are required."
-      );
+    if (!page1 || !prequalifications) return errorResponse(400, "Missing required fields. 'page1' and 'prequalifications' are required.");
     // Pre-approval: accept countryCode (CA/US) for validation branching
-    if (!countryCode || !["CA", "US"].includes(String(countryCode)))
-      return errorResponse(400, "Missing or invalid 'countryCode'.");
+    if (!countryCode || !["CA", "US"].includes(String(countryCode))) return errorResponse(400, "Missing or invalid 'countryCode'.");
 
     const sin = page1.sin;
     if (!isValidSIN(sin)) return errorResponse(400, "Invalid SIN");
 
     if (!isValidEmail(page1.email)) return errorResponse(400, "Invalid email");
-    if (page1.phoneHome && !isValidPhoneNumber(page1.phoneHome))
-      return errorResponse(400, "Invalid home phone");
-    if (!isValidPhoneNumber(page1.phoneCell))
-      return errorResponse(400, "Invalid cell phone");
-    if (!isValidPhoneNumber(page1.emergencyContactPhone))
-      return errorResponse(400, "Invalid emergency contact phone");
-    if (page1.phoneCell === page1.emergencyContactPhone)
-      return errorResponse(
-        400,
-        "cell phone and emergency contact phone cannot be the same"
-      );
+    if (page1.phoneHome && !isValidPhoneNumber(page1.phoneHome)) return errorResponse(400, "Invalid home phone");
+    if (!isValidPhoneNumber(page1.phoneCell)) return errorResponse(400, "Invalid cell phone");
+    if (!isValidPhoneNumber(page1.emergencyContactPhone)) return errorResponse(400, "Invalid emergency contact phone");
+    if (page1.phoneCell === page1.emergencyContactPhone) return errorResponse(400, "cell phone and emergency contact phone cannot be the same");
     if (!isValidDOB(page1.dob)) return errorResponse(400, "Invalid DOB");
-    if (!isValidSINIssueDate(page1.sinIssueDate))
-      return errorResponse(400, "Invalid SIN issue date");
-    if (!isValidGender(page1.gender))
-      return errorResponse(400, "Invalid gender");
-    if (!hasRecentAddressCoverage(page1.addresses))
-      return errorResponse(400, "Address history must cover 5 years");
+    if (!isValidSINIssueDate(page1.sinIssueDate)) return errorResponse(400, "Invalid SIN issue date");
+    if (!isValidGender(page1.gender)) return errorResponse(400, "Invalid gender");
+    if (!hasRecentAddressCoverage(page1.addresses)) return errorResponse(400, "Address history must cover 5 years");
 
     const licenses = page1.licenses;
-    if (!Array.isArray(licenses) || licenses.length === 0)
-      return errorResponse(400, "'licenses' must be a non-empty array");
+    if (!Array.isArray(licenses) || licenses.length === 0) return errorResponse(400, "'licenses' must be a non-empty array");
 
     const firstLicense = licenses[0];
-    if (firstLicense.licenseType !== ELicenseType.AZ)
-      return errorResponse(400, "First license must be of type AZ");
+    if (firstLicense.licenseType !== ELicenseType.AZ) return errorResponse(400, "First license must be of type AZ");
 
-    if (!firstLicense.licenseFrontPhoto || !firstLicense.licenseBackPhoto)
-      return errorResponse(
-        400,
-        "First license must include both front and back photos"
-      );
+    if (!firstLicense.licenseFrontPhoto || !firstLicense.licenseBackPhoto) return errorResponse(400, "First license must include both front and back photos");
 
     if (countryCode === ECountryCode.CA) {
-      const { canCrossBorderUSA, hasFASTCard, statusInCanada } =
-        prequalifications;
-      if (typeof canCrossBorderUSA !== "boolean")
-        return errorResponse(
-          400,
-          "'canCrossBorderUSA' is required for Canadian applicants"
-        );
-      if (!statusInCanada)
-        return errorResponse(
-          400,
-          "'statusInCanada' is required for Canadian applicants"
-        );
+      const { canCrossBorderUSA, hasFASTCard, statusInCanada } = prequalifications;
+      if (typeof canCrossBorderUSA !== "boolean") return errorResponse(400, "'canCrossBorderUSA' is required for Canadian applicants");
+      if (!statusInCanada) return errorResponse(400, "'statusInCanada' is required for Canadian applicants");
 
       // Only validate FAST card fields if they were provided (conditional logic)
       if (hasFASTCard !== undefined && typeof hasFASTCard !== "boolean") {
-        return errorResponse(
-          400,
-          "'hasFASTCard' must be a boolean when provided"
-        );
+        return errorResponse(400, "'hasFASTCard' must be a boolean when provided");
       }
-      if (
-        prequalifications.eligibleForFASTCard !== undefined &&
-        typeof prequalifications.eligibleForFASTCard !== "boolean"
-      ) {
-        return errorResponse(
-          400,
-          "'eligibleForFASTCard' must be a boolean when provided"
-        );
+      if (prequalifications.eligibleForFASTCard !== undefined && typeof prequalifications.eligibleForFASTCard !== "boolean") {
+        return errorResponse(400, "'eligibleForFASTCard' must be a boolean when provided");
       }
 
       // Validate SIN expiry date for Work Permit holders
       if (statusInCanada === "Work Permit") {
         if (!page1.sinExpiryDate) {
-          return errorResponse(
-            400,
-            "SIN expiry date is required for Work Permit holders"
-          );
+          return errorResponse(400, "SIN expiry date is required for Work Permit holders");
         }
         // Validate that expiry date is in the future
         const expiryDate = new Date(page1.sinExpiryDate);
@@ -149,8 +92,7 @@ export async function POST(req: NextRequest) {
 
     const sinHash = hashString(sin);
     const existing = await OnboardingTracker.findOne({ sinHash });
-    if (existing)
-      return errorResponse(400, "Application with this SIN already exists");
+    if (existing) return errorResponse(400, "Application with this SIN already exists");
 
     onboardingDoc = await OnboardingTracker.create({
       sinHash,
@@ -186,10 +128,7 @@ export async function POST(req: NextRequest) {
       driverApplication: appFormDoc.id,
       preQualification: preQualDoc.id,
     };
-    onboardingDoc.status = advanceProgress(
-      onboardingDoc,
-      EStepPath.APPLICATION_PAGE_1
-    );
+    onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.APPLICATION_PAGE_1);
 
     // Flatbed training is determined after company assignment at approval
     onboardingDoc.needsFlatbedTraining = false;
@@ -200,10 +139,7 @@ export async function POST(req: NextRequest) {
     const movedKeys: string[] = [];
 
     // Finalize SIN photo
-    const finalizedSinPhoto = await finalizeAsset(
-      page1.sinPhoto,
-      `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.SIN_PHOTOS}/${trackerId}`
-    );
+    const finalizedSinPhoto = await finalizeAsset(page1.sinPhoto, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.SIN_PHOTOS}/${trackerId}`);
     movedKeys.push(finalizedSinPhoto.s3Key);
 
     const tempPrefix = `${S3_TEMP_FOLDER}/`;
@@ -213,18 +149,12 @@ export async function POST(req: NextRequest) {
         const updated: ILicenseEntry = { ...lic };
 
         if (lic.licenseFrontPhoto?.s3Key?.startsWith(tempPrefix)) {
-          updated.licenseFrontPhoto = await finalizeAsset(
-            lic.licenseFrontPhoto,
-            `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.LICENSES}/${trackerId}`
-          );
+          updated.licenseFrontPhoto = await finalizeAsset(lic.licenseFrontPhoto, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.LICENSES}/${trackerId}`);
           movedKeys.push(updated.licenseFrontPhoto.s3Key);
         }
 
         if (lic.licenseBackPhoto?.s3Key?.startsWith(tempPrefix)) {
-          updated.licenseBackPhoto = await finalizeAsset(
-            lic.licenseBackPhoto,
-            `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.LICENSES}/${trackerId}`
-          );
+          updated.licenseBackPhoto = await finalizeAsset(lic.licenseBackPhoto, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.LICENSES}/${trackerId}`);
           movedKeys.push(updated.licenseBackPhoto.s3Key);
         }
 
@@ -245,15 +175,10 @@ export async function POST(req: NextRequest) {
     );
 
     // Create (or reuse) a 6h session and issue cookie
-    const { setCookie } = await createOnboardingSessionAndCookie(
-      String(onboardingDoc._id)
-    );
+    const { setCookie } = await createOnboardingSessionAndCookie(String(onboardingDoc._id));
 
     const res = successResponse(200, "Onboarding created successfully", {
-      onboardingContext: buildTrackerContext(
-        onboardingDoc,
-        EStepPath.APPLICATION_PAGE_1
-      ),
+      onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_1),
       preQualifications: preQualDoc.toObject(),
       applicationForm: updatedForm?.toObject({ virtuals: true }),
     });
@@ -274,10 +199,8 @@ export async function POST(req: NextRequest) {
 
     try {
       // send notification email to driver
-      // Send a generic pending email without company branding
       await sendDriverPendingApprovalEmail(req, {
         trackerId: onboardingDoc.id,
-        companyId: undefined as unknown as ECompanyId,
         firstName: page1.firstName,
         lastName: page1.lastName,
         toEmail: page1.email,
@@ -289,12 +212,9 @@ export async function POST(req: NextRequest) {
     return attachCookies(res, setCookie);
   } catch (error) {
     // Cleanup
-    if (appFormDoc?._id)
-      await ApplicationForm.findByIdAndDelete(appFormDoc._id);
-    if (preQualDoc?._id)
-      await PreQualifications.findByIdAndDelete(preQualDoc._id);
-    if (onboardingDoc?._id)
-      await OnboardingTracker.findByIdAndDelete(onboardingDoc._id);
+    if (appFormDoc?._id) await ApplicationForm.findByIdAndDelete(appFormDoc._id);
+    if (preQualDoc?._id) await PreQualifications.findByIdAndDelete(preQualDoc._id);
+    if (onboardingDoc?._id) await OnboardingTracker.findByIdAndDelete(onboardingDoc._id);
 
     console.error("POST /onboarding error:", error);
     return errorResponse(error);

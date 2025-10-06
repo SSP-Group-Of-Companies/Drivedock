@@ -3,12 +3,10 @@ import type { NextRequest } from "next/server";
 import { sendMailAppOnly } from "@/lib/mail/mailer";
 import { OUTBOUND_SENDER_EMAIL } from "@/config/env";
 import { resolveBaseUrlFromRequest } from "@/lib/utils/urlHelper.server";
-import { COMPANIES, type ECompanyId } from "@/constants/companies";
 import { escapeHtml } from "@/lib/mail/utils";
 
 type Args = {
   trackerId: string; // kept for parity with callers, even though we no longer deep-link to /pending-approval
-  companyId: ECompanyId;
   firstName: string;
   lastName: string;
   /** Driver recipient */
@@ -26,17 +24,14 @@ type Args = {
  * requires an active driver session. Instead, we link to the homepage and
  * instruct the driver to use the "Resume" flow (SIN -> code via email).
  */
-export async function sendDriverPendingApprovalEmail(req: NextRequest, { companyId, firstName, lastName, toEmail, phone, subject, saveToSentItems = true }: Args) {
+export async function sendDriverPendingApprovalEmail(req: NextRequest, { firstName, lastName, toEmail, phone, subject, saveToSentItems = true }: Args) {
   const origin = resolveBaseUrlFromRequest(req);
-  const company = COMPANIES.find((c) => c.id === companyId);
-  const companyLabel = company?.name ?? String(companyId);
-
   const fullName = `${firstName} ${lastName}`.trim();
   const homeLink = origin; // open the homepage; driver will click "Resume" there
 
-  const finalSubject = subject ?? `[DriveDock] Application received — Pending approval (${companyLabel})`;
+  const finalSubject = subject ?? `[DriveDock] Application received — Pending approval`;
 
-  const preheader = `Thanks, ${fullName}. We received your application for ${companyLabel}. It’s now pending approval.`;
+  const preheader = `Thanks, ${fullName}. We received your application. It’s now pending approval.`;
 
   const html = `
   <!doctype html>
@@ -61,7 +56,7 @@ export async function sendDriverPendingApprovalEmail(req: NextRequest, { company
                 <td style="padding:20px 24px 8px 24px; font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif; color:#0f172a;">
                   <h1 style="margin:0 0 8px 0; font-size:18px; line-height:24px;">We’ve received your application</h1>
                   <p style="margin:0; font-size:13px; color:#475569;">
-                    Thanks, ${escapeHtml(fullName)}. Your application for <strong>${escapeHtml(companyLabel)}</strong> has been submitted and is now <strong>pending approval</strong>.
+                    Thanks, ${escapeHtml(fullName)}. Your application has been submitted and is now <strong>pending approval</strong>.
                   </p>
                 </td>
               </tr>
@@ -75,10 +70,6 @@ export async function sendDriverPendingApprovalEmail(req: NextRequest, { company
                           <tr>
                             <td style="padding:6px 0; width:140px; font-weight:600; color:#334155;">Name</td>
                             <td style="padding:6px 0; color:#0f172a;">${escapeHtml(fullName)}</td>
-                          </tr>
-                          <tr>
-                            <td style="padding:6px 0; width:140px; font-weight:600; color:#334155;">Company</td>
-                            <td style="padding:6px 0; color:#0f172a;">${escapeHtml(companyLabel)}</td>
                           </tr>
                           ${
                             phone
@@ -124,7 +115,7 @@ export async function sendDriverPendingApprovalEmail(req: NextRequest, { company
   `.trim();
 
   const text = [
-    `We’ve received your application for ${companyLabel}.`,
+    `We’ve received your application.`,
     `Status: Pending approval`,
     ``,
     `How to check your status:`,
