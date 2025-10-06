@@ -8,8 +8,8 @@ import { sendMailAppOnly, type GraphAttachment } from "@/lib/mail/mailer";
 
 /**
  * Email w/ attached policy PDFs — improved styling + text fallback.
- * - If `html` is provided, it's used as-is (attachments still included).
- * - Otherwise a clean, mobile-friendly HTML template is generated.
+ * - If `html` is provided, we still append the standard SSP footer (Mexico line + banner).
+ * - Otherwise a clean, mobile-friendly HTML template is generated (with footer included).
  */
 
 type Args = {
@@ -17,7 +17,7 @@ type Args = {
   companyId: ECompanyId;
   from?: string;
   subject?: string;
-  html?: string; // optional custom template override
+  html?: string; // optional custom template override (footer will be appended)
   saveToSentItems?: boolean;
 };
 
@@ -25,14 +25,30 @@ function readAsBase64(filePath: string): string {
   return fs.readFileSync(filePath).toString("base64");
 }
 
-function buildDefaultHtml(opts: { subject: string; companyLabel: string; attachmentNames: string[] }) {
-  const { subject, companyLabel, attachmentNames } = opts;
+/** SSP footer block: text + CID banner image */
+function buildSspFooterHtml(bannerCid: string, containerWidth = 560) {
+  return `
+  <!-- SSP Footer -->
+  <tr>
+    <td style="padding:16px 24px 24px 24px; font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif; font-size:12px; color:#334155;">
+      <p style="margin:0 0 12px 0;">
+        We do door to door to Mexico. For any quotes please email
+        <a href="mailto:logistics@sspgroup.com" style="color:#0a66c2; text-decoration:none;">logistics@sspgroup.com</a>
+      </p>
+      <img src="cid:${bannerCid}" alt="SSP Email Banner" style="max-width:${containerWidth}px; border-radius:6px; display:block;" />
+    </td>
+  </tr>
+  `.trim();
+}
+
+function buildDefaultHtml(opts: { subject: string; companyLabel: string; attachmentNames: string[]; bannerCid: string }) {
+  const { subject, companyLabel, attachmentNames, bannerCid } = opts;
 
   const preheader = "Your onboarding is complete. Policy PDFs are attached for your records.";
 
   const attachmentsList =
     attachmentNames.length > 0
-      ? attachmentNames.map((n) => `<li style="margin:0 0 6px 0; padding:0; font-size:13px; color:#334155;">${n}</li>`).join("")
+      ? attachmentNames.map((n) => `<li style="margin:0 0 6px 0; padding:0; font-size:13px; color:#334155;">${escapeHtml(n)}</li>`).join("")
       : `<li style="margin:0; padding:0; font-size:13px; color:#334155;">(No attachments found)</li>`;
 
   return `
@@ -103,10 +119,13 @@ function buildDefaultHtml(opts: { subject: string; companyLabel: string; attachm
 
             <!-- Footer -->
             <tr>
-              <td style="padding:18px 24px 20px 24px; font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif; font-size:12px; color:#64748b; border-top:1px solid #f1f3f5;">
+              <td style="padding:18px 24px 12px 24px; font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif; font-size:12px; color:#64748b; border-top:1px solid #f1f3f5;">
                 This message was sent automatically by DriveDock.
               </td>
             </tr>
+
+            ${buildSspFooterHtml(bannerCid)}
+
           </table>
         </td>
       </tr>
@@ -120,7 +139,7 @@ function escapeHtml(str: string) {
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-export async function sendCompletionPdfsEmail({ to, companyId, from = OUTBOUND_SENDER_EMAIL, subject, html, saveToSentItems = true }: Args) {
+export async function sendDriverCompletionPdfsEmail({ to, companyId, from = OUTBOUND_SENDER_EMAIL, subject, html, saveToSentItems = true }: Args) {
   const refs = getPoliciesPdfsForCompanyServer(companyId);
 
   const attachments: GraphAttachment[] = refs
@@ -136,20 +155,52 @@ export async function sendCompletionPdfsEmail({ to, companyId, from = OUTBOUND_S
   // Default subject mentions company
   const effectiveSubject = subject ?? `Your onboarding documents — ${companyLabel}`;
 
-  // Build a tasteful default HTML if not provided
-  const bodyHtml =
-    html ??
-    buildDefaultHtml({
-      subject: effectiveSubject,
-      companyLabel,
-      attachmentNames: attachments.map((a) => a.name),
-    });
+  // --- Inline SSP footer banner (CID) ---
+  const bannerCid = "ssp-email-banner";
+  const bannerAbsPath = path.join(process.cwd(), "public/assets/banners/ssp-email-banner.jpg");
+
+  let bannerAttachment: GraphAttachment | undefined;
+  try {
+    const base64 = readAsBase64(bannerAbsPath);
+    bannerAttachment = {
+      name: "ssp-email-banner.jpg",
+      contentType: "image/jpeg",
+      base64,
+      contentId: bannerCid,
+      isInline: true,
+    };
+  } catch {
+    bannerAttachment = undefined; // continue without image if missing
+  }
+
+  // Build default HTML (already includes SSP footer), or append footer to provided custom HTML
+  const defaultHtml = buildDefaultHtml({
+    subject: effectiveSubject,
+    companyLabel,
+    attachmentNames: attachments.map((a) => a.name),
+    bannerCid,
+  });
+
+  const footerAppend = `
+  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-top:12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="560" border="0" cellspacing="0" cellpadding="0" style="width:560px; max-width:560px;">
+          ${buildSspFooterHtml(bannerCid)}
+        </table>
+      </td>
+    </tr>
+  </table>`.trim();
+
+  const bodyHtml = html ? `${html}\n${footerAppend}` : defaultHtml;
 
   // Plain-text fallback
   const bodyText = [
     `Your onboarding is complete for ${companyLabel}.`,
     `We've attached the relevant policy PDFs for your records.`,
     attachments.length ? `Attachments:\n${attachments.map((a) => `- ${a.name}`).join("\n")}` : `No attachments found.`,
+    ``,
+    `We do door to door to Mexico. For any quotes please email logistics@sspgroup.com`,
     ``,
     `If you have any questions, reply to this email.`,
   ].join("\n");
@@ -160,9 +211,9 @@ export async function sendCompletionPdfsEmail({ to, companyId, from = OUTBOUND_S
     subject: effectiveSubject,
     html: bodyHtml,
     text: bodyText,
-    attachments,
+    attachments: bannerAttachment ? [...attachments, bannerAttachment] : attachments,
     saveToSentItems,
   });
 
-  return { count: attachments.length, attached: attachments.map((a) => a.name) };
+  return { count: attachments.length + (bannerAttachment ? 1 : 0), attached: [...attachments.map((a) => a.name), ...(bannerAttachment ? [bannerAttachment.name] : [])] };
 }

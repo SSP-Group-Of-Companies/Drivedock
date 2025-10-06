@@ -1,5 +1,7 @@
 // src/lib/mail/driver/sendDriverPendingApprovalEmail.ts
 import type { NextRequest } from "next/server";
+import { promises as fs } from "fs";
+import { join } from "path";
 import { sendMailAppOnly } from "@/lib/mail/mailer";
 import { OUTBOUND_SENDER_EMAIL } from "@/config/env";
 import { resolveBaseUrlFromRequest } from "@/lib/utils/urlHelper.server";
@@ -23,6 +25,7 @@ type Args = {
  * NOTE: We do NOT include a direct pending-approval link anymore because it
  * requires an active driver session. Instead, we link to the homepage and
  * instruct the driver to use the "Resume" flow (SIN -> code via email).
+ * Appends the SSP footer (Mexico line + banner).
  */
 export async function sendDriverPendingApprovalEmail(req: NextRequest, { firstName, lastName, toEmail, phone, subject, saveToSentItems = true }: Args) {
   const origin = resolveBaseUrlFromRequest(req);
@@ -32,6 +35,34 @@ export async function sendDriverPendingApprovalEmail(req: NextRequest, { firstNa
   const finalSubject = subject ?? `[DriveDock] Application received — Pending approval`;
 
   const preheader = `Thanks, ${fullName}. We received your application. It’s now pending approval.`;
+
+  // --- Inline SSP footer banner (CID) ---
+  const bannerCid = "ssp-email-banner";
+  const bannerPath = join(process.cwd(), "public/assets/banners/ssp-email-banner.jpg");
+
+  let bannerAttachment:
+    | {
+        name: string;
+        contentType: string;
+        base64: string;
+        contentId: string;
+        isInline: true;
+      }
+    | undefined;
+
+  try {
+    const bytes = await fs.readFile(bannerPath);
+    bannerAttachment = {
+      name: "ssp-email-banner.jpg",
+      contentType: "image/jpeg",
+      base64: bytes.toString("base64"),
+      contentId: bannerCid,
+      isInline: true,
+    };
+  } catch {
+    // If missing in an environment, continue without image.
+    bannerAttachment = undefined;
+  }
 
   const html = `
   <!doctype html>
@@ -102,10 +133,22 @@ export async function sendDriverPendingApprovalEmail(req: NextRequest, { firstNa
               </tr>
 
               <tr>
-                <td style="padding:18px 24px 20px 24px; font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif; font-size:12px; color:#64748b; border-top:1px solid #f1f3f5;">
+                <td style="padding:18px 24px 12px 24px; font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif; font-size:12px; color:#64748b; border-top:1px solid #f1f3f5;">
                   This message was sent automatically by DriveDock.
                 </td>
               </tr>
+
+              <!-- SSP Footer -->
+              <tr>
+                <td style="padding:16px 24px 24px 24px; font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif; font-size:12px; color:#334155;">
+                  <p style="margin:0 0 12px 0;">
+                    We do door to door to Mexico. For any quotes please email
+                    <a href="mailto:logistics@sspgroup.com" style="color:#0a66c2; text-decoration:none;">logistics@sspgroup.com</a>
+                  </p>
+                  ${bannerAttachment ? `<img src="cid:${bannerCid}" alt="SSP Email Banner" style="max-width:560px; border-radius:6px; display:block;" />` : ``}
+                </td>
+              </tr>
+
             </table>
           </td>
         </tr>
@@ -123,6 +166,8 @@ export async function sendDriverPendingApprovalEmail(req: NextRequest, { firstNa
     `2) Click "Resume"`,
     `3) Enter your SIN/SSN`,
     `4) Enter the verification code we email to you`,
+    ``,
+    `We do door to door to Mexico. For any quotes please email logistics@sspgroup.com`,
   ]
     .filter(Boolean)
     .join("\n");
@@ -134,5 +179,16 @@ export async function sendDriverPendingApprovalEmail(req: NextRequest, { firstNa
     html,
     text,
     saveToSentItems,
+    attachments: bannerAttachment
+      ? [
+          {
+            name: bannerAttachment.name,
+            contentType: bannerAttachment.contentType,
+            base64: bannerAttachment.base64,
+            contentId: bannerAttachment.contentId,
+            isInline: true,
+          },
+        ]
+      : undefined,
   });
 }

@@ -1,5 +1,7 @@
 // src/lib/mail/driver/sendDriverApprovedEmail.ts
 import type { NextRequest } from "next/server";
+import { promises as fs } from "fs";
+import { join } from "path";
 import { sendMailAppOnly } from "@/lib/mail/mailer";
 import { OUTBOUND_SENDER_EMAIL } from "@/config/env";
 import { resolveBaseUrlFromRequest } from "@/lib/utils/urlHelper.server";
@@ -20,6 +22,7 @@ type Args = {
 /**
  * Sends the driver a confirmation that they were approved.
  * Includes a link to the homepage and instructs to resume by entering SIN.
+ * Adds the standard SSP footer (Mexico line + banner).
  */
 export async function sendDriverApprovedEmail(req: NextRequest, { trackerId, companyId, firstName, lastName, toEmail, subject, saveToSentItems = true }: Args) {
   const origin = resolveBaseUrlFromRequest(req);
@@ -27,11 +30,37 @@ export async function sendDriverApprovedEmail(req: NextRequest, { trackerId, com
   const companyLabel = company?.name ?? String(companyId);
 
   const fullName = `${firstName} ${lastName}`.trim();
-  const homepageLink = `${origin}/`; // “homepage to resume by SIN” as requested
+  const homepageLink = `${origin}/`;
 
   const finalSubject = subject ?? `[DriveDock] You’re approved — Continue your application (${companyLabel})`;
 
   const preheader = `Approved! Resume your application for ${companyLabel} from the homepage using your SIN.`;
+
+  // --- Load banner (inline) ---
+  const bannerCid = "ssp-email-banner";
+  const bannerPath = join(process.cwd(), "public/assets/banners/ssp-email-banner.jpg");
+
+  let bannerAttachment: {
+    name: string;
+    contentType: string;
+    base64: string;
+    contentId: string;
+    isInline: true;
+  } | null = null;
+
+  try {
+    const bytes = await fs.readFile(bannerPath);
+    bannerAttachment = {
+      name: "ssp-email-banner.jpg",
+      contentType: "image/jpeg",
+      base64: bytes.toString("base64"),
+      contentId: bannerCid,
+      isInline: true,
+    };
+  } catch {
+    // If the banner file is missing in some environment, continue without it.
+    bannerAttachment = null;
+  }
 
   const html = `
   <!doctype html>
@@ -88,10 +117,22 @@ export async function sendDriverApprovedEmail(req: NextRequest, { trackerId, com
               </tr>
 
               <tr>
-                <td style="padding:18px 24px 20px 24px; font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif; font-size:12px; color:#64748b; border-top:1px solid #f1f3f5;">
+                <td style="padding:18px 24px 12px 24px; font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif; font-size:12px; color:#64748b; border-top:1px solid #f1f3f5;">
                   This message was sent automatically by DriveDock.
                 </td>
               </tr>
+
+              <!-- SSP Footer -->
+              <tr>
+                <td style="padding:16px 24px 24px 24px; font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif; font-size:12px; color:#334155;">
+                  <p style="margin:0 0 12px 0;">
+                    We do door to door to Mexico. For any quotes please email
+                    <a href="mailto:logistics@sspgroup.com" style="color:#0a66c2; text-decoration:none;">logistics@sspgroup.com</a>
+                  </p>
+                  ${bannerAttachment ? `<img src="cid:${bannerCid}" alt="SSP Email Banner" style="max-width:560px; border-radius:6px; display:block;" />` : ``}
+                </td>
+              </tr>
+
             </table>
           </td>
         </tr>
@@ -106,6 +147,8 @@ export async function sendDriverApprovedEmail(req: NextRequest, { trackerId, com
     ``,
     `Homepage: ${homepageLink}`,
     `Onboarding ID (reference): ${trackerId}`,
+    ``,
+    `We do door to door to Mexico. For any quotes please email logistics@sspgroup.com`,
   ]
     .filter(Boolean)
     .join("\n");
@@ -117,5 +160,16 @@ export async function sendDriverApprovedEmail(req: NextRequest, { trackerId, com
     html,
     text,
     saveToSentItems,
+    attachments: bannerAttachment
+      ? [
+          {
+            name: bannerAttachment.name,
+            contentType: bannerAttachment.contentType,
+            base64: bannerAttachment.base64,
+            contentId: bannerAttachment.contentId,
+            isInline: true,
+          },
+        ]
+      : undefined,
   });
 }

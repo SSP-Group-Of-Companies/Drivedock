@@ -3,9 +3,9 @@ import "server-only";
 import connectDB from "@/lib/utils/connectDB";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
-import { sendCompletionPdfsEmail } from "@/lib/mail/sendCompletionPdfsEmail";
 import { ECompanyId } from "@/constants/companies";
 import { EEmailStatus, IOnboardingTracker } from "@/types/onboardingTracker.types";
+import { sendDriverCompletionPdfsEmail } from "../mail/driver/sendDriverCompletionPdfsEmail";
 
 const MAX_ATTEMPTS = 5;
 
@@ -92,7 +92,7 @@ export default async function sendCompletionEmailIfEligible(trackerId: string): 
 
   // 3) Send + finalize in one update, returning the updated tracker
   try {
-    await sendCompletionPdfsEmail({
+    await sendDriverCompletionPdfsEmail({
       to: email,
       companyId: claimed.companyId as ECompanyId,
     });
