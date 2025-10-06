@@ -58,13 +58,17 @@ export default function ErrorModal({ modal, onClose }: ErrorModalProps) {
             aria-hidden="true"
           />
 
-          <div className="fixed inset-0 flex items-center justify-center p-4">
+          <div className="fixed inset-0 flex items-center justify-center p-4" style={{ 
+            minHeight: '100dvh', // Dynamic viewport height for mobile
+            paddingTop: 'env(safe-area-inset-top)',
+            paddingBottom: 'env(safe-area-inset-bottom)'
+          }}>
             <motion.div
               initial={{ y: 20, opacity: 0, scale: 0.95 }}
               animate={{ y: 0, opacity: 1, scale: 1 }}
               exit={{ y: 20, opacity: 0, scale: 0.95 }}
               transition={{ duration: 0.2 }}
-              className="w-full max-w-lg"
+              className="w-full max-w-lg ios-modal-fix"
             >
               <DialogPanel className="relative transform overflow-hidden rounded-2xl bg-white px-4 pb-4 pt-5 text-left shadow-2xl sm:my-8 sm:w-full sm:p-6">
                 {/* Close button - only show if modal can be closed */}
