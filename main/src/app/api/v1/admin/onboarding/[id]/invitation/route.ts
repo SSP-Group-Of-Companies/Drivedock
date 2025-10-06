@@ -296,7 +296,6 @@ export const DELETE = async (req: NextRequest, { params }: { params: Promise<{ i
       try {
         await sendDriverRejectedEmail(req, {
           trackerId: id,
-          companyId: onboardingDoc.companyId as ECompanyId,
           firstName: driverInfo.firstName,
           lastName: driverInfo.lastName,
           toEmail: driverInfo.toEmail,
