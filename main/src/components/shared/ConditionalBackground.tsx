@@ -13,6 +13,6 @@ export default function ConditionalBackground() {
   }
 
   return (
-    <div className="absolute inset-0 z-[-2] bg-gradient-to-br from-white via-blue-100 to-blue-600 opacity-40" />
+    <div className="fixed inset-0 z-[-2] bg-gradient-to-br from-white via-blue-100 to-blue-600 opacity-40" />
   );
 }

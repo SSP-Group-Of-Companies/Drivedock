@@ -147,7 +147,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {/* Turnstile client script */}
         <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer />
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased relative min-h-screen overflow-x-hidden`} suppressHydrationWarning>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased relative min-h-[100svh] sm:min-h-screen overflow-x-hidden`} suppressHydrationWarning>
         {/* Make user available to the entire app */}
         <AuthProvider user={user}>
           <I18nProvider>
