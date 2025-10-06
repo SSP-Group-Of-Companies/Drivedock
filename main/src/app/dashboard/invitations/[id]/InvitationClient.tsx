@@ -11,6 +11,7 @@ import PersonalDetailsCard from "./components/PersonalDetailsCard";
 type InvitationApiData = {
   onboardingContext: {
     companyId?: string;
+    preApprovalCountryCode?: string;
   };
   preQualifications: any;
   personalDetails: any;
@@ -62,6 +63,7 @@ export default function InvitationClient({ trackerId }: { trackerId: string }) {
   }, [trackerId]);
 
   const companyId = useMemo(() => payload?.onboardingContext?.companyId, [payload]);
+  const preApprovalCountryCode = useMemo(() => payload?.onboardingContext?.preApprovalCountryCode, [payload]);
 
   const approve = async ({ companyId, applicationType }: { companyId: string; applicationType?: string }) => {
     setBusy("approve");
@@ -147,7 +149,7 @@ export default function InvitationClient({ trackerId }: { trackerId: string }) {
       <ApproveRejectBar busy={busy} onApprove={approve} onReject={reject} />
 
       {/* Prequalification (read-only) */}
-      <PrequalificationCard prequal={payload.preQualifications} companyId={companyId} />
+      <PrequalificationCard prequal={payload.preQualifications} companyId={companyId} preApprovalCountryCode={preApprovalCountryCode as any} />
 
       {/* Personal Details (read-only) */}
       <PersonalDetailsCard personal={payload.personalDetails} prequal={payload.preQualifications} />

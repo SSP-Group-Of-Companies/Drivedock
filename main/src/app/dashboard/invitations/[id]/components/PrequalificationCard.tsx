@@ -2,11 +2,15 @@
 "use client";
 
 import { getCompanyById } from "@/constants/companies";
+import { ECountryCode } from "@/types/shared.types";
 // Reuse the existing styled read-only sections from your contract page
 import { OptionalsSection, MandatorySection, CategoriesSection } from "@/app/dashboard/contract/[id]/prequalification/components";
 
-export default function PrequalificationCard({ prequal, companyId }: { prequal: any; companyId?: string }) {
-  const company = companyId ? getCompanyById(companyId) : null;
+export default function PrequalificationCard({ prequal, companyId, preApprovalCountryCode }: { prequal: any; companyId?: string; preApprovalCountryCode?: ECountryCode }) {
+  const selectedCompany = companyId ? getCompanyById(companyId) : null;
+  const effectiveCountryCode = selectedCompany?.countryCode ?? preApprovalCountryCode;
+  // We only need countryCode for filtering; provide a minimal object to shared components
+  const company = effectiveCountryCode ? ({ countryCode: effectiveCountryCode } as any) : null;
 
   return (
     <div className="rounded-xl border p-8 shadow-sm dark:shadow-none" style={{ background: "var(--color-card)", borderColor: "var(--color-outline)" }}>
