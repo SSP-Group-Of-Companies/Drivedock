@@ -15,15 +15,15 @@ interface ErrorModalProps {
 export default function ErrorModal({ modal, onClose }: ErrorModalProps) {
   const [vhPx, setVhPx] = useState<number | null>(null);
   const [vvTop, setVvTop] = useState<number>(0);
-  if (!modal) return null;
 
   const handleClose = () => {
-    if (modal.canClose && onClose) {
+    if (modal && modal.canClose && onClose) {
       onClose();
     }
   };
 
   const getIcon = () => {
+    if (!modal) return null;
     switch (modal.type) {
       case ErrorModalType.NETWORK_ERROR:
         return <WifiOff className="w-12 h-12 text-red-500" aria-hidden="true" />;
@@ -37,6 +37,7 @@ export default function ErrorModal({ modal, onClose }: ErrorModalProps) {
   };
 
   const getIconBgColor = () => {
+    if (!modal) return "bg-red-100";
     switch (modal.type) {
       case ErrorModalType.NETWORK_ERROR:
         return "bg-red-100";
