@@ -38,7 +38,7 @@ export async function sendDriverApprovedEmail(req: NextRequest, { trackerId, com
 
   // --- Load banner (inline) ---
   const bannerCid = "ssp-email-banner";
-  const bannerPath = join(process.cwd(), "src/public/assets/banners/ssp-email-banner.jpg");
+  const bannerPath = join(process.cwd(), "public/assets/banners/ssp-email-banner.jpg");
 
   let bannerAttachment: {
     name: string;

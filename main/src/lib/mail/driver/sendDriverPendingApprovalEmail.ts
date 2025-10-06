@@ -38,7 +38,7 @@ export async function sendDriverPendingApprovalEmail(req: NextRequest, { firstNa
 
   // --- Inline SSP footer banner (CID) ---
   const bannerCid = "ssp-email-banner";
-  const bannerPath = join(process.cwd(), "src/public/assets/banners/ssp-email-banner.jpg");
+  const bannerPath = join(process.cwd(), "public/assets/banners/ssp-email-banner.jpg");
 
   let bannerAttachment:
     | {
