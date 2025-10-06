@@ -48,13 +48,13 @@ export default function ErrorModal({ modal, onClose }: ErrorModalProps) {
     <AnimatePresence>
       {modal && (
         <Dialog open={true} onClose={handleClose} className="relative z-50">
-          {/* Blur overlay like existing modals */}
+          {/* Overlay. Avoid backdrop-blur on iOS Safari which can misplace the backdrop when browser UI shows/hides. */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/30 backdrop-blur-sm"
+            className="fixed inset-0 bg-black/40 sm:bg-black/30 sm:backdrop-blur-sm"
             aria-hidden="true"
           />
 
