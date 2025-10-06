@@ -2,6 +2,7 @@
 "use client";
 
 import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
+import { useEffect, useState } from "react";
 import { AlertTriangle, X, WifiOff } from "lucide-react";
 // Animations disabled for mobile Safari stability
 import { ErrorModalData, ErrorModalType } from "@/types/onboardingError.types";
@@ -12,6 +13,8 @@ interface ErrorModalProps {
 }
 
 export default function ErrorModal({ modal, onClose }: ErrorModalProps) {
+  const [vhPx, setVhPx] = useState<number | null>(null);
+  const [vvTop, setVvTop] = useState<number>(0);
   if (!modal) return null;
 
   const handleClose = () => {
@@ -44,6 +47,39 @@ export default function ErrorModal({ modal, onClose }: ErrorModalProps) {
     }
   };
 
+  // Lock viewport height at open time (iOS Safari address bar collapse fix)
+  useEffect(() => {
+    const compute = () => {
+      // Prefer VisualViewport measurements when available (iOS Safari)
+      const vv = (window as any).visualViewport as VisualViewport | undefined;
+      if (vv) {
+        setVhPx(Math.round(vv.height));
+        setVvTop(Math.round(vv.offsetTop));
+      } else {
+        setVhPx(window.innerHeight);
+        setVvTop(0);
+      }
+    };
+    // double raf to ensure keyboard/address bar transitions settle
+    const id = requestAnimationFrame(() => requestAnimationFrame(compute));
+    window.addEventListener("resize", compute);
+    window.addEventListener("orientationchange", compute);
+    const vv = (window as any).visualViewport as VisualViewport | undefined;
+    if (vv) {
+      vv.addEventListener("resize", compute);
+      vv.addEventListener("scroll", compute);
+    }
+    return () => {
+      cancelAnimationFrame(id);
+      window.removeEventListener("resize", compute);
+      window.removeEventListener("orientationchange", compute);
+      if (vv) {
+        vv.removeEventListener("resize", compute);
+        vv.removeEventListener("scroll", compute);
+      }
+    };
+  }, []);
+
   return (
     <>
       {modal && (
@@ -54,7 +90,8 @@ export default function ErrorModal({ modal, onClose }: ErrorModalProps) {
           <div
             className="fixed inset-0 flex items-center justify-center p-4"
             style={{
-              minHeight: "100dvh",
+              minHeight: vhPx ? `${vhPx}px` : "100dvh",
+              top: vvTop ? `${vvTop}px` : undefined,
               paddingTop: "env(safe-area-inset-top)",
               paddingBottom: "env(safe-area-inset-bottom)",
             }}
