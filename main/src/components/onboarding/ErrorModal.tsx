@@ -116,23 +116,27 @@ export default function ErrorModal({ modal, onClose }: ErrorModalProps) {
       className="relative z-50"
       initialFocus={primaryBtnRef}
     >
-      {/* Overlay – no blur on mobile; prevent rubber-band nudges */}
+      {/* Overlay – no blur on mobile; size to visual viewport */}
       <div
-        className="fixed inset-0 bg-black/40"
+        className="fixed left-0 top-0 w-screen bg-black/40"
         aria-hidden="true"
-        style={{ touchAction: "none" }}
+        style={{
+          touchAction: "none",
+          height: "calc(var(--vh, 1vh) * 100)",
+          minHeight: "100svh" as any,
+        }}
       />
 
       {/* Centering against dynamic viewport */}
       <div
-        className="fixed inset-0 p-4 overflow-y-auto flex items-center justify-center"
-        style={
-          {
-            minHeight: "100dvh",
-            height: "calc(var(--vh, 1vh) * 100)",
-            paddingBottom: "env(safe-area-inset-bottom)",
-          } as React.CSSProperties
-        }
+        className="fixed left-0 top-0 w-screen p-4 overflow-y-auto flex items-center justify-center"
+        style={{
+          height: "calc(var(--vh, 1vh) * 100)",
+          minHeight: "100svh" as any,
+          paddingBottom: "env(safe-area-inset-bottom)",
+          WebkitOverflowScrolling: "touch",
+          overscrollBehavior: "contain",
+        } as React.CSSProperties}
       >
         <DialogPanel className="relative overflow-hidden rounded-2xl bg-white px-4 pb-4 pt-5 text-left shadow-2xl sm:w-full sm:p-6 w-full max-w-lg">
           {/* Close button */}

@@ -202,7 +202,7 @@ export default function ContinueButton<T extends FieldValues>({
     if (popup?.show) {
       const errorManager = ErrorManager.getInstance();
 
-      // ✅ Drop the iOS keyboard before showing the confirm (prevents mis-centering)
+      //  Drop the iOS keyboard before showing the confirm (prevents mis-centering)
       (document.activeElement as HTMLElement | null)?.blur?.();
 
       errorManager.showConfirm({
