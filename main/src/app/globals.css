@@ -318,34 +318,6 @@ input, select, textarea {
 }
 
 /* =========================
- * iOS Modal Positioning Fix
- * - Fixes intermittent modal misalignment on iOS Safari
- * - Uses viewport units and safe area insets
- * ========================= */
-.ios-modal-fix {
-  /* Force hardware acceleration to prevent iOS rendering glitches */
-  transform: translateZ(0);
-  -webkit-transform: translateZ(0);
-  
-  /* Ensure modal stays centered even when viewport changes */
-  position: relative;
-  z-index: 1;
-}
-
-/* iOS Safari modal container fixes */
-@media screen and (max-width: 768px) {
-  .ios-modal-fix {
-    /* Use dynamic viewport units on mobile */
-    max-height: 100dvh;
-    max-height: 100vh; /* Fallback */
-    
-    /* Prevent iOS Safari from repositioning the modal */
-    will-change: transform;
-    backface-visibility: hidden;
-  }
-}
-
-/* =========================
  * Date Input Cross-Platform Styling (Onboarding)
  * - iOS Safari often hides borders/icons on input[type=date]
  * - Normalize appearance and provide a visible icon & border

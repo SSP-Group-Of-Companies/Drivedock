@@ -2,9 +2,8 @@
 "use client";
 
 import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
-import { useEffect, useState } from "react";
 import { AlertTriangle, X, WifiOff } from "lucide-react";
-// Animations disabled for mobile Safari stability
+import { motion, AnimatePresence } from "framer-motion";
 import { ErrorModalData, ErrorModalType } from "@/types/onboardingError.types";
 
 interface ErrorModalProps {
@@ -13,17 +12,15 @@ interface ErrorModalProps {
 }
 
 export default function ErrorModal({ modal, onClose }: ErrorModalProps) {
-  const [vhPx, setVhPx] = useState<number | null>(null);
-  const [vvTop, setVvTop] = useState<number>(0);
+  if (!modal) return null;
 
   const handleClose = () => {
-    if (modal && modal.canClose && onClose) {
+    if (modal.canClose && onClose) {
       onClose();
     }
   };
 
   const getIcon = () => {
-    if (!modal) return null;
     switch (modal.type) {
       case ErrorModalType.NETWORK_ERROR:
         return <WifiOff className="w-12 h-12 text-red-500" aria-hidden="true" />;
@@ -37,7 +34,6 @@ export default function ErrorModal({ modal, onClose }: ErrorModalProps) {
   };
 
   const getIconBgColor = () => {
-    if (!modal) return "bg-red-100";
     switch (modal.type) {
       case ErrorModalType.NETWORK_ERROR:
         return "bg-red-100";
@@ -48,56 +44,28 @@ export default function ErrorModal({ modal, onClose }: ErrorModalProps) {
     }
   };
 
-  // Lock viewport height at open time (iOS Safari address bar collapse fix)
-  useEffect(() => {
-    const compute = () => {
-      // Prefer VisualViewport measurements when available (iOS Safari)
-      const vv = (window as any).visualViewport as VisualViewport | undefined;
-      if (vv) {
-        setVhPx(Math.round(vv.height));
-        setVvTop(Math.round(vv.offsetTop));
-      } else {
-        setVhPx(window.innerHeight);
-        setVvTop(0);
-      }
-    };
-    // double raf to ensure keyboard/address bar transitions settle
-    const id = requestAnimationFrame(() => requestAnimationFrame(compute));
-    window.addEventListener("resize", compute);
-    window.addEventListener("orientationchange", compute);
-    const vv = (window as any).visualViewport as VisualViewport | undefined;
-    if (vv) {
-      vv.addEventListener("resize", compute);
-      vv.addEventListener("scroll", compute);
-    }
-    return () => {
-      cancelAnimationFrame(id);
-      window.removeEventListener("resize", compute);
-      window.removeEventListener("orientationchange", compute);
-      if (vv) {
-        vv.removeEventListener("resize", compute);
-        vv.removeEventListener("scroll", compute);
-      }
-    };
-  }, []);
-
   return (
-    <>
+    <AnimatePresence>
       {modal && (
         <Dialog open={true} onClose={handleClose} className="relative z-50">
-          {/* Overlay (no blur on mobile) */}
-          <div className="fixed inset-0 bg-black/40 sm:bg-black/30 sm:backdrop-blur-sm" aria-hidden="true" />
+          {/* Overlay. Avoid backdrop-blur on iOS Safari which can misplace the backdrop when browser UI shows/hides. */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-black/40 sm:bg-black/30 sm:backdrop-blur-sm"
+            aria-hidden="true"
+          />
 
-          <div
-            className="fixed inset-0 flex items-center justify-center p-4"
-            style={{
-              minHeight: vhPx ? `${vhPx}px` : "100dvh",
-              top: vvTop ? `${vvTop}px` : undefined,
-              paddingTop: "env(safe-area-inset-top)",
-              paddingBottom: "env(safe-area-inset-bottom)",
-            }}
-          >
-            <div className="w-full max-w-lg ios-modal-fix">
+          <div className="fixed inset-0 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ y: 20, opacity: 0, scale: 0.95 }}
+              animate={{ y: 0, opacity: 1, scale: 1 }}
+              exit={{ y: 20, opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="w-full max-w-lg"
+            >
               <DialogPanel className="relative transform overflow-hidden rounded-2xl bg-white px-4 pb-4 pt-5 text-left shadow-2xl sm:my-8 sm:w-full sm:p-6">
                 {/* Close button - only show if modal can be closed */}
                 {modal.canClose && (
@@ -152,10 +120,10 @@ export default function ErrorModal({ modal, onClose }: ErrorModalProps) {
                   )}
                 </div>
               </DialogPanel>
-            </div>
+            </motion.div>
           </div>
         </Dialog>
       )}
-    </>
+    </AnimatePresence>
   );
 }
