@@ -146,7 +146,7 @@ export default function InvitationClient({ trackerId }: { trackerId: string }) {
 
   return (
     <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: "easeOut" }} className="space-y-6">
-      <ApproveRejectBar busy={busy} onApprove={approve} onReject={reject} />
+      <ApproveRejectBar busy={busy} onApprove={approve} onReject={reject} countryCode={preApprovalCountryCode as any} />
 
       {/* Prequalification (read-only) */}
       <PrequalificationCard prequal={payload.preQualifications} companyId={companyId} preApprovalCountryCode={preApprovalCountryCode as any} />

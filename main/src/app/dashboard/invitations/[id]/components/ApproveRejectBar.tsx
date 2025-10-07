@@ -4,9 +4,13 @@
 import { useMemo, useState } from "react";
 import ConfirmModal from "./ConfirmModal";
 import { COMPANIES, ECompanyId } from "@/constants/companies";
+import { ECountryCode } from "@/types/shared.types";
 
-function CompanySelect({ value, onChange }: { value?: string; onChange: (v: string) => void }) {
-  const options = useMemo(() => COMPANIES.map((c) => ({ id: c.id, name: c.name })), []);
+function CompanySelect({ value, onChange, countryCode }: { value?: string; onChange: (v: string) => void; countryCode?: ECountryCode | null }) {
+  const options = useMemo(() => {
+    const list = countryCode ? COMPANIES.filter((c) => c.countryCode === countryCode) : COMPANIES;
+    return list.map((c) => ({ id: c.id, name: c.name }));
+  }, [countryCode]);
   return (
     <select
       className="rounded-md border px-2 py-1 text-sm w-full"
@@ -48,10 +52,12 @@ export default function ApproveRejectBar({
   busy,
   onApprove,
   onReject,
+  countryCode,
 }: {
   busy: "approve" | "reject" | null;
   onApprove: (opts: { companyId: string; applicationType?: string }) => Promise<void> | void;
   onReject: (reason?: string) => Promise<void> | void;
+  countryCode?: ECountryCode | null;
 }) {
   const [approveOpen, setApproveOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
@@ -80,7 +86,7 @@ export default function ApproveRejectBar({
 
         <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
           <div className="w-64">
-            <CompanySelect value={companyId} onChange={setCompanyId} />
+            <CompanySelect value={companyId} onChange={setCompanyId} countryCode={countryCode} />
           </div>
           <div className="w-56">
             <ApplicationTypeSelect visible={showAppType} value={applicationType} onChange={setApplicationType} />
