@@ -318,6 +318,36 @@ input, select, textarea {
 }
 
 /* =========================
+ * Modal viewport stability (iOS Safari safe)
+ * ========================= */
+html,
+body {
+  min-height: 100%;
+}
+@supports (height: -webkit-fill-available) {
+  html,
+  body {
+    height: -webkit-fill-available;
+  }
+}
+
+.dd-modal-overlay,
+.dd-modal-container {
+  height: 100dvh; /* modern visual viewport unit */
+  min-height: 100svh; /* fallback for compact viewports */
+}
+@supports (height: -webkit-fill-available) {
+  .dd-modal-overlay,
+  .dd-modal-container {
+    height: -webkit-fill-available; /* iOS WebKit fallback */
+  }
+}
+.dd-modal-container {
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* =========================
  * Date Input Cross-Platform Styling (Onboarding)
  * - iOS Safari often hides borders/icons on input[type=date]
  * - Normalize appearance and provide a visible icon & border
