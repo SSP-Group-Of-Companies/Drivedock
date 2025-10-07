@@ -15,7 +15,7 @@ import { useTranslation } from "react-i18next";
 import { useState, useEffect, useCallback } from "react";
 import { ELicenseType } from "@/types/shared.types";
 import { FieldErrors } from "react-hook-form";
-import { Camera, Upload, X, AlertTriangle } from "lucide-react";
+import { Camera, Upload, X, AlertTriangle, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { uploadToS3Presigned } from "@/lib/utils/s3Upload";
 import { ES3Folder } from "@/types/aws.types";
@@ -259,8 +259,13 @@ export default function LicenseSection() {
           <div className="flex justify-between items-center">
             <h4 className="text-md font-medium text-gray-500">{index === 0 ? t("form.step2.page1.sections.license") : `${t("form.step2.page1.sections.license")} ${index + 1}`}</h4>
             {index > 0 && (
-              <button type="button" onClick={() => remove(index)} className="absolute top-3 right-3 text-xs bg-red-50 text-red-600 hover:bg-red-100 px-2 py-1 rounded-md border border-red-200">
-                {t("form.step2.page1.actions.removeLicense")}
+              <button
+                type="button"
+                aria-label={t("form.remove", "Remove")}
+                onClick={() => remove(index)}
+                className="absolute top-2 right-2 text-red-600 hover:text-red-700"
+              >
+                <Trash2 size={16} />
               </button>
             )}
           </div>
