@@ -19,7 +19,11 @@ import { useGlobalLoading } from "@/store/useGlobalLoading";
 import { useFormErrorScroll } from "@/hooks/useFormErrorScroll";
 import { submitFormStep } from "@/lib/frontendUtils/submitFormStep";
 import { ErrorManager } from "@/lib/onboarding/errorManager";
-import type { BuildPayloadCtx, FormPageConfig, FormPageConfigFactory } from "@/lib/frontendConfigs/formPageConfig.types";
+import type {
+  BuildPayloadCtx,
+  FormPageConfig,
+  FormPageConfigFactory,
+} from "@/lib/frontendConfigs/formPageConfig.types";
 
 import { hasDeepChanges } from "@/lib/utils/deepCompare";
 
@@ -28,7 +32,10 @@ type ContinueButtonProps<T extends FieldValues> = {
   trackerId?: string;
 };
 
-export default function ContinueButton<T extends FieldValues>({ config, trackerId }: ContinueButtonProps<T>): ReactNode {
+export default function ContinueButton<T extends FieldValues>({
+  config,
+  trackerId,
+}: ContinueButtonProps<T>): ReactNode {
   const {
     getValues,
     trigger,
@@ -50,13 +57,22 @@ export default function ContinueButton<T extends FieldValues>({ config, trackerI
   const { show, hide } = useGlobalLoading();
 
   // Extract the actual submit logic so the confirmation popup can call it.
-  const doSubmit = async (resolvedConfig: FormPageConfig<T>, ctx: BuildPayloadCtx, isPost: boolean, urlTrackerId?: string) => {
+  const doSubmit = async (
+    resolvedConfig: FormPageConfig<T>,
+    ctx: BuildPayloadCtx,
+    isPost: boolean,
+    urlTrackerId?: string
+  ) => {
     try {
       setSubmitting(true);
 
       // For PATCH, if nothing changed, just navigate forward.
       const formValues = getValues();
-      const hasChanges = hasDeepChanges(formValues, (defaultValues ?? {}) as Partial<T>, { nullAsUndefined: true, emptyStringAsUndefined: true });
+      const hasChanges = hasDeepChanges(
+        formValues,
+        (defaultValues ?? {}) as Partial<T>,
+        { nullAsUndefined: true, emptyStringAsUndefined: true }
+      );
 
       if (!isPost && !hasChanges) {
         router.push(resolvedConfig.nextRoute);
@@ -75,7 +91,8 @@ export default function ContinueButton<T extends FieldValues>({ config, trackerI
       });
 
       if (isPost) {
-        if (!trackerContext?.id) throw new Error("Tracker not returned from POST");
+        if (!trackerContext?.id)
+          throw new Error("Tracker not returned from POST");
         setTracker(trackerContext);
         clearData();
         router.push(nextUrl ?? resolvedConfig.nextRoute);
@@ -109,11 +126,16 @@ export default function ContinueButton<T extends FieldValues>({ config, trackerI
       effectiveTrackerId,
     };
 
-    const resolvedConfig = typeof config === "function" ? (config as FormPageConfigFactory<T>)(ctx) : (config as FormPageConfig<T>);
+    const resolvedConfig =
+      typeof config === "function"
+        ? (config as FormPageConfigFactory<T>)(ctx)
+        : (config as FormPageConfig<T>);
 
     // 1) Field-level validation
     const fieldsToValidate = resolvedConfig.validationFields(values);
-    const isValid = await trigger(fieldsToValidate as Parameters<typeof trigger>[0]);
+    const isValid = await trigger(
+      fieldsToValidate as Parameters<typeof trigger>[0]
+    );
     if (!isValid) {
       handleFormError(errors);
       return;
@@ -143,7 +165,8 @@ export default function ContinueButton<T extends FieldValues>({ config, trackerI
         errorManager.showModal({
           type: "GENERIC_ERROR" as any,
           title: t("errors.generic.title", "Error"),
-          message: "Prequalification data is missing. Please restart the application.",
+          message:
+            "Prequalification data is missing. Please restart the application.",
           primaryAction: {
             label: "Back to Start",
             action: () => {
@@ -160,7 +183,8 @@ export default function ContinueButton<T extends FieldValues>({ config, trackerI
         errorManager.showModal({
           type: "GENERIC_ERROR" as any,
           title: t("errors.generic.title", "Error"),
-          message: "Country not selected. Please start again and choose a country.",
+          message:
+            "Country not selected. Please start again and choose a country.",
           primaryAction: {
             label: "Back to Start",
             action: () => {
@@ -178,7 +202,9 @@ export default function ContinueButton<T extends FieldValues>({ config, trackerI
     if (popup?.show) {
       const errorManager = ErrorManager.getInstance();
 
-      // Uses your new ErrorManager.showConfirm helper
+      // ✅ Drop the iOS keyboard before showing the confirm (prevents mis-centering)
+      (document.activeElement as HTMLElement | null)?.blur?.();
+
       errorManager.showConfirm({
         title: popup.title,
         message: popup.message,
@@ -209,7 +235,9 @@ export default function ContinueButton<T extends FieldValues>({ config, trackerI
         disabled={submitting}
         onClick={onSubmit}
         className={`px-8 py-2 mt-6 rounded-full font-semibold transition-all shadow-md flex items-center gap-2 cursor-pointer active:translate-y-[1px] active:shadow ${
-          submitting ? "bg-gray-400 text-white cursor-not-allowed" : "bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 text-white hover:opacity-90"
+          submitting
+            ? "bg-gray-400 text-white cursor-not-allowed"
+            : "bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400 text-white hover:opacity-90"
         }`}
       >
         {submitting ? t("form.submitting") : t("form.continue")}
