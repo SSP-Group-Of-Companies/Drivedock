@@ -67,43 +67,70 @@ export default function ErrorModal({ modal, onClose }: ErrorModalProps) {
     };
   }, []);
 
-  // Lock scroll while modal is open
+  // Lock scroll while modal is open using body position:fixed technique (iOS-safe)
   useEffect(() => {
     if (!modal) return;
-    const prevHtmlOverflow = document.documentElement.style.overflow;
-    const prevBodyOverflow = document.body.style.overflow;
-    document.documentElement.style.overflow = "hidden";
-    document.body.style.overflow = "hidden";
+    const body = document.body as HTMLBodyElement;
+    const html = document.documentElement as HTMLElement;
+    const prev = {
+      bodyPosition: body.style.position,
+      bodyTop: body.style.top,
+      bodyLeft: body.style.left,
+      bodyRight: body.style.right,
+      bodyWidth: body.style.width,
+      htmlOverflow: html.style.overflow,
+      bodyOverflow: body.style.overflow,
+    };
+    const scrollY = window.scrollY || window.pageYOffset || 0;
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.left = "0";
+    body.style.right = "0";
+    body.style.width = "100%";
+    // keep overflow visible to avoid layout viewport freeze
+    html.style.overflow = "visible";
+    body.style.overflow = "visible";
     return () => {
-      document.documentElement.style.overflow = prevHtmlOverflow;
-      document.body.style.overflow = prevBodyOverflow;
+      body.style.position = prev.bodyPosition;
+      body.style.top = prev.bodyTop;
+      body.style.left = prev.bodyLeft;
+      body.style.right = prev.bodyRight;
+      body.style.width = prev.bodyWidth;
+      html.style.overflow = prev.htmlOverflow;
+      body.style.overflow = prev.bodyOverflow;
+      const y = Math.abs(parseInt(prev.bodyTop || "0", 10)) || scrollY;
+      window.scrollTo(0, y);
     };
   }, [modal]);
 
-  // iOS hardening: blur active input, set --vh fallback, focus a safe element
+  // iOS hardening: blur active input, set --vvh from visualViewport, focus a safe element
   useEffect(() => {
     if (!modal) return;
 
     // Drop the iOS keyboard if any input was focused
     (document.activeElement as HTMLElement | null)?.blur?.();
 
-    const setVh = () => {
+    const setVvh = () => {
       const h = window.visualViewport?.height ?? window.innerHeight;
-      document.documentElement.style.setProperty("--vh", `${h * 0.01}px`);
+      document.documentElement.style.setProperty("--vvh", `${h * 0.01}px`);
     };
-    setVh();
+    setVvh();
 
     // Resize handlers
     const vv = window.visualViewport;
-    vv?.addEventListener("resize", setVh);
-    window.addEventListener("orientationchange", setVh);
+    vv?.addEventListener("resize", setVvh);
+    vv?.addEventListener("scroll", setVvh);
+    window.addEventListener("orientationchange", setVvh);
+    window.addEventListener("resize", setVvh);
 
     // Ensure focus is inside dialog to avoid scroll jumps
     setTimeout(() => primaryBtnRef.current?.focus?.(), 0);
 
     return () => {
-      vv?.removeEventListener("resize", setVh);
-      window.removeEventListener("orientationchange", setVh);
+      vv?.removeEventListener("resize", setVvh);
+      vv?.removeEventListener("scroll", setVvh);
+      window.removeEventListener("orientationchange", setVvh);
+      window.removeEventListener("resize", setVvh);
     };
   }, [modal]);
 
@@ -122,7 +149,7 @@ export default function ErrorModal({ modal, onClose }: ErrorModalProps) {
         aria-hidden="true"
         style={{
           touchAction: "none",
-          height: "calc(var(--vh, 1vh) * 100)",
+          height: "calc(var(--vvh, 1vh) * 100)",
           minHeight: "100svh" as any,
         }}
       />
@@ -131,7 +158,7 @@ export default function ErrorModal({ modal, onClose }: ErrorModalProps) {
       <div
         className="fixed left-0 top-0 w-screen p-4 overflow-y-auto flex items-center justify-center"
         style={{
-          height: "calc(var(--vh, 1vh) * 100)",
+          height: "calc(var(--vvh, 1vh) * 100)",
           minHeight: "100svh" as any,
           paddingBottom: "env(safe-area-inset-bottom)",
           WebkitOverflowScrolling: "touch",
