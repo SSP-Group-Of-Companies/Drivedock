@@ -1,9 +1,10 @@
 // src/components/onboarding/ErrorModal.tsx
 "use client";
 
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
 import { AlertTriangle, X, WifiOff } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import { ErrorModalData, ErrorModalType } from "@/types/onboardingError.types";
 
 interface ErrorModalProps {
@@ -44,90 +45,99 @@ export default function ErrorModal({ modal, onClose }: ErrorModalProps) {
     }
   };
 
-  return (
-    <AnimatePresence>
-      {modal && (
-        <Dialog open={true} onClose={handleClose} className="relative z-50">
-          {/*
-           * Overlay and container are implemented without backdrop-blur and with a scrolling container
-           * sized using dynamic viewport units (svh) to avoid iOS Safari keyboard/layout jumps.
-           */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/40"
-            aria-hidden="true"
-          />
+  // Mount into a portal at <body> level to avoid parent transforms affecting position:fixed on iOS
+  const [portalEl, setPortalEl] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    const el = document.createElement("div");
+    el.setAttribute("data-error-modal-root", "");
+    document.body.appendChild(el);
+    setPortalEl(el);
 
-          {/* Scrollable container to keep the dialog centered even when keyboard shows */}
-          <div className="fixed inset-0 p-4 overflow-y-auto flex items-center justify-center" style={{ height: "100svh" }}>
-            <motion.div
-              initial={{ y: 20, opacity: 0, scale: 0.95 }}
-              animate={{ y: 0, opacity: 1, scale: 1 }}
-              exit={{ y: 20, opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.2 }}
-              className="w-full max-w-lg"
-            >
-              <DialogPanel className="relative transform overflow-hidden rounded-2xl bg-white px-4 pb-4 pt-5 text-left shadow-2xl sm:w-full sm:p-6">
-                {/* Close button - only show if modal can be closed */}
-                {modal.canClose && (
-                  <div className="absolute right-0 top-0 pr-4 pt-4">
-                    <button
-                      type="button"
-                      className="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                      onClick={handleClose}
-                    >
-                      <span className="sr-only">Close</span>
-                      <X className="h-6 w-6" aria-hidden="true" />
-                    </button>
-                  </div>
-                )}
+    // Lock scroll while modal is open
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+    const prevBodyOverflow = document.body.style.overflow;
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
 
-                <div className="sm:flex sm:items-start">
-                  {/* Icon */}
-                  <div className={`mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full ${getIconBgColor()} sm:mx-0 sm:h-10 sm:w-10`}>{getIcon()}</div>
+    return () => {
+      document.body.removeChild(el);
+      document.documentElement.style.overflow = prevHtmlOverflow;
+      document.body.style.overflow = prevBodyOverflow;
+    };
+  }, []);
 
-                  {/* Content */}
-                  <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left flex-1">
-                    <DialogTitle as="h3" className="text-lg font-semibold leading-6 text-gray-900">
-                      {modal.title}
-                    </DialogTitle>
+  if (!portalEl) return null;
 
-                    <div className="mt-2">
-                      <p className="text-sm text-gray-600 leading-relaxed">{modal.message}</p>
-                    </div>
-                  </div>
-                </div>
+  return createPortal(
+    <Dialog open={true} onClose={handleClose} className="relative z-50">
+      {/* Simple overlay without blur; ensure full dynamic viewport coverage on iOS */}
+      <div
+        className="fixed bg-black/40"
+        style={{ top: 0, left: 0, width: "100vw", height: "100dvh" as any }}
+        aria-hidden="true"
+      />
 
-                {/* Actions */}
-                <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse gap-3">
-                  {/* Primary Action */}
-                  <button
-                    type="button"
-                    className="inline-flex w-full justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:w-auto transition-colors"
-                    onClick={modal.primaryAction.action}
-                  >
-                    {modal.primaryAction.label}
-                  </button>
+      {/* Scrollable center container using dynamic viewport units */}
+      <div
+        className="fixed inset-0 p-4 overflow-y-auto flex items-center justify-center"
+        style={{ minHeight: "100dvh" as any }}
+      >
+        <DialogPanel className="relative overflow-hidden rounded-2xl bg-white px-4 pb-4 pt-5 text-left shadow-2xl sm:w-full sm:p-6 w-full max-w-lg">
+          {/* Close button - only show if modal can be closed */}
+          {modal.canClose && (
+            <div className="absolute right-0 top-0 pr-4 pt-4">
+              <button
+                type="button"
+                className="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                onClick={handleClose}
+              >
+                <span className="sr-only">Close</span>
+                <X className="h-6 w-6" aria-hidden="true" />
+              </button>
+            </div>
+          )}
 
-                  {/* Secondary Action */}
-                  {modal.secondaryAction && (
-                    <button
-                      type="button"
-                      className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:mt-0 sm:w-auto transition-colors"
-                      onClick={modal.secondaryAction.action}
-                    >
-                      {modal.secondaryAction.label}
-                    </button>
-                  )}
-                </div>
-              </DialogPanel>
-            </motion.div>
+          <div className="sm:flex sm:items-start">
+            {/* Icon */}
+            <div className={`mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full ${getIconBgColor()} sm:mx-0 sm:h-10 sm:w-10`}>{getIcon()}</div>
+
+            {/* Content */}
+            <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left flex-1">
+              <DialogTitle as="h3" className="text-lg font-semibold leading-6 text-gray-900">
+                {modal.title}
+              </DialogTitle>
+
+              <div className="mt-2">
+                <p className="text-sm text-gray-600 leading-relaxed">{modal.message}</p>
+              </div>
+            </div>
           </div>
-        </Dialog>
-      )}
-    </AnimatePresence>
+
+          {/* Actions */}
+          <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse gap-3">
+            {/* Primary Action */}
+            <button
+              type="button"
+              className="inline-flex w-full justify-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:w-auto transition-colors"
+              onClick={modal.primaryAction.action}
+            >
+              {modal.primaryAction.label}
+            </button>
+
+            {/* Secondary Action */}
+            {modal.secondaryAction && (
+              <button
+                type="button"
+                className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-4 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 sm:mt-0 sm:w-auto transition-colors"
+                onClick={modal.secondaryAction.action}
+              >
+                {modal.secondaryAction.label}
+              </button>
+            )}
+          </div>
+        </DialogPanel>
+      </div>
+    </Dialog>,
+    portalEl
   );
 }
