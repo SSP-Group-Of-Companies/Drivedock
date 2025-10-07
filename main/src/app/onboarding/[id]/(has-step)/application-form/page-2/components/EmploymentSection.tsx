@@ -3,6 +3,7 @@
 import { useFieldArray, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
+import { Trash2 } from "lucide-react";
 
 import useMounted from "@/hooks/useMounted";
 import EmploymentCard from "./EmploymentCard";
@@ -104,13 +105,14 @@ export default function EmploymentSection() {
             {isPrevious && (
               <button
                 type="button"
+                aria-label={t("form.remove", "Remove")}
                 onClick={() => {
                   remove(index);
                   if (fields.length - 1 <= 1) setShowPrevious(false);
                 }}
-                className="absolute top-2 right-2 text-red-600 hover:text-red-800 text-sm font-medium"
+                className="absolute top-2 right-2 text-red-600 hover:text-red-700"
               >
-                {t("form.step2.page2.actions.removePrevious")}
+                <Trash2 size={16} />
               </button>
             )}
 

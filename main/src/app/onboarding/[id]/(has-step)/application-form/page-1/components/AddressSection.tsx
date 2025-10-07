@@ -3,7 +3,7 @@
 import { useTranslation } from "react-i18next";
 import { useFormContext, useFieldArray, Path } from "react-hook-form";
 import { useEffect, useState } from "react";
-import { Upload } from "lucide-react";
+import { Upload, Trash2 } from "lucide-react";
 
 import useMounted from "@/hooks/useMounted";
 import { ApplicationFormPage1Schema } from "@/lib/zodSchemas/applicationFormPage1.schema";
@@ -140,8 +140,13 @@ export default function AddressSection() {
         const index = i + 1;
         return (
           <div key={field.id} className="space-y-4 border border-gray-300 p-4 rounded-lg relative bg-white mt-6">
-            <button type="button" onClick={() => remove(index)} className="absolute top-3 right-3 text-xs bg-red-50 text-red-600 hover:bg-red-100 px-2 py-1 rounded-md border border-red-200">
-              {t("form.step2.page1.actions.removeAddress")}
+            <button
+              type="button"
+              aria-label={t("form.remove", "Remove")}
+              onClick={() => remove(index)}
+              className="absolute top-2 right-2 text-red-600 hover:text-red-700"
+            >
+              <Trash2 size={16} />
             </button>
             <h3 className="text-sm font-medium text-gray-700 mb-2">
               {t("form.step2.page1.sections.address.previous")} {index}
