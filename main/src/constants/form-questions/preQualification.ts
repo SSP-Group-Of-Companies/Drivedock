@@ -191,18 +191,6 @@ export const categoryQuestions = [
     ],
   },
   {
-    // Prefers local deliveries
-    name: "preferLocalDriving",
-    label: "form.step1.questions.preferLocalDriving",
-    options: YesNoOptions,
-  },
-  {
-    // Prefers trailer switching (drop & hook)
-    name: "preferSwitching",
-    label: "form.step1.questions.preferSwitching",
-    options: YesNoOptions,
-  },
-  {
     // Prior flatbed experience (drives popup + step logic)
     name: "flatbedExperience",
     label: "form.step1.questions.flatbedExperience",

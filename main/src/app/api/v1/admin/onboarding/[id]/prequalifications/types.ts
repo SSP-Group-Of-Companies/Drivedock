@@ -22,8 +22,6 @@ export interface PrequalificationsResponse {
       driverType: string;
       haulPreference: string;
       teamStatus: string;
-      preferLocalDriving: boolean;
-      preferSwitching: boolean;
       flatbedExperience: boolean;
       completed: boolean;
     };

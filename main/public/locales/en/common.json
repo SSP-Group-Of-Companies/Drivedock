@@ -202,8 +202,7 @@
         "driverType": "Which type of driver are you?",
         "haulPreference": "Which do you prefer?",
         "teamStatus": "Are you part of a team or driving solo?",
-        "preferLocalDriving": "Do you prefer driving local?",
-        "preferSwitching": "Do you prefer switching (drop & hook)?",
+        
         "flatbedExperience": "Do you have flatbed experience?",
 
         "yes": "Yes",

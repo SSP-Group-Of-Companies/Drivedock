@@ -43,8 +43,6 @@ export const prequalificationConfig = {
       driverType: values.driverType as EDriverType,
       haulPreference: values.haulPreference as EHaulPreference,
       teamStatus: values.teamStatus as ETeamStatus,
-      preferLocalDriving: values.preferLocalDriving === "form.yes",
-      preferSwitching: values.preferSwitching === "form.yes",
       flatbedExperience: values.flatbedExperience === "form.yes",
       completed: true,
     };

@@ -241,8 +241,6 @@ export default function PreQualificationClient({
       driverType: data.driverType as EDriverType,
       haulPreference: data.haulPreference as EHaulPreference,
       teamStatus: data.teamStatus as ETeamStatus,
-      preferLocalDriving: data.preferLocalDriving === "form.yes",
-      preferSwitching: data.preferSwitching === "form.yes",
       flatbedExperience: data.flatbedExperience === "form.yes",
       completed: true, // Indicates step completion
     };

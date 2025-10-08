@@ -85,9 +85,6 @@ function transformToFormValues(
     haulPreference: data.haulPreference,
     teamStatus: data.teamStatus,
 
-    // Preferences / additional booleans
-    preferLocalDriving: data.preferLocalDriving ? "form.yes" : "form.no",
-    preferSwitching: data.preferSwitching ? "form.yes" : "form.no",
     flatbedExperience: data.flatbedExperience ? "form.yes" : "form.no",
   };
 }

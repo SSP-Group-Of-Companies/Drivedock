@@ -230,9 +230,6 @@ export default function PreQualificationPage() {
       haulPreference: data.haulPreference as EHaulPreference,
       teamStatus: data.teamStatus as ETeamStatus,
 
-      // More booleans
-      preferLocalDriving: data.preferLocalDriving === "form.yes",
-      preferSwitching: data.preferSwitching === "form.yes",
       flatbedExperience: data.flatbedExperience === "form.yes",
 
       // Completion acknowledgment for Step 1
@@ -360,9 +357,6 @@ function transformToFormValues(data: IPreQualifications): FormValues {
     haulPreference: data.haulPreference,
     teamStatus: data.teamStatus,
 
-    // More booleans
-    preferLocalDriving: data.preferLocalDriving ? "form.yes" : "form.no",
-    preferSwitching: data.preferSwitching ? "form.yes" : "form.no",
     flatbedExperience: data.flatbedExperience ? "form.yes" : "form.no",
   };
 }

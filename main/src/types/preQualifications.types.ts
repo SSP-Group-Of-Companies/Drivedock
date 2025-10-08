@@ -84,8 +84,6 @@ export interface IPreQualifications {
   driverType: EDriverType; // Employment type
   haulPreference: EHaulPreference; // Trip length preference
   teamStatus: ETeamStatus; // Solo or team driving
-  preferLocalDriving: boolean; // Prefers local deliveries
-  preferSwitching: boolean; // Prefers trailer switching (drop & hook)
   flatbedExperience: boolean; // Has flatbed trailer experience
 
   // Confirmation

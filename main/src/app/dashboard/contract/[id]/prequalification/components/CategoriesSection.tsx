@@ -7,8 +7,6 @@ interface CategoriesSectionProps {
     driverType: string;
     haulPreference: string;
     teamStatus: string;
-    preferLocalDriving: boolean;
-    preferSwitching: boolean;
     flatbedExperience: boolean;
   };
 }
@@ -35,18 +33,6 @@ export default function CategoriesSection({ data }: CategoriesSectionProps) {
       type: "choice" as const,
       options: ["Team", "Single"],
       value: data.teamStatus,
-    },
-    {
-      key: "preferLocalDriving",
-      label: "Do you prefer driving local?",
-      type: "boolean" as const,
-      value: data.preferLocalDriving,
-    },
-    {
-      key: "preferSwitching",
-      label: "Do you prefer Switching?",
-      type: "boolean" as const,
-      value: data.preferSwitching,
     },
     {
       key: "flatbedExperience",

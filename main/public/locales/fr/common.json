@@ -198,8 +198,6 @@
         "driverType": "Quel type de conducteur êtes-vous ?",
         "haulPreference": "Que préférez-vous ?",
         "teamStatus": "Faites-vous partie d’une équipe ou conduisez-vous en solo ?",
-        "preferLocalDriving": "Préférez-vous conduire localement ?",
-        "preferSwitching": "Préférez-vous le switching (drop & hook) ?",
         "flatbedExperience": "Avez-vous de l’expérience en plateau ?",
 
         "yes": "Oui",
