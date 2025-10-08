@@ -132,7 +132,7 @@ export default function InvitationsDataGrid({ isLoading, isFetching, isDefinitel
           <colgroup>
             <col className="w-[30%] sm:w-[30%]" />
             <col className="w-[35%] sm:w-[35%]" />
-            <col className="hidden sm:table-column sm:w-[20%]" />
+            <col className="w-[20%] sm:w-[20%]" />
             <col className="w-[15%] sm:w-[15%]" />
           </colgroup>
 
@@ -150,7 +150,7 @@ export default function InvitationsDataGrid({ isLoading, isFetching, isDefinitel
               <th className="px-2 py-3 text-left font-medium sm:px-3" style={{ borderBottom: "1px solid var(--color-outline)" }}>
                 Contact
               </th>
-              <th className="hidden px-3 py-3 text-left font-medium sm:table-cell" style={{ borderBottom: "1px solid var(--color-outline)" }}>
+              <th className="px-3 py-3 text-left font-medium" style={{ borderBottom: "1px solid var(--color-outline)" }}>
                 Country
               </th>
               <th className="px-2 py-3 text-center font-medium sm:px-3" style={{ borderBottom: "1px solid var(--color-outline)" }}>
@@ -211,9 +211,9 @@ export default function InvitationsDataGrid({ isLoading, isFetching, isDefinitel
                       </div>
                     </td>
 
-                    {/* Country (desktop) */}
-                    <td className="hidden px-3 py-4 sm:table-cell align-middle" style={{ borderBottom: "1px solid var(--color-outline)" }}>
-                      <div className="flex items-center">
+                    {/* Country */}
+                    <td className="px-3 py-4 align-middle" style={{ borderBottom: "1px solid var(--color-outline)" }}>
+                      <div className="flex items-center justify-center sm:justify-start">
                         <CountryFlag companyId={it.companyId} countryCode={(it as any).preApprovalCountryCode} size="md" />
                       </div>
                     </td>

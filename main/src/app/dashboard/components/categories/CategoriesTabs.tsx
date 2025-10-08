@@ -41,7 +41,7 @@ export default function CategoriesTabs({
     <div
       role="tablist"
       aria-label="Categories"
-      className="rounded-2xl overflow-hidden min-w-0"
+      className="rounded-2xl overflow-visible min-w-0"
       style={{
         backgroundColor: "var(--color-surface)",
         boxShadow: "var(--elevation-1)",
@@ -72,7 +72,7 @@ export default function CategoriesTabs({
                   : t.label;
 
               return (
-                <button
+              <button
                   key={t.key}
                   type="button"
                   role="tab"
@@ -80,7 +80,8 @@ export default function CategoriesTabs({
                   onClick={() => onChangeTab(t.key)}
                   title={labelText}
                   className={cx(
-                    "w-full text-center px-2 sm:px-4 py-2 sm:py-3",
+                    // Ensure consistent height and vertical centering; allow height to grow on zoom
+                    "w-full px-2 sm:px-4 py-2.5 flex items-center justify-center rounded-none first:rounded-l-2xl last:rounded-r-2xl",
                     "text-xs sm:text-sm",
                     "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
                     // Equal fill on desktop
@@ -99,7 +100,7 @@ export default function CategoriesTabs({
                     borderColor: "var(--color-outline)",
                   }}
                 >
-                  <span className="block truncate">{labelText}</span>
+                  <span className="block truncate leading-[1.1]">{labelText}</span>
                 </button>
               );
             })}

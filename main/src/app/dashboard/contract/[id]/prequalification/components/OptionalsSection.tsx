@@ -2,6 +2,7 @@
 
 import { Check } from "lucide-react";
 import { Company } from "@/constants/companies";
+import { EStatusInCanada } from "@/types/preQualifications.types";
 
 interface OptionalsSectionProps {
   data: {
@@ -63,15 +64,37 @@ export default function OptionalsSection({ data, company }: OptionalsSectionProp
     },
   ];
 
-  // Filter questions based on company country (same logic as onboarding)
-  const questions = company?.countryCode === "US" 
-    ? allQuestions.filter(q => 
-        q.key !== "canCrossBorderUSA" && 
-        q.key !== "hasFASTCard" && 
+  // Start from country-based visibility first (US hides Canada-specific)
+  let questions = company?.countryCode === "US"
+    ? allQuestions.filter((q) =>
+        q.key !== "canCrossBorderUSA" &&
+        q.key !== "hasFASTCard" &&
         q.key !== "statusInCanada" &&
         q.key !== "eligibleForFASTCard"
       )
-    : allQuestions;
+    : [...allQuestions];
+
+  // Apply Canadian conditional logic so dashboard mirrors onboarding:
+  // - If status is Work Permit → hide FAST card and eligibility questions entirely
+  // - If status is PR/Citizenship and has FAST card = Yes → hide eligibility question
+  if (company?.countryCode !== "US") {
+    const status = (data.statusInCanada as EStatusInCanada | string | undefined) || undefined;
+    const isPRorCitizen =
+      status === EStatusInCanada.PR ||
+      status === EStatusInCanada.Citizenship ||
+      status === "PR" ||
+      status === "Citizenship";
+
+    if (!isPRorCitizen) {
+      // Work Permit or undefined → these questions were not shown on onboarding
+      questions = questions.filter((q) => q.key !== "hasFASTCard" && q.key !== "eligibleForFASTCard");
+    } else {
+      // PR/Citizen → only show eligibility if FAST card is explicitly No
+      if (data.hasFASTCard !== false) {
+        questions = questions.filter((q) => q.key !== "eligibleForFASTCard");
+      }
+    }
+  }
 
   return (
     <div className="space-y-4">
