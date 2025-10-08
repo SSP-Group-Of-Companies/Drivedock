@@ -1,7 +1,7 @@
 // src/lib/mail/sendCompletionPdfsEmail.ts
 import path from "path";
 import fs from "fs";
-import { OUTBOUND_SENDER_EMAIL } from "@/config/env";
+import { NO_REPLY_EMAIL } from "@/config/env";
 import { getPoliciesPdfsForCompanyServer } from "@/constants/policiesConsentsPdfs.server";
 import { ECompanyId, COMPANIES } from "@/constants/companies";
 import { sendMailAppOnly, type GraphAttachment } from "@/lib/mail/mailer";
@@ -94,7 +94,7 @@ function buildDefaultHtml(opts: { subject: string; companyLabel: string; attachm
                         We’ve attached the relevant policy PDF(s) for your records.
                       </p>
                       <p style="margin:0 0 10px 0; font-size:13px; color:#475569;">
-                        You can download them directly from this email. If you have any questions, just reply to this message.
+                        You can download them directly from this email.
                       </p>
                       <div style="margin:12px 0 0 0;">
                         <p style="margin:0 0 6px 0; font-size:12px; color:#64748b;">Included attachments:</p>
@@ -139,7 +139,7 @@ function escapeHtml(str: string) {
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-export async function sendDriverCompletionPdfsEmail({ to, companyId, from = OUTBOUND_SENDER_EMAIL, subject, html, saveToSentItems = true }: Args) {
+export async function sendDriverCompletionPdfsEmail({ to, companyId, from = NO_REPLY_EMAIL, subject, html, saveToSentItems = true }: Args) {
   const refs = getPoliciesPdfsForCompanyServer(companyId);
 
   const attachments: GraphAttachment[] = refs
@@ -201,8 +201,6 @@ export async function sendDriverCompletionPdfsEmail({ to, companyId, from = OUTB
     attachments.length ? `Attachments:\n${attachments.map((a) => `- ${a.name}`).join("\n")}` : `No attachments found.`,
     ``,
     `We do door to door to Mexico. For any quotes please email logistics@sspgroup.com`,
-    ``,
-    `If you have any questions, reply to this email.`,
   ].join("\n");
 
   await sendMailAppOnly({

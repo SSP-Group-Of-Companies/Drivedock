@@ -112,7 +112,7 @@ export enum EDriverApplicationFillableFormFields {
   REFERRAL_SOURCE = "referral_source",
   EXPECTED_PAY_RATE = "expected_pay_rate",
 
-  // Western Canada availability (derived from prequal preferLocalDriving)
+  // Western Canada availability
   AVAILABLE_WESTERN_CANADA_YES = "available_western_canada_yes",
   AVAILABLE_WESTERN_CANADA_NO = "available_western_canada_no",
 

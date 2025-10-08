@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { promises as fs } from "fs";
 import { join } from "path";
 import { sendMailAppOnly } from "@/lib/mail/mailer";
-import { OUTBOUND_SENDER_EMAIL } from "@/config/env";
+import { NO_REPLY_EMAIL } from "@/config/env";
 import { COMPANIES, type ECompanyId } from "@/constants/companies";
 import { resolveBaseUrlFromRequest } from "@/lib/utils/urlHelper.server";
 import { escapeHtml } from "@/lib/mail/utils";
@@ -156,7 +156,7 @@ export async function sendDriverResumeVerificationCodeEmail(req: NextRequest, { 
   ].join("\n");
 
   await sendMailAppOnly({
-    from: OUTBOUND_SENDER_EMAIL,
+    from: NO_REPLY_EMAIL,
     to: [toEmail],
     subject: finalSubject,
     html,
