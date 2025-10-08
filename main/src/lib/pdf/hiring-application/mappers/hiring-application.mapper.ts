@@ -230,7 +230,7 @@ export function buildHiringApplicationFieldMap({ onboarding, application, prequa
 
     // Western Canada availability (default to true)
     [F.AVAILABLE_WESTERN_CANADA_YES]: true,
-    [F.AVAILABLE_WESTERN_CANADA_NO]: true,
+    [F.AVAILABLE_WESTERN_CANADA_NO]: false,
 
     // FAST Card block (page 3)
     [F.HAS_FAST_CARD_YES]: hasFast ? true : false,
