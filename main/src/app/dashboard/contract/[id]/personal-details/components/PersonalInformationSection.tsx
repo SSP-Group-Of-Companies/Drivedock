@@ -140,6 +140,11 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
     setSinPhotoMessage("");
   };
 
+  const openSinPhotoInNewTab = () => {
+    const url = formData?.sinPhoto?.url;
+    if (url) window.open(url, "_blank", "noopener,noreferrer");
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3 pb-2 border-b" style={{ borderColor: "var(--color-outline-variant)" }}>
@@ -266,29 +271,44 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
               SIN Card Photo
             </label>
 
+            {/* Container is relative so we can pin the X and overlay consistently */}
             <div
-              className="p-4 rounded-lg border-2 border-dashed text-center"
-              style={{
-                background: "var(--color-surface)",
-                borderColor: "var(--color-outline-variant)",
-              }}
+              className="relative group rounded-lg border-2 border-dashed p-4 text-center overflow-hidden"
+              style={{ background: "var(--color-surface)", borderColor: "var(--color-outline-variant)" }}
             >
-              {formData.sinPhoto?.url ? (
-                <div className="relative inline-block">
-                  <Image src={formData.sinPhoto.url} alt="SIN Card" width={200} height={120} className="mx-auto rounded-lg" />
-                  {isEditMode && (
-                    <button
-                      type="button"
-                      onClick={handleSinPhotoRemove}
-                      disabled={sinPhotoStatus === "uploading" || sinPhotoStatus === "deleting"}
-                      className="absolute -top-2 -right-2 p-1 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors disabled:opacity-60"
-                      aria-label="Remove photo"
-                      title="Remove"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  )}
-                </div>
+              {/* Only show delete button if a photo exists */}
+              {isEditMode && formData?.sinPhoto?.url && (
+                <button
+                  type="button"
+                  onClick={handleSinPhotoRemove}
+                  disabled={sinPhotoStatus === "uploading" || sinPhotoStatus === "deleting"}
+                  className="absolute top-2 right-2 z-20 p-1 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors disabled:opacity-60"
+                  aria-label="Remove photo"
+                  title="Remove"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+
+              {/* If photo exists, show it with a hover overlay to view */}
+              {formData?.sinPhoto?.url ? (
+                <>
+                  <div className="relative inline-block">
+                    <Image src={formData.sinPhoto.url} alt="SIN Card" width={240} height={140} className="mx-auto rounded-lg object-contain max-h-40 w-auto" />
+                  </div>
+
+                  {/* Hover overlay to view (never covers the ❌ thanks to z-index) */}
+                  <button
+                    type="button"
+                    onClick={openSinPhotoInNewTab}
+                    className="absolute inset-0 z-10 hidden group-hover:flex items-center justify-center transition-opacity"
+                    style={{ background: "rgba(0,0,0,0.4)" }}
+                    aria-label="View SIN card photo"
+                    title="View"
+                  >
+                    <Eye className="w-7 h-7 text-white" />
+                  </button>
+                </>
               ) : (
                 <>
                   <label htmlFor="sinPhotoInput" className="cursor-pointer flex flex-col items-center gap-2">

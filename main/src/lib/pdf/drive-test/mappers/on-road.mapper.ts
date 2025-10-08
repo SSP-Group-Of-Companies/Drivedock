@@ -49,7 +49,6 @@ function expectedFlags(v: EExpectedStandard) {
 export type PreQualSummary = {
   driverType?: EDriverType;
   teamStatus?: ETeamStatus;
-  preferLocalDriving?: boolean;
   haulPreference?: EHaulPreference;
 };
 
@@ -90,9 +89,7 @@ export function buildOnRoadFillablePayload({ onRoad, driverName, driverLicense, 
     payload[F.ROLE_SINGLE] = preQual.teamStatus === ETeamStatus.Single;
     payload[F.ROLE_TEAM] = preQual.teamStatus === ETeamStatus.Team;
   }
-  if (typeof preQual?.preferLocalDriving === "boolean") {
-    payload[F.ROLE_CITY] = !!preQual.preferLocalDriving;
-  }
+
   if (preQual?.haulPreference) {
     payload[F.ROLE_SHORT_RUNS] = preQual.haulPreference === EHaulPreference.ShortHaul;
   }

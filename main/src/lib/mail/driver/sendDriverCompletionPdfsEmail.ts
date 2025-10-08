@@ -1,7 +1,7 @@
 // src/lib/mail/sendCompletionPdfsEmail.ts
 import path from "path";
 import fs from "fs";
-import { OUTBOUND_SENDER_EMAIL } from "@/config/env";
+import { NO_REPLY_EMAIL } from "@/config/env";
 import { getPoliciesPdfsForCompanyServer } from "@/constants/policiesConsentsPdfs.server";
 import { ECompanyId, COMPANIES } from "@/constants/companies";
 import { sendMailAppOnly, type GraphAttachment } from "@/lib/mail/mailer";
@@ -139,7 +139,7 @@ function escapeHtml(str: string) {
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-export async function sendDriverCompletionPdfsEmail({ to, companyId, from = OUTBOUND_SENDER_EMAIL, subject, html, saveToSentItems = true }: Args) {
+export async function sendDriverCompletionPdfsEmail({ to, companyId, from = NO_REPLY_EMAIL, subject, html, saveToSentItems = true }: Args) {
   const refs = getPoliciesPdfsForCompanyServer(companyId);
 
   const attachments: GraphAttachment[] = refs

@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { promises as fs } from "fs";
 import { join } from "path";
 import { sendMailAppOnly } from "@/lib/mail/mailer";
-import { OUTBOUND_SENDER_EMAIL } from "@/config/env";
+import { NO_REPLY_EMAIL, SAFETY_EMAIL } from "@/config/env";
 import { resolveBaseUrlFromRequest } from "@/lib/utils/urlHelper.server";
 import { escapeHtml } from "../utils";
 
@@ -178,8 +178,8 @@ export default async function sendSafetyInvitationNotificationEmail(req: NextReq
     .join("\n");
 
   await sendMailAppOnly({
-    from: OUTBOUND_SENDER_EMAIL,
-    to: [OUTBOUND_SENDER_EMAIL],
+    from: NO_REPLY_EMAIL,
+    to: [SAFETY_EMAIL],
     subject: finalSubject,
     html,
     text,

@@ -141,7 +141,6 @@ export function buildHiringApplicationFieldMap({ onboarding, application, prequa
   const prev2 = addr[2];
 
   const workedBefore = !!p2?.workedWithCompanyBefore;
-  const preferLocal = !!prequals?.preferLocalDriving; // derives Western Canada availability
   const legalRight = prequals?.legalRightToWorkCanada === true;
   const legalRightNo = prequals?.legalRightToWorkCanada === false;
 
@@ -229,9 +228,9 @@ export function buildHiringApplicationFieldMap({ onboarding, application, prequa
     [F.REFERRAL_SOURCE]: p2?.referredBy || "",
     [F.EXPECTED_PAY_RATE]: p2?.expectedRateOfPay || "",
 
-    // Western Canada availability (derived from prequal preferLocalDriving)
-    [F.AVAILABLE_WESTERN_CANADA_YES]: preferLocal ? true : false,
-    [F.AVAILABLE_WESTERN_CANADA_NO]: !preferLocal ? true : false,
+    // Western Canada availability (default to true)
+    [F.AVAILABLE_WESTERN_CANADA_YES]: true,
+    [F.AVAILABLE_WESTERN_CANADA_NO]: true,
 
     // FAST Card block (page 3)
     [F.HAS_FAST_CARD_YES]: hasFast ? true : false,

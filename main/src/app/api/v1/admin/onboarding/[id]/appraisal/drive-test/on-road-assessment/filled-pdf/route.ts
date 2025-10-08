@@ -98,7 +98,6 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
       preQual: {
         driverType: preQual?.driverType,
         teamStatus: preQual?.teamStatus,
-        preferLocalDriving: preQual?.preferLocalDriving,
         haulPreference: preQual?.haulPreference,
       },
       // dates
