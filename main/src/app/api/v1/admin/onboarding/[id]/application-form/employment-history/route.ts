@@ -9,12 +9,13 @@ import { isValidObjectId } from "mongoose";
 import { NextRequest } from "next/server";
 import { validateEmploymentHistory } from "@/lib/utils/validationUtils";
 import { guard } from "@/lib/utils/auth/authUtils";
+import { sortEmploymentsDesc } from "@/lib/utils/sortUtils";
 
 /**
  * PATCH /admin/onboarding/[id]/application-form/employment-history
- * - Validates & saves empoloyment history
- * - Requires that the user can access empoloyment history (i.e., has progressed to it)
- * - Advances progress to empoloyment history (furthest) and refreshes resume expiry
+ * - Validates & saves employment history
+ * - Requires that the driver has completed PAGE_2
+ * - Advances progress to PAGE_2 (monotonic) and refreshes resume expiry
  */
 export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
@@ -26,15 +27,22 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
     const body = (await req.json()) as IApplicationFormPage2;
 
-    // employment-history specific business validation
+    // Validate employment history
     const validationError = validateEmploymentHistory(body.employments);
     if (validationError) return errorResponse(400, validationError);
+
+    // Persist in canonical order: most recent → oldest
+    const payload: IApplicationFormPage2 = {
+      ...body,
+      employments: sortEmploymentsDesc(body.employments),
+    };
 
     const onboardingDoc = await OnboardingTracker.findById(id);
     if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
     if (!isInvitationApproved(onboardingDoc)) return errorResponse(400, "driver not yet approved for onboarding process");
-
-    if (!hasCompletedStep(onboardingDoc, EStepPath.APPLICATION_PAGE_2)) return errorResponse(401, "driver hasn't completed this step yet");
+    if (!hasCompletedStep(onboardingDoc, EStepPath.APPLICATION_PAGE_2)) {
+      return errorResponse(401, "driver hasn't completed this step yet");
+    }
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) return errorResponse(404, "ApplicationForm not linked");
@@ -43,25 +51,26 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     if (!appFormDoc) return errorResponse(404, "ApplicationForm not found");
 
     // ---------------------------
-    // Phase 1: write page2 only
+    // Phase 1: write page2 only (sorted)
     // ---------------------------
-    appFormDoc.set("page2", body);
-    await appFormDoc.validate(["page2"]); // validate subtree
-    await appFormDoc.save({ validateBeforeSave: false }); // persist without full-doc validation
+    appFormDoc.set("page2", payload);
+    await appFormDoc.validate(["page2"]);
+    await appFormDoc.save({ validateBeforeSave: false });
 
     // ---------------------------
     // Phase 2: tracker updates
     // ---------------------------
-    // 1) Advance authoritative progress to PAGE_2 (monotonic)
     onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.APPLICATION_PAGE_2);
-    // 2) Refresh resume window
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();
-
     await onboardingDoc.save();
+
+    // IMPORTANT: return a plain object (no Mongoose internals)
+    const freshLean = await ApplicationForm.findById(appFormId).lean();
+    const page2Plain = (freshLean?.page2 ?? {}) as IApplicationFormPage2;
 
     return successResponse(200, "employment history updated", {
       onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_2, true),
-      employmentHistory: appFormDoc.page2,
+      employmentHistory: page2Plain, // plain JSON (no $__parent)
     });
   } catch (error) {
     return errorResponse(error);
@@ -69,10 +78,9 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 };
 
 /**
- * GET /employment-history
- * - Gated by access to empoloyment history (furthest >= PAGE_2)
- * - Updates lastVisitedStep to empoloyment history (resume UX)
- * - Returns page2 data + context (built from lastVisited for UX)
+ * GET /admin/onboarding/[id]/application-form/employment-history
+ * - Returns employment history (sorted) + admin context
+ * - Uses .lean() so response is plain JSON (no Mongoose internals)
  */
 export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
   try {
@@ -85,20 +93,25 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
     if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
     if (!isInvitationApproved(onboardingDoc)) return errorResponse(400, "driver not yet approved for onboarding process");
+    if (!hasCompletedStep(onboardingDoc, EStepPath.APPLICATION_PAGE_2)) {
+      return errorResponse(401, "driver hasn't completed this step yet");
+    }
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) return errorResponse(404, "ApplicationForm not linked");
 
-    const appFormDoc = await ApplicationForm.findById(appFormId);
-    if (!appFormDoc) return errorResponse(404, "ApplicationForm not found");
+    // Use lean() to avoid $__parent and other internals
+    const appFormLean = await ApplicationForm.findById(appFormId).lean();
+    if (!appFormLean) return errorResponse(404, "ApplicationForm not found");
 
-    // GATE: must be allowed to view empoloyment history
-    if (!hasCompletedStep(onboardingDoc, EStepPath.APPLICATION_PAGE_2)) return errorResponse(401, "driver hasn't completed this step yet");
+    // Normalize to sorted order on read (covers legacy unsorted data)
+    const page2 = (appFormLean.page2 ?? {}) as IApplicationFormPage2;
+    const employments = Array.isArray(page2.employments) ? sortEmploymentsDesc(page2.employments) : [];
+    const normalizedPage2: IApplicationFormPage2 = { ...page2, employments };
 
-    return successResponse(200, "empoloyment history data retrieved", {
-      // For page rendering/resume, build context from lastVisited
+    return successResponse(200, "employment history data retrieved", {
       onboardingContext: buildTrackerContext(onboardingDoc, null, true),
-      employmentHistory: appFormDoc.page2,
+      employmentHistory: normalizedPage2, // plain JSON (lean)
     });
   } catch (error) {
     return errorResponse(error);
