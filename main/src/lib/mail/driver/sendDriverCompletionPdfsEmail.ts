@@ -94,7 +94,7 @@ function buildDefaultHtml(opts: { subject: string; companyLabel: string; attachm
                         We’ve attached the relevant policy PDF(s) for your records.
                       </p>
                       <p style="margin:0 0 10px 0; font-size:13px; color:#475569;">
-                        You can download them directly from this email. If you have any questions, just reply to this message.
+                        You can download them directly from this email.
                       </p>
                       <div style="margin:12px 0 0 0;">
                         <p style="margin:0 0 6px 0; font-size:12px; color:#64748b;">Included attachments:</p>
@@ -201,8 +201,6 @@ export async function sendDriverCompletionPdfsEmail({ to, companyId, from = NO_R
     attachments.length ? `Attachments:\n${attachments.map((a) => `- ${a.name}`).join("\n")}` : `No attachments found.`,
     ``,
     `We do door to door to Mexico. For any quotes please email logistics@sspgroup.com`,
-    ``,
-    `If you have any questions, reply to this email.`,
   ].join("\n");
 
   await sendMailAppOnly({
