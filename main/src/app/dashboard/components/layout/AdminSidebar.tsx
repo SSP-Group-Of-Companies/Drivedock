@@ -16,6 +16,7 @@ import {
   contractSidebarSections,
   type SidebarItem,
 } from "@/constants/dashboard/sidebar";
+import { useInvitationCount } from "@/hooks/dashboard/useInvitationCount";
 
 function cx(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
@@ -35,6 +36,7 @@ const INACTIVE_STYLES = {
 function NavItem({ item, active }: { item: SidebarItem; active: boolean }) {
   const Icon = item.icon;
   const styles = useMemo(() => active ? ACTIVE_STYLES : INACTIVE_STYLES, [active]);
+  const hasCount = typeof item.count === "number" && item.count > 0;
   
   return (
     <Link
@@ -54,6 +56,18 @@ function NavItem({ item, active }: { item: SidebarItem; active: boolean }) {
         aria-hidden="true"
       />
       <span className="truncate">{item.label}</span>
+      {hasCount && (
+        <span
+          className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-xs font-semibold tabular-nums"
+          style={{
+            backgroundColor: active ? "rgba(255, 255, 255, 0.25)" : "var(--color-primary)",
+            color: active ? "white" : "white",
+          }}
+          aria-label={`${item.count} pending`}
+        >
+          {item.count}
+        </span>
+      )}
     </Link>
   );
 }
@@ -69,11 +83,25 @@ function SidebarNav({
   trackerId?: string;
   navLabel: string;
 }) {
+  // Fetch invitation count for home variant
+  const { count: invitationCount } = useInvitationCount();
+
   // Memoize sections calculation to prevent unnecessary re-renders
   const sections = useMemo(() => {
     if (variant === "home") return null;
     return contractSidebarSections(trackerId ?? "");
   }, [variant, trackerId]);
+
+  // Memoize home sidebar items with invitation count
+  const homeSidebarItems = useMemo(() => {
+    if (variant !== "home") return HOME_SIDEBAR_ITEMS;
+    return HOME_SIDEBAR_ITEMS.map((item) => {
+      if (item.href === "/dashboard/invitations") {
+        return { ...item, count: invitationCount };
+      }
+      return item;
+    });
+  }, [variant, invitationCount]);
 
   if (variant === "home") {
     return (
@@ -86,7 +114,7 @@ function SidebarNav({
             Navigation
           </h3>
           <ul className="space-y-1">
-            {HOME_SIDEBAR_ITEMS.map((it) => (
+            {homeSidebarItems.map((it) => (
               <li key={it.href}>
                 <NavItem item={it} active={activePath === it.href} />
               </li>

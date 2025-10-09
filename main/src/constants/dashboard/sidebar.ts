@@ -4,7 +4,7 @@
 import { Home, FileX, FileClock, ClipboardList, IdCard, Briefcase, ShieldAlert, FileBadge, FileText, Slash, BadgeCheck, Printer, Car, Settings } from "lucide-react";
 import type { ElementType } from "react";
 
-export type SidebarItem = { href: string; label: string; icon: ElementType };
+export type SidebarItem = { href: string; label: string; icon: ElementType; count?: number };
 export type SidebarSection = { title: string; items: SidebarItem[] };
 
 /** Home-only Settings item */
