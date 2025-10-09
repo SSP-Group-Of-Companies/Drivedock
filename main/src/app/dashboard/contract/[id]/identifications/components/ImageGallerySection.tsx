@@ -5,10 +5,11 @@ import Image from "next/image";
 import { useEditMode } from "../../components/EditModeContext";
 import { ILicenseEntry, IFastCard, EPassportType, EWorkAuthorizationType } from "@/types/applicationForm.types";
 import { IFileAsset, ECountryCode } from "@/types/shared.types";
-import { Image as ImageIcon, ChevronLeft, ChevronRight, Plus, Camera, Upload, Trash2, AlertCircle, Menu, X, CheckCircle, XCircle, Download } from "lucide-react";
+import { Image as ImageIcon, ChevronLeft, ChevronRight, Plus, Camera, Upload, Trash2, AlertCircle, Menu, X, CheckCircle, XCircle, Download, ZoomIn } from "lucide-react";
 import { ES3Folder } from "@/types/aws.types";
 import { useParams } from "next/navigation";
 import { uploadToS3Presigned, deleteTempFiles, isTempKey } from "@/lib/utils/s3Upload";
+import ImageZoomModal from "./ImageZoomModal";
 
 interface ImageGallerySectionProps {
   licenses: ILicenseEntry[];
@@ -71,6 +72,7 @@ export default function ImageGallerySection({
   const [deleteMessage, setDeleteMessage] = useState<string>("");
   const [isMounted, setIsMounted] = useState(false);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isZoomModalOpen, setIsZoomModalOpen] = useState(false);
 
   // Ensure component is mounted before rendering dynamic content
   useEffect(() => {
@@ -648,6 +650,16 @@ export default function ImageGallerySection({
     }
   };
 
+  const handleZoomImage = () => {
+    if (currentPhoto?.url) {
+      setIsZoomModalOpen(true);
+    }
+  };
+
+  const handleCloseZoomModal = () => {
+    setIsZoomModalOpen(false);
+  };
+
   // Business section validation helper (reflect driver-type requirements)
   const getBusinessValidationStatus = () => {
     const hasBusinessData =
@@ -1004,19 +1016,36 @@ export default function ImageGallerySection({
                     )}
                   </div>
 
-                  {/* Download Button */}
+                  {/* Action Buttons */}
                   {currentPhoto?.url && (
-                    <button
-                      onClick={() => handleDownloadImage(currentPhoto, selectedItemData.title, getPhotoLabel(selectedItemData, currentPhotoIndex))}
-                      className="absolute top-4 right-4 p-2 rounded-full shadow-lg transition-all hover:scale-110"
-                      style={{
-                        background: "var(--color-primary)",
-                        color: "var(--color-on-primary)",
-                      }}
-                      title="Download image"
-                    >
-                      <Download className="h-5 w-5" />
-                    </button>
+                    <div className="absolute top-4 right-4 flex gap-2">
+                      {/* Zoom Button */}
+                      <button
+                        onClick={handleZoomImage}
+                        className="p-2 rounded-full shadow-lg transition-all hover:scale-110"
+                        style={{
+                          background: "var(--color-surface)",
+                          color: "var(--color-on-surface)",
+                          border: "1px solid var(--color-outline)",
+                        }}
+                        title="Zoom image"
+                      >
+                        <ZoomIn className="h-5 w-5" />
+                      </button>
+                      
+                      {/* Download Button */}
+                      <button
+                        onClick={() => handleDownloadImage(currentPhoto, selectedItemData.title, getPhotoLabel(selectedItemData, currentPhotoIndex))}
+                        className="p-2 rounded-full shadow-lg transition-all hover:scale-110"
+                        style={{
+                          background: "var(--color-primary)",
+                          color: "var(--color-on-primary)",
+                        }}
+                        title="Download image"
+                      >
+                        <Download className="h-5 w-5" />
+                      </button>
+                    </div>
                   )}
 
                   {/* Navigation Controls */}
@@ -1168,6 +1197,20 @@ export default function ImageGallerySection({
           </div>
         )}
       </div>
+
+      {/* Image Zoom Modal */}
+      <ImageZoomModal
+        isOpen={isZoomModalOpen}
+        onClose={handleCloseZoomModal}
+        imageUrl={currentPhoto?.url || ""}
+        imageAlt={`${selectedItemData?.title || ""} - ${selectedItemData ? getPhotoLabel(selectedItemData, currentPhotoIndex) : ""}`}
+        imageTitle={selectedItemData?.title}
+        onDownload={() => {
+          if (currentPhoto && selectedItemData) {
+            handleDownloadImage(currentPhoto, selectedItemData.title, getPhotoLabel(selectedItemData, currentPhotoIndex));
+          }
+        }}
+      />
     </div>
   );
 }
