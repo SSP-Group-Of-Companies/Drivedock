@@ -52,10 +52,10 @@ export default function OnRoadMetaFields({ isLocked, showFlatbedToggle, onboardi
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Expected Standard</label>
-          <select {...register("onRoad.expectedStandard")} disabled={isLocked} aria-invalid={!!expectedStandardErr} className={withError(selectBase + " uppercase", !!expectedStandardErr)}>
+          <select {...register("onRoad.expectedStandard")} disabled={isLocked} aria-invalid={!!expectedStandardErr} className={withError(selectBase + " capitalize", !!expectedStandardErr)}>
             <option value="">Select Expected Standard</option>
             {Object.values(EExpectedStandard).map((v) => (
-              <option key={v} value={v} className="uppercase">
+              <option key={v} value={v} className="capitalize">
                 {v.replaceAll("_", " ")}
               </option>
             ))}
@@ -65,10 +65,10 @@ export default function OnRoadMetaFields({ isLocked, showFlatbedToggle, onboardi
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Overall Assessment</label>
-          <select {...register("onRoad.overallAssessment")} disabled={isLocked} aria-invalid={!!overallAssessmentErr} className={withError(selectBase + " uppercase", !!overallAssessmentErr)}>
+          <select {...register("onRoad.overallAssessment")} disabled={isLocked} aria-invalid={!!overallAssessmentErr} className={withError(selectBase + " capitalize", !!overallAssessmentErr)}>
             <option value="">Select Overall Assessment</option>
             {Object.values(EDriveTestOverall).map((v) => (
-              <option key={v} value={v} className="uppercase">
+              <option key={v} value={v} className="capitalize">
                 {v.replaceAll("_", " ")}
               </option>
             ))}

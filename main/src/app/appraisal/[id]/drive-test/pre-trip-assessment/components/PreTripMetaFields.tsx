@@ -42,10 +42,10 @@ export default function PreTripMetaFields({ isLocked }: { isLocked: boolean }) {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Expected Standard</label>
-          <select {...register("preTrip.expectedStandard")} disabled={isLocked} aria-invalid={!!expectedStandardErr} className={withErrorRing(selectBase + " uppercase", !!expectedStandardErr)}>
+          <select {...register("preTrip.expectedStandard")} disabled={isLocked} aria-invalid={!!expectedStandardErr} className={withErrorRing(selectBase + " capitalize", !!expectedStandardErr)}>
             <option value="">Select Expected Standard</option>
             {Object.values(EExpectedStandard).map((v) => (
-              <option key={v} value={v} className="uppercase">
+              <option key={v} value={v} className="capitalize">
                 {v.replaceAll("_", " ")}
               </option>
             ))}
@@ -55,10 +55,10 @@ export default function PreTripMetaFields({ isLocked }: { isLocked: boolean }) {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Overall Assessment</label>
-          <select {...register("preTrip.overallAssessment")} disabled={isLocked} aria-invalid={!!overallAssessmentErr} className={withErrorRing(selectBase + " uppercase", !!overallAssessmentErr)}>
+          <select {...register("preTrip.overallAssessment")} disabled={isLocked} aria-invalid={!!overallAssessmentErr} className={withErrorRing(selectBase + " capitalize", !!overallAssessmentErr)}>
             <option value="">Select Overall Assessment</option>
             {Object.values(EDriveTestOverall).map((v) => (
-              <option key={v} value={v} className="uppercase">
+              <option key={v} value={v} className="capitalize">
                 {v.replaceAll("_", " ")}
               </option>
             ))}
