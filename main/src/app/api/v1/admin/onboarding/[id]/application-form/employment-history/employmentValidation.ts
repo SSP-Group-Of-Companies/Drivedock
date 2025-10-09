@@ -205,7 +205,7 @@ export function validateEmploymentCount(employments: IEmploymentEntry[]): Employ
 export function validateEmploymentOverlapsAndGaps(employments: IEmploymentEntry[]): EmploymentValidationError | null {
   if (employments.length < 2) return null;
 
-  // Sort by from date DESC (most recent first) - same logic as validationUtils
+  // Sort by from date DESC (most recent first), then collapse/ignore covered gaps
   const sorted = [...employments].sort(
     (a, b) => new Date(b.from).getTime() - new Date(a.from).getTime()
   );
@@ -226,17 +226,25 @@ export function validateEmploymentOverlapsAndGaps(employments: IEmploymentEntry[
       };
     }
     
-    // Gap check (≥ 30d requires explanation on the later job) - same logic as validationUtils
+    // Gap check (≥ 30d requires explanation on the later job)
+    // BUT ignore if another employment fully covers the gap window
     const gapDays = differenceInDays(currFrom, nextTo);
-    if (
-      gapDays >= 30 &&
-      (!curr.gapExplanationBefore || curr.gapExplanationBefore.trim() === "")
-    ) {
-      return {
-        type: 'gap',
-        message: `Missing gap explanation before employment at ${curr.supervisorName}`,
-        employmentIndex: i
-      };
+    if (gapDays >= 30) {
+      const hasCoveringEmployment = sorted.some((other, idx) => {
+        if (idx <= i + 1) return false; // only earlier entries (older than `next`)
+        const oFrom = new Date(other.from);
+        const oTo = new Date(other.to);
+        // fully covers the gap window [nextTo, currFrom]
+        return oFrom <= currFrom && oTo >= nextTo;
+      });
+
+      if (!hasCoveringEmployment && (!curr.gapExplanationBefore || curr.gapExplanationBefore.trim() === "")) {
+        return {
+          type: 'gap',
+          message: `Missing gap explanation before employment at ${curr.supervisorName}`,
+          employmentIndex: i
+        };
+      }
     }
   }
 

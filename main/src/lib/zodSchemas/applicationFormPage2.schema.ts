@@ -130,23 +130,17 @@ export const applicationFormPage2Schema = z
     const errorMessage = validateEmploymentHistory(normalized);
     if (!errorMessage) return;
 
-    // Try to map message → field when possible
+    // For gap errors, redirect to root banner so scroll lands at the top
     const gapMatch = errorMessage.match(
       /Missing gap explanation before employment at (.+)/
     );
     if (gapMatch) {
-      const supervisor = gapMatch[1];
-      const index = employments.findIndex(
-        (e) => e.supervisorName.toLowerCase() === supervisor.toLowerCase()
-      );
-      if (index !== -1) {
-        ctx.addIssue({
-          code: "custom",
-          path: ["employments", index, "gapExplanationBefore"],
-          message: "Please explain the gap in your employment history.",
-        });
-        return;
-      }
+      ctx.addIssue({
+        code: "custom",
+        path: ["employments", "totals", "root"], // 👈 matches the data-field anchor
+        message: "Please explain the gap(s) in your employment history. Look for the red gap explanation fields below.",
+      });
+      return;
     }
 
     const overlapMatch = errorMessage.match(

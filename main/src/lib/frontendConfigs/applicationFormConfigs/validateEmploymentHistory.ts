@@ -56,25 +56,31 @@ export function calculateTimelineFromCurrent(employments: any[]) {
     }
   }
 
-  // previous in the order they appear in the UI (1..n)
+  // previous entries: build with original UI index, then sort by `from` DESC
+  const previous: Array<{ index: number; from: Date; to: Date; d: number }> = [];
   for (let i = 1; i < (employments?.length ?? 0); i++) {
     const emp = employments[i];
     if (!emp?.from || !emp?.to) continue;
     const from = new Date(emp.from);
     const to = new Date(emp.to);
     if (isNaN(from.getTime()) || isNaN(to.getTime()) || to < from) continue;
-
     const d = differenceInDays(to, from) + 1;
-    totalDays += d;
-    timeline.push({
-      type: "previous",
-      index: i,
-      from,
-      to,
-      durationDays: d,
-      durationMonths: Math.floor(d / 30.44),
-    });
+    previous.push({ index: i, from, to, d });
   }
+
+  previous
+    .sort((a, b) => b.from.getTime() - a.from.getTime())
+    .forEach((p) => {
+      totalDays += p.d;
+      timeline.push({
+        type: "previous",
+        index: p.index,
+        from: p.from,
+        to: p.to,
+        durationDays: p.d,
+        durationMonths: Math.floor(p.d / 30.44),
+      });
+    });
 
   const totalMonths = Math.floor(totalDays / 30.44);
   const tenYears = 3650;

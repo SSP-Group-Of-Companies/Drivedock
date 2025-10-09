@@ -16,7 +16,7 @@ type EmploymentEntry = ApplicationFormPage2Schema["employments"][number];
 const MAX_ENTRIES = 8;
 
 export default function EmploymentSection() {
-  const { control, watch } = useFormContext<ApplicationFormPage2Schema>();
+  const { control, watch, formState: { errors } } = useFormContext<ApplicationFormPage2Schema>();
 
   const mounted = useMounted();
   const { t } = useTranslation("common");
@@ -66,6 +66,10 @@ export default function EmploymentSection() {
   const canAddMore = fields.length < MAX_ENTRIES;
   const previousCount = Math.max(fields.length - 1, 0);
 
+  // Check for employment-related errors at the root level (for gap explanations)
+  const employmentErrors = errors?.employments as any;
+  const rootErrorMessage = employmentErrors?.totals?.root?.message;
+
   if (!mounted) return null;
   return (
     <section className="space-y-6">
@@ -84,6 +88,13 @@ export default function EmploymentSection() {
         {lessThan10Years && (
           <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-md p-3">
             Employment history of 10 years is required. Current duration: ~{Math.floor(totalMonths / 12)} years {totalMonths % 12} months ({totalDays} days). Please add previous employment until you reach 10 years.
+          </p>
+        )}
+        
+        {/* Root error message for gap explanations */}
+        {rootErrorMessage && (
+          <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-md p-3 mt-2">
+            {rootErrorMessage}
           </p>
         )}
       </div>

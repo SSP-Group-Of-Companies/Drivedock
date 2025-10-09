@@ -207,9 +207,18 @@ export function validateEmploymentHistory(employments: IEmploymentEntry[]): stri
       }
 
       // Gap check (≥ 30d requires explanation on the later job)
+      // Ignore if there exists another employment that fully covers the gap window [next.to, curr.from]
       const gapDays = differenceInDays(from, nextTo);
-      if (gapDays >= 30 && (!curr.gapExplanationBefore || curr.gapExplanationBefore.trim() === "")) {
-        return `Missing gap explanation before employment at ${curr.supervisorName}`;
+      if (gapDays >= 30) {
+        const hasCoveringEmployment = sorted.some((other, idx) => {
+          if (idx <= i + 1) return false; // only consider older entries beyond `next`
+          const oFrom = new Date(other.from);
+          const oTo = new Date(other.to);
+          return oFrom <= from && oTo >= nextTo; // fully covers
+        });
+        if (!hasCoveringEmployment && (!curr.gapExplanationBefore || curr.gapExplanationBefore.trim() === "")) {
+          return `Missing gap explanation before employment at ${curr.supervisorName}`;
+        }
       }
     }
   }
