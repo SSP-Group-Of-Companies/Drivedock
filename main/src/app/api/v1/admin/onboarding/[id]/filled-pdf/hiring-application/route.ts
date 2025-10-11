@@ -19,17 +19,24 @@ import PreQualifications from "@/mongoose/models/Prequalifications";
 import { drawPdfImage } from "@/lib/pdf/utils/drawPdfImage";
 import { loadImageBytesFromAsset } from "@/lib/utils/s3Upload";
 
-import { buildHiringApplicationFieldMap, resolveHiringTemplate } from "@/lib/pdf/hiring-application/mappers/hiring-application.mapper";
+import {
+  buildHiringApplicationFieldMap,
+  resolveHiringTemplate,
+} from "@/lib/pdf/hiring-application/mappers/hiring-application.mapper";
 import { EDriverApplicationFillableFormFields as F } from "@/lib/pdf/hiring-application/mappers/hiring-application.types";
 
 import { ESafetyAdminId } from "@/constants/safetyAdmins";
 import { ECompanyId } from "@/constants/companies";
 import { getSafetyAdminServerById } from "@/lib/assets/safetyAdmins/safetyAdmins.server";
-import { isInvitationApproved } from "@/lib/utils/onboardingUtils";
+import { hasCompletedStep, isInvitationApproved } from "@/lib/utils/onboardingUtils";
+import { EStepPath } from "@/types/onboardingTracker.types";
 
 // ----------------------------------------------------------------------
 
-export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+export const GET = async (
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) => {
   try {
     await connectDB();
     await guard();
@@ -41,7 +48,9 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     }
 
     const searchParams = req.nextUrl.searchParams;
-    const safetyAdminId = searchParams.get("safetyAdminId") as ESafetyAdminId | null;
+    const safetyAdminId = searchParams.get(
+      "safetyAdminId"
+    ) as ESafetyAdminId | null;
     if (!safetyAdminId) return errorResponse(400, "safetyAdminId is required");
     if (!Object.values(ESafetyAdminId).includes(safetyAdminId)) {
       return errorResponse(400, "Invalid safetyAdminId");
@@ -53,19 +62,33 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     // ------- Load Onboarding (fail fast if missing)
     const onboarding = await OnboardingTracker.findById(onboardingId).lean();
     if (!onboarding) return errorResponse(404, "Onboarding document not found");
-    if (!isInvitationApproved(onboarding)) return errorResponse(400, "driver not yet approved for onboarding process");
-    if (!onboarding.status.completed) return errorResponse(400, "Onboarding is not yet completed");
+    if (!isInvitationApproved(onboarding))
+      return errorResponse(
+        400,
+        "driver not yet approved for onboarding process"
+      );
+    if (!hasCompletedStep(onboarding, EStepPath.POLICIES_CONSENTS))
+      return errorResponse(
+        400,
+        `Step ${EStepPath.POLICIES_CONSENTS} not yet completed`
+      );
 
     const companyId = onboarding.companyId as ECompanyId | undefined;
-    if (!companyId || !Object.values(ECompanyId).includes(companyId)) return errorResponse(400, "invalid company ID");
+    if (!companyId || !Object.values(ECompanyId).includes(companyId))
+      return errorResponse(400, "invalid company ID");
 
     // ------- Resolve referenced form IDs
     const appFormId = onboarding.forms?.driverApplication;
     const policiesId = onboarding.forms?.policiesConsents;
     const preQualId = onboarding.forms?.preQualification;
 
-    if (!appFormId) return errorResponse(404, "Onboarding.forms.driverApplication is missing");
-    if (!policiesId) return errorResponse(404, "Onboarding.forms.policiesConsents is missing");
+    if (!appFormId)
+      return errorResponse(
+        404,
+        "Onboarding.forms.driverApplication is missing"
+      );
+    if (!policiesId)
+      return errorResponse(404, "Onboarding.forms.policiesConsents is missing");
 
     // ------- Load required docs (IMPORTANT: do NOT use .lean() so we can materialize virtuals)
     const [application, policies, prequals] = await Promise.all([
@@ -74,8 +97,10 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
       preQualId ? PreQualifications.findById(preQualId) : Promise.resolve(null),
     ]);
 
-    if (!application) return errorResponse(404, "Application form document not found");
-    if (!policies) return errorResponse(404, "Policies & Consents document not found");
+    if (!application)
+      return errorResponse(404, "Application form document not found");
+    if (!policies)
+      return errorResponse(404, "Policies & Consents document not found");
 
     // ------- Resolve and load template (company-based)
     const templatePath = resolveHiringTemplate(companyId);
@@ -85,7 +110,9 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     let driverSignatureBytes: Uint8Array | undefined;
     if (policies?.signature) {
       try {
-        driverSignatureBytes = await loadImageBytesFromAsset(policies.signature);
+        driverSignatureBytes = await loadImageBytesFromAsset(
+          policies.signature
+        );
       } catch (e) {
         console.warn("Driver signature load failed:", e);
       }
@@ -93,7 +120,9 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
 
     let adminSignatureBytes: Uint8Array | undefined;
     try {
-      adminSignatureBytes = new Uint8Array(await fs.readFile(safetyAdmin.signatureAbsPath));
+      adminSignatureBytes = new Uint8Array(
+        await fs.readFile(safetyAdmin.signatureAbsPath)
+      );
     } catch (e) {
       console.warn("Safety admin signature load failed:", e);
     }
@@ -159,7 +188,14 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     }
 
     // ------- Signature drawing ----------------------------------------
-    const draw = async (pageIndex: number, fieldName: F, bytes?: Uint8Array, width = 64, height = 20, yOffset = 0) => {
+    const draw = async (
+      pageIndex: number,
+      fieldName: F,
+      bytes?: Uint8Array,
+      width = 64,
+      height = 20,
+      yOffset = 0
+    ) => {
       if (!bytes) return; // returns a resolved Promise<void> since this is async
       try {
         const page = pages[pageIndex];
@@ -181,7 +217,14 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     // Queue all draw tasks (conditional ones included)
     const tasks: Array<Promise<void>> = [];
 
-    const pushDraw = (pageIndex: number, fieldName: F, bytes?: Uint8Array, width?: number, height?: number, yOffset?: number) => {
+    const pushDraw = (
+      pageIndex: number,
+      fieldName: F,
+      bytes?: Uint8Array,
+      width?: number,
+      height?: number,
+      yOffset?: number
+    ) => {
       // Always push; `draw` will no-op if bytes is missing and still return a resolved Promise
       tasks.push(draw(pageIndex, fieldName, bytes, width, height, yOffset));
     };
@@ -215,7 +258,8 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
 
     // Page 13
     pushDraw(12, F.COMP_ACK_SIGNATURE, driverSignatureBytes);
-    const hasAccidentalInsurance = application.page4?.hasAccidentalInsurance === true;
+    const hasAccidentalInsurance =
+      application.page4?.hasAccidentalInsurance === true;
     if (hasAccidentalInsurance) {
       pushDraw(12, F.INSURANCE_SIGNATURE, driverSignatureBytes);
     }
@@ -226,7 +270,10 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     // ------- Finalize
     form.flatten();
     const out = await pdfDoc.save();
-    const arrayBuffer = out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength) as ArrayBuffer;
+    const arrayBuffer = out.buffer.slice(
+      out.byteOffset,
+      out.byteOffset + out.byteLength
+    ) as ArrayBuffer;
 
     return new NextResponse(arrayBuffer, {
       status: 200,

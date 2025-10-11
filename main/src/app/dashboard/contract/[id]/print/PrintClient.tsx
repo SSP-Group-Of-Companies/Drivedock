@@ -1,8 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Download, Eye, FileText, User, AlertTriangle } from "lucide-react";
+import {
+  Download,
+  Eye,
+  FileText,
+  User,
+  AlertTriangle,
+  Lock,
+} from "lucide-react";
 import { useContract } from "@/hooks/dashboard/contract/useContract";
 import { useDashboardPageLoading } from "@/hooks/useDashboardPageLoading";
 import { useDashboardLoading } from "@/store/useDashboardLoading";
@@ -12,21 +19,54 @@ import { ESafetyAdminId } from "@/constants/safetyAdmins";
 import PrintPdfViewerModal from "./components/PrintPdfViewerModal";
 import SafetyAdminPickerModal from "./components/SafetyAdminPickerModal";
 import { EStepPath } from "@/types/onboardingTracker.types";
+import { hasCompletedStep } from "@/lib/utils/onboardingUtils";
 
 // Helper function to check if truck details exist
 function hasTruckDetails(truckDetails?: any): boolean {
   if (!truckDetails) return false;
-
-  // Check if any truck detail field has meaningful data
-  const fields = ["vin", "make", "model", "year", "province", "truckUnitNumber", "plateNumber"];
+  const fields = [
+    "vin",
+    "make",
+    "model",
+    "year",
+    "province",
+    "truckUnitNumber",
+    "plateNumber",
+  ];
   return fields.some((field) => {
     const value = truckDetails[field];
     return value && typeof value === "string" && value.trim().length > 0;
   });
 }
 
+/** Determine if a PDF item belongs to Drive Test set (On-Road, Pre-Trip, Road Test). */
+function isDriveTestPdf(item: { label: string; apiUrl: string }) {
+  const l = item.label.toLowerCase();
+  const url = item.apiUrl.toLowerCase();
+  // Heuristics: label or URL keywords
+  return (
+    l.includes("on-road") ||
+    l.includes("onroad") ||
+    l.includes("pre-trip") ||
+    l.includes("pretrip") ||
+    l.includes("road test") ||
+    url.includes("drive-test") ||
+    url.includes("on-road") ||
+    url.includes("pre-trip") ||
+    url.includes("road-test")
+  );
+}
+
+/** Nice, concise locked reason for the badge. */
+function lockedReason(item: { label: string; apiUrl: string }) {
+  return isDriveTestPdf(item)
+    ? "Complete Drive Test"
+    : "Complete Policies & Consents";
+}
+
 export default function PrintClient({ trackerId }: { trackerId: string }) {
-  const { data: contractData, isLoading: isContractLoading } = useContract(trackerId);
+  const { data: contractData, isLoading: isContractLoading } =
+    useContract(trackerId);
   const { hideLoader } = useDashboardPageLoading();
   const { isVisible: isDashboardLoaderVisible } = useDashboardLoading();
   const [shouldRender, setShouldRender] = useState(false);
@@ -48,12 +88,9 @@ export default function PrintClient({ trackerId }: { trackerId: string }) {
 
   // Progressive loading: Show layout first, then content
   useEffect(() => {
-    // Show layout as soon as contract data is available
     if (contractData && !isContractLoading) {
       hideLoader();
-      setTimeout(() => {
-        setShouldRender(true);
-      }, 100); // Faster transition for layout
+      setTimeout(() => setShouldRender(true), 100);
     }
   }, [contractData, isContractLoading, hideLoader]);
 
@@ -66,10 +103,37 @@ export default function PrintClient({ trackerId }: { trackerId: string }) {
     }
   }, [contractData, trackerId]);
 
+  // Build a tiny adapter that satisfies hasCompletedStep’s expectations
+  const trackerAdapter = useMemo(
+    () =>
+      contractData
+        ? ({
+            // only fields used by hasCompletedStep / flow helpers
+            needsFlatbedTraining: Boolean(contractData.needsFlatbedTraining),
+            status: contractData.status ?? {
+              currentStep: EStepPath.PRE_QUALIFICATIONS,
+              completed: false,
+            },
+          } as any)
+        : null,
+    [contractData]
+  );
+
+  // Helpers to check per-item unlock
+  const isStepCompleted = (step: EStepPath) => {
+    if (!trackerAdapter) return false;
+    // The util is doc-aware; adapter provides status & needsFlatbedTraining
+    return hasCompletedStep(trackerAdapter, step);
+  };
+
+  const isItemUnlocked = (item: { label: string; apiUrl: string }) => {
+    return isDriveTestPdf(item)
+      ? isStepCompleted(EStepPath.DRIVE_TEST)
+      : isStepCompleted(EStepPath.POLICIES_CONSENTS);
+  };
+
   // Don't render anything while dashboard loader is visible or before transition is complete
-  if (isDashboardLoaderVisible || !shouldRender) {
-    return null;
-  }
+  if (isDashboardLoaderVisible || !shouldRender) return null;
 
   // Show loading state for contract data while layout is visible
   if (isContractLoading || !contractData || !pdfList) {
@@ -89,7 +153,10 @@ export default function PrintClient({ trackerId }: { trackerId: string }) {
               borderWidth: "2px",
             }}
           />
-          <span className="text-xs font-medium" style={{ color: "var(--color-on-surface-variant)" }}>
+          <span
+            className="text-xs font-medium"
+            style={{ color: "var(--color-on-surface-variant)" }}
+          >
             Loading Print Documents...
           </span>
         </div>
@@ -99,9 +166,14 @@ export default function PrintClient({ trackerId }: { trackerId: string }) {
 
   const ctx = contractData;
 
-  const handlePdfAction = (item: { apiUrl: string; needsSafetyAdminId: boolean }, action: "preview" | "download") => {
+  const handlePdfAction = (
+    item: { apiUrl: string; needsSafetyAdminId: boolean; label: string },
+    action: "preview" | "download"
+  ) => {
+    // Respect lock client-side too (buttons appear disabled, but guard anyway)
+    if (!isItemUnlocked(item)) return;
+
     if (!item.needsSafetyAdminId) {
-      // Direct action - no safety admin required
       if (action === "preview") {
         setPreviewModalUrl(item.apiUrl);
       } else {
@@ -135,11 +207,7 @@ export default function PrintClient({ trackerId }: { trackerId: string }) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{
-        duration: 0.5,
-        ease: "easeOut",
-        delay: 0.1, // Small delay to ensure smooth transition after loader hides
-      }}
+      transition={{ duration: 0.5, ease: "easeOut", delay: 0.1 }}
       className="space-y-4"
     >
       {/* Form Wizard Progress */}
@@ -155,7 +223,10 @@ export default function PrintClient({ trackerId }: { trackerId: string }) {
       >
         <div className="flex justify-end mb-6">
           <div className="flex items-center gap-2">
-            <span className="text-xs sm:text-sm" style={{ color: "var(--color-on-surface-variant)" }}>
+            <span
+              className="text-xs sm:text-sm"
+              style={{ color: "var(--color-on-surface-variant)" }}
+            >
               Mode:
             </span>
             <span
@@ -170,79 +241,161 @@ export default function PrintClient({ trackerId }: { trackerId: string }) {
           </div>
         </div>
 
-        {/* Print Documents Section Header */}
-        <div className="flex items-center gap-3 pb-4 border-b mb-6" style={{ borderColor: "var(--color-outline)" }}>
-          <div className="w-1 h-8 rounded-full" style={{ background: "var(--color-primary)" }} />
-          <h2 className="text-xl font-bold" style={{ color: "var(--color-on-surface)" }}>
+        {/* Section Header */}
+        <div
+          className="flex items-center gap-3 pb-4 border-b mb-6"
+          style={{ borderColor: "var(--color-outline)" }}
+        >
+          <div
+            className="w-1 h-8 rounded-full"
+            style={{ background: "var(--color-primary)" }}
+          />
+          <h2
+            className="text-xl font-bold"
+            style={{ color: "var(--color-on-surface)" }}
+          >
             Print Documents
           </h2>
         </div>
 
         {/* Truck Details Warning - only show when driver has completed page 4 or beyond */}
-        {contractData?.forms?.identifications?.truckDetails && 
-         !hasTruckDetails(contractData.forms.identifications.truckDetails) &&
-         (contractData.status?.currentStep === EStepPath.APPLICATION_PAGE_4 ||
-          contractData.status?.currentStep === EStepPath.APPLICATION_PAGE_5 ||
-          contractData.status?.currentStep === EStepPath.POLICIES_CONSENTS ||
-          contractData.status?.currentStep === EStepPath.DRIVE_TEST ||
-          contractData.status?.currentStep === EStepPath.CARRIERS_EDGE_TRAINING ||
-          contractData.status?.currentStep === EStepPath.DRUG_TEST ||
-          contractData.status?.currentStep === EStepPath.FLATBED_TRAINING) && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className="rounded-lg border p-4 mb-6"
-            style={{
-              background: "var(--color-warning-container)",
-              borderColor: "var(--color-warning)",
-            }}
-          >
-            <div className="flex items-start gap-3">
-              <div className="p-1 rounded" style={{ background: "var(--color-warning)" }}>
-                <AlertTriangle className="h-4 w-4" style={{ color: "var(--color-on-warning)" }} />
+        {contractData?.forms?.identifications?.truckDetails &&
+          !hasTruckDetails(contractData.forms.identifications.truckDetails) &&
+          (contractData.status?.currentStep === EStepPath.APPLICATION_PAGE_4 ||
+            contractData.status?.currentStep === EStepPath.APPLICATION_PAGE_5 ||
+            contractData.status?.currentStep === EStepPath.POLICIES_CONSENTS ||
+            contractData.status?.currentStep === EStepPath.DRIVE_TEST ||
+            contractData.status?.currentStep ===
+              EStepPath.CARRIERS_EDGE_TRAINING ||
+            contractData.status?.currentStep === EStepPath.DRUG_TEST ||
+            contractData.status?.currentStep ===
+              EStepPath.FLATBED_TRAINING) && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="rounded-lg border p-4 mb-6"
+              style={{
+                background: "var(--color-warning-container)",
+                borderColor: "var(--color-warning)",
+              }}
+            >
+              <div className="flex items-start gap-3">
+                <div
+                  className="p-1 rounded"
+                  style={{ background: "var(--color-warning)" }}
+                >
+                  <AlertTriangle
+                    className="h-4 w-4"
+                    style={{ color: "var(--color-on-warning)" }}
+                  />
+                </div>
+                <div className="flex-1">
+                  <h4
+                    className="font-medium text-sm mb-1"
+                    style={{ color: "var(--color-on-warning-container)" }}
+                  >
+                    Missing Truck Details
+                  </h4>
+                  <p
+                    className="text-xs"
+                    style={{ color: "var(--color-on-warning-container)" }}
+                  >
+                    Truck details are missing. Company Policy PDF will have
+                    empty truck detail fields. Please ensure truck details are
+                    completed in the Identifications section.
+                  </p>
+                </div>
               </div>
-              <div className="flex-1">
-                <h4 className="font-medium text-sm mb-1" style={{ color: "var(--color-on-warning-container)" }}>
-                  Missing Truck Details
-                </h4>
-                <p className="text-xs" style={{ color: "var(--color-on-warning-container)" }}>
-                  Truck details are missing. Company Policy PDF will have empty truck detail fields. Please ensure truck details are completed in the Identifications section.
-                </p>
-              </div>
-            </div>
-          </motion.div>
-        )}
+            </motion.div>
+          )}
 
-        {/* PDF List Grid */}
-        {!contractData.status?.completed ? (
-          <div className="">Printing is available when onboarding is completed</div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {pdfList.map((item, index) => (
+        {/* Helper strip explaining the lock logic (subtle) */}
+        <div
+          className="mb-6 rounded-lg p-3 text-xs flex items-center gap-2"
+          style={{
+            background: "var(--color-surface-variant)",
+            color: "var(--color-on-surface-variant)",
+          }}
+        >
+          <Lock className="h-4 w-4" />
+          <span>
+            <span className="font-medium">Note:</span> On-Road / Pre-Trip / Road
+            Test unlock after completing{" "}
+            <span className="font-medium">Drive Test</span>. All other documents
+            unlock after completing{" "}
+            <span className="font-medium">Policies & Consents</span>.
+          </span>
+        </div>
+
+        {/* PDF List Grid — always render; items lock individually */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {pdfList.map((item, index) => {
+            const unlocked = isItemUnlocked(item);
+            const requiresAdmin = item.needsSafetyAdminId;
+
+            return (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="rounded-lg border p-4 hover:shadow-md transition-shadow"
+                transition={{ delay: index * 0.08 }}
+                className="relative rounded-lg border p-4 hover:shadow-md transition-shadow"
                 style={{
                   background: "var(--color-surface)",
                   borderColor: "var(--color-outline-variant)",
+                  filter: unlocked ? undefined : "grayscale(0.2)",
+                  opacity: unlocked ? 1 : 0.8,
                 }}
               >
+                {/* Lock overlay ribbon when locked */}
+                {!unlocked && (
+                  <div className="absolute inset-0 rounded-lg pointer-events-none">
+                    {/* subtle glass overlay */}
+                    <div
+                      className="absolute inset-0 rounded-lg"
+                      style={{ background: "rgba(0,0,0,0.04)" }}
+                    />
+                    <div
+                      className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold tracking-wide"
+                      style={{
+                        background: "var(--color-error-container)",
+                        color: "var(--color-on-error-container)",
+                      }}
+                    >
+                      <Lock className="h-3.5 w-3.5" />
+                      Locked — {lockedReason(item)}
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex items-start gap-3 mb-4">
-                  <div className="p-2 rounded-lg" style={{ background: "var(--color-primary-container)" }}>
-                    <FileText className="h-5 w-5" style={{ color: "var(--color-on-primary-container)" }} />
+                  <div
+                    className="p-2 rounded-lg"
+                    style={{ background: "var(--color-primary-container)" }}
+                  >
+                    <FileText
+                      className="h-5 w-5"
+                      style={{ color: "var(--color-on-primary-container)" }}
+                    />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-sm" style={{ color: "var(--color-on-surface)" }}>
+                    <h3
+                      className="font-medium text-sm"
+                      style={{ color: "var(--color-on-surface)" }}
+                    >
                       {item.label}
                     </h3>
-                    {item.needsSafetyAdminId && (
+                    {requiresAdmin && (
                       <div className="flex items-center gap-1 mt-1">
-                        <User className="h-3 w-3" style={{ color: "var(--color-on-surface-variant)" }} />
-                        <span className="text-xs" style={{ color: "var(--color-on-surface-variant)" }}>
+                        <User
+                          className="h-3 w-3"
+                          style={{ color: "var(--color-on-surface-variant)" }}
+                        />
+                        <span
+                          className="text-xs"
+                          style={{ color: "var(--color-on-surface-variant)" }}
+                        >
                           Requires Safety Admin
                         </span>
                       </div>
@@ -252,32 +405,53 @@ export default function PrintClient({ trackerId }: { trackerId: string }) {
 
                 <div className="flex gap-2">
                   <button
-                    onClick={() => handlePdfAction(item, "preview")}
-                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                    onClick={() =>
+                      unlocked && handlePdfAction(item as any, "preview")
+                    }
+                    disabled={!unlocked}
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors disabled:cursor-not-allowed"
                     style={{
-                      background: "var(--color-secondary-container)",
-                      color: "var(--color-on-secondary-container)",
+                      background: unlocked
+                        ? "var(--color-secondary-container)"
+                        : "var(--color-surface-variant)",
+                      color: unlocked
+                        ? "var(--color-on-secondary-container)"
+                        : "var(--color-on-surface-variant)",
+                      border: "1px solid var(--color-outline-variant)",
                     }}
+                    aria-disabled={!unlocked}
+                    title={unlocked ? "Preview" : lockedReason(item)}
                   >
                     <Eye className="h-4 w-4" />
                     Preview
                   </button>
+
                   <button
-                    onClick={() => handlePdfAction(item, "download")}
-                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                    onClick={() =>
+                      unlocked && handlePdfAction(item as any, "download")
+                    }
+                    disabled={!unlocked}
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors disabled:cursor-not-allowed"
                     style={{
-                      background: "var(--color-primary)",
-                      color: "var(--color-on-primary)",
+                      background: unlocked
+                        ? "var(--color-primary)"
+                        : "var(--color-surface-variant)",
+                      color: unlocked
+                        ? "var(--color-on-primary)"
+                        : "var(--color-on-surface-variant)",
+                      border: "1px solid var(--color-outline-variant)",
                     }}
+                    aria-disabled={!unlocked}
+                    title={unlocked ? "Download" : lockedReason(item)}
                   >
                     <Download className="h-4 w-4" />
                     Download
                   </button>
                 </div>
               </motion.div>
-            ))}
-          </div>
-        )}
+            );
+          })}
+        </div>
 
         {/* Info Section */}
         {contractData.status?.completed && (
@@ -289,15 +463,29 @@ export default function PrintClient({ trackerId }: { trackerId: string }) {
             }}
           >
             <div className="flex items-start gap-3">
-              <div className="p-1 rounded" style={{ background: "var(--color-info-container)" }}>
-                <FileText className="h-4 w-4" style={{ color: "var(--color-on-info-container)" }} />
+              <div
+                className="p-1 rounded"
+                style={{ background: "var(--color-info-container)" }}
+              >
+                <FileText
+                  className="h-4 w-4"
+                  style={{ color: "var(--color-on-info-container)" }}
+                />
               </div>
               <div>
-                <h4 className="font-medium text-sm mb-1" style={{ color: "var(--color-on-surface)" }}>
+                <h4
+                  className="font-medium text-sm mb-1"
+                  style={{ color: "var(--color-on-surface)" }}
+                >
                   Document Information
                 </h4>
-                <p className="text-xs" style={{ color: "var(--color-on-surface-variant)" }}>
-                  Some documents require a Safety Admin signature. When you select these documents, you will be prompted to choose a Safety Admin before previewing or downloading.
+                <p
+                  className="text-xs"
+                  style={{ color: "var(--color-on-surface-variant)" }}
+                >
+                  Some documents require a Safety Admin signature. When you
+                  select these documents, you will be prompted to choose a
+                  Safety Admin before previewing or downloading.
                 </p>
               </div>
             </div>
@@ -306,7 +494,11 @@ export default function PrintClient({ trackerId }: { trackerId: string }) {
       </div>
 
       {/* PDF Preview Modal */}
-      <PrintPdfViewerModal modalUrl={previewModalUrl} strategy="fetch" onClose={() => setPreviewModalUrl(null)} />
+      <PrintPdfViewerModal
+        modalUrl={previewModalUrl}
+        strategy="fetch"
+        onClose={() => setPreviewModalUrl(null)}
+      />
 
       {/* Safety Admin Picker Modal */}
       <SafetyAdminPickerModal

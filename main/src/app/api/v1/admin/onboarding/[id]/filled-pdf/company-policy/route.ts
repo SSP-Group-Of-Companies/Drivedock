@@ -18,7 +18,11 @@ import PoliciesConsents from "@/mongoose/models/PoliciesConsents";
 import { ESafetyAdminId } from "@/constants/safetyAdmins";
 import { ECompanyId } from "@/constants/companies";
 
-import { buildCompanyPolicyPayload, applyCompanyPolicyPayloadToForm, resolveCompanyPolicyTemplate } from "@/lib/pdf/company-policy/mappers/company-policy.mapper";
+import {
+  buildCompanyPolicyPayload,
+  applyCompanyPolicyPayloadToForm,
+  resolveCompanyPolicyTemplate,
+} from "@/lib/pdf/company-policy/mappers/company-policy.mapper";
 import { ECompanyPolicyFillableFormFields as F } from "@/lib/pdf/company-policy/mappers/company-policy.types";
 
 import { drawPdfImage } from "@/lib/pdf/utils/drawPdfImage";
@@ -26,15 +30,23 @@ import { loadImageBytesFromAsset } from "@/lib/utils/s3Upload";
 import PreQualifications from "@/mongoose/models/Prequalifications";
 import { EDriverType } from "@/types/preQualifications.types";
 import { getSafetyAdminServerById } from "@/lib/assets/safetyAdmins/safetyAdmins.server";
-import { isInvitationApproved } from "@/lib/utils/onboardingUtils";
+import {
+  hasCompletedStep,
+  isInvitationApproved,
+} from "@/lib/utils/onboardingUtils";
+import { EStepPath } from "@/types/onboardingTracker.types";
 
-export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+export const GET = async (
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) => {
   try {
     await connectDB();
     await guard();
 
     const { id: onboardingId } = await params;
-    if (!isValidObjectId(onboardingId)) return errorResponse(400, "Not a valid onboarding tracker ID");
+    if (!isValidObjectId(onboardingId))
+      return errorResponse(400, "Not a valid onboarding tracker ID");
 
     // safety admin (witness) REQUIRED
     const sp = req.nextUrl.searchParams;
@@ -49,8 +61,16 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     // Onboarding
     const onboarding = await OnboardingTracker.findById(onboardingId).lean();
     if (!onboarding) return errorResponse(404, "Onboarding document not found");
-    if (!isInvitationApproved(onboarding)) return errorResponse(400, "driver not yet approved for onboarding process");
-    if (!onboarding.status?.completed) return errorResponse(400, "Onboarding is not completed yet");
+    if (!isInvitationApproved(onboarding))
+      return errorResponse(
+        400,
+        "driver not yet approved for onboarding process"
+      );
+    if (!hasCompletedStep(onboarding, EStepPath.POLICIES_CONSENTS))
+      return errorResponse(
+        400,
+        `Step ${EStepPath.POLICIES_CONSENTS} not yet completed`
+      );
 
     const companyId = onboarding.companyId as ECompanyId | undefined;
     if (!companyId || !Object.values(ECompanyId).includes(companyId)) {
@@ -59,22 +79,34 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
 
     // Application – names + TRUCK DETAILS (unit#, year, VIN)
     const appId = onboarding.forms?.driverApplication;
-    if (!appId || !isValidObjectId(appId)) return errorResponse(404, "Driver application not found");
+    if (!appId || !isValidObjectId(appId))
+      return errorResponse(404, "Driver application not found");
 
     const application = await ApplicationForm.findById(appId)
-      .select(["page1.firstName", "page1.lastName", "page4.truckDetails.vin", "page4.truckDetails.year", "page4.truckDetails.truckUnitNumber"].join(" "))
+      .select(
+        [
+          "page1.firstName",
+          "page1.lastName",
+          "page4.truckDetails.vin",
+          "page4.truckDetails.year",
+          "page4.truckDetails.truckUnitNumber",
+        ].join(" ")
+      )
       .lean();
 
     if (!application) return errorResponse(404, "Driver application not found");
 
     // Prequalification - to determine if owner-operator
     const preQualId = onboarding.forms?.preQualification;
-    if (!preQualId || !isValidObjectId(preQualId)) return errorResponse(404, "Pre-qualification form not found");
+    if (!preQualId || !isValidObjectId(preQualId))
+      return errorResponse(404, "Pre-qualification form not found");
 
     const preQual = await PreQualifications.findById(preQualId).lean();
     if (!preQual) return errorResponse(404, "Pre-qualification form not found");
 
-    const isOwnerOperator = preQual.driverType === EDriverType.OwnerDriver || preQual.driverType === EDriverType.OwnerOperator;
+    const isOwnerOperator =
+      preQual.driverType === EDriverType.OwnerDriver ||
+      preQual.driverType === EDriverType.OwnerOperator;
 
     const first = application?.page1?.firstName?.toString().trim();
     const last = application?.page1?.lastName?.toString().trim();
@@ -82,17 +114,28 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     const driverFullName = [first, last].filter(Boolean).join(" ");
 
     // Truck details — all optional; fallback to empty strings in mapper
-    const truckUnitNumber = (application as any)?.page4?.truckDetails?.truckUnitNumber?.toString().trim() || "";
-    const truckYear = (application as any)?.page4?.truckDetails?.year?.toString().trim() || "";
-    const truckVIN = (application as any)?.page4?.truckDetails?.vin?.toString().trim() || "";
+    const truckUnitNumber =
+      (application as any)?.page4?.truckDetails?.truckUnitNumber
+        ?.toString()
+        .trim() || "";
+    const truckYear =
+      (application as any)?.page4?.truckDetails?.year?.toString().trim() || "";
+    const truckVIN =
+      (application as any)?.page4?.truckDetails?.vin?.toString().trim() || "";
 
     // Policies & Consents – driver signature is REQUIRED
     const polId = onboarding.forms?.policiesConsents;
-    if (!polId || !isValidObjectId(polId)) return errorResponse(404, "Policies & Consents not found");
+    if (!polId || !isValidObjectId(polId))
+      return errorResponse(404, "Policies & Consents not found");
     const policies = await PoliciesConsents.findById(polId).lean();
-    if (!policies?.signature) return errorResponse(400, "Driver signature is missing in Policies & Consents");
+    if (!policies?.signature)
+      return errorResponse(
+        400,
+        "Driver signature is missing in Policies & Consents"
+      );
 
-    const effectiveSignedAt: Date | string = (policies as any)?.signedAt || (onboarding as any)?.createdAt;
+    const effectiveSignedAt: Date | string =
+      (policies as any)?.signedAt || (onboarding as any)?.createdAt;
 
     // Load signatures (both REQUIRED)
     let driverSigBytes: Uint8Array | undefined;
@@ -104,10 +147,15 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
 
     let witnessSigBytes: Uint8Array;
     try {
-      witnessSigBytes = new Uint8Array(await fs.readFile(safetyAdmin.signatureAbsPath));
+      witnessSigBytes = new Uint8Array(
+        await fs.readFile(safetyAdmin.signatureAbsPath)
+      );
     } catch (e) {
       console.error("Error loading safety admin signature image:", e);
-      return errorResponse(500, "Safety admin signature image not found or unreadable");
+      return errorResponse(
+        500,
+        "Safety admin signature image not found or unreadable"
+      );
     }
 
     // Template (by company)
@@ -155,7 +203,13 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     } as const;
 
     // Helper to draw signatures
-    const draw = async (pageIndex: number, fieldName: F, bytes?: Uint8Array, width = 120, height = 35) => {
+    const draw = async (
+      pageIndex: number,
+      fieldName: F,
+      bytes?: Uint8Array,
+      width = 120,
+      height = 35
+    ) => {
       if (!bytes) return;
       await drawPdfImage({
         pdfDoc,
@@ -173,18 +227,40 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     await draw(idx.mdDriver, F.MD_DRIVER_SIGNATURE, driverSigBytes, 100, 28); // Pg1
     await draw(idx.mdWitness, F.MD_WITNESS_SIGNATURE, witnessSigBytes, 100, 28); // Pg2 or Pg1 (WF)
     await draw(idx.ackDriver, F.ACK_DRIVER_SIGNATURE, driverSigBytes, 53, 15); // Pg4
-    await draw(idx.reqBoth, F.REQ_ACK_DRIVER_SIGNATURE, driverSigBytes, 100, 28); // Pg11
-    await draw(idx.reqBoth, F.REQ_ACK_WITNESS_SIGNATURE, witnessSigBytes, 100, 28); // Pg11
+    await draw(
+      idx.reqBoth,
+      F.REQ_ACK_DRIVER_SIGNATURE,
+      driverSigBytes,
+      100,
+      28
+    ); // Pg11
+    await draw(
+      idx.reqBoth,
+      F.REQ_ACK_WITNESS_SIGNATURE,
+      witnessSigBytes,
+      100,
+      28
+    ); // Pg11
 
     // only sign if owner-operator
-    if (isOwnerOperator) await draw(idx.speedDriver, F.SPEED_SIGNATURE, driverSigBytes, 71, 20); // Pg17 or Pg16 (WF)
+    if (isOwnerOperator)
+      await draw(idx.speedDriver, F.SPEED_SIGNATURE, driverSigBytes, 71, 20); // Pg17 or Pg16 (WF)
 
     await draw(idx.finalBoth, F.FINAL_DRIVER_SIGNATURE, driverSigBytes, 53, 15); // Pg22 or Pg21 (WF)
-    await draw(idx.finalBoth, F.FINAL_WITNESS_SIGNATURE, witnessSigBytes, 53, 15); // Pg22 or Pg21 (WF)
+    await draw(
+      idx.finalBoth,
+      F.FINAL_WITNESS_SIGNATURE,
+      witnessSigBytes,
+      53,
+      15
+    ); // Pg22 or Pg21 (WF)
 
     form.flatten();
     const out = await pdfDoc.save();
-    const arrayBuffer = out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength) as ArrayBuffer;
+    const arrayBuffer = out.buffer.slice(
+      out.byteOffset,
+      out.byteOffset + out.byteLength
+    ) as ArrayBuffer;
 
     return new NextResponse(arrayBuffer, {
       status: 200,

@@ -16,16 +16,26 @@ import { getCompanyById } from "@/constants/companies";
 import { ESafetyAdminId } from "@/constants/safetyAdmins";
 
 import { EIsbConsentFillableFormFields as F } from "@/lib/pdf/isb-consent/mappers/isb-consent.types";
-import { buildIsbConsentPayload, applyIsbConsentPayloadToForm } from "@/lib/pdf/isb-consent/mappers/isb-consent.mapper";
+import {
+  buildIsbConsentPayload,
+  applyIsbConsentPayloadToForm,
+} from "@/lib/pdf/isb-consent/mappers/isb-consent.mapper";
 
 import { drawPdfImage } from "@/lib/pdf/utils/drawPdfImage";
 import { loadImageBytesFromAsset } from "@/lib/utils/s3Upload";
 import { getSafetyAdminServerById } from "@/lib/assets/safetyAdmins/safetyAdmins.server";
-import { isInvitationApproved } from "@/lib/utils/onboardingUtils";
+import {
+  hasCompletedStep,
+  isInvitationApproved,
+} from "@/lib/utils/onboardingUtils";
+import { EStepPath } from "@/types/onboardingTracker.types";
 
 /* ------------------------------ helpers ------------------------------ */
 
-function composeCompanyCityCountry(company?: { location?: string; country?: string }) {
+function composeCompanyCityCountry(company?: {
+  location?: string;
+  country?: string;
+}) {
   if (!company) return "";
   const city = company.location?.split(",")[0]?.trim();
   const country = company.country?.trim();
@@ -34,23 +44,32 @@ function composeCompanyCityCountry(company?: { location?: string; country?: stri
 
 /** prefer cell, fallback home */
 function pickPhone(page1: any): string | undefined {
-  return (page1?.phoneCell || page1?.phoneHome || "").toString().trim() || undefined;
+  return (
+    (page1?.phoneCell || page1?.phoneHome || "").toString().trim() || undefined
+  );
 }
 
 /* --------------------------------- GET -------------------------------- */
 
-export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+export const GET = async (
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) => {
   try {
     await connectDB();
     await guard();
 
     const { id: onboardingId } = await params;
-    if (!isValidObjectId(onboardingId)) return errorResponse(400, "Not a valid onboarding tracker ID");
+    if (!isValidObjectId(onboardingId))
+      return errorResponse(400, "Not a valid onboarding tracker ID");
 
     // safety admin (witness) requirement
-    const safetyAdminId = req.nextUrl.searchParams.get("safetyAdminId") as ESafetyAdminId | null;
+    const safetyAdminId = req.nextUrl.searchParams.get(
+      "safetyAdminId"
+    ) as ESafetyAdminId | null;
     if (!safetyAdminId) return errorResponse(400, "safetyAdminId is required");
-    if (!Object.values(ESafetyAdminId).includes(safetyAdminId)) return errorResponse(400, "Invalid safetyAdminId");
+    if (!Object.values(ESafetyAdminId).includes(safetyAdminId))
+      return errorResponse(400, "Invalid safetyAdminId");
 
     const safetyAdmin = getSafetyAdminServerById(safetyAdminId);
     if (!safetyAdmin) return errorResponse(400, "Safety admin not found");
@@ -58,16 +77,27 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     // Onboarding
     const onboarding = await OnboardingTracker.findById(onboardingId).lean();
     if (!onboarding) return errorResponse(404, "Onboarding document not found");
-    if (!isInvitationApproved(onboarding)) return errorResponse(400, "driver not yet approved for onboarding process");
-    if (!onboarding.status?.completed) return errorResponse(400, "Onboarding is not completed yet");
+    if (!isInvitationApproved(onboarding))
+      return errorResponse(
+        400,
+        "driver not yet approved for onboarding process"
+      );
+    if (!hasCompletedStep(onboarding, EStepPath.POLICIES_CONSENTS))
+      return errorResponse(
+        400,
+        `Step ${EStepPath.POLICIES_CONSENTS} not yet completed`
+      );
 
     // Company
-    const company = onboarding.companyId ? getCompanyById(onboarding.companyId) : null;
+    const company = onboarding.companyId
+      ? getCompanyById(onboarding.companyId)
+      : null;
     if (!company) return errorResponse(400, "Company not recognized");
 
     // Application form (page1 + page4)
     const appId = onboarding.forms?.driverApplication;
-    if (!appId || !isValidObjectId(appId)) return errorResponse(404, "Driver application missing");
+    if (!appId || !isValidObjectId(appId))
+      return errorResponse(404, "Driver application missing");
     const application = await ApplicationForm.findById(appId)
       .select(
         "page1.firstName page1.lastName page1.gender page1.dob page1.email page1.phoneCell page1.phoneHome page1.birthCity page1.birthStateOrProvince page1.birthCountry page1.addresses page4.criminalRecords"
@@ -90,10 +120,14 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
 
     // Policies & Consents (for applicant signature + date)
     const polId = onboarding.forms?.policiesConsents;
-    if (!polId || !isValidObjectId(polId)) return errorResponse(404, "Policies & Consents missing");
+    if (!polId || !isValidObjectId(polId))
+      return errorResponse(404, "Policies & Consents missing");
     const policies = await PoliciesConsents.findById(polId).lean();
     if (!policies?.signature || !policies?.signedAt) {
-      return errorResponse(400, "Policies & Consents signature or date missing");
+      return errorResponse(
+        400,
+        "Policies & Consents signature or date missing"
+      );
     }
 
     // Build payload
@@ -128,7 +162,10 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     });
 
     // Load template
-    const pdfPath = path.join(process.cwd(), "src/lib/pdf/isb-consent/templates/isb-consent-fillable.pdf");
+    const pdfPath = path.join(
+      process.cwd(),
+      "src/lib/pdf/isb-consent/templates/isb-consent-fillable.pdf"
+    );
     const pdfBytes = await fs.readFile(pdfPath);
     const pdfDoc = await PDFDocument.load(pdfBytes);
     const form = pdfDoc.getForm();
@@ -177,7 +214,9 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
 
     // Witness signature (Consent page, Section D)
     try {
-      const adminBytes = new Uint8Array(await fs.readFile(safetyAdmin.signatureAbsPath));
+      const adminBytes = new Uint8Array(
+        await fs.readFile(safetyAdmin.signatureAbsPath)
+      );
       tasks.push(
         drawPdfImage({
           pdfDoc,
@@ -203,7 +242,10 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     // Flatten & return
     form.flatten();
     const out = await pdfDoc.save();
-    const arrayBuffer = out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength) as ArrayBuffer;
+    const arrayBuffer = out.buffer.slice(
+      out.byteOffset,
+      out.byteOffset + out.byteLength
+    ) as ArrayBuffer;
 
     return new NextResponse(arrayBuffer, {
       status: 200,

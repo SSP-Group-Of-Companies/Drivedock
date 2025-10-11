@@ -15,50 +15,81 @@ import PoliciesConsents from "@/mongoose/models/PoliciesConsents";
 import { getCompanyById } from "@/constants/companies";
 
 import { EPspAuthorizationFillableFormFields as F } from "@/lib/pdf/psp-authorization/mappers/psp-authorization.types";
-import { buildPspAuthorizationPayload, applyPspAuthorizationPayloadToForm } from "@/lib/pdf/psp-authorization/mappers/psp-authorization.mapper";
+import {
+  buildPspAuthorizationPayload,
+  applyPspAuthorizationPayloadToForm,
+} from "@/lib/pdf/psp-authorization/mappers/psp-authorization.mapper";
 
 import { drawPdfImage } from "@/lib/pdf/utils/drawPdfImage";
 import { loadImageBytesFromAsset } from "@/lib/utils/s3Upload";
-import { isInvitationApproved } from "@/lib/utils/onboardingUtils";
+import { hasCompletedStep, isInvitationApproved } from "@/lib/utils/onboardingUtils";
+import { EStepPath } from "@/types/onboardingTracker.types";
 
-export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+export const GET = async (
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) => {
   try {
     await connectDB();
     await guard();
 
     const { id: onboardingId } = await params;
-    if (!isValidObjectId(onboardingId)) return errorResponse(400, "Not a valid onboarding tracker ID");
+    if (!isValidObjectId(onboardingId))
+      return errorResponse(400, "Not a valid onboarding tracker ID");
 
     const onboardingDoc = await OnboardingTracker.findById(onboardingId).lean();
-    if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
-    if (!isInvitationApproved(onboardingDoc)) return errorResponse(400, "driver not yet approved for onboarding process");
-    if (!onboardingDoc.status?.completed) return errorResponse(400, "Onboarding is not completed yet");
+    if (!onboardingDoc)
+      return errorResponse(404, "Onboarding document not found");
+    if (!isInvitationApproved(onboardingDoc))
+      return errorResponse(
+        400,
+        "driver not yet approved for onboarding process"
+      );
+    if (!hasCompletedStep(onboardingDoc, EStepPath.POLICIES_CONSENTS))
+      return errorResponse(
+        400,
+        `Step ${EStepPath.POLICIES_CONSENTS} not yet completed`
+      );
 
     // ----- Company
-    const companyName = onboardingDoc.companyId ? getCompanyById(onboardingDoc.companyId)?.name : undefined;
+    const companyName = onboardingDoc.companyId
+      ? getCompanyById(onboardingDoc.companyId)?.name
+      : undefined;
     if (!companyName) return errorResponse(400, "Company not recognized");
 
     // ----- Applicant name (print) from ApplicationForm.page1
     const appFormId = onboardingDoc.forms?.driverApplication;
-    if (!appFormId || !isValidObjectId(appFormId)) return errorResponse(400, "Driver application not found");
-    const appForm = await ApplicationForm.findById(appFormId).select("page1.firstName page1.lastName").lean();
+    if (!appFormId || !isValidObjectId(appFormId))
+      return errorResponse(400, "Driver application not found");
+    const appForm = await ApplicationForm.findById(appFormId)
+      .select("page1.firstName page1.lastName")
+      .lean();
 
     const firstName = (appForm as any)?.page1?.firstName?.toString().trim();
     const lastName = (appForm as any)?.page1?.lastName?.toString().trim();
-    if (!firstName || !lastName) return errorResponse(400, "Applicant name is missing");
+    if (!firstName || !lastName)
+      return errorResponse(400, "Applicant name is missing");
     const applicantFullName = [firstName, lastName].filter(Boolean).join(" ");
 
     // ----- Signature + date from Policies & Consents
     const policiesId = onboardingDoc.forms?.policiesConsents;
-    if (!policiesId || !isValidObjectId(policiesId)) return errorResponse(400, "Policies & Consents not found");
+    if (!policiesId || !isValidObjectId(policiesId))
+      return errorResponse(400, "Policies & Consents not found");
 
     const policiesDoc = await PoliciesConsents.findById(policiesId).lean();
     const signedAt = policiesDoc?.signedAt;
     const signaturePhoto = policiesDoc?.signature;
-    if (!signedAt || !signaturePhoto) return errorResponse(400, "Signature or signed date missing in Policies & Consents");
+    if (!signedAt || !signaturePhoto)
+      return errorResponse(
+        400,
+        "Signature or signed date missing in Policies & Consents"
+      );
 
     // ----- Load fillable template
-    const pdfPath = path.join(process.cwd(), "src/lib/pdf/psp-authorization/templates/psp-authorization-fillable.pdf");
+    const pdfPath = path.join(
+      process.cwd(),
+      "src/lib/pdf/psp-authorization/templates/psp-authorization-fillable.pdf"
+    );
     const pdfBytes = await readFile(pdfPath);
     const pdfDoc = await PDFDocument.load(pdfBytes);
     const form = pdfDoc.getForm();
@@ -93,13 +124,17 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
     form.flatten();
 
     const out = await pdfDoc.save();
-    const arrayBuffer = out.buffer.slice(out.byteOffset, out.byteOffset + out.byteLength) as ArrayBuffer;
+    const arrayBuffer = out.buffer.slice(
+      out.byteOffset,
+      out.byteOffset + out.byteLength
+    ) as ArrayBuffer;
 
     return new NextResponse(arrayBuffer, {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": 'inline; filename="psp-authorization-filled.pdf"',
+        "Content-Disposition":
+          'inline; filename="psp-authorization-filled.pdf"',
       },
     });
   } catch (err) {
