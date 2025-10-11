@@ -43,7 +43,6 @@ function hasTruckDetails(truckDetails?: any): boolean {
 function isDriveTestPdf(item: { label: string; apiUrl: string }) {
   const l = item.label.toLowerCase();
   const url = item.apiUrl.toLowerCase();
-  // Heuristics: label or URL keywords
   return (
     l.includes("on-road") ||
     l.includes("onroad") ||
@@ -57,28 +56,27 @@ function isDriveTestPdf(item: { label: string; apiUrl: string }) {
   );
 }
 
-/** Nice, concise locked reason for the badge. */
 function lockedReason(item: { label: string; apiUrl: string }) {
   return isDriveTestPdf(item)
     ? "Complete Drive Test"
     : "Complete Policies & Consents";
 }
 
-export default function PrintClient({ trackerId }: { trackerId: string }) {
+export default function PrintClient({
+  trackerId,
+}: Readonly<{ trackerId: string }>) {
   const { data: contractData, isLoading: isContractLoading } =
     useContract(trackerId);
   const { hideLoader } = useDashboardPageLoading();
   const { isVisible: isDashboardLoaderVisible } = useDashboardLoading();
   const [shouldRender, setShouldRender] = useState(false);
 
-  // PDF list state
   const [pdfList, setPdfList] = useState<Array<{
     label: string;
     apiUrl: string;
     needsSafetyAdminId: boolean;
   }> | null>(null);
 
-  // Modal states
   const [previewModalUrl, setPreviewModalUrl] = useState<string | null>(null);
   const [safetyAdminPickerOpen, setSafetyAdminPickerOpen] = useState(false);
   const [pendingPdfAction, setPendingPdfAction] = useState<{
@@ -86,7 +84,6 @@ export default function PrintClient({ trackerId }: { trackerId: string }) {
     action: "preview" | "download";
   } | null>(null);
 
-  // Progressive loading: Show layout first, then content
   useEffect(() => {
     if (contractData && !isContractLoading) {
       hideLoader();
@@ -94,21 +91,17 @@ export default function PrintClient({ trackerId }: { trackerId: string }) {
     }
   }, [contractData, isContractLoading, hideLoader]);
 
-  // Generate PDF list when contract data is available
   useEffect(() => {
     if (contractData?.companyId && trackerId) {
-      const { companyId } = contractData;
-      const list = getCompanyPdfList(companyId as any, trackerId);
+      const list = getCompanyPdfList(contractData.companyId as any, trackerId);
       setPdfList(list);
     }
   }, [contractData, trackerId]);
 
-  // Build a tiny adapter that satisfies hasCompletedStep’s expectations
   const trackerAdapter = useMemo(
     () =>
       contractData
         ? ({
-            // only fields used by hasCompletedStep / flow helpers
             needsFlatbedTraining: Boolean(contractData.needsFlatbedTraining),
             status: contractData.status ?? {
               currentStep: EStepPath.PRE_QUALIFICATIONS,
@@ -119,23 +112,16 @@ export default function PrintClient({ trackerId }: { trackerId: string }) {
     [contractData]
   );
 
-  // Helpers to check per-item unlock
-  const isStepCompleted = (step: EStepPath) => {
-    if (!trackerAdapter) return false;
-    // The util is doc-aware; adapter provides status & needsFlatbedTraining
-    return hasCompletedStep(trackerAdapter, step);
-  };
+  const isStepCompleted = (step: EStepPath) =>
+    trackerAdapter ? hasCompletedStep(trackerAdapter, step) : false;
 
-  const isItemUnlocked = (item: { label: string; apiUrl: string }) => {
-    return isDriveTestPdf(item)
+  const isItemUnlocked = (item: { label: string; apiUrl: string }) =>
+    isDriveTestPdf(item)
       ? isStepCompleted(EStepPath.DRIVE_TEST)
       : isStepCompleted(EStepPath.POLICIES_CONSENTS);
-  };
 
-  // Don't render anything while dashboard loader is visible or before transition is complete
   if (isDashboardLoaderVisible || !shouldRender) return null;
 
-  // Show loading state for contract data while layout is visible
   if (isContractLoading || !contractData || !pdfList) {
     return (
       <div
@@ -170,35 +156,22 @@ export default function PrintClient({ trackerId }: { trackerId: string }) {
     item: { apiUrl: string; needsSafetyAdminId: boolean; label: string },
     action: "preview" | "download"
   ) => {
-    // Respect lock client-side too (buttons appear disabled, but guard anyway)
     if (!isItemUnlocked(item)) return;
 
     if (!item.needsSafetyAdminId) {
-      if (action === "preview") {
-        setPreviewModalUrl(item.apiUrl);
-      } else {
-        window.open(item.apiUrl, "_blank", "noopener,noreferrer");
-      }
+      if (action === "preview") setPreviewModalUrl(item.apiUrl);
+      else window.open(item.apiUrl, "_blank", "noopener,noreferrer");
       return;
     }
-
-    // Safety admin required - show picker
     setPendingPdfAction({ apiUrl: item.apiUrl, action });
     setSafetyAdminPickerOpen(true);
   };
 
   const handleSafetyAdminSelected = (adminId: ESafetyAdminId) => {
     if (!pendingPdfAction) return;
-
     const url = `${pendingPdfAction.apiUrl}?safetyAdminId=${adminId}`;
-
-    if (pendingPdfAction.action === "preview") {
-      setPreviewModalUrl(url);
-    } else {
-      window.open(url, "_blank", "noopener,noreferrer");
-    }
-
-    // Reset state
+    if (pendingPdfAction.action === "preview") setPreviewModalUrl(url);
+    else window.open(url, "_blank", "noopener,noreferrer");
     setPendingPdfAction(null);
     setSafetyAdminPickerOpen(false);
   };
@@ -210,10 +183,8 @@ export default function PrintClient({ trackerId }: { trackerId: string }) {
       transition={{ duration: 0.5, ease: "easeOut", delay: 0.1 }}
       className="space-y-4"
     >
-      {/* Form Wizard Progress */}
       <DashboardFormWizard contractContext={ctx} />
 
-      {/* Print Documents Content */}
       <div
         className="rounded-xl border p-4 sm:p-6 lg:p-8 shadow-sm dark:shadow-none"
         style={{
@@ -241,7 +212,6 @@ export default function PrintClient({ trackerId }: { trackerId: string }) {
           </div>
         </div>
 
-        {/* Section Header */}
         <div
           className="flex items-center gap-3 pb-4 border-b mb-6"
           style={{ borderColor: "var(--color-outline)" }}
@@ -258,7 +228,6 @@ export default function PrintClient({ trackerId }: { trackerId: string }) {
           </h2>
         </div>
 
-        {/* Truck Details Warning - only show when driver has completed page 4 or beyond */}
         {contractData?.forms?.identifications?.truckDetails &&
           !hasTruckDetails(contractData.forms.identifications.truckDetails) &&
           (contractData.status?.currentStep === EStepPath.APPLICATION_PAGE_4 ||
@@ -310,7 +279,6 @@ export default function PrintClient({ trackerId }: { trackerId: string }) {
             </motion.div>
           )}
 
-        {/* Helper strip explaining the lock logic (subtle) */}
         <div
           className="mb-6 rounded-lg p-3 text-xs flex items-center gap-2"
           style={{
@@ -321,14 +289,13 @@ export default function PrintClient({ trackerId }: { trackerId: string }) {
           <Lock className="h-4 w-4" />
           <span>
             <span className="font-medium">Note:</span> On-Road / Pre-Trip / Road
-            Test unlock after completing{" "}
-            <span className="font-medium">Drive Test</span>. All other documents
-            unlock after completing{" "}
+            Test unlock after <span className="font-medium">Drive Test</span>.
+            Others unlock after{" "}
             <span className="font-medium">Policies & Consents</span>.
           </span>
         </div>
 
-        {/* PDF List Grid — always render; items lock individually */}
+        {/* GRID */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {pdfList.map((item, index) => {
             const unlocked = isItemUnlocked(item);
@@ -345,62 +312,67 @@ export default function PrintClient({ trackerId }: { trackerId: string }) {
                   background: "var(--color-surface)",
                   borderColor: "var(--color-outline-variant)",
                   filter: unlocked ? undefined : "grayscale(0.2)",
-                  opacity: unlocked ? 1 : 0.8,
+                  opacity: unlocked ? 1 : 0.9,
                 }}
               >
-                {/* Lock overlay ribbon when locked */}
+                {/* subtle glass overlay only when locked (no text here to avoid overlap) */}
                 {!unlocked && (
-                  <div className="absolute inset-0 rounded-lg pointer-events-none">
-                    {/* subtle glass overlay */}
-                    <div
-                      className="absolute inset-0 rounded-lg"
-                      style={{ background: "rgba(0,0,0,0.04)" }}
-                    />
-                    <div
-                      className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold tracking-wide"
-                      style={{
-                        background: "var(--color-error-container)",
-                        color: "var(--color-on-error-container)",
-                      }}
-                    >
-                      <Lock className="h-3.5 w-3.5" />
-                      Locked — {lockedReason(item)}
-                    </div>
-                  </div>
+                  <div
+                    className="pointer-events-none absolute inset-0 rounded-lg"
+                    style={{ background: "rgba(0,0,0,0.03)" }}
+                  />
                 )}
 
-                <div className="flex items-start gap-3 mb-4">
-                  <div
-                    className="p-2 rounded-lg"
-                    style={{ background: "var(--color-primary-container)" }}
-                  >
-                    <FileText
-                      className="h-5 w-5"
-                      style={{ color: "var(--color-on-primary-container)" }}
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3
-                      className="font-medium text-sm"
-                      style={{ color: "var(--color-on-surface)" }}
-                    >
-                      {item.label}
-                    </h3>
-                    {requiresAdmin && (
-                      <div className="flex items-center gap-1 mt-1">
-                        <User
-                          className="h-3 w-3"
-                          style={{ color: "var(--color-on-surface-variant)" }}
+                {/* Header row with wrapping lock badge (prevents overlap on small screens) */}
+                <div className="mb-4">
+                  <div className="flex flex-wrap items-start gap-2">
+                    <div className="flex items-start gap-3 min-w-0">
+                      <div
+                        className="p-2 rounded-lg shrink-0"
+                        style={{ background: "var(--color-primary-container)" }}
+                      >
+                        <FileText
+                          className="h-5 w-5"
+                          style={{ color: "var(--color-on-primary-container)" }}
                         />
-                        <span
-                          className="text-xs"
-                          style={{ color: "var(--color-on-surface-variant)" }}
-                        >
-                          Requires Safety Admin
-                        </span>
                       </div>
+                      <h3
+                        className="font-medium text-sm truncate"
+                        style={{ color: "var(--color-on-surface)" }}
+                        title={item.label}
+                      >
+                        {item.label}
+                      </h3>
+                    </div>
+
+                    {!unlocked && (
+                      <span
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold tracking-wide"
+                        style={{
+                          background: "var(--color-error-container)",
+                          color: "var(--color-on-error-container)",
+                        }}
+                      >
+                        <Lock className="h-3.5 w-3.5" />
+                        Locked — {lockedReason(item)}
+                      </span>
                     )}
                   </div>
+
+                  {requiresAdmin && (
+                    <div className="flex items-center gap-1 mt-2">
+                      <User
+                        className="h-3 w-3"
+                        style={{ color: "var(--color-on-surface-variant)" }}
+                      />
+                      <span
+                        className="text-xs"
+                        style={{ color: "var(--color-on-surface-variant)" }}
+                      >
+                        Requires Safety Admin
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex gap-2">
@@ -453,7 +425,6 @@ export default function PrintClient({ trackerId }: { trackerId: string }) {
           })}
         </div>
 
-        {/* Info Section */}
         {contractData.status?.completed && (
           <div
             className="mt-6 rounded-lg p-4"
@@ -493,14 +464,12 @@ export default function PrintClient({ trackerId }: { trackerId: string }) {
         )}
       </div>
 
-      {/* PDF Preview Modal */}
       <PrintPdfViewerModal
         modalUrl={previewModalUrl}
         strategy="fetch"
         onClose={() => setPreviewModalUrl(null)}
       />
 
-      {/* Safety Admin Picker Modal */}
       <SafetyAdminPickerModal
         isOpen={safetyAdminPickerOpen}
         onClose={() => {
