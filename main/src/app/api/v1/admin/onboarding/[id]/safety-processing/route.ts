@@ -7,7 +7,7 @@ import DrugTest from "@/mongoose/models/DrugTest";
 import CarriersEdgeTraining from "@/mongoose/models/CarriersEdgeTraining";
 
 import { successResponse, errorResponse, AppError } from "@/lib/utils/apiResponse";
-import { advanceProgress, buildTrackerContext, hasReachedStep, isInvitationApproved, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
+import { advanceProgress, buildTrackerContext, hasReachedStep, isInvitationApproved, nextResumeExpiry, getFlowOpts, getOnboardingStepFlow } from "@/lib/utils/onboardingUtils";
 import { readMongooseRefField } from "@/lib/utils/mongooseRef";
 import { parseJsonBody } from "@/lib/utils/reqParser";
 
@@ -198,7 +198,7 @@ const TEMP_PREFIX = `${S3_TEMP_FOLDER}/`;
 // Allowed MIME types for images, PDF, and Word docs
 const ALLOWED_MIME: ReadonlySet<string> = new Set<string>([EFileMimeType.JPEG, EFileMimeType.JPG, EFileMimeType.PNG, EFileMimeType.PDF, EFileMimeType.DOC, EFileMimeType.DOCX]);
 
-const MAX_DOCS = 15;
+const MAX_DOCS = 20;
 
 function assertAllowedMimeOrThrow(mime?: string) {
   const mt = (mime ?? "").toLowerCase().trim();
@@ -261,6 +261,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
     const body = await parseJsonBody<{
       notes?: string;
+      needsFlatbedTraining?: boolean;
       drugTest?: {
         adminDocuments?: IFileAsset[];
         driverDocuments?: IFileAsset[];
@@ -283,6 +284,35 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     /* ------------------------------- NOTES ------------------------------- */
     if (typeof body.notes === "string") {
       onboardingDoc.notes = body.notes;
+    }
+
+    /* ------------------------- FLATBED TRAINING TOGGLE ------------------------- */
+    if (typeof body.needsFlatbedTraining === "boolean") {
+      const previousNeedsFlatbed = onboardingDoc.needsFlatbedTraining;
+      onboardingDoc.needsFlatbedTraining = body.needsFlatbedTraining;
+      
+      // If flatbed training was removed (true → false), check if we should complete the application
+      if (previousNeedsFlatbed === true && body.needsFlatbedTraining === false) {
+        // Check if the current step is FLATBED_TRAINING and if DRUG_TEST is completed
+        if (onboardingDoc.status.currentStep === EStepPath.FLATBED_TRAINING) {
+          // Check if drug test is completed by seeing if we've reached a step after it
+          const opts = getFlowOpts(onboardingDoc);
+          const flow = getOnboardingStepFlow(opts);
+          const drugTestIdx = flow.indexOf(EStepPath.DRUG_TEST);
+          
+          // If drug test is the last step in the new flow (no flatbed), complete the application
+          if (drugTestIdx === flow.length - 1) {
+            onboardingDoc.status = {
+              currentStep: EStepPath.DRUG_TEST,
+              completed: true,
+              completionDate: new Date(),
+            };
+          } else {
+            // Move to the next step after drug test
+            onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.DRUG_TEST);
+          }
+        }
+      }
     }
 
     /* ----------------------------- DRUG TEST ----------------------------- */

@@ -27,6 +27,7 @@ import {
   FlaskConical,
   CheckCircle2,
   RotateCcw,
+  Upload,
 } from "lucide-react";
 
 /* ---------------- helpers ---------------- */
@@ -835,7 +836,7 @@ export default function DataGrid({
                                         navigateToCarriersEdge(it._id)
                                       }
                                     >
-                                      Assign test
+                                      Assign
                                     </ActionBtn>
                                   )}
                                 </div>
@@ -866,17 +867,14 @@ export default function DataGrid({
                                       !s
                                     ) {
                                       return (
-                                        <span
-                                          className="inline-flex items-center rounded-full px-2 py-1 text-xs font-medium"
-                                          style={{
-                                            backgroundColor:
-                                              "var(--color-outline-variant)",
-                                            color:
-                                              "var(--color-on-surface-variant)",
-                                          }}
+                                        <ActionBtn
+                                          icon={Upload}
+                                          onClick={() =>
+                                            navigateToDrugTest(it._id)
+                                          }
                                         >
-                                          Pending upload
-                                        </span>
+                                          Upload
+                                        </ActionBtn>
                                       );
                                     }
 

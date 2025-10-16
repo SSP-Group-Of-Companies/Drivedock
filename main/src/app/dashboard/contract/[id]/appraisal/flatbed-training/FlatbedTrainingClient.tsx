@@ -8,7 +8,8 @@ import { useDashboardPageLoading } from "@/hooks/useDashboardPageLoading";
 import { useDashboardLoading } from "@/store/useDashboardLoading";
 import DashboardFormWizard from "../../components/DashboardFormWizard";
 import { useEditMode } from "../../components/EditModeContext";
-import { FlatbedTrainingContent, UpdateSubmitBar } from "./components";
+import { FlatbedTrainingContent } from "./components";
+import UpdateSubmitBar from "../../safety-processing/components/UpdateSubmitBar";
 import StepNotCompletedMessage from "../../components/StepNotCompletedMessage";
 import type { IFileAsset } from "@/types/shared.types";
 

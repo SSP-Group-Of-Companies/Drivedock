@@ -81,7 +81,11 @@ export default function CategoriesTabs({
                   title={labelText}
                   className={cx(
                     // Ensure consistent height and vertical centering; allow height to grow on zoom
-                    "w-full px-2 sm:px-4 py-2.5 flex items-center justify-center rounded-none first:rounded-l-2xl last:rounded-r-2xl",
+                    "w-full px-2 sm:px-4 py-2.5 flex items-center justify-center rounded-none",
+                    // Apply rounded corners only to inactive tabs
+                    !active && "first:rounded-l-2xl last:rounded-r-2xl",
+                    // For active tabs, only apply rounded corners to the last tab
+                    active && index === tabs.length - 1 && "rounded-r-2xl",
                     "text-xs sm:text-sm",
                     "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
                     // Equal fill on desktop

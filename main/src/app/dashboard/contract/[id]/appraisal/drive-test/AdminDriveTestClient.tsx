@@ -2,18 +2,31 @@
 "use client";
 
 import Link from "next/link";
-import { useId, useMemo } from "react";
+import { useId, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import type { IDriveTest, IOnRoadAssessment, IPreTripAssessment } from "@/types/driveTest.types";
+import type {
+  IDriveTest,
+  IOnRoadAssessment,
+  IPreTripAssessment,
+} from "@/types/driveTest.types";
 import { EDriveTestOverall } from "@/types/driveTest.types";
 import type { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
+import FlatbedTrainingToggle from "./components/FlatbedTrainingToggle";
+import { canHaveFlatbedTraining } from "@/constants/companies";
+import { useEditMode } from "../../components/EditModeContext";
 
 /* ------------------------------- Utilities ------------------------------- */
 
-const isOverall = (v: unknown): v is EDriveTestOverall => v === EDriveTestOverall.PASS || v === EDriveTestOverall.FAIL || v === EDriveTestOverall.CONDITIONAL_PASS;
+const isOverall = (v: unknown): v is EDriveTestOverall =>
+  v === EDriveTestOverall.PASS ||
+  v === EDriveTestOverall.FAIL ||
+  v === EDriveTestOverall.CONDITIONAL_PASS;
 
-function isCompleted(block: { overallAssessment?: EDriveTestOverall | null } | undefined | null): boolean {
+function isCompleted(
+  block: { overallAssessment?: EDriveTestOverall | null } | undefined | null
+): boolean {
   return isOverall(block?.overallAssessment ?? null);
 }
 
@@ -41,7 +54,10 @@ function overallBadge(overall?: EDriveTestOverall | null) {
     fg = "white";
   }
   return (
-    <span className="rounded-full px-2 py-0.5 text-xs capitalize" style={{ background: bg, color: fg }}>
+    <span
+      className="rounded-full px-2 py-0.5 text-xs capitalize"
+      style={{ background: bg, color: fg }}
+    >
       {overall.replace("_", " ")}
     </span>
   );
@@ -50,24 +66,36 @@ function overallBadge(overall?: EDriveTestOverall | null) {
 function countCheckedFromPreTrip(pre?: IPreTripAssessment | null): number {
   if (!pre) return 0;
   const s = pre.sections;
-  const lists = [s?.underHood?.items, s?.outside?.items, s?.uncoupling?.items, s?.coupling?.items, s?.airSystem?.items, s?.inCab?.items, s?.backingUp?.items].filter(Boolean) as Array<
-    { checked?: boolean }[]
-  >;
+  const lists = [
+    s?.underHood?.items,
+    s?.outside?.items,
+    s?.uncoupling?.items,
+    s?.coupling?.items,
+    s?.airSystem?.items,
+    s?.inCab?.items,
+    s?.backingUp?.items,
+  ].filter(Boolean) as Array<{ checked?: boolean }[]>;
   return lists.flat().reduce((acc, it) => acc + (it?.checked ? 1 : 0), 0);
 }
 
 function countCheckedFromOnRoad(or?: IOnRoadAssessment | null): number {
   if (!or) return 0;
   const s = or.sections;
-  const lists = [s?.placingVehicleInMotion?.items, s?.highwayDriving?.items, s?.rightLeftTurns?.items, s?.defensiveDriving?.items, s?.gps?.items, s?.operatingInTraffic?.items].filter(
-    Boolean
-  ) as Array<{ checked?: boolean }[]>;
+  const lists = [
+    s?.placingVehicleInMotion?.items,
+    s?.highwayDriving?.items,
+    s?.rightLeftTurns?.items,
+    s?.defensiveDriving?.items,
+    s?.gps?.items,
+    s?.operatingInTraffic?.items,
+  ].filter(Boolean) as Array<{ checked?: boolean }[]>;
   return lists.flat().reduce((acc, it) => acc + (it?.checked ? 1 : 0), 0);
 }
 
 /* -------------------------------- Component ------------------------------- */
 
 export default function AdminDriveTestClient({
+  onboardingContext,
   driveTest,
   driverName,
   driverLicense,
@@ -79,6 +107,71 @@ export default function AdminDriveTestClient({
 }) {
   const { id: trackerId } = useParams<{ id: string }>();
   const titleId = useId();
+  const { isEditMode } = useEditMode();
+  const queryClient = useQueryClient();
+
+  // Staged changes (page-level) - like other dashboard pages
+  const [staged, setStaged] = useState<Record<string, any>>({});
+
+  const hasUnsavedChanges = Object.keys(staged).length > 0;
+
+  const clearStaged = () => setStaged({});
+
+  // Merge-friendly staged updater used across sections
+  const stageUpdate = (changes: any) => {
+    if (typeof changes === "function") {
+      setStaged((prev) => changes(prev));
+    } else {
+      setStaged((prev) => ({ ...prev, ...changes }));
+    }
+  };
+
+  // Mutation for updating flatbed training requirement
+  const updateMutation = useMutation({
+    mutationFn: async (data: { needsFlatbedTraining: boolean }) => {
+      const response = await fetch(
+        `/api/v1/admin/onboarding/${trackerId}/safety-processing`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(
+          error.message || "Failed to update flatbed training requirement"
+        );
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      // Invalidate and refetch relevant queries
+      queryClient.invalidateQueries({ queryKey: ["admin-onboarding-list"] });
+      queryClient.invalidateQueries({ queryKey: ["drive-test", trackerId] });
+      queryClient.invalidateQueries({ queryKey: ["contract", trackerId] });
+    },
+  });
+
+  const handleSave = async () => {
+    if (Object.keys(staged).length === 0) return;
+
+    // Ensure we have the required data structure
+    const payload: { needsFlatbedTraining: boolean } = {
+      needsFlatbedTraining:
+        staged.needsFlatbedTraining ?? onboardingContext.needsFlatbedTraining,
+    };
+
+    await updateMutation.mutateAsync(payload);
+
+    // Reload the page after successful submission to show live updates
+    // Note: No need to clearStaged() since page reload will reset everything
+    window.location.reload();
+  };
 
   const pre = driveTest?.preTrip ?? null;
   const road = driveTest?.onRoad ?? null;
@@ -89,7 +182,27 @@ export default function AdminDriveTestClient({
   const preChecked = useMemo(() => countCheckedFromPreTrip(pre), [pre]);
   const roadChecked = useMemo(() => countCheckedFromOnRoad(road), [road]);
 
-  const tileBase = "block w-full text-center rounded-xl px-4 py-4 sm:py-5 text-sm font-medium shadow-sm";
+  // Early return if trackerId is not available
+  if (!trackerId) {
+    return (
+      <div className="p-6 text-center text-red-600 font-semibold">
+        Invalid tracker ID
+      </div>
+    );
+  }
+
+  // can show the flatbed training toggle? (same logic as on-road form)
+  const companyId = onboardingContext.companyId;
+  const applicationType = onboardingContext.applicationType;
+  const showFlatbedToggle = companyId
+    ? canHaveFlatbedTraining(companyId, applicationType)
+    : false;
+
+  // Disable flatbed toggle if application is already completed
+  const isApplicationCompleted = onboardingContext.status.completed;
+
+  const tileBase =
+    "block w-full text-center rounded-xl px-4 py-4 sm:py-5 text-sm font-medium shadow-sm";
   const tileStyle: React.CSSProperties = {
     background: "var(--color-primary-container)",
     color: "var(--color-primary-on-container)",
@@ -104,13 +217,21 @@ export default function AdminDriveTestClient({
   const preTripApiUrl = `/api/v1/admin/onboarding/${trackerId}/appraisal/drive-test/pre-trip-assessment/filled-pdf`;
   const onRoadApiUrl = `/api/v1/admin/onboarding/${trackerId}/appraisal/drive-test/on-road-assessment/filled-pdf`;
 
-  const openPreTrip = () => window.open(preTripApiUrl, "_blank", "noopener,noreferrer");
-  const openOnRoad = () => window.open(onRoadApiUrl, "_blank", "noopener,noreferrer");
+  const openPreTrip = () =>
+    window.open(preTripApiUrl, "_blank", "noopener,noreferrer");
+  const openOnRoad = () =>
+    window.open(onRoadApiUrl, "_blank", "noopener,noreferrer");
 
   return (
     <div className="space-y-4">
       {/* Page header (overview with badge in top right) */}
-      <header className="rounded-xl border p-4 flex items-center justify-between" style={{ background: "var(--color-card)", borderColor: "var(--color-outline)" }}>
+      <header
+        className="rounded-xl border p-4 flex items-center justify-between"
+        style={{
+          background: "var(--color-card)",
+          borderColor: "var(--color-outline)",
+        }}
+      >
         <div>
           <h1 id={titleId} className="text-lg font-semibold">
             Drive Test — Overview
@@ -135,13 +256,22 @@ export default function AdminDriveTestClient({
       {/* Two columns */}
       <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {/* --------------------------- Pre-Trip Card --------------------------- */}
-        <article className="rounded-xl border p-4 flex flex-col gap-3" style={{ background: "var(--color-card)", borderColor: "var(--color-outline)" }}>
+        <article
+          className="rounded-xl border p-4 flex flex-col gap-3"
+          style={{
+            background: "var(--color-card)",
+            borderColor: "var(--color-outline)",
+          }}
+        >
           <header className="flex items-center justify-between">
             <h2 className="text-base font-semibold">Pre-Trip Assessment</h2>
             {overallBadge(pre?.overallAssessment)}
           </header>
 
-          <div className="rounded-xl border p-3 grid grid-cols-1 sm:grid-cols-2 gap-3" style={{ borderColor: "var(--color-outline-variant)" }}>
+          <div
+            className="rounded-xl border p-3 grid grid-cols-1 sm:grid-cols-2 gap-3"
+            style={{ borderColor: "var(--color-outline-variant)" }}
+          >
             <div className="text-sm">
               <div className="text-xs opacity-70">Completed</div>
               <div>{preDone ? "Yes" : "No"}</div>
@@ -165,7 +295,12 @@ export default function AdminDriveTestClient({
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <Link className={tileBase} style={tileStyle} href={`/appraisal/${trackerId}/drive-test/pre-trip-assessment`} target="_blank">
+            <Link
+              className={tileBase}
+              style={tileStyle}
+              href={`/appraisal/${trackerId}/drive-test/pre-trip-assessment`}
+              target="_blank"
+            >
               Pre-Trip Assessment
             </Link>
 
@@ -192,19 +327,32 @@ export default function AdminDriveTestClient({
                 color: "var(--color-on-surface)",
               }}
             >
-              {pre?.comments?.trim() ? pre.comments : <span className="opacity-60">—</span>}
+              {pre?.comments?.trim() ? (
+                pre.comments
+              ) : (
+                <span className="opacity-60">—</span>
+              )}
             </div>
           </div>
         </article>
 
         {/* --------------------------- On-Road Card ---------------------------- */}
-        <article className="rounded-xl border p-4 flex flex-col gap-3" style={{ background: "var(--color-card)", borderColor: "var(--color-outline)" }}>
+        <article
+          className="rounded-xl border p-4 flex flex-col gap-3"
+          style={{
+            background: "var(--color-card)",
+            borderColor: "var(--color-outline)",
+          }}
+        >
           <header className="flex items-center justify-between">
             <h2 className="text-base font-semibold">On-Road Assessment</h2>
             {overallBadge(road?.overallAssessment)}
           </header>
 
-          <div className="rounded-xl border p-3 grid grid-cols-1 sm:grid-cols-2 gap-3" style={{ borderColor: "var(--color-outline-variant)" }}>
+          <div
+            className="rounded-xl border p-3 grid grid-cols-1 sm:grid-cols-2 gap-3"
+            style={{ borderColor: "var(--color-outline-variant)" }}
+          >
             <div className="text-sm">
               <div className="text-xs opacity-70">Completed</div>
               <div>{roadDone ? "Yes" : "No"}</div>
@@ -228,7 +376,12 @@ export default function AdminDriveTestClient({
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <Link className={tileBase} style={tileStyle} href={`/appraisal/${trackerId}/drive-test/on-road-assessment`} target="_blank">
+            <Link
+              className={tileBase}
+              style={tileStyle}
+              href={`/appraisal/${trackerId}/drive-test/on-road-assessment`}
+              target="_blank"
+            >
               On-Road Assessment
             </Link>
 
@@ -255,11 +408,34 @@ export default function AdminDriveTestClient({
                 color: "var(--color-on-surface)",
               }}
             >
-              {road?.comments?.trim() ? road.comments : <span className="opacity-60">—</span>}
+              {road?.comments?.trim() ? (
+                road.comments
+              ) : (
+                <span className="opacity-60">—</span>
+              )}
             </div>
           </div>
         </article>
       </section>
+
+      {/* Flatbed Training Toggle */}
+      {showFlatbedToggle && companyId && (
+        <FlatbedTrainingToggle
+          trackerId={trackerId}
+          needsFlatbedTraining={onboardingContext.needsFlatbedTraining}
+          canEdit={!isApplicationCompleted} // Disable if application is completed
+          companyId={companyId}
+          applicationType={applicationType}
+          isEditMode={isEditMode}
+          staged={staged}
+          onStage={stageUpdate}
+          hasUnsavedChanges={hasUnsavedChanges}
+          onSave={handleSave}
+          onDiscard={clearStaged}
+          isSubmitting={updateMutation.isPending}
+          isApplicationCompleted={isApplicationCompleted}
+        />
+      )}
     </div>
   );
 }

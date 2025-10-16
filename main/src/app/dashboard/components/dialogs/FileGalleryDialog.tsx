@@ -255,7 +255,7 @@ export default function FileGalleryDialog({ open, items, initialIndex = 0, title
           </div>
 
           {/* Thumbnails */}
-          {items.length > 1 && <div className="no-scrollbar flex gap-2 overflow-x-auto pt-1">{items.map((it, i) => renderThumb(it, i === idx, i))}</div>}
+          {items.length > 1 && <div className="no-scrollbar flex gap-2 overflow-x-auto py-1 px-1">{items.map((it, i) => renderThumb(it, i === idx, i))}</div>}
         </div>
       </div>
     </div>

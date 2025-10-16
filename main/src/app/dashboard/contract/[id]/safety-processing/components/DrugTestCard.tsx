@@ -262,14 +262,13 @@ export default function DrugTestCard({ trackerId, drugTest, canEdit, onChange, h
 
   /* ----------------------------- Render ----------------------------- */
   return (
-    <div className={showHighlight ? "ssp-ring-wrapper rounded-xl p-[6px] ssp-animated-ring" : ""}>
-      <section
-        className="relative rounded-xl border p-3 sm:p-4 lg:max-h-[22rem] lg:overflow-y-auto"
-        style={{ background: "var(--color-card)", borderColor: "var(--color-outline)" }}
-        aria-labelledby={titleId}
-        aria-describedby={locked ? descId : undefined}
-        aria-busy={busy || undefined}
-      >
+    <section
+      className={`relative rounded-xl border p-3 sm:p-4 lg:max-h-[22rem] lg:overflow-y-auto ${showHighlight ? "ssp-inside-animated-ring" : ""}`}
+      style={{ background: "var(--color-card)", borderColor: "var(--color-outline)" }}
+      aria-labelledby={titleId}
+      aria-describedby={locked ? descId : undefined}
+      aria-busy={busy || undefined}
+    >
         {locked && (
           <>
             <p id={descId} className="sr-only">
@@ -465,7 +464,6 @@ export default function DrugTestCard({ trackerId, drugTest, canEdit, onChange, h
           }}
           errorMessage={galleryError}
         />
-      </section>
-    </div>
+    </section>
   );
 }

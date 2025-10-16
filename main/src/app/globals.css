@@ -195,6 +195,47 @@
 }
 
 /* ------------------------------
+   Inside Border Animation
+   Used for card highlights without affecting layout
+   Same animation as ssp-animated-ring but inside the card
+------------------------------ */
+.ssp-inside-animated-ring {
+  position: relative;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.ssp-inside-animated-ring::before {
+  content: "";
+  position: absolute;
+  z-index: -2;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background-repeat: no-repeat;
+  background-size: 50% 50%;
+  background-position: 0 0, 100% 0, 100% 100%, 0 100%;
+  background-image: linear-gradient(#005baa, #005baa),
+    linear-gradient(#005baa, #005baa), linear-gradient(#e30613, #e30613),
+    linear-gradient(#e30613, #e30613);
+  animation: rotate-ssp 2.5s linear forwards,
+    fade-out 0.4s ease-out 2.2s forwards;
+}
+
+.ssp-inside-animated-ring::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 6px;
+  left: 6px;
+  width: calc(100% - 12px);
+  height: calc(100% - 12px);
+  background: var(--color-card);
+  border-radius: 10px;
+}
+
+/* ------------------------------
    6. Country Flag Background Utilities
    Used for language selection flags
 ------------------------------ */

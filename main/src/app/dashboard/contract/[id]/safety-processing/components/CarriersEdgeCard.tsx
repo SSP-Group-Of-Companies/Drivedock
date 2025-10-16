@@ -30,7 +30,7 @@ const ALLOWED_MIME = new Set<string>([EFileMimeType.JPEG, EFileMimeType.JPG, EFi
 
 const INPUT_ACCEPT = "image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
-const MAX_CERTS = 15;
+const MAX_CERTS = 20;
 
 export default function CarriersEdgeCard({ trackerId, driverEmail, carriersEdge, canEdit, onChange, highlight = false }: Props) {
   const user = useAuth();
@@ -198,17 +198,16 @@ export default function CarriersEdgeCard({ trackerId, driverEmail, carriersEdge,
   /* -------------------------------- Render -------------------------------- */
 
   return (
-    <div className={`relative ${showHighlight ? "ssp-ring-wrapper rounded-xl p-[6px] ssp-animated-ring" : ""}`}>
-      <section
-        className="relative rounded-xl border p-3 sm:p-4 lg:max-h-[21rem] lg:overflow-y-auto"
-        aria-labelledby={headingId}
-        aria-describedby={locked ? descId : undefined}
-        aria-busy={busy || undefined}
-        style={{
-          background: "var(--color-card)",
-          borderColor: "var(--color-outline)",
-        }}
-      >
+    <section
+      className={`relative rounded-xl border p-3 sm:p-4 lg:max-h-[21rem] lg:overflow-y-auto ${showHighlight ? "ssp-inside-animated-ring" : ""}`}
+      aria-labelledby={headingId}
+      aria-describedby={locked ? descId : undefined}
+      aria-busy={busy || undefined}
+      style={{
+        background: "var(--color-card)",
+        borderColor: "var(--color-outline)",
+      }}
+    >
         {/* Card-wide lock overlay (kept) */}
         {locked && (
           <>
@@ -375,7 +374,6 @@ export default function CarriersEdgeCard({ trackerId, driverEmail, carriersEdge,
           onDelete={handleDeleteFromGallery}
           errorMessage={galleryError}
         />
-      </section>
-    </div>
+    </section>
   );
 }
