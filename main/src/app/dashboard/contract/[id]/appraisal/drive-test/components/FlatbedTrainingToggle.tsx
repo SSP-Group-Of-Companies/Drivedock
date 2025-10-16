@@ -4,11 +4,8 @@ import { useState, useEffect } from "react";
 import clsx from "clsx";
 
 type Props = {
-  trackerId: string;
   needsFlatbedTraining: boolean;
   canEdit: boolean;
-  companyId: string;
-  applicationType?: string;
   isEditMode: boolean;
   staged: Record<string, any>;
   onStage: (changes: any) => void;
@@ -20,11 +17,8 @@ type Props = {
 };
 
 export default function FlatbedTrainingToggle({
-  trackerId,
   needsFlatbedTraining,
   canEdit,
-  companyId,
-  applicationType,
   isEditMode,
   staged,
   onStage,

@@ -421,11 +421,8 @@ export default function AdminDriveTestClient({
       {/* Flatbed Training Toggle */}
       {showFlatbedToggle && companyId && (
         <FlatbedTrainingToggle
-          trackerId={trackerId}
           needsFlatbedTraining={onboardingContext.needsFlatbedTraining}
           canEdit={!isApplicationCompleted} // Disable if application is completed
-          companyId={companyId}
-          applicationType={applicationType}
           isEditMode={isEditMode}
           staged={staged}
           onStage={stageUpdate}
