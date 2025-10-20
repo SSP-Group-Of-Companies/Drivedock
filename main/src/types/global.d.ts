@@ -6,5 +6,9 @@ declare global {
       highlightPaper: (source: HTMLCanvasElement) => HTMLCanvasElement;
       extractPaper: (source: HTMLCanvasElement, w?: number, h?: number) => HTMLCanvasElement;
     };
+    jscanify?: new () => {
+      highlightPaper: (source: HTMLCanvasElement) => HTMLCanvasElement;
+      extractPaper: (source: HTMLCanvasElement, w?: number, h?: number) => HTMLCanvasElement;
+    };
   }
 }
