@@ -28,6 +28,8 @@ import type { IOnboardingTrackerContext } from "@/types/onboardingTracker.types"
 import { ECountryCode } from "@/types/shared.types";
 import { COMPANIES } from "@/constants/companies";
 import { useCountrySelection } from "@/hooks/useCountrySelection";
+import { useCroppedUpload } from "@/hooks/useCroppedUpload";
+import { DOC_ASPECTS } from "@/lib/docAspects";
 
 // Helpers
 const formatPhoneNumber = (value: string) => {
@@ -75,6 +77,7 @@ export default function PersonalDetails({
   const { t } = useTranslation("common");
   const { id } = useParams<{ id: string }>();
   const { selectedCountryCode } = useCountrySelection();
+  const { openCrop, CropModalPortal } = useCroppedUpload();
 
   //  WATCH ALL FIELDS UP FRONT (no hooks in JSX, no conditional hooks)
   const sinValue = useWatch({ control, name: "sin" });
@@ -214,19 +217,24 @@ export default function PersonalDetails({
     setSinPhotoMessage("");
 
     try {
-      const result = await uploadToS3Presigned({
+      // 1) open cropper (drivers will preview/adjust)
+      const { file: croppedFile, previewDataUrl } = await openCrop({
         file,
+        aspect: DOC_ASPECTS.ID,     // or DOC_ASPECTS.FREE if you prefer
+        targetWidth: 1600,
+        jpegQuality: 0.9,
+      });
+
+      // 2) upload using your existing util (unchanged)
+      const result = await uploadToS3Presigned({
+        file: croppedFile,
         folder: ES3Folder.SIN_PHOTOS,
         trackerId: id,
       });
 
+      // 3) update form and preview with processed image
       setValue("sinPhoto", result, { shouldValidate: true });
-
-      const reader = new FileReader();
-      reader.onload = (ev) =>
-        setSinPhotoPreview(String(ev.target?.result || ""));
-      reader.readAsDataURL(file);
-
+      setSinPhotoPreview(previewDataUrl);
       setSinPhotoStatus("idle");
       setSinPhotoMessage("Upload successful");
     } catch (error: any) {
@@ -709,6 +717,9 @@ export default function PersonalDetails({
           error={errors.emergencyContactPhone}
         />
       </div>
+
+      {/* Crop modal portal */}
+      {CropModalPortal}
     </section>
   );
 }
