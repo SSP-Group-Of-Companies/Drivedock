@@ -18,6 +18,7 @@ import Image from "next/image";
 import { uploadToS3Presigned } from "@/lib/utils/s3Upload";
 import { ES3Folder } from "@/types/aws.types";
 import { useParams } from "next/navigation";
+import { preprocessWithJscanify } from "@/lib/imagePreprocess";
 
 // components, types and hooks
 import useMounted from "@/hooks/useMounted";
@@ -214,25 +215,30 @@ export default function PersonalDetails({
     setSinPhotoMessage("");
 
     try {
+      // NEW: preprocess client-side (deskew/auto-crop if possible, else compress)
+      const processedFile = await preprocessWithJscanify(file, 1.6); // aspectHint for ID-like cards
+
+      // Use your EXISTING upload util & API – do NOT change it
       const result = await uploadToS3Presigned({
-        file,
+        file: processedFile,               // <-- previously was the raw file
         folder: ES3Folder.SIN_PHOTOS,
         trackerId: id,
       });
 
+      // Keep your existing form value shape
       setValue("sinPhoto", result, { shouldValidate: true });
 
+      // Preview the processed image so user sees WYSIWYG
       const reader = new FileReader();
-      reader.onload = (ev) =>
-        setSinPhotoPreview(String(ev.target?.result || ""));
-      reader.readAsDataURL(file);
+      reader.onload = (ev) => setSinPhotoPreview(String(ev.target?.result || ""));
+      reader.readAsDataURL(processedFile);
 
       setSinPhotoStatus("idle");
       setSinPhotoMessage("Upload successful");
     } catch (error: any) {
       console.error("SIN photo upload failed:", error);
       setSinPhotoStatus("error");
-      setSinPhotoMessage(error.message || "Upload failed");
+      setSinPhotoMessage(error?.message || "Upload failed");
     }
   };
 
