@@ -6,7 +6,7 @@ import { Camera } from "lucide-react";
 type UploadPickerProps = {
   /** Trigger the label shown on the tile/button (fallback if no children) */
   label?: string;
-  /** Content for the trigger. If provided, replaces default tile UI. */
+  /** Content for trigger. If provided, replaces default tile UI. */
   children?: React.ReactNode;
   /** Called with the chosen File (or null if user cancels). */
   onPick: (file: File | null) => void | Promise<void>;
