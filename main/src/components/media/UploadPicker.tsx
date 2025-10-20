@@ -14,12 +14,12 @@ type UploadPickerProps = {
   accept?: string;
   /** Disable the trigger */
   disabled?: boolean;
-  /** Optional aria-label for the trigger */
+  /** optional aria-label for the trigger */
   ariaLabel?: string;
 
   /** Action sheet button labels */
-  cameraText?: string;   // default: "Take photo (camera)"
-  filesText?: string;    // default: "Choose from files"
+  cameraText?: string; // default: "Take photo (camera)"
+  filesText?: string; // default: "Choose from files"
 
   /** Tailwind classes for outer container */
   className?: string;
@@ -50,7 +50,10 @@ export default function UploadPicker({
   useEffect(() => {
     function onDoc(e: MouseEvent) {
       if (!open) return;
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+      if (
+        wrapperRef.current &&
+        !wrapperRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     }
@@ -92,14 +95,13 @@ export default function UploadPicker({
             : "cursor-pointer flex flex-col items-center justify-center h-10 px-4 mt-1 w-full text-sm text-gray-600 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 hover:border-gray-400 transition-all duration-200 group"
         }
       >
-        {children ?? (showDefaultTile && (
-          <>
-            <Camera className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
-            <span className="font-medium text-gray-400 text-xs">
-              {label}
-            </span>
-          </>
-        ))}
+        {children ??
+          (showDefaultTile && (
+            <>
+              <Camera className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
+              <span className="font-medium text-gray-400 text-xs">{label}</span>
+            </>
+          ))}
       </button>
 
       {/* Action sheet */}
@@ -143,7 +145,9 @@ export default function UploadPicker({
         accept={accept}
         capture="environment"
         className="hidden"
-        onChange={(e) => handleChange(e.currentTarget, e.target.files?.[0] || null)}
+        onChange={(e) =>
+          handleChange(e.currentTarget, e.target.files?.[0] || null)
+        }
         // do not register with RHF, we manage via onPick()
       />
       {/* 2) File picker (shows Take Photo / Photo Library / Browse on iOS) */}
@@ -152,7 +156,9 @@ export default function UploadPicker({
         type="file"
         accept={accept}
         className="hidden"
-        onChange={(e) => handleChange(e.currentTarget, e.target.files?.[0] || null)}
+        onChange={(e) =>
+          handleChange(e.currentTarget, e.target.files?.[0] || null)
+        }
       />
     </div>
   );
