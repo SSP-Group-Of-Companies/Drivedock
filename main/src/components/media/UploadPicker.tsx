@@ -4,7 +4,7 @@ import React, { useEffect, useId, useRef, useState } from "react";
 import { Camera } from "lucide-react";
 
 type UploadPickerProps = {
-  /** Trigger label shown on the tile/button (fallback if no children) */
+  /** Trigger the label shown on the tile/button (fallback if no children) */
   label?: string;
   /** Content for the trigger. If provided, replaces default tile UI. */
   children?: React.ReactNode;
