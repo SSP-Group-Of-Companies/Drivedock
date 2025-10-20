@@ -204,6 +204,24 @@ export default function PersonalDetails({
     originalName: "",
   };
 
+  // Helper function to validate minimum image dimensions
+  async function ensureMinShortEdge(file: File, min = 900): Promise<boolean> {
+    return new Promise((resolve) => {
+      const url = URL.createObjectURL(file);
+      const img = document.createElement("img");
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const short = Math.min(img.naturalWidth, img.naturalHeight);
+        resolve(short >= min);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(false);
+      };
+      img.src = url;
+    });
+  }
+
   const handleSinPhotoUpload = async (file: File | null) => {
     if (!file) {
       setValue("sinPhoto", EMPTY_PHOTO, { shouldValidate: true });
@@ -217,13 +235,30 @@ export default function PersonalDetails({
     setSinPhotoMessage("");
 
     try {
+      // Check minimum image size before opening cropper
+      const ok = await ensureMinShortEdge(file, 900).catch(() => false);
+      if (!ok) {
+        setSinPhotoStatus("error");
+        setSinPhotoMessage("Image too small. Retake a clearer photo.");
+        return;
+      }
+
       // 1) open cropper (drivers will preview/adjust)
-      const { file: croppedFile, previewDataUrl } = await openCrop({
+      const cropResult = await openCrop({
         file,
         aspect: DOC_ASPECTS.ID,     // or DOC_ASPECTS.FREE if you prefer
         targetWidth: 1600,
         jpegQuality: 0.9,
       });
+
+      // Handle user cancellation or HEIC files that can't be cropped
+      if (!cropResult) {
+        // User cancelled or HEIC detected; just reset UI quietly
+        setSinPhotoStatus("idle");
+        return;
+      }
+
+      const { file: croppedFile, previewDataUrl } = cropResult;
 
       // 2) upload using your existing util (unchanged)
       const result = await uploadToS3Presigned({
@@ -533,9 +568,9 @@ export default function PersonalDetails({
               <Image
                 src={sinPhotoPreview || sinPhotoUrl || ""}
                 alt="SIN Card Preview"
-                width={400}
-                height={128}
-                className="w-full h-32 object-cover rounded-lg border border-gray-300"
+                width={800}
+                height={400}
+                className="w-full h-40 object-contain rounded-lg border border-gray-300 bg-white"
               />
               <button
                 type="button"
@@ -564,7 +599,7 @@ export default function PersonalDetails({
             id="sinPhoto"
             type="file"
             accept="image/*"
-            {...register("sinPhoto")}
+            capture="environment"
             onChange={(e) => handleSinPhotoUpload(e.target.files?.[0] || null)}
             data-field="sinPhoto"
             className="hidden"

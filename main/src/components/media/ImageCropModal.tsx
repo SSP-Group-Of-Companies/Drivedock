@@ -34,6 +34,16 @@ export default function ImageCropModal({
     if (open) containerRef.current?.focus();
   }, [open]);
 
+  // prevent background scroll while modal is open
+  useEffect(() => {
+    if (!open) return;
+    const original = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { 
+      document.body.style.overflow = original; 
+    };
+  }, [open]);
+
   const onCropComplete = useCallback((_croppedArea: Area, croppedAreaPixels: Area) => {
     setCroppedPixels(croppedAreaPixels);
   }, []);
@@ -146,13 +156,6 @@ function degToRad(degree: number) {
   return (degree * Math.PI) / 180;
 }
 
-function getRotaSize(width: number, height: number, rotation: number) {
-  const rotRad = degToRad(rotation);
-  const bBoxW = Math.abs(Math.cos(rotRad) * width) + Math.abs(Math.sin(rotRad) * height);
-  const bBoxH = Math.abs(Math.sin(rotRad) * width) + Math.abs(Math.cos(rotRad) * height);
-  return { width: bBoxW, height: bBoxH };
-}
-
 async function getCroppedBlob(
   imageSrc: string,
   cropPx: Area,
@@ -161,39 +164,38 @@ async function getCroppedBlob(
   jpegQuality = 0.9
 ): Promise<Blob> {
   const img = await createImage(imageSrc);
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d")!;
 
-  // Create a canvas that can fit the rotated image
-  const { width: bW, height: bH } = getRotaSize(img.width, img.height, rotationDeg);
-  canvas.width = Math.round(bW);
-  canvas.height = Math.round(bH);
+  // 1) draw the rotated image to an intermediate canvas
+  const rot = document.createElement("canvas");
+  const rctx = rot.getContext("2d")!;
+  const rad = degToRad(rotationDeg);
+  const bbW = Math.abs(Math.cos(rad) * img.width) + Math.abs(Math.sin(rad) * img.height);
+  const bbH = Math.abs(Math.sin(rad) * img.width) + Math.abs(Math.cos(rad) * img.height);
+  rot.width = Math.round(bbW);
+  rot.height = Math.round(bbH);
 
-  // Move to center and rotate
-  ctx.translate(canvas.width / 2, canvas.height / 2);
-  ctx.rotate(degToRad(rotationDeg));
-  ctx.drawImage(img, -img.width / 2, -img.height / 2);
+  rctx.translate(rot.width / 2, rot.height / 2);
+  rctx.rotate(rad);
+  rctx.drawImage(img, -img.width / 2, -img.height / 2);
 
-  // Now crop from the rotated image
-  const data = ctx.getImageData(cropPx.x, cropPx.y, cropPx.width, cropPx.height);
-
-  // Draw cropped to a new canvas and scale to target width
-  const out = document.createElement("canvas");
+  // 2) scale so the cropped width becomes targetWidth
   const scale = targetWidth / cropPx.width;
+  const out = document.createElement("canvas");
   out.width = Math.round(cropPx.width * scale);
   out.height = Math.round(cropPx.height * scale);
   const octx = out.getContext("2d")!;
-  octx.putImageData(data, 0, 0);
-  if (scale !== 1) {
-    // scale with drawImage for better quality
-    const tmp = document.createElement("canvas");
-    tmp.width = cropPx.width;
-    tmp.height = cropPx.height;
-    tmp.getContext("2d")!.putImageData(data, 0, 0);
-    octx.drawImage(tmp, 0, 0, tmp.width, tmp.height, 0, 0, out.width, out.height);
-  }
 
-  // Slight contrast lift for readability
+  // 3) crop from the rotated canvas directly with high-quality sampling
+  //    (source: rot, sx,sy,sw,sh → dest: 0,0,outW,outH)
+  const sx = Math.max(0, Math.floor(cropPx.x));
+  const sy = Math.max(0, Math.floor(cropPx.y));
+  const sw = Math.max(1, Math.floor(cropPx.width));
+  const sh = Math.max(1, Math.floor(cropPx.height));
+  octx.imageSmoothingEnabled = true;
+  octx.imageSmoothingQuality = "high";
+  octx.drawImage(rot, sx, sy, sw, sh, 0, 0, out.width, out.height);
+
+  // 4) subtle contrast lift
   boostContrast(out, 1.12);
 
   return new Promise<Blob>((resolve) => {

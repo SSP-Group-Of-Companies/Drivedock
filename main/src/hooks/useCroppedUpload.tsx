@@ -10,7 +10,7 @@ type OpenCropArgs = {
   jpegQuality?: number;
 };
 
-type CropResult = { file: File; previewDataUrl: string };
+type CropResult = { file: File; previewDataUrl: string } | null;
 
 export function useCroppedUpload() {
   const [open, setOpen] = useState(false);
@@ -34,7 +34,7 @@ export function useCroppedUpload() {
         onCancel={() => {
           setOpen(false);
           setImageSrc(null);
-          resolver.reject(new Error("Cropping cancelled"));
+          resolver?.resolve(null); // resolve with null to indicate cancel
           setResolver(null);
         }}
         onCropped={async (blob: Blob) => {
@@ -50,9 +50,15 @@ export function useCroppedUpload() {
                 setResolver(null);
                 setOpen(false);
                 setImageSrc(null);
+                reader.onload = null;
+                reader.onerror = null;
                 resolveReader();
               };
-              reader.onerror = () => rejectReader(new Error("Failed to create preview"));
+              reader.onerror = () => {
+                reader.onload = null;
+                reader.onerror = null;
+                rejectReader(new Error("Failed to create preview"));
+              };
               reader.readAsDataURL(file);
             });
           } catch (error) {
@@ -70,6 +76,11 @@ export function useCroppedUpload() {
 
   const openCrop = useCallback((args: OpenCropArgs) => {
     const { file, aspect, targetWidth, jpegQuality } = args;
+    
+    // If browser can't display HEIC/HEIF, skip cropper gracefully
+    if (/image\/hei(c|f)/i.test(file.type)) {
+      return Promise.resolve(null);
+    }
     
     return new Promise<CropResult>((resolve, reject) => {
       const reader = new FileReader();
