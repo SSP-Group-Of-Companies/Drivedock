@@ -1,5 +1,5 @@
-import jscanify from "jscanify";
 import { loadOpenCV } from "@/lib/opencvLoader";
+import { loadJscanify } from "@/lib/jscanifyLoader";
 
 /** File -> HTMLCanvasElement */
 export async function fileToCanvas(file: File): Promise<HTMLCanvasElement> {
@@ -40,15 +40,16 @@ export async function preprocessWithJscanify(
   file: File,
   aspectHint?: number
 ): Promise<File> {
-  await loadOpenCV(); // jscanify relies on OpenCV
-  const srcCanvas = await fileToCanvas(file);
+  await loadOpenCV();
+  await loadJscanify(); // <-- NEW
 
+  const srcCanvas = await fileToCanvas(file);
   const targetW = 1600;
   const targetH = aspectHint ? Math.round(targetW / aspectHint) : 1000;
 
   let outBlob: Blob;
   try {
-    const scanner: any = new (jscanify as any)();
+    const scanner: any = new window.Jscanify(); // <-- use global
     const out = scanner.extractPaper(srcCanvas, targetW, targetH);
     outBlob = await canvasToJpegBlob(out, 0.9);
   } catch {

@@ -39,6 +39,12 @@ const nextConfig: NextConfig = {
       util: false,
       buffer: false,
       process: false,
+      // prevent unwanted node core polyfills
+      net: false,
+      tls: false,
+      child_process: false,
+      dns: false,
+      module: false,
     };
 
     if (isServer) {
