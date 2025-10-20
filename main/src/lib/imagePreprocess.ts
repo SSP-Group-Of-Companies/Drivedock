@@ -49,10 +49,16 @@ export async function preprocessWithJscanify(
 
   let outBlob: Blob;
   try {
-    const scanner: any = new window.Jscanify(); // <-- use global
+    // Verify Jscanify is available before using it
+    if (!window.Jscanify) {
+      throw new Error("Jscanify not available on window object");
+    }
+    
+    const scanner: any = new window.Jscanify();
     const out = scanner.extractPaper(srcCanvas, targetW, targetH);
     outBlob = await canvasToJpegBlob(out, 0.9);
-  } catch {
+  } catch (error) {
+    console.warn("Jscanify preprocessing failed, falling back to compression:", error);
     // graceful fallback: just compress the original
     outBlob = await canvasToJpegBlob(srcCanvas, 0.9);
   }
