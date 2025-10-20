@@ -600,7 +600,10 @@ export default function PersonalDetails({
             type="file"
             accept="image/*"
             capture="environment"
-            onChange={(e) => handleSinPhotoUpload(e.target.files?.[0] || null)}
+            onChange={(e) => { 
+              void handleSinPhotoUpload(e.target.files?.[0] || null);
+              e.currentTarget.value = ""; // allow picking same file again
+            }}
             data-field="sinPhoto"
             className="hidden"
           />

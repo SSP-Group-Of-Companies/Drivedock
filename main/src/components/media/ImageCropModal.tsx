@@ -27,6 +27,7 @@ export default function ImageCropModal({
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
   const [croppedPixels, setCroppedPixels] = useState<Area | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // focus the dialog for a11y
@@ -44,19 +45,31 @@ export default function ImageCropModal({
     };
   }, [open]);
 
+  // reset saving state when modal closes
+  useEffect(() => {
+    if (!open) {
+      setIsSaving(false);
+    }
+  }, [open]);
+
   const onCropComplete = useCallback((_croppedArea: Area, croppedAreaPixels: Area) => {
     setCroppedPixels(croppedAreaPixels);
   }, []);
 
   async function handleDone() {
-    if (!croppedPixels) return;
-    const blob = await getCroppedBlob(imageSrc, croppedPixels, rotation, targetWidth, jpegQuality);
-    await onCropped(blob);
+    if (!croppedPixels || isSaving) return;
+    setIsSaving(true);
+    try {
+      const blob = await getCroppedBlob(imageSrc, croppedPixels, rotation, targetWidth, jpegQuality);
+      await onCropped(blob);
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   function onKeyDown(e: React.KeyboardEvent) {
     if (e.key === "Escape") onCancel();
-    if (e.key === "Enter") void handleDone();
+    if (e.key === "Enter" && !isSaving) void handleDone();
   }
 
   if (!open) return null;
@@ -124,10 +137,11 @@ export default function ImageCropModal({
             </button>
             <button
               type="button"
-              className="flex-1 rounded-xl bg-black text-white px-4 py-2 text-sm"
+              className="flex-1 rounded-xl bg-black text-white px-4 py-2 text-sm disabled:opacity-50"
               onClick={handleDone}
+              disabled={isSaving}
             >
-              Done
+              {isSaving ? "Saving..." : "Done"}
             </button>
           </div>
 
