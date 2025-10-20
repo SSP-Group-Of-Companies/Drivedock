@@ -12,8 +12,8 @@
 
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useState, useCallback } from "react";
-import { Eye, EyeOff, Camera, X } from "lucide-react";
+import { useState, useCallback, useEffect } from "react";
+import { Eye, EyeOff, X } from "lucide-react";
 import Image from "next/image";
 import { uploadToS3Presigned } from "@/lib/utils/s3Upload";
 import { ES3Folder } from "@/types/aws.types";
@@ -30,6 +30,7 @@ import { COMPANIES } from "@/constants/companies";
 import { useCountrySelection } from "@/hooks/useCountrySelection";
 import { useCroppedUpload } from "@/hooks/useCroppedUpload";
 import { DOC_ASPECTS } from "@/lib/docAspects";
+import UploadPicker from "@/components/media/UploadPicker";
 
 // Helpers
 const formatPhoneNumber = (value: string) => {
@@ -72,6 +73,11 @@ export default function PersonalDetails({
     formState: { errors },
     control,
   } = useFormContext<ApplicationFormPage1Schema>();
+
+  // register the field so RHF tracks touched/dirty/errors as before
+  useEffect(() => {
+    register("sinPhoto");
+  }, [register]);
 
   const mounted = useMounted();
   const { t } = useTranslation("common");
@@ -246,7 +252,7 @@ export default function PersonalDetails({
       // 1) open cropper (drivers will preview/adjust)
       const cropResult = await openCrop({
         file,
-        aspect: DOC_ASPECTS.ID,     // or DOC_ASPECTS.FREE if you prefer
+        aspect: DOC_ASPECTS.FREE,   // SIN can be card or document format
         targetWidth: 1600,
         jpegQuality: 0.9,
       });
@@ -563,6 +569,7 @@ export default function PersonalDetails({
           <label className="block text-sm font-medium text-gray-700 mb-1">
             {t("form.step2.page1.fields.sinPhoto")}
           </label>
+
           {sinPhotoPreview || sinPhotoUrl ? (
             <div className="relative">
               <Image
@@ -585,28 +592,13 @@ export default function PersonalDetails({
               </button>
             </div>
           ) : (
-            <label
-              htmlFor="sinPhoto"
-              className="cursor-pointer flex flex-col items-center justify-center h-10 px-4 mt-1 w-full text-sm text-gray-600 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 hover:border-gray-400 transition-all duration-200 group"
-            >
-              <Camera className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
-              <span className="font-medium text-gray-400 text-xs">
-                {t("form.step2.page1.fields.sinPhotoDesc")}
-              </span>
-            </label>
+            <UploadPicker
+              label={t("form.step2.page1.fields.sinPhotoDesc")}
+              onPick={(file) => handleSinPhotoUpload(file)}
+              accept="image/*,.heic,.heif"
+              className="w-full"
+            />
           )}
-          <input
-            id="sinPhoto"
-            type="file"
-            accept="image/*"
-            capture="environment"
-            onChange={(e) => { 
-              void handleSinPhotoUpload(e.target.files?.[0] || null);
-              e.currentTarget.value = ""; // allow picking same file again
-            }}
-            data-field="sinPhoto"
-            className="hidden"
-          />
           {sinPhotoStatus !== "uploading" && errors.sinPhoto && (
             <p className="text-red-500 text-sm mt-1">
               {errors.sinPhoto.message?.toString() || "SIN photo is required"}
