@@ -361,6 +361,22 @@ input, select, textarea {
 /* =========================
  * Modal viewport stability (iOS Safari safe)
  * ========================= */
+:root {
+  --vvh: 1vh; /* fallback for browsers that don't support vvh */
+}
+
+@supports (height: 100vh) {
+  :root {
+    --vvh: 1vh;
+  }
+}
+
+@supports (height: 100dvh) {
+  :root {
+    --vvh: 1dvh;
+  }
+}
+
 html,
 body {
   min-height: 100%;

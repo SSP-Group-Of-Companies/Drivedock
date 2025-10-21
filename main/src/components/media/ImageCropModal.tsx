@@ -314,8 +314,22 @@ export default function ImageCropModal({
       tabIndex={-1}
       onKeyDown={onKeyDown}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 sm:p-6"
+      style={{
+        height: "calc(var(--vvh, 1vh) * 100)",
+        minHeight: "100svh" as any,
+        paddingBottom: "env(safe-area-inset-bottom)",
+        WebkitOverflowScrolling: "touch",
+        overscrollBehavior: "contain",
+      } as React.CSSProperties}
     >
-      <div className="image-crop-modal relative w-full max-w-5xl h-[90vh] sm:h-[95vh] bg-white rounded-lg shadow-2xl overflow-hidden flex flex-col">
+      <div 
+        className="image-crop-modal relative w-full max-w-5xl bg-white rounded-lg shadow-2xl overflow-hidden flex flex-col"
+        style={{
+          height: "calc(100% - 2rem)",
+          maxHeight: "calc(100vh - 2rem)",
+          minHeight: "400px",
+        }}
+      >
         <h2 id={titleId} className="sr-only">Crop image</h2>
         
         {/* Close button for desktop */}
@@ -330,11 +344,16 @@ export default function ImageCropModal({
           </svg>
         </button>
 
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 min-h-0" style={{ height: "calc(100% - 120px)" }}>
           <Cropper
             ref={cropperRef}
             src={imageSrc}
-            style={{ height: "100%", width: "100%", minHeight: "400px" }}
+            style={{ 
+              height: "100%", 
+              width: "100%", 
+              minHeight: "300px",
+              maxHeight: "calc(100vh - 200px)"
+            }}
             // Behavior
             viewMode={2}                    // stricter: image can't leave canvas
             dragMode="move"                 // drag to move image

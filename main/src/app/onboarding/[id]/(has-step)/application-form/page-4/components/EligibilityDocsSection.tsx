@@ -8,7 +8,7 @@ import {
 import OnboardingPhotoGroup from "@/app/onboarding/components/OnboardingPhotoGroup";
 import { ES3Folder } from "@/types/aws.types";
 import { useFormContext, useWatch } from "react-hook-form";
-import { useMemo, useEffect } from "react";
+import { useMemo, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { DOC_ASPECTS } from "@/lib/docAspects";
 
@@ -37,18 +37,35 @@ export default function EligibilityDocsSection({
   const passportType = useWatch({ name: "passportType" });
   const workAuthorizationType = useWatch({ name: "workAuthorizationType" });
 
+  // Track previous passport type to avoid clearing on mount
+  const prevPassportTypeRef = useRef<EPassportType | "" | undefined>(undefined);
+
   // Clear fields when passport type changes to maintain form state consistency
   useEffect(() => {
-    if (isCA && passportType === EPassportType.CANADIAN) {
-      // Clear work authorization type since it's not needed for Canadian passports
-      setValue("workAuthorizationType", undefined);
-      // Also clear US visa and PR/Permit photos since they're not needed for Canadian passports
-      setValue("usVisaPhotos", []);
-      setValue("prPermitCitizenshipPhotos", []);
-    } else if (isCA && passportType === EPassportType.OTHERS) {
-      // When switching to "Others", clear the work authorization type to force re-selection
-      setValue("workAuthorizationType", undefined);
+    if (!isCA) return;
+
+    const prev = prevPassportTypeRef.current;
+    const curr = passportType;
+
+    // Skip clearing on the initial mount (preserve prefilled values)
+    if (prev === undefined) {
+      prevPassportTypeRef.current = curr;
+      return;
     }
+
+    // Only react when the value truly changes
+    if (curr !== prev) {
+      if (curr === EPassportType.CANADIAN) {
+        setValue("workAuthorizationType", undefined, { shouldDirty: true, shouldValidate: true });
+        setValue("usVisaPhotos", [], { shouldDirty: true });
+        setValue("prPermitCitizenshipPhotos", [], { shouldDirty: true });
+      } else if (curr === EPassportType.OTHERS) {
+        // Clear only when switching *to* Others (not on mount)
+        setValue("workAuthorizationType", undefined, { shouldDirty: true, shouldValidate: true });
+      }
+    }
+
+    prevPassportTypeRef.current = curr;
   }, [isCA, passportType, setValue]);
 
   // Determine which fields to show based on passport type
