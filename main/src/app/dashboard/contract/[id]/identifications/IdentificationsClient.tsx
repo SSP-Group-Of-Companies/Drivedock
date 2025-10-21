@@ -190,6 +190,7 @@ export default function IdentificationsClient({
     // Filter data based on country requirements
     const filteredData: any = {
       licenses: baseData.licenses,
+      sinPhoto: baseData.sinPhoto, // Add SIN photo
       hstNumber: baseData.hstNumber,
       businessName: baseData.businessName,
       incorporatePhotos: baseData.incorporatePhotos,

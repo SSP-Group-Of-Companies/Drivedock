@@ -1,29 +1,24 @@
 "use client";
 
-import { Eye, EyeOff, Camera, X } from "lucide-react";
+import { Eye, EyeOff, Image as ImageIcon } from "lucide-react";
 import { useState } from "react";
 import Image from "next/image";
 import { formatInputDate } from "@/lib/utils/dateUtils";
 import { IApplicationFormPage1 } from "@/types/applicationForm.types";
-import { uploadToS3Presigned, deleteTempFiles, isTempKey } from "@/lib/utils/s3Upload";
-import { ES3Folder } from "@/types/aws.types";
 
 interface PersonalInformationSectionProps {
   data: IApplicationFormPage1;
   isEditMode: boolean;
   staged: any;
   onStage: (changes: any) => void;
+  trackerId: string;
   prequalificationData?: {
     statusInCanada?: string;
   };
 }
 
-export default function PersonalInformationSection({ data, isEditMode, staged, onStage, prequalificationData }: PersonalInformationSectionProps) {
+export default function PersonalInformationSection({ data, isEditMode, staged, onStage, trackerId, prequalificationData }: PersonalInformationSectionProps) {
   const [showSIN, setShowSIN] = useState(false);
-
-  // Upload/Delete UI state
-  const [sinPhotoStatus, setSinPhotoStatus] = useState<"idle" | "uploading" | "deleting" | "error">("idle");
-  const [sinPhotoMessage, setSinPhotoMessage] = useState<string>("");
 
   // Merge staged changes with original data for display
   const formData = { ...data, ...staged };
@@ -77,72 +72,21 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
   };
 
   /** Upload handler (client-side presign → PUT → stage result) */
-  const handleSinPhotoUpload = async (file: File | null) => {
-    if (!isEditMode) return;
-    if (!file) return;
-
-    setSinPhotoStatus("uploading");
-    setSinPhotoMessage("");
-
-    try {
-      const result = await uploadToS3Presigned({
-        file,
-        folder: ES3Folder.SIN_PHOTOS,
-        // trackerId optional — defaults inside helper if not provided
-      });
-
-      updateField("sinPhoto", result);
-      setSinPhotoStatus("idle");
-      setSinPhotoMessage("Upload successful");
-    } catch (err: any) {
-      console.error("SIN photo upload failed:", err);
-      setSinPhotoStatus("error");
-      setSinPhotoMessage(err?.message || "Upload failed");
-    }
-  };
-
-  /** Delete handler:
-   * - If temp (key starts with temp-files/): call API → show "Deleting..."
-   * - If final/empty: instant remove from state
-   */
-  const handleSinPhotoRemove = async () => {
-    if (!isEditMode) return;
-    const key = formData?.sinPhoto?.s3Key;
-
-    // If no key/url in state, just clear
-    if (!key && !formData?.sinPhoto?.url) {
-      updateField("sinPhoto", { s3Key: "", url: "", mimeType: "", sizeBytes: 0, originalName: "" });
-      return;
-    }
-
-    // Temp file: show deleting + call API
-    if (key && isTempKey(key)) {
-      setSinPhotoStatus("deleting");
-      setSinPhotoMessage("");
-
-      try {
-        await deleteTempFiles([key]);
-        // Clear from state after deletion
-        updateField("sinPhoto", { s3Key: "", url: "", mimeType: "", sizeBytes: 0, originalName: "" });
-        setSinPhotoStatus("idle");
-        setSinPhotoMessage("Photo removed");
-      } catch (err) {
-        console.error("Temp photo deletion failed:", err);
-        setSinPhotoStatus("error");
-        setSinPhotoMessage("Delete failed");
+  const redirectToIdentifications = () => {
+    // Navigate to identifications page
+    const targetUrl = `/dashboard/contract/${trackerId}/identifications`;
+    
+    // Check if we're already on the identifications page
+    if (window.location.pathname.includes('/identifications')) {
+      // Already on identifications page, just scroll to gallery
+      const galleryElement = document.getElementById('image-gallery');
+      if (galleryElement) {
+        galleryElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
-      return;
+    } else {
+      // Navigate to identifications page with anchor
+      window.location.href = `${targetUrl}#image-gallery`;
     }
-
-    // Final/Non-temp photo: remove immediately from state
-    updateField("sinPhoto", { s3Key: "", url: "", mimeType: "", sizeBytes: 0, originalName: "" });
-    setSinPhotoStatus("idle");
-    setSinPhotoMessage("");
-  };
-
-  const openSinPhotoInNewTab = () => {
-    const url = formData?.sinPhoto?.url;
-    if (url) window.open(url, "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -271,72 +215,41 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
               SIN Card Photo
             </label>
 
-            {/* Container is relative so we can pin the X and overlay consistently */}
-            <div
-              className="relative group rounded-lg border-2 border-dashed p-4 text-center overflow-hidden"
+            {/* View-only: Click to go to identifications gallery */}
+            <button
+              type="button"
+              onClick={redirectToIdentifications}
+              className="relative group w-full rounded-lg border-2 border-dashed p-4 text-center overflow-hidden transition-colors hover:border-blue-400"
               style={{ background: "var(--color-surface)", borderColor: "var(--color-outline-variant)" }}
             >
-              {/* Only show delete button if a photo exists */}
-              {isEditMode && formData?.sinPhoto?.url && (
-                <button
-                  type="button"
-                  onClick={handleSinPhotoRemove}
-                  disabled={sinPhotoStatus === "uploading" || sinPhotoStatus === "deleting"}
-                  className="absolute top-2 right-2 z-20 p-1 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors disabled:opacity-60"
-                  aria-label="Remove photo"
-                  title="Remove"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              )}
-
-              {/* If photo exists, show it with a hover overlay to view */}
               {formData?.sinPhoto?.url ? (
                 <>
                   <div className="relative inline-block">
                     <Image src={formData.sinPhoto.url} alt="SIN Card" width={240} height={140} className="mx-auto rounded-lg object-contain max-h-40 w-auto" />
                   </div>
 
-                  {/* Hover overlay to view (never covers the ❌ thanks to z-index) */}
-                  <button
-                    type="button"
-                    onClick={openSinPhotoInNewTab}
-                    className="absolute inset-0 z-10 hidden group-hover:flex items-center justify-center transition-opacity"
+                  {/* Hover overlay to view in gallery */}
+                  <div
+                    className="absolute inset-0 hidden group-hover:flex items-center justify-center transition-opacity"
                     style={{ background: "rgba(0,0,0,0.4)" }}
-                    aria-label="View SIN card photo"
-                    title="View"
                   >
                     <Eye className="w-7 h-7 text-white" />
-                  </button>
+                  </div>
                 </>
               ) : (
-                <>
-                  <label htmlFor="sinPhotoInput" className="cursor-pointer flex flex-col items-center gap-2">
-                    <Camera className="w-8 h-8" style={{ color: "var(--color-on-surface-variant)" }} />
-                    <span className="text-sm" style={{ color: "var(--color-on-surface-variant)" }}>
-                      Click to capture or select an image
-                    </span>
-                  </label>
-                  {isEditMode && <input id="sinPhotoInput" type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => handleSinPhotoUpload(e.target.files?.[0] || null)} />}
-                </>
-              )}
-
-              {/* Status messages under the card area */}
-              {sinPhotoStatus === "uploading" && (
-                <div className="text-yellow-600 text-sm mt-2 flex items-center justify-center">
-                  <p className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-600 mr-2"></p>
-                  Uploading...
+                <div className="flex flex-col items-center gap-2">
+                  <ImageIcon className="w-8 h-8" style={{ color: "var(--color-on-surface-variant)" }} />
+                  <span className="text-sm" style={{ color: "var(--color-on-surface-variant)" }}>
+                    No photo uploaded
+                  </span>
                 </div>
               )}
-              {sinPhotoStatus === "deleting" && (
-                <div className="text-yellow-600 text-sm mt-2 flex items-center justify-center">
-                  <p className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-600 mr-2"></p>
-                  Deleting...
-                </div>
-              )}
-              {sinPhotoStatus === "error" && <p className="text-red-500 text-sm mt-2">{sinPhotoMessage}</p>}
-              {sinPhotoStatus === "idle" && sinPhotoMessage && <p className="text-green-600 text-sm mt-2">{sinPhotoMessage}</p>}
-            </div>
+              
+              {/* Helper text */}
+              <p className="text-xs mt-2" style={{ color: "var(--color-on-surface-variant)" }}>
+                Click to view/edit in Image gallery
+              </p>
+            </button>
           </div>
         </div>
 

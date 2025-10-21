@@ -217,6 +217,7 @@ export default function PersonalDetailsClient({
                   ...changes,
                 }))
               }
+              trackerId={trackerId}
               prequalificationData={prequalificationData?.data?.preQualifications}
             />
           </div>

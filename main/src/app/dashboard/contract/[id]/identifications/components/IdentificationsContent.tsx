@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { IdentificationsData } from "@/app/api/v1/admin/onboarding/[id]/application-form/identifications/types";
 import DriverLicenseSection from "./DriverLicenseSection";
 import FastCardSection from "./FastCardSection";
@@ -36,10 +36,25 @@ export default function IdentificationsContent({
 
   // Get current values (staged or original)
   const getCurrentValue = (field: string) => {
-    return staged[field] !== undefined
+    // Use hasOwnProperty to detect if field was explicitly set in staged (even if undefined)
+    return Object.prototype.hasOwnProperty.call(staged, field)
       ? staged[field]
       : data[field as keyof IdentificationsData];
   };
+
+  // Handle anchor scrolling on page load (from Personal Details SIN photo click)
+  useEffect(() => {
+    if (window.location.hash === '#image-gallery') {
+      // Small delay to ensure DOM is fully rendered
+      const timer = setTimeout(() => {
+        const galleryElement = document.getElementById('image-gallery');
+        if (galleryElement) {
+          galleryElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -79,7 +94,7 @@ export default function IdentificationsContent({
       </div>
 
       {/* Image Gallery Section */}
-      <div className="space-y-4">
+      <div id="image-gallery" className="space-y-4">
         <div
           className="flex items-center gap-3 pb-2 border-b"
           style={{ borderColor: "var(--color-outline)" }}
@@ -97,6 +112,7 @@ export default function IdentificationsContent({
         </div>
         <ImageGallerySection
           licenses={getCurrentValue("licenses") || []}
+          sinPhoto={getCurrentValue("sinPhoto")}
           incorporatePhotos={getCurrentValue("incorporatePhotos") || []}
           hstPhotos={getCurrentValue("hstPhotos") || []}
           bankingInfoPhotos={getCurrentValue("bankingInfoPhotos") || []}
