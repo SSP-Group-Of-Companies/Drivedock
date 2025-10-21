@@ -650,6 +650,59 @@ export default function ImageGallerySection({
     }
   };
 
+  // Handle crop commit - upload and stage the cropped image
+  const handleCropCommit = async (blob: Blob) => {
+    if (!selectedItemData) return;
+    
+    try {
+      const folder = getS3FolderForType(selectedItemData.type);
+      const file = new File([blob], `crop-${Date.now()}.jpg`, { type: "image/jpeg" });
+      const asset = await uploadToS3Presigned({ file, folder, trackerId });
+
+      // Replace correct slot & stage (this flips dirty)
+      replaceAssetAndStage(selectedItemData, currentPhotoIndex, asset);
+    } catch (error: any) {
+      console.error("Failed to save cropped image:", error);
+      setUploadError("Failed to save cropped image. Please try again.");
+    }
+  };
+
+  // Helper function to replace asset and stage (reuse existing logic)
+  const replaceAssetAndStage = (item: GalleryItem, photoIndex: number, asset: IFileAsset) => {
+    const current = item.photos[photoIndex];
+
+    if (item.type === "fastCard") {
+      const isFront = current === fastCard?.fastCardFrontPhoto;
+      onStage({
+        fastCard: {
+          ...fastCard,
+          ...(isFront ? { fastCardFrontPhoto: asset } : { fastCardBackPhoto: asset }),
+        },
+      });
+      return;
+    }
+
+    if (item.type === "license") {
+      const isFront = current === licenses[0]?.licenseFrontPhoto;
+      const updated = [...licenses];
+      updated[0] = {
+        ...updated[0],
+        ...(isFront ? { licenseFrontPhoto: asset } : { licenseBackPhoto: asset }),
+      };
+      onStage({ licenses: updated });
+      return;
+    }
+
+    // Array-based collections stay index-based
+    onStage((prev: any) => {
+      const prevArr: IFileAsset[] = Array.isArray(prev?.[item.fieldKey])
+        ? prev[item.fieldKey]
+        : item.photos || [];
+      const next = prevArr.map((p, i) => (i === photoIndex ? asset : p));
+      return { ...prev, [item.fieldKey]: next };
+    });
+  };
+
   const handleZoomImage = () => {
     if (currentPhoto?.url) {
       setIsZoomModalOpen(true);
@@ -1210,6 +1263,9 @@ export default function ImageGallerySection({
             handleDownloadImage(currentPhoto, selectedItemData.title, getPhotoLabel(selectedItemData, currentPhotoIndex));
           }
         }}
+        enableCrop={isEditMode}
+        cropAspect={null} // Free crop
+        onCropCommit={handleCropCommit}
       />
     </div>
   );
