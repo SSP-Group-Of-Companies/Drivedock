@@ -210,23 +210,6 @@ export default function PersonalDetails({
     originalName: "",
   };
 
-  // Helper function to validate minimum image dimensions
-  async function ensureMinShortEdge(file: File, min = 900): Promise<boolean> {
-    return new Promise((resolve) => {
-      const url = URL.createObjectURL(file);
-      const img = document.createElement("img");
-      img.onload = () => {
-        URL.revokeObjectURL(url);
-        const short = Math.min(img.naturalWidth, img.naturalHeight);
-        resolve(short >= min);
-      };
-      img.onerror = () => {
-        URL.revokeObjectURL(url);
-        resolve(false);
-      };
-      img.src = url;
-    });
-  }
 
   const handleSinPhotoUpload = async (file: File | null) => {
     if (!file) {
