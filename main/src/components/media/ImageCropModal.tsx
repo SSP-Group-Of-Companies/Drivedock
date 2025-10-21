@@ -5,6 +5,90 @@ import type { ReactCropperElement } from "react-cropper";
 import Cropper from "react-cropper";
 import "cropperjs/dist/cropper.css";
 
+// Custom CSS for better mobile touch targets
+const customCropperStyles = `
+  .cropper-container .cropper-crop-box {
+    border: 3px solid #007bff !important;
+  }
+  
+  .cropper-container .cropper-crop-box .cropper-view-box {
+    border: 2px solid #007bff !important;
+  }
+  
+  .cropper-container .cropper-crop-box .cropper-face {
+    border: 2px solid #007bff !important;
+  }
+  
+  .cropper-container .cropper-crop-box .cropper-line {
+    background-color: #007bff !important;
+    width: 4px !important;
+    height: 4px !important;
+  }
+  
+  .cropper-container .cropper-crop-box .cropper-point {
+    background-color: #007bff !important;
+    width: 12px !important;
+    height: 12px !important;
+    border: 2px solid #ffffff !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
+  }
+  
+  .cropper-container .cropper-crop-box .cropper-point.point-se {
+    background-color: #007bff !important;
+  }
+  
+  .cropper-container .cropper-crop-box .cropper-point.point-sw {
+    background-color: #007bff !important;
+  }
+  
+  .cropper-container .cropper-crop-box .cropper-point.point-nw {
+    background-color: #007bff !important;
+  }
+  
+  .cropper-container .cropper-crop-box .cropper-point.point-ne {
+    background-color: #007bff !important;
+  }
+  
+  .cropper-container .cropper-crop-box .cropper-point.point-n {
+    background-color: #007bff !important;
+  }
+  
+  .cropper-container .cropper-crop-box .cropper-point.point-s {
+    background-color: #007bff !important;
+  }
+  
+  .cropper-container .cropper-crop-box .cropper-point.point-e {
+    background-color: #007bff !important;
+  }
+  
+  .cropper-container .cropper-crop-box .cropper-point.point-w {
+    background-color: #007bff !important;
+  }
+  
+  /* Add padding around the entire cropper container for better mobile touch */
+  .cropper-container {
+    padding: 20px !important;
+  }
+  
+  /* Make the crop box have more breathing room */
+  .cropper-container .cropper-crop-box {
+    margin: 10px !important;
+  }
+  
+  /* Ensure touch targets are large enough */
+  .cropper-container .cropper-crop-box .cropper-point {
+    min-width: 20px !important;
+    min-height: 20px !important;
+    touch-action: none !important;
+  }
+  
+  /* Make lines more visible on mobile */
+  .cropper-container .cropper-crop-box .cropper-line {
+    min-width: 3px !important;
+    min-height: 3px !important;
+  }
+`;
+
 type Props = {
   open: boolean;
   imageSrc: string;              // data URL or https URL
@@ -35,6 +119,29 @@ export default function ImageCropModal({
   const [zoom, setZoom] = useState<number>(1);
 
   const isFree = useMemo(() => aspect == null, [aspect]);
+
+  // Inject custom CSS for better mobile touch targets
+  useEffect(() => {
+    if (!open) return;
+    
+    const styleId = 'cropper-custom-styles';
+    let styleElement = document.getElementById(styleId) as HTMLStyleElement;
+    
+    if (!styleElement) {
+      styleElement = document.createElement('style');
+      styleElement.id = styleId;
+      styleElement.textContent = customCropperStyles;
+      document.head.appendChild(styleElement);
+    }
+    
+    return () => {
+      // Don't remove styles immediately to avoid flash
+      setTimeout(() => {
+        const element = document.getElementById(styleId);
+        if (element) element.remove();
+      }, 100);
+    };
+  }, [open]);
 
   // a11y focus + prevent background scroll
   useEffect(() => {
@@ -179,6 +286,14 @@ export default function ImageCropModal({
           cropBoxResizable
           minCropBoxWidth={120}
           minCropBoxHeight={120}
+          // Mobile-friendly padding
+          cropstart={() => {
+            // Add padding when crop starts
+            const container = document.querySelector('.cropper-container') as HTMLElement;
+            if (container) {
+              container.style.padding = '20px';
+            }
+          }}
           // Events
           ready={handleReady}
         />
