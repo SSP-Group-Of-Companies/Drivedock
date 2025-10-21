@@ -110,7 +110,7 @@ export default function UploadPicker({
           id={menuId}
           role="menu"
           aria-labelledby={btnId}
-          className="absolute top-full left-0 mt-2 rounded-xl border border-gray-200 bg-white shadow-md overflow-hidden w-full max-w-sm z-50 ring-1 ring-gray-200"
+          className="absolute top-full left-0 mt-2 rounded-xl border border-gray-200 bg-white shadow-md overflow-hidden w-full min-w-[200px] max-w-xs z-50 ring-1 ring-gray-200"
         >
           <button
             type="button"
@@ -119,7 +119,7 @@ export default function UploadPicker({
               setOpen(false);
               cameraInputRef.current?.click();
             }}
-            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-50 text-left text-sm font-medium text-gray-800 transition-colors focus:outline-none focus:bg-blue-50"
+            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-50 text-left text-sm font-medium text-gray-800 transition-colors focus:outline-none focus:bg-blue-50 whitespace-nowrap"
           >
             <Camera className="w-4 h-4 text-blue-600" />
             {cameraText}
@@ -132,7 +132,7 @@ export default function UploadPicker({
               setOpen(false);
               fileInputRef.current?.click();
             }}
-            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-50 text-left text-sm font-medium text-gray-800 transition-colors focus:outline-none focus:bg-blue-50"
+            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-50 text-left text-sm font-medium text-gray-800 transition-colors focus:outline-none focus:bg-blue-50 whitespace-nowrap"
           >
             <ImageIcon className="w-4 h-4 text-blue-600" />
             {filesText}

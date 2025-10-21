@@ -14,6 +14,7 @@ import type { IFileAsset } from "@/types/shared.types";
 import type { ApplicationFormPage4Input } from "@/lib/zodSchemas/applicationFormPage4.Schema";
 import { useCroppedUpload } from "@/hooks/useCroppedUpload";
 import { DOC_ASPECTS } from "@/lib/docAspects";
+import UploadPicker from "@/components/media/UploadPicker";
 
 type PhotoFieldName = "incorporatePhotos" | "hstPhotos" | "bankingInfoPhotos" | "healthCardPhotos" | "medicalCertificationPhotos" | "passportPhotos" | "usVisaPhotos" | "prPermitCitizenshipPhotos";
 
@@ -170,35 +171,30 @@ function Manager({ name, folder, maxPhotos, description, aspect }: { name: Photo
   // Initialize crop upload hook
   const { openCrop, CropModalPortal } = useCroppedUpload();
 
-  const onUpload = async (files: FileList | null) => {
-    if (!files || files.length === 0 || atLimit) return;
-    const take = Array.from(files).slice(0, remaining);
+  const onUpload = async (file: File | null) => {
+    if (!file || atLimit) return;
 
     setStatus("uploading");
     setMessage("");
     try {
       const current = (getValues(name) || []) as IFileAsset[];
-      const uploaded: IFileAsset[] = [];
       
-      // Process each file with cropping
-      for (const file of take) {
-        // Open the cropping modal with the specified aspect ratio
-        const cropResult = await openCrop({
-          file,
-          aspect: aspect, // Use the passed aspect ratio
-        });
+      // Open the cropping modal with the specified aspect ratio
+      const cropResult = await openCrop({
+        file,
+        aspect: aspect, // Use the passed aspect ratio
+      });
 
-        // User cancelled or HEIC bypass returned null
-        if (!cropResult) {
-          continue; // Skip this file and continue with the next one
-        }
-
-        const { file: croppedFile } = cropResult;
-        const res = await uploadToS3Presigned({ file: croppedFile, folder, trackerId: id });
-        uploaded.push(res);
+      // User cancelled or HEIC bypass returned null
+      if (!cropResult) {
+        setStatus("idle");
+        return;
       }
+
+      const { file: croppedFile } = cropResult;
+      const res = await uploadToS3Presigned({ file: croppedFile, folder, trackerId: id });
       
-      setValue(name, [...current, ...uploaded], { shouldValidate: true, shouldDirty: true });
+      setValue(name, [...current, res], { shouldValidate: true, shouldDirty: true });
       setStatus("idle");
       setMessage("Upload successful");
     } catch (e: any) {
@@ -241,17 +237,26 @@ function Manager({ name, folder, maxPhotos, description, aspect }: { name: Photo
           </div>
         </div>
       )}
-      {/* Compact dashed upload button (always compact) */}
+      {/* Compact upload button with camera/file picker choice */}
       <div className="flex items-center gap-3">
-        <label
-          className={`cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed text-sm transition
-            ${atLimit ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed" : "bg-gray-50 hover:bg-gray-100 hover:border-gray-400 text-gray-700 border-gray-300"}`}
-          title={atLimit ? "Max reached" : "Add Photos"}
+        <UploadPicker
+          onPick={onUpload}
+          accept="image/*,.heic,.heif"
+          disabled={atLimit}
+          ariaLabel={atLimit ? "Max photos reached" : "Add photo"}
+          cameraText="Take photo"
+          filesText="Select from files"
+          showDefaultTile={false}
         >
-          <Upload className="w-4 h-4" />
-          {atLimit ? "Max reached" : "Add Photos"}
-          <input type="file" accept="image/*" multiple className="hidden" disabled={atLimit} onChange={(e) => onUpload(e.target.files)} />
-        </label>
+          <div
+            className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed text-sm transition
+              ${atLimit ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed" : "bg-gray-50 hover:bg-gray-100 hover:border-gray-400 text-gray-700 border-gray-300"}`}
+            title={atLimit ? "Max reached" : "Add Photos"}
+          >
+            <Upload className="w-4 h-4" />
+            {atLimit ? "Max reached" : "Add Photos"}
+          </div>
+        </UploadPicker>
         <span className="text-xs text-gray-500">
           {photos.length}/{maxPhotos} uploaded
         </span>
