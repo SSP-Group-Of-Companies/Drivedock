@@ -101,6 +101,7 @@ export default function BusinessSection() {
             description={t("form.step2.page4.fields.hstPhotosDescription")}
             folder={ES3Folder.HST_PHOTOS}
             maxPhotos={2}
+            aspect={null} // FREE aspect for HST documents
           />
         </div>
 

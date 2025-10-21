@@ -10,6 +10,7 @@ import { ES3Folder } from "@/types/aws.types";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { DOC_ASPECTS } from "@/lib/docAspects";
 
 function RequiredBadge({ children = "Required" }) {
   return (
@@ -105,6 +106,7 @@ export default function EligibilityDocsSection({
               description={t("form.step2.page4.fields.healthCardDescription", "Upload clear photos of both the front and back of your health card (e.g., Ontario Health Card).")}
               folder={ES3Folder.HEALTH_CARD_PHOTOS}
               maxPhotos={2}
+              aspect={DOC_ASPECTS.ID} // Standard health card ratio (1.6)
             />
           </div>
 
@@ -177,6 +179,7 @@ export default function EligibilityDocsSection({
                     description={t("form.step2.page4.fields.passportDescription", "Upload the passport bio/data page (with your photo) and the back cover page (e.g., Canadian or foreign passport).")}
                     folder={ES3Folder.PASSPORT_PHOTOS}
                     maxPhotos={2}
+                    aspect={DOC_ASPECTS.PASSPORT} // Passport bio page ratio (1.42)
                   />
                 </div>
               )}
@@ -202,6 +205,7 @@ export default function EligibilityDocsSection({
                     description={t("form.step2.page4.fields.usVisaDescription", "Upload clear photos of your valid US visa (e.g., visitor, work, or study visa pages).")}
                     folder={ES3Folder.US_VISA_PHOTOS}
                     maxPhotos={2}
+                    aspect={DOC_ASPECTS.PASSPORT} // Visa page ratio (1.42)
                   />
                 </div>
               )}
@@ -221,6 +225,7 @@ export default function EligibilityDocsSection({
                     description={t("form.step2.page4.fields.prPermitCitizenshipDescription", "Upload clear photos of your Permanent Resident card, Work/Study Permit, or Citizenship document (e.g., PR card front & back, Work Permit letter).")}
                     folder={ES3Folder.PR_CITIZENSHIP_PHOTOS}
                     maxPhotos={2}
+                    aspect={DOC_ASPECTS.ID} // Standard card ratio (1.6)
                   />
                 </div>
               )}
@@ -241,6 +246,7 @@ export default function EligibilityDocsSection({
               description={t("form.step2.page4.fields.medicalCertificationDescription", "Upload clear photos of your valid DOT Medical Certificate (front and back if applicable).")}
               folder={ES3Folder.MEDICAL_CERT_PHOTOS}
               maxPhotos={2}
+              aspect={null} // FREE aspect for medical documents
             />
           </div>
 
@@ -261,6 +267,7 @@ export default function EligibilityDocsSection({
                   description={t("form.step2.page4.fields.passportDescriptionUS", "Upload the passport bio/data page (with your photo) and the back cover page (e.g., US passport).")}
                   folder={ES3Folder.PASSPORT_PHOTOS}
                   maxPhotos={2}
+                  aspect={DOC_ASPECTS.PASSPORT} // Passport bio page ratio (1.42)
                 />
               </div>
 
@@ -274,6 +281,7 @@ export default function EligibilityDocsSection({
                   description={t("form.step2.page4.fields.greenCardCitizenshipDescription", "Upload clear photos of your Permanent Resident card or US Citizenship document (e.g., PR card front & back, Certificate of Naturalization).")}
                   folder={ES3Folder.PR_CITIZENSHIP_PHOTOS}
                   maxPhotos={2}
+                  aspect={DOC_ASPECTS.ID} // Standard card ratio (1.6)
                 />
               </div>
             </div>
