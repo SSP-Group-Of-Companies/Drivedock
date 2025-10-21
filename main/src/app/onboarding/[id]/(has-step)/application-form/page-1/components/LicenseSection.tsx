@@ -15,7 +15,7 @@ import { useTranslation } from "react-i18next";
 import { useState, useEffect, useCallback } from "react";
 import { ELicenseType } from "@/types/shared.types";
 import { FieldErrors } from "react-hook-form";
-import { Camera, Upload, X, AlertTriangle, Trash2 } from "lucide-react";
+import { Upload, X, AlertTriangle, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { uploadToS3Presigned } from "@/lib/utils/s3Upload";
 import { ES3Folder } from "@/types/aws.types";
@@ -24,6 +24,9 @@ import { useParams } from "next/navigation";
 //components, types and hooks imports
 import useMounted from "@/hooks/useMounted";
 import { ApplicationFormPage1Schema } from "@/lib/zodSchemas/applicationFormPage1.schema";
+import { useCroppedUpload } from "@/hooks/useCroppedUpload";
+import { DOC_ASPECTS } from "@/lib/docAspects";
+import UploadPicker from "@/components/media/UploadPicker";
 
 export default function LicenseSection() {
   const mounted = useMounted();
@@ -39,6 +42,9 @@ export default function LicenseSection() {
   } = useFormContext();
 
   const { id } = useParams<{ id: string }>();
+  
+  // Initialize crop upload hook
+  const { openCrop, CropModalPortal } = useCroppedUpload();
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -161,24 +167,31 @@ export default function LicenseSection() {
       return;
     }
 
+    // Open the cropping modal with ID aspect ratio (1.6)
+    const cropResult = await openCrop({
+      file,
+      aspect: DOC_ASPECTS.ID, // 1.6 for driver's license
+    });
+
+    // User cancelled or HEIC bypass returned null
+    if (!cropResult) {
+      return;
+    }
+
+    const { file: croppedFile, previewDataUrl } = cropResult;
+
     setStatus("uploading");
     setMessage("");
 
     try {
       const result = await uploadToS3Presigned({
-        file,
+        file: croppedFile,
         folder: ES3Folder.LICENSES,
         trackerId: id,
       });
 
       setValue(fieldKey, result, { shouldValidate: true, shouldDirty: true });
-
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const preview = e.target?.result as string;
-        setPreview(preview);
-      };
-      reader.readAsDataURL(file);
+      setPreview(previewDataUrl);
 
       setStatus("idle");
       setMessage("Upload successful");
@@ -235,6 +248,12 @@ export default function LicenseSection() {
   const canAddMore = fields.length < 3;
 
   const methods = useFormContext();
+
+  // Register license photo fields with RHF
+  useEffect(() => {
+    register("licenses.0.licenseFrontPhoto");
+    register("licenses.0.licenseBackPhoto");
+  }, [register]);
 
   useEffect(() => {
     if (!frontPhotoPreview && frontPhotoS3Key) {
@@ -424,7 +443,7 @@ export default function LicenseSection() {
                       alt="License Front Preview"
                       width={400}
                       height={128}
-                      className="w-full h-32 object-cover rounded-lg border border-gray-300"
+                      className="w-full h-32 object-contain rounded-lg border border-gray-300 bg-white"
                     />
                     <button
                       type="button"
@@ -441,30 +460,13 @@ export default function LicenseSection() {
                     </button>
                   </div>
                 ) : (
-                  <label
-                    htmlFor="licenseFrontPhoto"
-                    className="cursor-pointer flex flex-col items-center justify-center py-6 px-4 mt-1 w-full text-sm text-gray-600 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 hover:border-gray-400 transition-all duration-200 group"
-                  >
-                    <Camera className="w-8 h-8 text-gray-400 mb-2 group-hover:text-gray-600" />
-                    <span className="font-medium text-gray-400">
-                      {t("form.step2.page1.fields.licensePhotoDesc")}
-                    </span>
-                  </label>
+                  <UploadPicker
+                    label={t("form.step2.page1.fields.licensePhotoDesc")}
+                    onPick={(file) => handleLicensePhotoUpload(file, "front")}
+                    accept="image/*,.heic,.heif"
+                    className="w-full"
+                  />
                 )}
-                <input
-                  id="licenseFrontPhoto"
-                  type="file"
-                  accept="image/*"
-                  {...register(`licenses.0.licenseFrontPhoto`)}
-                  onChange={(e) =>
-                    handleLicensePhotoUpload(
-                      e.target.files?.[0] || null,
-                      "front"
-                    )
-                  }
-                  data-field="licenses.0.licenseFrontPhoto"
-                  className="hidden"
-                />
                 {frontPhotoStatus !== "uploading" &&
                   licenseErrors?.[0]?.licenseFrontPhoto && (
                     <p className="text-red-500 text-sm mt-1">
@@ -513,7 +515,7 @@ export default function LicenseSection() {
                       alt="License Back Preview"
                       width={400}
                       height={128}
-                      className="w-full h-32 object-cover rounded-lg border border-gray-300"
+                      className="w-full h-32 object-contain rounded-lg border border-gray-300 bg-white"
                     />
                     <button
                       type="button"
@@ -530,30 +532,13 @@ export default function LicenseSection() {
                     </button>
                   </div>
                 ) : (
-                  <label
-                    htmlFor="licenseBackPhoto"
-                    className="cursor-pointer flex flex-col items-center justify-center py-6 px-4 mt-1 w-full text-sm text-gray-600 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 hover:border-gray-400 transition-all duration-200 group"
-                  >
-                    <Camera className="w-8 h-8 text-gray-400 mb-2 group-hover:text-gray-600" />
-                    <span className="font-medium text-gray-400">
-                      {t("form.step2.page1.fields.licensePhotoDesc")}
-                    </span>
-                  </label>
+                  <UploadPicker
+                    label={t("form.step2.page1.fields.licensePhotoDesc")}
+                    onPick={(file) => handleLicensePhotoUpload(file, "back")}
+                    accept="image/*,.heic,.heif"
+                    className="w-full"
+                  />
                 )}
-                <input
-                  id="licenseBackPhoto"
-                  type="file"
-                  accept="image/*"
-                  {...register(`licenses.0.licenseBackPhoto`)}
-                  onChange={(e) =>
-                    handleLicensePhotoUpload(
-                      e.target.files?.[0] || null,
-                      "back"
-                    )
-                  }
-                  data-field="licenses.0.licenseBackPhoto"
-                  className="hidden"
-                />
                 {backPhotoStatus !== "uploading" &&
                   licenseErrors?.[0]?.licenseBackPhoto && (
                     <p className="text-red-500 text-sm mt-1">
@@ -614,6 +599,9 @@ export default function LicenseSection() {
           {t("form.step2.page1.actions.addLicense")}
         </button>
       )}
+      
+      {/* Crop Modal Portal */}
+      {CropModalPortal}
     </section>
   );
 }
