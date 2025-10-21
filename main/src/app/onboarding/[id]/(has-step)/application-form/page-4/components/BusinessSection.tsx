@@ -90,6 +90,7 @@ export default function BusinessSection() {
             description={t("form.step2.page4.fields.incorporatePhotosDescription")}
             folder={ES3Folder.INCORPORATION_PHOTOS}
             maxPhotos={10}
+            aspect={null} // FREE aspect for incorporation documents
           />
         </div>
 

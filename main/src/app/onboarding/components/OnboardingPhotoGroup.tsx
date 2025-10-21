@@ -12,6 +12,8 @@ import { uploadToS3Presigned } from "@/lib/utils/s3Upload";
 import { ES3Folder } from "@/types/aws.types";
 import type { IFileAsset } from "@/types/shared.types";
 import type { ApplicationFormPage4Input } from "@/lib/zodSchemas/applicationFormPage4.Schema";
+import { useCroppedUpload } from "@/hooks/useCroppedUpload";
+import { DOC_ASPECTS } from "@/lib/docAspects";
 
 type PhotoFieldName = "incorporatePhotos" | "hstPhotos" | "bankingInfoPhotos" | "healthCardPhotos" | "medicalCertificationPhotos" | "passportPhotos" | "usVisaPhotos" | "prPermitCitizenshipPhotos";
 
@@ -22,9 +24,10 @@ type Props = {
   maxPhotos: number;
   className?: string;
   description?: string;
+  aspect?: number | null; // Aspect ratio for cropping (null = FREE)
 };
 
-export default function OnboardingPhotoGroup({ name, label, folder, maxPhotos, className, description }: Props) {
+export default function OnboardingPhotoGroup({ name, label, folder, maxPhotos, className, description, aspect = DOC_ASPECTS.FREE }: Props) {
   const {
     control,
     formState: { errors },
@@ -40,7 +43,7 @@ export default function OnboardingPhotoGroup({ name, label, folder, maxPhotos, c
     <div className={className} data-field={name}>
       <PreviewCard label={label} photos={photos} onOpen={() => setOpen(true)} maxPhotos={maxPhotos} hasError={!!errorMessage} errorMessage={errorMessage} />
       <Lightbox title={label} count={photos.length} open={open} onClose={() => setOpen(false)}>
-        <Manager name={name} folder={folder} maxPhotos={maxPhotos} description={description} />
+        <Manager name={name} folder={folder} maxPhotos={maxPhotos} description={description} aspect={aspect} />
       </Lightbox>
     </div>
   );
@@ -146,7 +149,7 @@ function Lightbox({ title, count, open, onClose, children }: { title: string; co
   );
 }
 
-function Manager({ name, folder, maxPhotos, description }: { name: PhotoFieldName; folder: ES3Folder; maxPhotos: number; description?: string }) {
+function Manager({ name, folder, maxPhotos, description, aspect }: { name: PhotoFieldName; folder: ES3Folder; maxPhotos: number; description?: string; aspect?: number | null }) {
   const { id } = useParams<{ id: string }>();
   const {
     control,
@@ -164,6 +167,9 @@ function Manager({ name, folder, maxPhotos, description }: { name: PhotoFieldNam
   const remaining = Math.max(0, maxPhotos - photos.length);
   const atLimit = remaining === 0;
 
+  // Initialize crop upload hook
+  const { openCrop, CropModalPortal } = useCroppedUpload();
+
   const onUpload = async (files: FileList | null) => {
     if (!files || files.length === 0 || atLimit) return;
     const take = Array.from(files).slice(0, remaining);
@@ -173,10 +179,25 @@ function Manager({ name, folder, maxPhotos, description }: { name: PhotoFieldNam
     try {
       const current = (getValues(name) || []) as IFileAsset[];
       const uploaded: IFileAsset[] = [];
+      
+      // Process each file with cropping
       for (const file of take) {
-        const res = await uploadToS3Presigned({ file, folder, trackerId: id });
+        // Open the cropping modal with the specified aspect ratio
+        const cropResult = await openCrop({
+          file,
+          aspect: aspect, // Use the passed aspect ratio
+        });
+
+        // User cancelled or HEIC bypass returned null
+        if (!cropResult) {
+          continue; // Skip this file and continue with the next one
+        }
+
+        const { file: croppedFile } = cropResult;
+        const res = await uploadToS3Presigned({ file: croppedFile, folder, trackerId: id });
         uploaded.push(res);
       }
+      
       setValue(name, [...current, ...uploaded], { shouldValidate: true, shouldDirty: true });
       setStatus("idle");
       setMessage("Upload successful");
@@ -267,6 +288,9 @@ function Manager({ name, folder, maxPhotos, description }: { name: PhotoFieldNam
       )}
       {/* Field-level error inside modal */}
       {err && typeof err.message === "string" && <p className="text-red-500 text-xs">{err.message}</p>}
+      
+      {/* Crop Modal Portal */}
+      {CropModalPortal}
     </div>
   );
 }
