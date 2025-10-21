@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useId, useRef, useState } from "react";
-import { Camera } from "lucide-react";
+import { Camera, Image as ImageIcon } from "lucide-react";
 
 type UploadPickerProps = {
   /** Trigger label shown on the tile/button (fallback if no children) */
@@ -110,7 +110,7 @@ export default function UploadPicker({
           id={menuId}
           role="menu"
           aria-labelledby={btnId}
-          className="absolute top-full left-0 mt-2 rounded-lg border bg-white shadow-sm overflow-hidden w-full max-w-sm z-50"
+          className="absolute top-full left-0 mt-2 rounded-xl border border-gray-200 bg-white shadow-md overflow-hidden w-full max-w-sm z-50 ring-1 ring-gray-200"
         >
           <button
             type="button"
@@ -119,10 +119,12 @@ export default function UploadPicker({
               setOpen(false);
               cameraInputRef.current?.click();
             }}
-            className="w-full text-left px-3 py-2 hover:bg-gray-50 text-sm"
+            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-50 text-left text-sm font-medium text-gray-800 transition-colors focus:outline-none focus:bg-blue-50"
           >
+            <Camera className="w-4 h-4 text-blue-600" />
             {cameraText}
           </button>
+          <div className="border-t border-gray-200" />
           <button
             type="button"
             role="menuitem"
@@ -130,8 +132,9 @@ export default function UploadPicker({
               setOpen(false);
               fileInputRef.current?.click();
             }}
-            className="w-full text-left px-3 py-2 hover:bg-gray-50 text-sm border-t"
+            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-50 text-left text-sm font-medium text-gray-800 transition-colors focus:outline-none focus:bg-blue-50"
           >
+            <ImageIcon className="w-4 h-4 text-blue-600" />
             {filesText}
           </button>
         </div>
