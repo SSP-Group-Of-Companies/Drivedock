@@ -11,7 +11,7 @@ interface PersonalInformationSectionProps {
   isEditMode: boolean;
   staged: any;
   onStage: (changes: any) => void;
-  trackerId: string;
+  trackerId?: string; // Optional - only for contract pages
   prequalificationData?: {
     statusInCanada?: string;
   };
@@ -71,9 +71,17 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
     onStage({ [field]: value });
   };
 
-  /** Upload handler (client-side presign → PUT → stage result) */
-  const redirectToIdentifications = () => {
-    // Navigate to identifications page
+  const handleSinPhotoClick = () => {
+    const url = formData?.sinPhoto?.url;
+    if (!url) return;
+
+    // For invitation pages (no trackerId): open in new tab
+    if (!trackerId) {
+      window.open(url, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    // For contract pages (has trackerId): navigate to identifications gallery
     const targetUrl = `/dashboard/contract/${trackerId}/identifications`;
     
     // Check if we're already on the identifications page
@@ -215,41 +223,49 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
               SIN Card Photo
             </label>
 
-            {/* View-only: Click to go to identifications gallery */}
-            <button
-              type="button"
-              onClick={redirectToIdentifications}
-              className="relative group w-full rounded-lg border-2 border-dashed p-4 text-center overflow-hidden transition-colors hover:border-blue-400"
-              style={{ background: "var(--color-surface)", borderColor: "var(--color-outline-variant)" }}
-            >
-              {formData?.sinPhoto?.url ? (
-                <>
-                  <div className="relative inline-block">
-                    <Image src={formData.sinPhoto.url} alt="SIN Card" width={240} height={140} className="mx-auto rounded-lg object-contain max-h-40 w-auto" />
-                  </div>
+            {/* View-only: Click behavior depends on context */}
+            {formData?.sinPhoto?.url ? (
+              <button
+                type="button"
+                onClick={handleSinPhotoClick}
+                className="relative group w-full rounded-lg border-2 border-dashed p-4 text-center overflow-hidden transition-colors hover:border-blue-400"
+                style={{ background: "var(--color-surface)", borderColor: "var(--color-outline-variant)" }}
+              >
+                <div className="relative inline-block">
+                  <Image src={formData.sinPhoto.url} alt="SIN Card" width={240} height={140} className="mx-auto rounded-lg object-contain max-h-40 w-auto" />
+                </div>
 
-                  {/* Hover overlay to view in gallery */}
-                  <div
-                    className="absolute inset-0 hidden group-hover:flex items-center justify-center transition-opacity"
-                    style={{ background: "rgba(0,0,0,0.4)" }}
-                  >
-                    <Eye className="w-7 h-7 text-white" />
-                  </div>
-                </>
-              ) : (
+                {/* Hover overlay */}
+                <div
+                  className="absolute inset-0 hidden group-hover:flex items-center justify-center transition-opacity"
+                  style={{ background: "rgba(0,0,0,0.4)" }}
+                >
+                  <Eye className="w-7 h-7 text-white" />
+                </div>
+                
+                {/* Helper text */}
+                <p className="absolute bottom-2 left-0 right-0 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                  {trackerId ? "Click to view/edit in Image gallery" : "Click to view full size"}
+                </p>
+              </button>
+            ) : (
+              <div
+                className="w-full rounded-lg border-2 border-dashed p-4 text-center"
+                style={{ background: "var(--color-surface)", borderColor: "var(--color-outline-variant)" }}
+              >
                 <div className="flex flex-col items-center gap-2">
                   <ImageIcon className="w-8 h-8" style={{ color: "var(--color-on-surface-variant)" }} />
                   <span className="text-sm" style={{ color: "var(--color-on-surface-variant)" }}>
                     No photo uploaded
                   </span>
                 </div>
-              )}
-              
-              {/* Helper text */}
-              <p className="text-xs mt-2" style={{ color: "var(--color-on-surface-variant)" }}>
-                Click to view/edit in Image gallery
-              </p>
-            </button>
+                {trackerId && (
+                  <p className="text-xs mt-2" style={{ color: "var(--color-on-surface-variant)" }}>
+                    Go to Identifications to add photo
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
