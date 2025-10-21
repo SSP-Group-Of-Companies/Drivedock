@@ -241,14 +241,6 @@ export default function PersonalDetails({
     setSinPhotoMessage("");
 
     try {
-      // Check minimum image size before opening cropper
-      const ok = await ensureMinShortEdge(file, 900).catch(() => false);
-      if (!ok) {
-        setSinPhotoStatus("error");
-        setSinPhotoMessage("Image too small. Retake a clearer photo.");
-        return;
-      }
-
       // 1) open cropper (drivers will preview/adjust)
       const cropResult = await openCrop({
         file,

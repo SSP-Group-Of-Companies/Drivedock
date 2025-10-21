@@ -5,27 +5,27 @@ import type { ReactCropperElement } from "react-cropper";
 import Cropper from "react-cropper";
 import "cropperjs/dist/cropper.css";
 
-// Custom CSS for better mobile touch targets
+// Custom CSS for better mobile touch targets - scoped to our modal
 const customCropperStyles = `
-  .cropper-container .cropper-crop-box {
+  .image-crop-modal .cropper-container .cropper-crop-box {
     border: 3px solid #007bff !important;
   }
   
-  .cropper-container .cropper-crop-box .cropper-view-box {
+  .image-crop-modal .cropper-container .cropper-crop-box .cropper-view-box {
     border: 2px solid #007bff !important;
   }
   
-  .cropper-container .cropper-crop-box .cropper-face {
+  .image-crop-modal .cropper-container .cropper-crop-box .cropper-face {
     border: 2px solid #007bff !important;
   }
   
-  .cropper-container .cropper-crop-box .cropper-line {
+  .image-crop-modal .cropper-container .cropper-crop-box .cropper-line {
     background-color: #007bff !important;
     width: 4px !important;
     height: 4px !important;
   }
   
-  .cropper-container .cropper-crop-box .cropper-point {
+  .image-crop-modal .cropper-container .cropper-crop-box .cropper-point {
     background-color: #007bff !important;
     width: 12px !important;
     height: 12px !important;
@@ -33,71 +33,82 @@ const customCropperStyles = `
     box-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
   }
   
-  .cropper-container .cropper-crop-box .cropper-point.point-se {
+  .image-crop-modal .cropper-container .cropper-crop-box .cropper-point.point-se {
     background-color: #007bff !important;
   }
   
-  .cropper-container .cropper-crop-box .cropper-point.point-sw {
+  .image-crop-modal .cropper-container .cropper-crop-box .cropper-point.point-sw {
     background-color: #007bff !important;
   }
   
-  .cropper-container .cropper-crop-box .cropper-point.point-nw {
+  .image-crop-modal .cropper-container .cropper-crop-box .cropper-point.point-nw {
     background-color: #007bff !important;
   }
   
-  .cropper-container .cropper-crop-box .cropper-point.point-ne {
+  .image-crop-modal .cropper-container .cropper-crop-box .cropper-point.point-ne {
     background-color: #007bff !important;
   }
   
-  .cropper-container .cropper-crop-box .cropper-point.point-n {
+  .image-crop-modal .cropper-container .cropper-crop-box .cropper-point.point-n {
     background-color: #007bff !important;
   }
   
-  .cropper-container .cropper-crop-box .cropper-point.point-s {
+  .image-crop-modal .cropper-container .cropper-crop-box .cropper-point.point-s {
     background-color: #007bff !important;
   }
   
-  .cropper-container .cropper-crop-box .cropper-point.point-e {
+  .image-crop-modal .cropper-container .cropper-crop-box .cropper-point.point-e {
     background-color: #007bff !important;
   }
   
-  .cropper-container .cropper-crop-box .cropper-point.point-w {
+  .image-crop-modal .cropper-container .cropper-crop-box .cropper-point.point-w {
     background-color: #007bff !important;
   }
   
-  /* Responsive padding - more on mobile, less on desktop */
-  .cropper-container {
+  /* Responsive padding - applied to modal wrapper, not cropper container */
+  .image-crop-modal .cropper-container {
     padding: 10px !important;
   }
   
   @media (max-width: 768px) {
-    .cropper-container {
+    .image-crop-modal .cropper-container {
       padding: 20px !important;
     }
   }
   
   /* Make the crop box have more breathing room */
-  .cropper-container .cropper-crop-box {
+  .image-crop-modal .cropper-container .cropper-crop-box {
     margin: 5px !important;
   }
   
   @media (max-width: 768px) {
-    .cropper-container .cropper-crop-box {
+    .image-crop-modal .cropper-container .cropper-crop-box {
       margin: 10px !important;
     }
   }
   
   /* Ensure touch targets are large enough */
-  .cropper-container .cropper-crop-box .cropper-point {
+  .image-crop-modal .cropper-container .cropper-crop-box .cropper-point {
     min-width: 20px !important;
     min-height: 20px !important;
     touch-action: none !important;
   }
   
   /* Make lines more visible on mobile */
-  .cropper-container .cropper-crop-box .cropper-line {
+  .image-crop-modal .cropper-container .cropper-crop-box .cropper-line {
     min-width: 3px !important;
     min-height: 3px !important;
+  }
+  
+  /* Ensure cropper container doesn't overflow */
+  .image-crop-modal .cropper-container {
+    max-height: 100% !important;
+    overflow: hidden !important;
+  }
+  
+  /* Ensure the cropper canvas fits properly */
+  .image-crop-modal .cropper-container .cropper-canvas {
+    max-height: 100% !important;
   }
 `;
 
@@ -180,37 +191,39 @@ export default function ImageCropModal({
     const c = cropperRef.current?.cropper;
     if (!c) return;
 
-    // Ensure initial "contain" fit
-    c.reset(); // puts image fully inside the viewport
-    // The current zoom ratio at this point is our min zoom (fit)
-    const img = c.getImageData(); // has naturalWidth, naturalHeight, width, height
-    const fitZoom = img.width / img.naturalWidth;
-    setMinZoom(fitZoom);
-    setZoom(fitZoom);        // reflect in the UI slider
+    c.reset(); // fit/contain
 
-    // FREE aspect: start with the crop box covering the whole visible image
+    const img = c.getImageData();
+    // This ratio is the exact "fit" zoom
+    const fitZoom = img.width / img.naturalWidth;
+
+    setMinZoom(fitZoom);
+    c.zoomTo(fitZoom);
+    setZoom(fitZoom);
+
+    const updated = c.getImageData();
+
     if (isFree) {
       c.setCropBoxData({
-        left: img.left,
-        top: img.top,
-        width: img.width,
-        height: img.height,
+        left: updated.left,
+        top: updated.top,
+        width: updated.width,
+        height: updated.height,
       });
     } else {
-      // Fixed aspect: large centered crop that respects aspect
-      // Try to maximize width while preserving aspect inside the image bounds.
       const a = aspect!;
-      // Fit by width first
-      let boxW = img.width;
+      let boxW = updated.width;
       let boxH = boxW / a;
-      if (boxH > img.height) {
-        // too tall; fit by height
-        boxH = img.height;
+      if (boxH > updated.height) {
+        boxH = updated.height;
         boxW = boxH * a;
       }
-      const left = img.left + (img.width - boxW) / 2;
-      const top = img.top + (img.height - boxH) / 2;
-      c.setCropBoxData({ left, top, width: boxW, height: boxH });
+      c.setCropBoxData({
+        left: updated.left + (updated.width - boxW) / 2,
+        top: updated.top + (updated.height - boxH) / 2,
+        width: boxW,
+        height: boxH,
+      });
     }
   }
 
@@ -230,10 +243,28 @@ export default function ImageCropModal({
     setRotation(nextDeg);
   }
 
+  // Estimate effective export width for quality warning
+  function estimateEffectiveExportWidth(cropper: any, targetWidth: number) {
+    const img = cropper.getImageData();       // naturalWidth, width (on screen)
+    const crop = cropper.getCropBoxData();    // crop box in screen pixels
+    const pxPerScreenPx = img.naturalWidth / img.width;
+    const cropNaturalW = crop.width * pxPerScreenPx;
+    // We'll export with maxWidth = targetWidth, so final width = min(cropNaturalW, targetWidth) if downscaling,
+    // or = targetWidth if upscaling is allowed.
+    return Math.min(Math.max(cropNaturalW, targetWidth), targetWidth);
+  }
+
   async function handleDone() {
     if (isSaving) return;
     const c = cropperRef.current?.cropper;
     if (!c) return;
+
+    // Soft quality warning
+    const effW = estimateEffectiveExportWidth(c, targetWidth);
+    if (effW < 1000) {
+      // Show non-blocking warning (you could add a toast here)
+      console.warn("This crop may look soft when zoomed. You can zoom in closer or try a clearer photo.");
+    }
 
     setIsSaving(true);
     try {
@@ -273,7 +304,7 @@ export default function ImageCropModal({
       onKeyDown={onKeyDown}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 sm:p-6"
     >
-      <div className="relative w-full max-w-4xl h-[80vh] sm:h-[85vh] bg-white rounded-lg shadow-2xl overflow-hidden">
+      <div className="image-crop-modal relative w-full max-w-5xl h-[90vh] sm:h-[95vh] bg-white rounded-lg shadow-2xl overflow-hidden flex flex-col">
         <h2 id={titleId} className="sr-only">Crop image</h2>
         
         {/* Close button for desktop */}
@@ -288,13 +319,13 @@ export default function ImageCropModal({
           </svg>
         </button>
 
-        <div className="h-[calc(100%-120px)]">
+        <div className="flex-1 min-h-0">
           <Cropper
             ref={cropperRef}
             src={imageSrc}
-            style={{ height: "100%", width: "100%" }}
+            style={{ height: "100%", width: "100%", minHeight: "400px" }}
             // Behavior
-            viewMode={1}                    // crop stays inside image
+            viewMode={2}                    // stricter: image can't leave canvas
             dragMode="move"                 // drag to move image
             autoCrop
             autoCropArea={1}                // start filled; we set exact box in ready()
@@ -310,26 +341,37 @@ export default function ImageCropModal({
             movable
             cropBoxMovable
             cropBoxResizable
-            minCropBoxWidth={120}
-            minCropBoxHeight={120}
-            // Mobile-friendly padding
-            cropstart={() => {
-              // Add padding when crop starts
-              const container = document.querySelector('.cropper-container') as HTMLElement;
-              if (container) {
-                container.style.padding = '20px';
-              }
-            }}
+            minCropBoxWidth={80}
+            minCropBoxHeight={80}
+            // No dynamic style mutation
             // Events
             ready={handleReady}
           />
         </div>
 
-        {/* Controls - positioned at bottom of modal */}
-        <div className="absolute bottom-0 left-0 right-0 bg-white border-t p-3 sm:p-4">
+        {/* Controls - flex positioned at bottom of modal */}
+        <div className="bg-white border-t p-3 sm:p-4 flex-shrink-0">
           <div className="grid gap-3">
             {/* Rotation */}
-            <label className="text-xs text-gray-600">Rotation ({rotation}°)</label>
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-gray-600 flex-1">Rotation ({rotation}°)</label>
+              <button
+                type="button"
+                onClick={() => handleRotateInput(rotation - 90)}
+                className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded"
+                disabled={isSaving}
+              >
+                -90°
+              </button>
+              <button
+                type="button"
+                onClick={() => handleRotateInput(rotation + 90)}
+                className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded"
+                disabled={isSaving}
+              >
+                +90°
+              </button>
+            </div>
             <input
               type="range"
               min={-45}
