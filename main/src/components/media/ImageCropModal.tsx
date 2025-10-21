@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import type { ReactCropperElement } from "react-cropper";
 import Cropper from "react-cropper";
 import { ZoomIn, ZoomOut, RotateCw } from "lucide-react";
@@ -8,6 +9,13 @@ import "cropperjs/dist/cropper.css";
 
 // Custom CSS for better mobile touch targets - scoped to our modal
 const customCropperStyles = `
+  /* Fallback for older iOS Safari */
+  @supports not (height: 100dvh) {
+    .image-crop-modal {
+      height: calc(var(--vh, 1vh) * 100) !important;
+    }
+  }
+  
   .image-crop-modal .cropper-container .cropper-crop-box {
     border: 3px solid #007bff !important;
   }
@@ -167,28 +175,71 @@ export default function ImageCropModal({
     };
   }, [open]);
 
-  // a11y focus + prevent background scroll
+  // Battle-tested scroll lock (prevents jump, restores scroll, accounts for desktop scrollbar)
   useEffect(() => {
     if (!open) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+
+    const scrollY = window.scrollY;
+    const body = document.body;
+
+    // account for desktop scrollbar to avoid content shift
+    const hasScrollbar = window.innerWidth > document.documentElement.clientWidth;
+    const scrollbarWidth = hasScrollbar ? (window.innerWidth - document.documentElement.clientWidth) : 0;
+
+    const prev = {
+      overflow: body.style.overflow,
+      position: body.style.position,
+      top: body.style.top,
+      width: body.style.width,
+      paddingRight: body.style.paddingRight,
+      overscrollBehavior: body.style.overscrollBehavior,
+    };
+
+    body.style.overflow = "hidden";
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.width = "100%";
+    if (scrollbarWidth) body.style.paddingRight = `${scrollbarWidth}px`;
+
+    // block iOS rubber-banding inside the page
+    body.style.touchAction = "none";
+    body.style.overscrollBehavior = "contain";
+
     return () => {
-      document.body.style.overflow = prev;
+      body.style.overflow = prev.overflow;
+      body.style.position = prev.position;
+      body.style.top = prev.top;
+      body.style.width = prev.width;
+      body.style.paddingRight = prev.paddingRight;
+      body.style.touchAction = "";
+      body.style.overscrollBehavior = prev.overscrollBehavior;
+
+      window.scrollTo(0, scrollY);
     };
   }, [open]);
 
-  // Reset state whenever we open a new image
+  // Set viewport height fallback for older Safari
   useEffect(() => {
-    if (!open) {
-      setIsSaving(false);
-      setRotation(0);
-      setZoom(1);
-      setMinZoom(0.1);
-    }
-  }, [open, imageSrc]);
+    if (!open) return;
+    
+    const setVH = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty("--vh", `${vh}px`);
+    };
+    
+    setVH();
+    window.addEventListener("resize", setVH);
+    window.addEventListener("orientationchange", setVH);
+    
+    return () => {
+      window.removeEventListener("resize", setVH);
+      window.removeEventListener("orientationchange", setVH);
+      document.documentElement.style.removeProperty("--vh");
+    };
+  }, [open]);
 
   // Ready handler: fit image + initialize crop box
-  function handleReady() {
+  const handleReady = useCallback(() => {
     const c = cropperRef.current?.cropper;
     if (!c) return;
 
@@ -226,7 +277,25 @@ export default function ImageCropModal({
         height: boxH,
       });
     }
-  }
+  }, [isFree, aspect]);
+
+  // Reset state whenever we open a new image
+  useEffect(() => {
+    if (!open) {
+      setIsSaving(false);
+      setRotation(0);
+      setZoom(1);
+      setMinZoom(0.1);
+    } else if (imageSrc) {
+      // If modal is already open but imageSrc changes, reset cropper
+      const timer = setTimeout(() => {
+        if (cropperRef.current?.cropper) {
+          handleReady();
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [open, imageSrc, handleReady]);
 
   // Zoom in/out handlers
   function handleZoomIn() {
@@ -262,7 +331,7 @@ export default function ImageCropModal({
     const cropNaturalW = crop.width * pxPerScreenPx;
     // We'll export with maxWidth = targetWidth, so final width = min(cropNaturalW, targetWidth) if downscaling,
     // or = targetWidth if upscaling is allowed.
-    return Math.min(Math.max(cropNaturalW, targetWidth), targetWidth);
+    return Math.min(cropNaturalW, targetWidth);
   }
 
   async function handleDone() {
@@ -306,28 +375,27 @@ export default function ImageCropModal({
 
   if (!open) return null;
 
-  return (
+  const modalUI = (
     <div
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
       tabIndex={-1}
       onKeyDown={onKeyDown}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 sm:p-6"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 sm:p-6"
       style={{
-        height: "calc(var(--vvh, 1vh) * 100)",
-        minHeight: "100svh" as any,
-        paddingBottom: "env(safe-area-inset-bottom)",
-        WebkitOverflowScrolling: "touch",
-        overscrollBehavior: "contain",
-      } as React.CSSProperties}
+        width: "100vw",
+        height: "100dvh", // modern browsers - fallback handled by CSS
+        background: "rgba(0,0,0,.7)",
+        overscrollBehaviorY: "contain",
+        touchAction: "none",
+      }}
     >
       <div 
-        className="image-crop-modal relative w-full max-w-5xl bg-white rounded-lg shadow-2xl overflow-hidden flex flex-col"
-        style={{
-          height: "calc(100% - 2rem)",
-          maxHeight: "calc(100vh - 2rem)",
-          minHeight: "400px",
+        className="image-crop-modal relative w-full h-full sm:h-[90vh] bg-white overflow-hidden flex flex-col sm:max-w-5xl sm:mx-auto sm:rounded-lg sm:shadow-2xl"
+        style={{ 
+          paddingBottom: "env(safe-area-inset-bottom, 0)",
+          paddingTop: "env(safe-area-inset-top, 0)"
         }}
       >
         <h2 id={titleId} className="sr-only">Crop image</h2>
@@ -344,16 +412,11 @@ export default function ImageCropModal({
           </svg>
         </button>
 
-        <div className="flex-1 min-h-0" style={{ height: "calc(100% - 120px)" }}>
+        <div className="flex-1 min-h-0">
           <Cropper
             ref={cropperRef}
             src={imageSrc}
-            style={{ 
-              height: "100%", 
-              width: "100%", 
-              minHeight: "300px",
-              maxHeight: "calc(100vh - 200px)"
-            }}
+            style={{ width: "100%", height: "100%" }}
             // Behavior
             viewMode={2}                    // stricter: image can't leave canvas
             dragMode="move"                 // drag to move image
@@ -451,4 +514,6 @@ export default function ImageCropModal({
       </div>
     </div>
   );
+
+  return typeof window !== "undefined" ? createPortal(modalUI, document.body) : null;
 }
