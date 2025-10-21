@@ -5,12 +5,15 @@ import { useTranslation } from "react-i18next";
 import { useParams } from "next/navigation";
 import useMounted from "@/hooks/useMounted";
 import Image from "next/image";
-import { Camera, X } from "lucide-react"; // ✅ NEW
+import { X } from "lucide-react";
 import { uploadToS3Presigned } from "@/lib/utils/s3Upload";
 import { ES3Folder } from "@/types/aws.types";
 import type { IFileAsset } from "@/types/shared.types";
 import type { ApplicationFormPage4Input } from "@/lib/zodSchemas/applicationFormPage4.Schema";
-import { useEffect, useState } from "react"; // ✅ UPDATED
+import { useEffect, useState } from "react";
+import { useCroppedUpload } from "@/hooks/useCroppedUpload";
+import { DOC_ASPECTS } from "@/lib/docAspects";
+import UploadPicker from "@/components/media/UploadPicker";
 
 export default function FastCardSection({ isCanadian }: { isCanadian: boolean }) {
   const mounted = useMounted();
@@ -25,6 +28,9 @@ export default function FastCardSection({ isCanadian }: { isCanadian: boolean })
     clearErrors,
   } = useFormContext<ApplicationFormPage4Input>();
 
+  // Initialize crop upload hook
+  const { openCrop, CropModalPortal } = useCroppedUpload();
+
   const num = useWatch({ control, name: "fastCard.fastCardNumber" }) as string | undefined;
   const exp = useWatch({ control, name: "fastCard.fastCardExpiry" }) as string | undefined;
   const front = useWatch({ control, name: "fastCard.fastCardFrontPhoto" }) as IFileAsset | undefined;
@@ -37,6 +43,12 @@ export default function FastCardSection({ isCanadian }: { isCanadian: boolean })
 
   // handy alias to the nested error object
   const fcErr = (errors.fastCard as any) || {};
+
+  // Register FAST Card photo fields with RHF
+  useEffect(() => {
+    register("fastCard.fastCardFrontPhoto");
+    register("fastCard.fastCardBackPhoto");
+  }, [register]);
 
   useEffect(() => {
     const allEmpty = !num?.trim() && !exp && !front && !back;
@@ -57,10 +69,23 @@ export default function FastCardSection({ isCanadian }: { isCanadian: boolean })
       return;
     }
 
+    // Open the cropping modal with ID aspect ratio (1.6)
+    const cropResult = await openCrop({
+      file,
+      aspect: DOC_ASPECTS.ID, // 1.6 for FAST card
+    });
+
+    // User cancelled or HEIC bypass returned null
+    if (!cropResult) {
+      return;
+    }
+
+    const { file: croppedFile } = cropResult;
+
     try {
       setStatus("uploading");
       setMsg("");
-      const res = await uploadToS3Presigned({ file, folder: ES3Folder.FAST_CARD_PHOTOS, trackerId: id } as any);
+      const res = await uploadToS3Presigned({ file: croppedFile, folder: ES3Folder.FAST_CARD_PHOTOS, trackerId: id } as any);
       setValue(field as any, res, { shouldValidate: true, shouldDirty: true });
       setStatus("idle");
       setMsg("Upload successful");
@@ -116,7 +141,8 @@ export default function FastCardSection({ isCanadian }: { isCanadian: boolean })
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Row 1: FAST Card Number and Expiry Date */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-medium text-gray-700">{t("form.step2.page4.fields.fastNumber", "FAST Card Number")}</label>
           <input
@@ -147,15 +173,17 @@ export default function FastCardSection({ isCanadian }: { isCanadian: boolean })
             </p>
           )}
         </div>
+      </div>
 
-        <div className="grid grid-cols-2 gap-6 md:col-span-1">
+      {/* Row 2: Photo Front and Photo Back */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Front */}
           <div data-field="fastCard.fastCardFrontPhoto">
             <label className="block text-sm font-medium text-gray-700 mb-1">{t("form.step2.page4.fields.fastFront", "Photo Front")}</label>
 
             {front?.url ? (
               <div className="relative">
-                <Image src={front.url} alt="FAST card front" width={400} height={128} className="w-full h-32 object-cover rounded-lg border border-gray-300" />
+                <Image src={front.url} alt="FAST card front" width={400} height={128} className="w-full h-32 object-contain rounded-lg border border-gray-300 bg-white" />
                 <button
                   type="button"
                   onClick={() => removeSide("front")}
@@ -166,11 +194,12 @@ export default function FastCardSection({ isCanadian }: { isCanadian: boolean })
                 </button>
               </div>
             ) : (
-              <label className="cursor-pointer flex flex-col items-center justify-center py-6 px-4 mt-1 w-full text-sm text-gray-600 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 hover:border-gray-400">
-                <Camera className="w-6 h-6 text-gray-400 mb-1" />
-                <span className="text-gray-400 text-xs">{t("form.step2.page4.fields.uploadFront", "Upload Front")}</span>
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => uploadSide(e.target.files?.[0] || null, "front")} />
-              </label>
+              <UploadPicker
+                label={t("form.step2.page4.fields.uploadFront", "Upload Front")}
+                onPick={(file) => uploadSide(file, "front")}
+                accept="image/*,.heic,.heif"
+                className="w-full"
+              />
             )}
 
             {frontStatus === "uploading" && <p className="text-yellow-600 text-xs mt-1">{t("form.step3.status.uploading", "Uploading...")}</p>}
@@ -191,7 +220,7 @@ export default function FastCardSection({ isCanadian }: { isCanadian: boolean })
 
             {back?.url ? (
               <div className="relative">
-                <Image src={back.url} alt="FAST card back" width={400} height={128} className="w-full h-32 object-cover rounded-lg border border-gray-300" />
+                <Image src={back.url} alt="FAST card back" width={400} height={128} className="w-full h-32 object-contain rounded-lg border border-gray-300 bg-white" />
                 <button
                   type="button"
                   onClick={() => removeSide("back")}
@@ -202,11 +231,12 @@ export default function FastCardSection({ isCanadian }: { isCanadian: boolean })
                 </button>
               </div>
             ) : (
-              <label className="cursor-pointer flex flex-col items-center justify-center py-6 px-4 mt-1 w-full text-sm text-gray-600 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 hover:border-gray-400">
-                <Camera className="w-6 h-6 text-gray-400 mb-1" />
-                <span className="text-gray-400 text-xs">{t("form.step2.page4.fields.uploadBack", "Upload Back")}</span>
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => uploadSide(e.target.files?.[0] || null, "back")} />
-              </label>
+              <UploadPicker
+                label={t("form.step2.page4.fields.uploadBack", "Upload Back")}
+                onPick={(file) => uploadSide(file, "back")}
+                accept="image/*,.heic,.heif"
+                className="w-full"
+              />
             )}
 
             {backStatus === "uploading" && <p className="text-yellow-600 text-xs mt-1">{t("form.step3.status.uploading", "Uploading...")}</p>}
@@ -220,10 +250,12 @@ export default function FastCardSection({ isCanadian }: { isCanadian: boolean })
               </p>
             )}
           </div>
-        </div>
       </div>
 
       {/* No banner here—schema now only emits granular FAST errors */}
+      
+      {/* Crop Modal Portal */}
+      {CropModalPortal}
     </section>
   );
 }
