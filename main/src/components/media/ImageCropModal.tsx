@@ -25,12 +25,10 @@ export default function ImageCropModal({
   const titleId = useId();
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
-  const [minZoom, setMinZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
   const [croppedPixels, setCroppedPixels] = useState<Area | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const lastMediaDimensionsRef = useRef<{ naturalWidth: number; naturalHeight: number } | null>(null);
 
   // focus the dialog for a11y
   useEffect(() => {
@@ -47,109 +45,12 @@ export default function ImageCropModal({
     };
   }, [open]);
 
-  // reset state when modal opens/closes
+  // reset saving state when modal closes
   useEffect(() => {
     if (!open) {
       setIsSaving(false);
-      setZoom(1);
-      setMinZoom(1);
-      setCrop({ x: 0, y: 0 });
-      setRotation(0);
-      lastMediaDimensionsRef.current = null;
     }
-  }, [open, imageSrc]);
-
-  // helper: compute fit zoom
-  function getFitZoom({
-    containerW,
-    containerH,
-    naturalW,
-    naturalH,
-  }: {
-    containerW: number; 
-    containerH: number;
-    naturalW: number; 
-    naturalH: number;
-  }) {
-    if (!containerW || !containerH || !naturalW || !naturalH) return 1;
-    return Math.min(containerW / naturalW, containerH / naturalH);
-  }
-
-  // called by react-easy-crop when media is ready
-  const handleMediaLoaded = useCallback((m: {
-    naturalWidth: number; 
-    naturalHeight: number;
-    width: number; 
-    height: number; // rendered size
-  }) => {
-    if (!containerRef.current) return;
-
-    // Store dimensions for resize recomputation
-    lastMediaDimensionsRef.current = {
-      naturalWidth: m.naturalWidth,
-      naturalHeight: m.naturalHeight
-    };
-
-    // FREE aspect only: auto-fit
-    if (aspect == null) {
-      const rect = containerRef.current.getBoundingClientRect();
-      const fit = getFitZoom({
-        containerW: rect.width,
-        containerH: rect.height,
-        naturalW: m.naturalWidth,
-        naturalH: m.naturalHeight,
-      });
-
-      setMinZoom(Math.min(1, fit)); // let user zoom out slightly if fit>1 case
-      setZoom(fit);
-      setCrop({ x: 0, y: 0 }); // center
-    }
-  }, [aspect]);
-
-  // re-fit on resize/orientation (FREE only)
-  useEffect(() => {
-    if (aspect != null) return; // fixed aspects keep normal behavior
-    
-    const onResize = () => {
-      if (!lastMediaDimensionsRef.current || !containerRef.current) return;
-      
-      const rect = containerRef.current.getBoundingClientRect();
-      const fit = getFitZoom({
-        containerW: rect.width,
-        containerH: rect.height,
-        naturalW: lastMediaDimensionsRef.current.naturalWidth,
-        naturalH: lastMediaDimensionsRef.current.naturalHeight,
-      });
-      
-      setMinZoom(Math.min(1, fit));
-      setZoom(fit);
-    };
-    
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, [aspect]);
-
-  // When aspect changes, re-fit if moving into FREE
-  useEffect(() => {
-    if (aspect == null && lastMediaDimensionsRef.current && containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      const fit = getFitZoom({
-        containerW: rect.width,
-        containerH: rect.height,
-        naturalW: lastMediaDimensionsRef.current.naturalWidth,
-        naturalH: lastMediaDimensionsRef.current.naturalHeight,
-      });
-      
-      setMinZoom(Math.min(1, fit));
-      setZoom(fit);
-      setCrop({ x: 0, y: 0 });
-    } else if (aspect != null) {
-      // Reset to defaults for fixed aspects
-      setMinZoom(1);
-      setZoom(1);
-      setCrop({ x: 0, y: 0 });
-    }
-  }, [aspect]);
+  }, [open]);
 
   const onCropComplete = useCallback((_croppedArea: Area, croppedAreaPixels: Area) => {
     setCroppedPixels(croppedAreaPixels);
@@ -183,24 +84,20 @@ export default function ImageCropModal({
       className="fixed inset-0 z-50 grid grid-rows-[1fr_auto] bg-black/70"
       onKeyDown={onKeyDown}
     >
-      <div className="relative h-[90dvh]">
+      <div className="relative">
         <h2 id={titleId} className="sr-only">Crop image</h2>
         <Cropper
           image={imageSrc}
           crop={crop}
           zoom={zoom}
-          minZoom={minZoom}
-          maxZoom={8}
           rotation={rotation}
           aspect={aspect ?? undefined}
           onCropChange={setCrop}
           onZoomChange={setZoom}
           onRotationChange={setRotation}
           onCropComplete={onCropComplete}
-          onMediaLoaded={handleMediaLoaded}
           restrictPosition
           objectFit="contain"
-          showGrid
         />
       </div>
 
@@ -222,8 +119,8 @@ export default function ImageCropModal({
           <label className="text-xs text-gray-600">Zoom</label>
           <input
             type="range"
-            min={minZoom}
-            max={8}
+            min={1}
+            max={3}
             step={0.01}
             value={zoom}
             onChange={(e) => setZoom(parseFloat(e.target.value))}
