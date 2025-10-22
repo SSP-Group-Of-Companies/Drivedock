@@ -15,52 +15,72 @@ interface OptionalsSectionProps {
     statusInCanada?: string;
     eligibleForFASTCard?: boolean;
   };
+  staged: any;
+  onStage: (changes: any) => void;
+  isEditMode: boolean;
   company?: Company | null;
 }
 
-export default function OptionalsSection({ data, company }: OptionalsSectionProps) {
+export default function OptionalsSection({ data, staged, onStage, isEditMode, company }: OptionalsSectionProps) {
+  // Helper function to get current value (staged or original)
+  const getCurrentValue = (field: string) => {
+    return staged[field] !== undefined ? staged[field] : data[field as keyof typeof data];
+  };
+
+  // Helper function to update a field
+  const updateField = (field: string, value: any) => {
+    onStage({ [field]: value });
+  };
   // Filter questions based on company country (same logic as onboarding)
   const allQuestions = [
     {
       key: "canDriveManual",
       label: "Can you Drive Manual Transmission?",
-      value: data.canDriveManual,
+      value: getCurrentValue("canDriveManual"),
+      editable: true,
     },
     {
       key: "faultAccidentIn3Years",
       label: "Do you have any at fault accident in the past 3 years?",
-      value: data.faultAccidentIn3Years,
+      value: getCurrentValue("faultAccidentIn3Years"),
+      editable: true,
     },
     {
       key: "zeroPointsOnAbstract",
       label: "Do you have more than 0 points on your driver's abstract?",
-      value: data.zeroPointsOnAbstract,
+      value: getCurrentValue("zeroPointsOnAbstract"),
+      editable: true,
     },
     {
       key: "noUnpardonedCriminalRecord",
       label:
         "Do you have any criminal record for which pardon has not been granted?",
-      value: data.noUnpardonedCriminalRecord,
+      value: getCurrentValue("noUnpardonedCriminalRecord"),
+      editable: true,
     },
     {
       key: "canCrossBorderUSA",
       label: "Can you cross borders into USA?",
-      value: data.canCrossBorderUSA,
+      value: getCurrentValue("canCrossBorderUSA"),
+      editable: false,
     },
     {
       key: "hasFASTCard",
       label: "Do you have FAST card?",
-      value: data.hasFASTCard,
+      value: getCurrentValue("hasFASTCard"),
+      editable: false,
     },
     {
       key: "statusInCanada",
       label: "What is your status in Canada?",
-      value: data.statusInCanada,
+      value: getCurrentValue("statusInCanada"),
+      editable: false,
     },
     {
       key: "eligibleForFASTCard",
       label: "Are you eligible for a FAST card?",
-      value: data.eligibleForFASTCard,
+      value: getCurrentValue("eligibleForFASTCard"),
+      editable: false,
     },
   ];
 
@@ -129,51 +149,79 @@ export default function OptionalsSection({ data, company }: OptionalsSectionProp
             >
               {question.label}
             </span>
-            <div className="flex items-center gap-2">
-              <div
-                className="flex items-center justify-center w-6 h-6 rounded border-2"
-                style={{
-                  borderColor:
-                    question.value === true
-                      ? "var(--color-success)"
-                      : question.value === false
-                      ? "var(--color-error)"
-                      : typeof question.value === "string" && question.value
-                      ? "var(--color-primary)"
-                      : "var(--color-outline-variant)",
-                  background:
-                    question.value === true
-                      ? "var(--color-success)"
-                      : question.value === false
-                      ? "var(--color-error)"
-                      : typeof question.value === "string" && question.value
-                      ? "var(--color-primary)"
-                      : "var(--color-surface-variant)",
-                }}
-              >
-                {question.value === true && (
-                  <Check className="w-4 h-4 text-white" />
-                )}
-                {question.value === false && (
-                  <span className="w-2 h-2 bg-white rounded-full" />
-                )}
-                {typeof question.value === "string" && question.value && (
-                  <span className="w-2 h-2 bg-white rounded-full" />
-                )}
+            
+            {isEditMode && question.editable ? (
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name={question.key}
+                    value="true"
+                    checked={question.value === true}
+                    onChange={() => updateField(question.key, true)}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-sm">Yes</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name={question.key}
+                    value="false"
+                    checked={question.value === false}
+                    onChange={() => updateField(question.key, false)}
+                    className="w-4 h-4"
+                  />
+                  <span className="text-sm">No</span>
+                </label>
               </div>
-              <span
-                className="text-sm font-medium min-w-[40px]"
-                style={{ color: "var(--color-on-surface)" }}
-              >
-                {question.value === true
-                  ? "Yes"
-                  : question.value === false
-                  ? "No"
-                  : typeof question.value === "string" && question.value
-                  ? question.value
-                  : "N/A"}
-              </span>
-            </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <div
+                  className="flex items-center justify-center w-6 h-6 rounded border-2"
+                  style={{
+                    borderColor:
+                      question.value === true
+                        ? "var(--color-success)"
+                        : question.value === false
+                        ? "var(--color-error)"
+                        : typeof question.value === "string" && question.value
+                        ? "var(--color-primary)"
+                        : "var(--color-outline-variant)",
+                    background:
+                      question.value === true
+                        ? "var(--color-success)"
+                        : question.value === false
+                        ? "var(--color-error)"
+                        : typeof question.value === "string" && question.value
+                        ? "var(--color-primary)"
+                        : "var(--color-surface-variant)",
+                  }}
+                >
+                  {question.value === true && (
+                    <Check className="w-4 h-4 text-white" />
+                  )}
+                  {question.value === false && (
+                    <span className="w-2 h-2 bg-white rounded-full" />
+                  )}
+                  {typeof question.value === "string" && question.value && (
+                    <span className="w-2 h-2 bg-white rounded-full" />
+                  )}
+                </div>
+                <span
+                  className="text-sm font-medium min-w-[40px]"
+                  style={{ color: "var(--color-on-surface)" }}
+                >
+                  {question.value === true
+                    ? "Yes"
+                    : question.value === false
+                    ? "No"
+                    : typeof question.value === "string" && question.value
+                    ? question.value
+                    : "N/A"}
+                </span>
+              </div>
+            )}
           </div>
         ))}
       </div>

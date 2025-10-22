@@ -67,9 +67,6 @@ export default function ContractSummaryBar({ trackerId }: Props) {
   // Check if we're on the safety processing page (don't show notes icon there)
   const isSafetyProcessingPage = pathname?.includes("/safety-processing");
 
-  // Check if we're on the prequalification page (toggle should be disabled)
-  const isPrequalificationPage = pathname?.includes("/prequalification");
-
   // Check if we're on the quiz-result page (toggle should be disabled)
   const isQuizResultPage = pathname?.includes("/quiz-result");
 
@@ -79,9 +76,8 @@ export default function ContractSummaryBar({ trackerId }: Props) {
   // Check if we're on the print page (toggle should be disabled)
   const isPrintPage = pathname?.includes("/print");
 
-  // Check if edit mode toggle should be functional (not prequalification, not quiz-result, not policies, not print, not safety processing, not terminated)
+  // Check if edit mode toggle should be functional (not quiz-result, not policies, not print, not safety processing, not terminated)
   const canToggleEditMode =
-    !isPrequalificationPage &&
     !isQuizResultPage &&
     !isPoliciesPage &&
     !isPrintPage &&
@@ -492,8 +488,6 @@ export default function ContractSummaryBar({ trackerId }: Props) {
                       ? `Edit mode is ${isEditMode ? "on" : "off"}`
                       : isTerminated
                       ? "Edit mode disabled - driver is terminated/resigned"
-                      : isPrequalificationPage
-                      ? "Edit mode disabled - prequalification is read-only"
                       : isQuizResultPage
                       ? "Edit mode disabled - quiz results are read-only"
                       : isPoliciesPage
@@ -522,26 +516,6 @@ export default function ContractSummaryBar({ trackerId }: Props) {
                     }}
                   >
                     Driver is terminated/resigned
-                    <div
-                      className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent"
-                      style={{
-                        borderTopColor:
-                          "var(--color-surface-container-highest)",
-                      }}
-                    ></div>
-                  </div>
-                )}
-                {/* Tooltip for prequalification page */}
-                {!isTerminated && isPrequalificationPage && (
-                  <div
-                    className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50"
-                    style={{
-                      backgroundColor: "var(--color-surface-container-highest)",
-                      color: "var(--color-on-surface)",
-                      border: "1px solid var(--color-outline)",
-                    }}
-                  >
-                    Prequalification is read-only
                     <div
                       className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent"
                       style={{
@@ -907,23 +881,21 @@ export default function ContractSummaryBar({ trackerId }: Props) {
                       ? "var(--color-primary)"
                       : "var(--color-outline-variant)",
                 }}
-                aria-label={
-                  canToggleEditMode
-                    ? `Edit mode is ${isEditMode ? "on" : "off"}`
-                    : isTerminated
-                    ? "Edit mode disabled - driver is terminated/resigned"
-                    : isPrequalificationPage
-                    ? "Edit mode disabled - prequalification is read-only"
-                    : isQuizResultPage
-                    ? "Edit mode disabled - quiz results are read-only"
-                    : isPoliciesPage
-                    ? "Edit mode disabled - policies are read-only"
-                    : isPrintPage
-                    ? "Edit mode disabled - print page is read-only"
-                    : isSafetyProcessingPage
-                    ? "Edit mode disabled during safety processing"
-                    : "Edit mode disabled"
-                }
+                  aria-label={
+                    canToggleEditMode
+                      ? `Edit mode is ${isEditMode ? "on" : "off"}`
+                      : isTerminated
+                      ? "Edit mode disabled - driver is terminated/resigned"
+                      : isQuizResultPage
+                      ? "Edit mode disabled - quiz results are read-only"
+                      : isPoliciesPage
+                      ? "Edit mode disabled - policies are read-only"
+                      : isPrintPage
+                      ? "Edit mode disabled - print page is read-only"
+                      : isSafetyProcessingPage
+                      ? "Edit mode disabled during safety processing"
+                      : "Edit mode disabled"
+                  }
               >
                 <span
                   className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
@@ -942,25 +914,6 @@ export default function ContractSummaryBar({ trackerId }: Props) {
                   }}
                 >
                   Driver is terminated/resigned
-                  <div
-                    className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent"
-                    style={{
-                      borderTopColor: "var(--color-surface-container-highest)",
-                    }}
-                  ></div>
-                </div>
-              )}
-              {/* Tooltip for prequalification page */}
-              {!isTerminated && isPrequalificationPage && (
-                <div
-                  className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50"
-                  style={{
-                    backgroundColor: "var(--color-surface-container-highest)",
-                    color: "var(--color-on-surface)",
-                    border: "1px solid var(--color-outline)",
-                  }}
-                >
-                  Prequalification is read-only
                   <div
                     className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent"
                     style={{
