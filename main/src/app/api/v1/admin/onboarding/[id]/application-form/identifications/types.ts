@@ -8,6 +8,7 @@ export interface IdentificationsResponse {
   data: {
     onboardingContext: IOnboardingTrackerContext;
     licenses: ILicenseEntry[];
+    sinPhoto?: IFileAsset; // Add SIN photo from page1
     hstNumber?: string;
     businessName?: string;
     incorporatePhotos?: IFileAsset[];

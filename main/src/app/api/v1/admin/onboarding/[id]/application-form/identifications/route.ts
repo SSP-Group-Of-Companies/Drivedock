@@ -34,6 +34,7 @@ import type { ILicenseEntry, IApplicationFormDoc, IApplicationFormPage4 } from "
 type PatchBody = {
   // Page 1
   licenses?: ILicenseEntry[];
+  sinPhoto?: IFileAsset;
 
   // Page 4 subset (BODY defines truth for provided keys; required keys must be present)
   employeeNumber?: string;
@@ -178,6 +179,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     const body = await parseJsonBody<PatchBody>(req);
 
     const touchingLicenses = Array.isArray(body.licenses);
+    const touchingSinPhoto = hasKey(body, "sinPhoto");
     const touchingAnyPage4Key =
       businessKeysPresentInBody(body) ||
       hasKey(body, "healthCardPhotos") ||
@@ -187,7 +189,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       hasKey(body, "usVisaPhotos") ||
       hasKey(body, "fastCard");
 
-    if (!touchingLicenses && !touchingAnyPage4Key) {
+    if (!touchingLicenses && !touchingSinPhoto && !touchingAnyPage4Key) {
       return errorResponse(400, "No identifiable fields provided for update");
     }
 
@@ -200,9 +202,15 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
     // Keep previous state for deletions
     const prevP1Licenses = appFormDoc.page1.licenses ?? [];
+    const prevP1SinPhoto = appFormDoc.page1.sinPhoto;
     const prevP4 = appFormDoc.page4;
 
     /* -------------------- 0) ALWAYS require required groups in BODY (explicit contract) -------------------- */
+    // SIN photo validation - ALWAYS required (not conditional on touching)
+    if (!body.sinPhoto || !body.sinPhoto.s3Key) {
+      throw new AppError(400, "SIN photo is required");
+    }
+
     // For US drivers: either passport OR PR/citizenship is required (not both)
     // For Canadian drivers: both are required
     if (isUS) {
@@ -269,6 +277,10 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       }
       tempLicenses = body.licenses.map((l) => ({ ...l }));
       appFormDoc.set("page1.licenses", tempLicenses as any);
+    }
+
+    if (touchingSinPhoto) {
+      appFormDoc.set("page1.sinPhoto", body.sinPhoto as any);
     }
 
     // (B) Page 4 — explicit, body-driven
@@ -399,7 +411,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
     // Validate only what we touched
     const validatePaths: string[] = [];
-    if (touchingLicenses) validatePaths.push("page1");
+    if (touchingLicenses || touchingSinPhoto) validatePaths.push("page1");
     validatePaths.push("page4"); // explicit required groups means we always touched page4
     await appFormDoc.validate(validatePaths);
     await appFormDoc.save({ validateBeforeSave: false });
@@ -457,6 +469,15 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       for (const lic of p1FinalLicenses) {
         if (lic.licenseFrontPhoto) lic.licenseFrontPhoto = await finalizeAsset(lic.licenseFrontPhoto, dest);
         if (lic.licenseBackPhoto) lic.licenseBackPhoto = await finalizeAsset(lic.licenseBackPhoto, dest);
+      }
+    }
+
+    // SIN photo finalization
+    let p1FinalSinPhoto: IFileAsset | undefined;
+    if (touchingSinPhoto) {
+      const tempSinPhoto = appFormDoc.page1.sinPhoto;
+      if (tempSinPhoto) {
+        p1FinalSinPhoto = await finalizeAsset(tempSinPhoto, buildFinalDest(onboardingDoc.id, ES3Folder.SIN_PHOTOS));
       }
     }
 
@@ -519,6 +540,19 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       }
     }
 
+    // SIN photo deletion
+    if (touchingSinPhoto) {
+      const prevSinKey = prevP1SinPhoto?.s3Key;
+      const newSinKey = p1FinalSinPhoto?.s3Key;
+      if (prevSinKey && newSinKey && prevSinKey !== newSinKey && !prevSinKey.startsWith(`${S3_TEMP_FOLDER}/`)) {
+        try {
+          await deleteS3Objects([prevSinKey]);
+        } catch (e) {
+          console.warn("Failed to delete old SIN photo S3 key:", e);
+        }
+      }
+    }
+
     const prevKeysP4 = new Set(collectP4Keys(prevP4));
     const newKeysP4 = new Set(collectP4Keys(p4Final));
     const removedP4 = [...prevKeysP4].filter((k) => !newKeysP4.has(k) && !k.startsWith(`${S3_TEMP_FOLDER}/`));
@@ -540,6 +574,12 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       await appFormDoc.save({ validateBeforeSave: false });
     }
 
+    if (touchingSinPhoto && p1FinalSinPhoto) {
+      appFormDoc.set("page1.sinPhoto", p1FinalSinPhoto as any);
+      await appFormDoc.validate(["page1"]);
+      await appFormDoc.save({ validateBeforeSave: false });
+    }
+
     appFormDoc.set("page4", p4Final);
     await appFormDoc.validate(["page4"]);
     await appFormDoc.save({ validateBeforeSave: false });
@@ -552,6 +592,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     return successResponse(200, "Identifications updated", {
       onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_4, true),
       licenses: appFormDoc.page1.licenses,
+      sinPhoto: appFormDoc.page1.sinPhoto,
       // Page 4 subset echo
       hstNumber: appFormDoc.page4.hstNumber,
       businessName: appFormDoc.page4.businessName,
@@ -605,6 +646,7 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
     return successResponse(200, "Identifications retrieved", {
       onboardingContext: buildTrackerContext(onboardingDoc, null, true),
       licenses: appFormDoc.page1.licenses,
+      sinPhoto: appFormDoc.page1.sinPhoto, // Add SIN photo from page1
       hstNumber: appFormDoc.page4.hstNumber,
       businessName: appFormDoc.page4.businessName,
       incorporatePhotos: appFormDoc.page4.incorporatePhotos,

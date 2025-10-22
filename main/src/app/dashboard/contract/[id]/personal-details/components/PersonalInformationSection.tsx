@@ -1,29 +1,25 @@
 "use client";
 
-import { Eye, EyeOff, Camera, X } from "lucide-react";
+import { Eye, EyeOff, Image as ImageIcon } from "lucide-react";
 import { useState } from "react";
 import Image from "next/image";
 import { formatInputDate } from "@/lib/utils/dateUtils";
 import { IApplicationFormPage1 } from "@/types/applicationForm.types";
-import { uploadToS3Presigned, deleteTempFiles, isTempKey } from "@/lib/utils/s3Upload";
-import { ES3Folder } from "@/types/aws.types";
+import { WithCopy } from "@/components/form/WithCopy";
 
 interface PersonalInformationSectionProps {
   data: IApplicationFormPage1;
   isEditMode: boolean;
   staged: any;
   onStage: (changes: any) => void;
+  trackerId?: string; // Optional - only for contract pages
   prequalificationData?: {
     statusInCanada?: string;
   };
 }
 
-export default function PersonalInformationSection({ data, isEditMode, staged, onStage, prequalificationData }: PersonalInformationSectionProps) {
+export default function PersonalInformationSection({ data, isEditMode, staged, onStage, trackerId, prequalificationData }: PersonalInformationSectionProps) {
   const [showSIN, setShowSIN] = useState(false);
-
-  // Upload/Delete UI state
-  const [sinPhotoStatus, setSinPhotoStatus] = useState<"idle" | "uploading" | "deleting" | "error">("idle");
-  const [sinPhotoMessage, setSinPhotoMessage] = useState<string>("");
 
   // Merge staged changes with original data for display
   const formData = { ...data, ...staged };
@@ -76,73 +72,30 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
     onStage({ [field]: value });
   };
 
-  /** Upload handler (client-side presign → PUT → stage result) */
-  const handleSinPhotoUpload = async (file: File | null) => {
-    if (!isEditMode) return;
-    if (!file) return;
-
-    setSinPhotoStatus("uploading");
-    setSinPhotoMessage("");
-
-    try {
-      const result = await uploadToS3Presigned({
-        file,
-        folder: ES3Folder.SIN_PHOTOS,
-        // trackerId optional — defaults inside helper if not provided
-      });
-
-      updateField("sinPhoto", result);
-      setSinPhotoStatus("idle");
-      setSinPhotoMessage("Upload successful");
-    } catch (err: any) {
-      console.error("SIN photo upload failed:", err);
-      setSinPhotoStatus("error");
-      setSinPhotoMessage(err?.message || "Upload failed");
-    }
-  };
-
-  /** Delete handler:
-   * - If temp (key starts with temp-files/): call API → show "Deleting..."
-   * - If final/empty: instant remove from state
-   */
-  const handleSinPhotoRemove = async () => {
-    if (!isEditMode) return;
-    const key = formData?.sinPhoto?.s3Key;
-
-    // If no key/url in state, just clear
-    if (!key && !formData?.sinPhoto?.url) {
-      updateField("sinPhoto", { s3Key: "", url: "", mimeType: "", sizeBytes: 0, originalName: "" });
-      return;
-    }
-
-    // Temp file: show deleting + call API
-    if (key && isTempKey(key)) {
-      setSinPhotoStatus("deleting");
-      setSinPhotoMessage("");
-
-      try {
-        await deleteTempFiles([key]);
-        // Clear from state after deletion
-        updateField("sinPhoto", { s3Key: "", url: "", mimeType: "", sizeBytes: 0, originalName: "" });
-        setSinPhotoStatus("idle");
-        setSinPhotoMessage("Photo removed");
-      } catch (err) {
-        console.error("Temp photo deletion failed:", err);
-        setSinPhotoStatus("error");
-        setSinPhotoMessage("Delete failed");
-      }
-      return;
-    }
-
-    // Final/Non-temp photo: remove immediately from state
-    updateField("sinPhoto", { s3Key: "", url: "", mimeType: "", sizeBytes: 0, originalName: "" });
-    setSinPhotoStatus("idle");
-    setSinPhotoMessage("");
-  };
-
-  const openSinPhotoInNewTab = () => {
+  const handleSinPhotoClick = () => {
     const url = formData?.sinPhoto?.url;
-    if (url) window.open(url, "_blank", "noopener,noreferrer");
+    if (!url) return;
+
+    // For invitation pages (no trackerId): open in new tab
+    if (!trackerId) {
+      window.open(url, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    // For contract pages (has trackerId): navigate to identifications gallery
+    const targetUrl = `/dashboard/contract/${trackerId}/identifications`;
+    
+    // Check if we're already on the identifications page
+    if (window.location.pathname.includes('/identifications')) {
+      // Already on identifications page, just scroll to gallery
+      const galleryElement = document.getElementById('image-gallery');
+      if (galleryElement) {
+        galleryElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    } else {
+      // Navigate to identifications page with anchor
+      window.location.href = `${targetUrl}#image-gallery`;
+    }
   };
 
   return (
@@ -162,30 +115,34 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
               First Name
             </label>
             {isEditMode ? (
-              <input
-                type="text"
-                value={formData.firstName || ""}
-                onChange={(e) => updateField("firstName", e.target.value)}
-                className="w-full p-3 rounded-lg border text-sm transition-colors"
-                style={{
-                  background: "var(--color-surface)",
-                  borderColor: "var(--color-outline)",
-                  color: "var(--color-on-surface)",
-                }}
-                placeholder="Enter first name"
-              />
+              <WithCopy value={formData.firstName || ""} label="First name">
+                <input
+                  type="text"
+                  value={formData.firstName || ""}
+                  onChange={(e) => updateField("firstName", e.target.value)}
+                  className="w-full p-3 rounded-lg border text-sm transition-colors pr-10"
+                  style={{
+                    background: "var(--color-surface)",
+                    borderColor: "var(--color-outline)",
+                    color: "var(--color-on-surface)",
+                  }}
+                  placeholder="Enter first name"
+                />
+              </WithCopy>
             ) : (
-              <div
-                className="p-3 rounded-lg border"
-                style={{
-                  background: "var(--color-surface)",
-                  borderColor: "var(--color-outline)",
-                }}
-              >
-                <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
-                  {formData.firstName || "Not provided"}
-                </span>
-              </div>
+              <WithCopy value={formData.firstName || ""} label="First name">
+                <div
+                  className="p-3 rounded-lg border pr-10"
+                  style={{
+                    background: "var(--color-surface)",
+                    borderColor: "var(--color-outline)",
+                  }}
+                >
+                  <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
+                    {formData.firstName || "Not provided"}
+                  </span>
+                </div>
+              </WithCopy>
             )}
           </div>
 
@@ -194,30 +151,34 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
               Last Name
             </label>
             {isEditMode ? (
-              <input
-                type="text"
-                value={formData.lastName || ""}
-                onChange={(e) => updateField("lastName", e.target.value)}
-                className="w-full p-3 rounded-lg border text-sm transition-colors"
-                style={{
-                  background: "var(--color-surface)",
-                  borderColor: "var(--color-outline)",
-                  color: "var(--color-on-surface)",
-                }}
-                placeholder="Enter last name"
-              />
+              <WithCopy value={formData.lastName || ""} label="Last name">
+                <input
+                  type="text"
+                  value={formData.lastName || ""}
+                  onChange={(e) => updateField("lastName", e.target.value)}
+                  className="w-full p-3 rounded-lg border text-sm transition-colors pr-10"
+                  style={{
+                    background: "var(--color-surface)",
+                    borderColor: "var(--color-outline)",
+                    color: "var(--color-on-surface)",
+                  }}
+                  placeholder="Enter last name"
+                />
+              </WithCopy>
             ) : (
-              <div
-                className="p-3 rounded-lg border"
-                style={{
-                  background: "var(--color-surface)",
-                  borderColor: "var(--color-outline)",
-                }}
-              >
-                <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
-                  {formData.lastName || "Not provided"}
-                </span>
-              </div>
+              <WithCopy value={formData.lastName || ""} label="Last name">
+                <div
+                  className="p-3 rounded-lg border pr-10"
+                  style={{
+                    background: "var(--color-surface)",
+                    borderColor: "var(--color-outline)",
+                  }}
+                >
+                  <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
+                    {formData.lastName || "Not provided"}
+                  </span>
+                </div>
+              </WithCopy>
             )}
           </div>
         </div>
@@ -271,72 +232,49 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
               SIN Card Photo
             </label>
 
-            {/* Container is relative so we can pin the X and overlay consistently */}
-            <div
-              className="relative group rounded-lg border-2 border-dashed p-4 text-center overflow-hidden"
-              style={{ background: "var(--color-surface)", borderColor: "var(--color-outline-variant)" }}
-            >
-              {/* Only show delete button if a photo exists */}
-              {isEditMode && formData?.sinPhoto?.url && (
-                <button
-                  type="button"
-                  onClick={handleSinPhotoRemove}
-                  disabled={sinPhotoStatus === "uploading" || sinPhotoStatus === "deleting"}
-                  className="absolute top-2 right-2 z-20 p-1 rounded-full bg-red-500 text-white hover:bg-red-600 transition-colors disabled:opacity-60"
-                  aria-label="Remove photo"
-                  title="Remove"
+            {/* View-only: Click behavior depends on context */}
+            {formData?.sinPhoto?.url ? (
+              <button
+                type="button"
+                onClick={handleSinPhotoClick}
+                className="relative group w-full rounded-lg border-2 border-dashed p-4 text-center overflow-hidden transition-colors hover:border-blue-400"
+                style={{ background: "var(--color-surface)", borderColor: "var(--color-outline-variant)" }}
+              >
+                <div className="relative inline-block">
+                  <Image src={formData.sinPhoto.url} alt="SIN Card" width={240} height={140} className="mx-auto rounded-lg object-contain max-h-40 w-auto" />
+                </div>
+
+                {/* Hover overlay */}
+                <div
+                  className="absolute inset-0 hidden group-hover:flex items-center justify-center transition-opacity"
+                  style={{ background: "rgba(0,0,0,0.4)" }}
                 >
-                  <X className="w-3 h-3" />
-                </button>
-              )}
-
-              {/* If photo exists, show it with a hover overlay to view */}
-              {formData?.sinPhoto?.url ? (
-                <>
-                  <div className="relative inline-block">
-                    <Image src={formData.sinPhoto.url} alt="SIN Card" width={240} height={140} className="mx-auto rounded-lg object-contain max-h-40 w-auto" />
-                  </div>
-
-                  {/* Hover overlay to view (never covers the ❌ thanks to z-index) */}
-                  <button
-                    type="button"
-                    onClick={openSinPhotoInNewTab}
-                    className="absolute inset-0 z-10 hidden group-hover:flex items-center justify-center transition-opacity"
-                    style={{ background: "rgba(0,0,0,0.4)" }}
-                    aria-label="View SIN card photo"
-                    title="View"
-                  >
-                    <Eye className="w-7 h-7 text-white" />
-                  </button>
-                </>
-              ) : (
-                <>
-                  <label htmlFor="sinPhotoInput" className="cursor-pointer flex flex-col items-center gap-2">
-                    <Camera className="w-8 h-8" style={{ color: "var(--color-on-surface-variant)" }} />
-                    <span className="text-sm" style={{ color: "var(--color-on-surface-variant)" }}>
-                      Click to capture or select an image
-                    </span>
-                  </label>
-                  {isEditMode && <input id="sinPhotoInput" type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => handleSinPhotoUpload(e.target.files?.[0] || null)} />}
-                </>
-              )}
-
-              {/* Status messages under the card area */}
-              {sinPhotoStatus === "uploading" && (
-                <div className="text-yellow-600 text-sm mt-2 flex items-center justify-center">
-                  <p className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-600 mr-2"></p>
-                  Uploading...
+                  <Eye className="w-7 h-7 text-white" />
                 </div>
-              )}
-              {sinPhotoStatus === "deleting" && (
-                <div className="text-yellow-600 text-sm mt-2 flex items-center justify-center">
-                  <p className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-600 mr-2"></p>
-                  Deleting...
+                
+                {/* Helper text */}
+                <p className="absolute bottom-2 left-0 right-0 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                  {trackerId ? "Click to view/edit in Image gallery" : "Click to view full size"}
+                </p>
+              </button>
+            ) : (
+              <div
+                className="w-full rounded-lg border-2 border-dashed p-4 text-center"
+                style={{ background: "var(--color-surface)", borderColor: "var(--color-outline-variant)" }}
+              >
+                <div className="flex flex-col items-center gap-2">
+                  <ImageIcon className="w-8 h-8" style={{ color: "var(--color-on-surface-variant)" }} />
+                  <span className="text-sm" style={{ color: "var(--color-on-surface-variant)" }}>
+                    No photo uploaded
+                  </span>
                 </div>
-              )}
-              {sinPhotoStatus === "error" && <p className="text-red-500 text-sm mt-2">{sinPhotoMessage}</p>}
-              {sinPhotoStatus === "idle" && sinPhotoMessage && <p className="text-green-600 text-sm mt-2">{sinPhotoMessage}</p>}
-            </div>
+                {trackerId && (
+                  <p className="text-xs mt-2" style={{ color: "var(--color-on-surface-variant)" }}>
+                    Go to Identifications to add photo
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -347,29 +285,33 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
               SIN Issue Date
             </label>
             {isEditMode ? (
-              <input
-                type="date"
-                value={formatInputDate(formData.sinIssueDate) || ""}
-                onChange={(e) => updateField("sinIssueDate", e.target.value)}
-                className="w-full p-3 rounded-lg border text-sm transition-colors"
-                style={{
-                  background: "var(--color-surface)",
-                  borderColor: "var(--color-outline)",
-                  color: "var(--color-on-surface)",
-                }}
-              />
+              <WithCopy value={formatInputDate(formData.sinIssueDate) || ""} label="SIN issue date">
+                <input
+                  type="date"
+                  value={formatInputDate(formData.sinIssueDate) || ""}
+                  onChange={(e) => updateField("sinIssueDate", e.target.value)}
+                  className="w-full p-3 rounded-lg border text-sm transition-colors pr-10"
+                  style={{
+                    background: "var(--color-surface)",
+                    borderColor: "var(--color-outline)",
+                    color: "var(--color-on-surface)",
+                  }}
+                />
+              </WithCopy>
             ) : (
-              <div
-                className="p-3 rounded-lg border"
-                style={{
-                  background: "var(--color-surface)",
-                  borderColor: "var(--color-outline)",
-                }}
-              >
-                <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
-                  {formatDisplayDate(formData.sinIssueDate)}
-                </span>
-              </div>
+              <WithCopy value={formatInputDate(formData.sinIssueDate) || ""} label="SIN issue date">
+                <div
+                  className="p-3 rounded-lg border pr-10"
+                  style={{
+                    background: "var(--color-surface)",
+                    borderColor: "var(--color-outline)",
+                  }}
+                >
+                  <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
+                    {formatDisplayDate(formData.sinIssueDate)}
+                  </span>
+                </div>
+              </WithCopy>
             )}
           </div>
 
@@ -380,30 +322,34 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
                 SIN Expiry Date
               </label>
               {isEditMode ? (
-                <input
-                  type="date"
-                  value={formatInputDate(formData.sinExpiryDate) || ""}
-                  onChange={(e) => updateField("sinExpiryDate", e.target.value)}
-                  required={prequalificationData?.statusInCanada === "Work Permit"}
-                  className="w-full p-3 rounded-lg border text-sm transition-colors"
-                  style={{
-                    background: "var(--color-surface)",
-                    borderColor: "var(--color-outline)",
-                    color: "var(--color-on-surface)",
-                  }}
-                />
+                <WithCopy value={formatInputDate(formData.sinExpiryDate) || ""} label="SIN expiry date">
+                  <input
+                    type="date"
+                    value={formatInputDate(formData.sinExpiryDate) || ""}
+                    onChange={(e) => updateField("sinExpiryDate", e.target.value)}
+                    required={prequalificationData?.statusInCanada === "Work Permit"}
+                    className="w-full p-3 rounded-lg border text-sm transition-colors pr-10"
+                    style={{
+                      background: "var(--color-surface)",
+                      borderColor: "var(--color-outline)",
+                      color: "var(--color-on-surface)",
+                    }}
+                  />
+                </WithCopy>
               ) : (
-                <div
-                  className="p-3 rounded-lg border"
-                  style={{
-                    background: "var(--color-surface)",
-                    borderColor: "var(--color-outline)",
-                  }}
-                >
-                  <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
-                    {formatDisplayDate(formData.sinExpiryDate)}
-                  </span>
-                </div>
+                <WithCopy value={formatInputDate(formData.sinExpiryDate) || ""} label="SIN expiry date">
+                  <div
+                    className="p-3 rounded-lg border pr-10"
+                    style={{
+                      background: "var(--color-surface)",
+                      borderColor: "var(--color-outline)",
+                    }}
+                  >
+                    <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
+                      {formatDisplayDate(formData.sinExpiryDate)}
+                    </span>
+                  </div>
+                </WithCopy>
               )}
             </div>
           )}
@@ -428,17 +374,19 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
                 <option value="female">Female</option>
               </select>
             ) : (
-              <div
-                className="p-3 rounded-lg border"
-                style={{
-                  background: "var(--color-surface)",
-                  borderColor: "var(--color-outline)",
-                }}
-              >
-                <span className="text-sm capitalize" style={{ color: "var(--color-on-surface)" }}>
-                  {formData.gender || "Not provided"}
-                </span>
-              </div>
+              <WithCopy value={formData.gender || ""} label="Gender">
+                <div
+                  className="p-3 rounded-lg border pr-10"
+                  style={{
+                    background: "var(--color-surface)",
+                    borderColor: "var(--color-outline)",
+                  }}
+                >
+                  <span className="text-sm capitalize" style={{ color: "var(--color-on-surface)" }}>
+                    {formData.gender || "Not provided"}
+                  </span>
+                </div>
+              </WithCopy>
             )}
           </div>
         </div>
@@ -451,29 +399,33 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
             </label>
             <div className="flex items-center gap-4">
               {isEditMode ? (
-                <input
-                  type="date"
-                  value={formatInputDate(formData.dob) || ""}
-                  onChange={(e) => updateField("dob", e.target.value)}
-                  className="flex-1 p-3 rounded-lg border text-sm transition-colors"
-                  style={{
-                    background: "var(--color-surface)",
-                    borderColor: "var(--color-outline)",
-                    color: "var(--color-on-surface)",
-                  }}
-                />
+                <WithCopy value={formatInputDate(formData.dob) || ""} label="Date of birth">
+                  <input
+                    type="date"
+                    value={formatInputDate(formData.dob) || ""}
+                    onChange={(e) => updateField("dob", e.target.value)}
+                    className="flex-1 p-3 rounded-lg border text-sm transition-colors pr-10"
+                    style={{
+                      background: "var(--color-surface)",
+                      borderColor: "var(--color-outline)",
+                      color: "var(--color-on-surface)",
+                    }}
+                  />
+                </WithCopy>
               ) : (
-                <div
-                  className="flex-1 p-3 rounded-lg border"
-                  style={{
-                    background: "var(--color-surface)",
-                    borderColor: "var(--color-outline)",
-                  }}
-                >
-                  <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
-                    {formatDisplayDate(formData.dob)}
-                  </span>
-                </div>
+                <WithCopy value={formatInputDate(formData.dob) || ""} label="Date of birth">
+                  <div
+                    className="flex-1 p-3 rounded-lg border pr-10"
+                    style={{
+                      background: "var(--color-surface)",
+                      borderColor: "var(--color-outline)",
+                    }}
+                  >
+                    <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
+                      {formatDisplayDate(formData.dob)}
+                    </span>
+                  </div>
+                </WithCopy>
               )}
               {calculatedAge && (
                 <div
@@ -538,30 +490,34 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
               Phone (Home) (Optional)
             </label>
             {isEditMode ? (
-              <input
-                type="tel"
-                value={formData.phoneHome || ""}
-                onChange={(e) => updateField("phoneHome", e.target.value)}
-                className="w-full p-3 rounded-lg border text-sm transition-colors"
-                style={{
-                  background: "var(--color-surface)",
-                  borderColor: "var(--color-outline)",
-                  color: "var(--color-on-surface)",
-                }}
-                placeholder="Enter home phone"
-              />
+              <WithCopy value={formData.phoneHome || ""} label="Home phone">
+                <input
+                  type="tel"
+                  value={formData.phoneHome || ""}
+                  onChange={(e) => updateField("phoneHome", e.target.value)}
+                  className="w-full p-3 rounded-lg border text-sm transition-colors pr-10"
+                  style={{
+                    background: "var(--color-surface)",
+                    borderColor: "var(--color-outline)",
+                    color: "var(--color-on-surface)",
+                  }}
+                  placeholder="Enter home phone"
+                />
+              </WithCopy>
             ) : (
-              <div
-                className="p-3 rounded-lg border"
-                style={{
-                  background: "var(--color-surface)",
-                  borderColor: "var(--color-outline)",
-                }}
-              >
-                <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
-                  {formData.phoneHome ? formatPhoneNumber(formData.phoneHome) : "Not provided"}
-                </span>
-              </div>
+              <WithCopy value={formData.phoneHome || ""} label="Home phone">
+                <div
+                  className="p-3 rounded-lg border pr-10"
+                  style={{
+                    background: "var(--color-surface)",
+                    borderColor: "var(--color-outline)",
+                  }}
+                >
+                  <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
+                    {formData.phoneHome ? formatPhoneNumber(formData.phoneHome) : "Not provided"}
+                  </span>
+                </div>
+              </WithCopy>
             )}
           </div>
 
@@ -570,30 +526,34 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
               Phone (Cell)
             </label>
             {isEditMode ? (
-              <input
-                type="tel"
-                value={formData.phoneCell || ""}
-                onChange={(e) => updateField("phoneCell", e.target.value)}
-                className="w-full p-3 rounded-lg border text-sm transition-colors"
-                style={{
-                  background: "var(--color-surface)",
-                  borderColor: "var(--color-outline)",
-                  color: "var(--color-on-surface)",
-                }}
-                placeholder="Enter cell phone"
-              />
+              <WithCopy value={formData.phoneCell || ""} label="Cell phone">
+                <input
+                  type="tel"
+                  value={formData.phoneCell || ""}
+                  onChange={(e) => updateField("phoneCell", e.target.value)}
+                  className="w-full p-3 rounded-lg border text-sm transition-colors pr-10"
+                  style={{
+                    background: "var(--color-surface)",
+                    borderColor: "var(--color-outline)",
+                    color: "var(--color-on-surface)",
+                  }}
+                  placeholder="Enter cell phone"
+                />
+              </WithCopy>
             ) : (
-              <div
-                className="p-3 rounded-lg border"
-                style={{
-                  background: "var(--color-surface)",
-                  borderColor: "var(--color-outline)",
-                }}
-              >
-                <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
-                  {formData.phoneCell ? formatPhoneNumber(formData.phoneCell) : "Not provided"}
-                </span>
-              </div>
+              <WithCopy value={formData.phoneCell || ""} label="Cell phone">
+                <div
+                  className="p-3 rounded-lg border pr-10"
+                  style={{
+                    background: "var(--color-surface)",
+                    borderColor: "var(--color-outline)",
+                  }}
+                >
+                  <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
+                    {formData.phoneCell ? formatPhoneNumber(formData.phoneCell) : "Not provided"}
+                  </span>
+                </div>
+              </WithCopy>
             )}
           </div>
         </div>
@@ -604,30 +564,34 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
             Email Address
           </label>
           {isEditMode ? (
-            <input
-              type="email"
-              value={formData.email || ""}
-              onChange={(e) => updateField("email", e.target.value)}
-              className="w-full p-3 rounded-lg border text-sm transition-colors"
-              style={{
-                background: "var(--color-surface)",
-                borderColor: "var(--color-outline)",
-                color: "var(--color-on-surface)",
-              }}
-              placeholder="Enter email address"
-            />
+            <WithCopy value={formData.email || ""} label="Email address">
+              <input
+                type="email"
+                value={formData.email || ""}
+                onChange={(e) => updateField("email", e.target.value)}
+                className="w-full p-3 rounded-lg border text-sm transition-colors pr-10"
+                style={{
+                  background: "var(--color-surface)",
+                  borderColor: "var(--color-outline)",
+                  color: "var(--color-on-surface)",
+                }}
+                placeholder="Enter email address"
+              />
+            </WithCopy>
           ) : (
-            <div
-              className="p-3 rounded-lg border"
-              style={{
-                background: "var(--color-surface)",
-                borderColor: "var(--color-outline)",
-              }}
-            >
-              <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
-                {formData.email || "Not provided"}
-              </span>
-            </div>
+            <WithCopy value={formData.email || ""} label="Email address">
+              <div
+                className="p-3 rounded-lg border pr-10"
+                style={{
+                  background: "var(--color-surface)",
+                  borderColor: "var(--color-outline)",
+                }}
+              >
+                <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
+                  {formData.email || "Not provided"}
+                </span>
+              </div>
+            </WithCopy>
           )}
         </div>
 
@@ -638,30 +602,34 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
               Emergency Contact Name
             </label>
             {isEditMode ? (
-              <input
-                type="text"
-                value={formData.emergencyContactName || ""}
-                onChange={(e) => updateField("emergencyContactName", e.target.value)}
-                className="w-full p-3 rounded-lg border text-sm transition-colors"
-                style={{
-                  background: "var(--color-surface)",
-                  borderColor: "var(--color-outline)",
-                  color: "var(--color-on-surface)",
-                }}
-                placeholder="Enter emergency contact name"
-              />
+              <WithCopy value={formData.emergencyContactName || ""} label="Emergency contact name">
+                <input
+                  type="text"
+                  value={formData.emergencyContactName || ""}
+                  onChange={(e) => updateField("emergencyContactName", e.target.value)}
+                  className="w-full p-3 rounded-lg border text-sm transition-colors pr-10"
+                  style={{
+                    background: "var(--color-surface)",
+                    borderColor: "var(--color-outline)",
+                    color: "var(--color-on-surface)",
+                  }}
+                  placeholder="Enter emergency contact name"
+                />
+              </WithCopy>
             ) : (
-              <div
-                className="p-3 rounded-lg border"
-                style={{
-                  background: "var(--color-surface)",
-                  borderColor: "var(--color-outline)",
-                }}
-              >
-                <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
-                  {formData.emergencyContactName || "Not provided"}
-                </span>
-              </div>
+              <WithCopy value={formData.emergencyContactName || ""} label="Emergency contact name">
+                <div
+                  className="p-3 rounded-lg border pr-10"
+                  style={{
+                    background: "var(--color-surface)",
+                    borderColor: "var(--color-outline)",
+                  }}
+                >
+                  <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
+                    {formData.emergencyContactName || "Not provided"}
+                  </span>
+                </div>
+              </WithCopy>
             )}
           </div>
 
@@ -670,30 +638,34 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
               Emergency Contact Phone
             </label>
             {isEditMode ? (
-              <input
-                type="tel"
-                value={formData.emergencyContactPhone || ""}
-                onChange={(e) => updateField("emergencyContactPhone", e.target.value)}
-                className="w-full p-3 rounded-lg border text-sm transition-colors"
-                style={{
-                  background: "var(--color-surface)",
-                  borderColor: "var(--color-outline)",
-                  color: "var(--color-on-surface)",
-                }}
-                placeholder="Enter emergency contact phone"
-              />
+              <WithCopy value={formData.emergencyContactPhone || ""} label="Emergency contact phone">
+                <input
+                  type="tel"
+                  value={formData.emergencyContactPhone || ""}
+                  onChange={(e) => updateField("emergencyContactPhone", e.target.value)}
+                  className="w-full p-3 rounded-lg border text-sm transition-colors pr-10"
+                  style={{
+                    background: "var(--color-surface)",
+                    borderColor: "var(--color-outline)",
+                    color: "var(--color-on-surface)",
+                  }}
+                  placeholder="Enter emergency contact phone"
+                />
+              </WithCopy>
             ) : (
-              <div
-                className="p-3 rounded-lg border"
-                style={{
-                  background: "var(--color-surface)",
-                  borderColor: "var(--color-outline)",
-                }}
-              >
-                <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
-                  {formData.emergencyContactPhone ? formatPhoneNumber(formData.emergencyContactPhone) : "Not provided"}
-                </span>
-              </div>
+              <WithCopy value={formData.emergencyContactPhone || ""} label="Emergency contact phone">
+                <div
+                  className="p-3 rounded-lg border pr-10"
+                  style={{
+                    background: "var(--color-surface)",
+                    borderColor: "var(--color-outline)",
+                  }}
+                >
+                  <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
+                    {formData.emergencyContactPhone ? formatPhoneNumber(formData.emergencyContactPhone) : "Not provided"}
+                  </span>
+                </div>
+              </WithCopy>
             )}
           </div>
         </div>

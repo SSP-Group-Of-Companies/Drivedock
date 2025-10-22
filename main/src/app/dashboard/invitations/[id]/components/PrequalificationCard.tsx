@@ -30,13 +30,24 @@ export default function PrequalificationCard({ prequal, companyId, preApprovalCo
 
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-12 gap-6 lg:gap-8">
         <div className="lg:col-span-1 xl:col-span-4">
-          <OptionalsSection data={prequal || {}} company={company} />
+          <OptionalsSection 
+            data={prequal || {}} 
+            staged={{}}
+            onStage={() => {}}
+            isEditMode={false}
+            company={company} 
+          />
         </div>
         <div className="lg:col-span-1 xl:col-span-3">
           <MandatorySection data={prequal || {}} company={company} />
         </div>
         <div className="lg:col-span-2 xl:col-span-5">
-          <CategoriesSection data={prequal || {}} />
+          <CategoriesSection 
+            data={prequal || {}} 
+            staged={{}}
+            onStage={() => {}}
+            isEditMode={false}
+          />
         </div>
       </div>
     </div>

@@ -4,6 +4,8 @@ import React, { useState } from "react";
 import { useEditMode } from "@/app/dashboard/contract/[id]/components/EditModeContext";
 import { ITrafficConvictionEntry } from "@/types/applicationForm.types";
 import { Plus, X } from "lucide-react";
+import { formatInputDate } from "@/lib/utils/dateUtils";
+import { WithCopy } from "@/components/form/WithCopy";
 
 interface TrafficConvictionsSectionProps {
   data: ITrafficConvictionEntry[];
@@ -62,43 +64,30 @@ export default function TrafficConvictionsSection({
     onStage(updated);
   };
 
-  const formatInputDate = (date: string | Date) => {
-    if (!date) return "";
-    if (typeof date === "string") {
-      // Handle ISO date strings for HTML date input
-      try {
-        const dateObj = new Date(date);
-        if (isNaN(dateObj.getTime())) return "";
-        return dateObj.toISOString().split("T")[0];
-      } catch {
-        return "";
-      }
+  const formatDisplayDate = (date: string | Date) => {
+    if (!date) return "Not provided";
+    const s = String(date);
+
+    // If already plain date (yyyy-MM-dd), format directly without timezone conversion
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+      const [year, month, day] = s.split("-");
+      return `${month}/${day}/${year}`;
     }
-    return date.toISOString().split("T")[0];
+
+    // For ISO strings, use UTC methods to avoid timezone drift
+    try {
+      const dateObj = new Date(s);
+      if (isNaN(dateObj.getTime())) return s;
+
+      const year = dateObj.getUTCFullYear();
+      const month = String(dateObj.getUTCMonth() + 1).padStart(2, "0");
+      const day = String(dateObj.getUTCDate()).padStart(2, "0");
+      return `${month}/${day}/${year}`;
+    } catch {
+      return s;
+    }
   };
 
-  const formatDisplayDate = (date: string | Date) => {
-    if (!date) return "";
-    if (typeof date === "string") {
-      // Handle ISO date strings
-      try {
-        const dateObj = new Date(date);
-        if (isNaN(dateObj.getTime())) return date; // Return original if invalid
-        return dateObj.toLocaleDateString("en-CA", {
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-        });
-      } catch {
-        return date; // Return original if parsing fails
-      }
-    }
-    return date.toLocaleDateString("en-CA", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    });
-  };
 
   return (
     <section
@@ -193,65 +182,73 @@ export default function TrafficConvictionsSection({
           {localData.map((conviction, index) => (
             <div
               key={index}
-              className="grid grid-cols-4 gap-4 items-center relative"
+              className="grid grid-cols-4 gap-2 items-center relative"
             >
               {isEditMode ? (
                 <>
-                  <input
-                    type="date"
-                    value={formatInputDate(conviction.date)}
-                    onChange={(e) =>
-                      updateConviction(index, "date", e.target.value)
-                    }
-                    className="py-2 px-3 rounded-md border focus:ring-2 focus:outline-none transition-colors"
-                    style={{
-                      background: "var(--color-surface)",
-                      borderColor: "var(--color-outline)",
-                      color: "var(--color-on-surface)",
-                    }}
-                  />
-                  <input
-                    type="text"
-                    value={conviction.location}
-                    onChange={(e) =>
-                      updateConviction(index, "location", e.target.value)
-                    }
-                    placeholder="Location"
-                    className="py-2 px-3 rounded-md border focus:ring-2 focus:outline-none transition-colors"
-                    style={{
-                      background: "var(--color-surface)",
-                      borderColor: "var(--color-outline)",
-                      color: "var(--color-on-surface)",
-                    }}
-                  />
-                  <input
-                    type="text"
-                    value={conviction.charge}
-                    onChange={(e) =>
-                      updateConviction(index, "charge", e.target.value)
-                    }
-                    placeholder="Charge"
-                    className="py-2 px-3 rounded-md border focus:ring-2 focus:outline-none transition-colors"
-                    style={{
-                      background: "var(--color-surface)",
-                      borderColor: "var(--color-outline)",
-                      color: "var(--color-on-surface)",
-                    }}
-                  />
-                  <input
-                    type="text"
-                    value={conviction.penalty}
-                    onChange={(e) =>
-                      updateConviction(index, "penalty", e.target.value)
-                    }
-                    placeholder="Penalty"
-                    className="py-2 px-3 rounded-md border focus:ring-2 focus:outline-none transition-colors"
-                    style={{
-                      background: "var(--color-surface)",
-                      borderColor: "var(--color-outline)",
-                      color: "var(--color-on-surface)",
-                    }}
-                  />
+                  <WithCopy value={formatInputDate(conviction.date) || ""} label="Conviction date">
+                    <input
+                      type="date"
+                      value={formatInputDate(conviction.date)}
+                      onChange={(e) =>
+                        updateConviction(index, "date", e.target.value)
+                      }
+                      className="w-full py-2 px-3 rounded-md border focus:ring-2 focus:outline-none transition-colors pr-9"
+                      style={{
+                        background: "var(--color-surface)",
+                        borderColor: "var(--color-outline)",
+                        color: "var(--color-on-surface)",
+                      }}
+                    />
+                  </WithCopy>
+                  <WithCopy value={conviction.location || ""} label="Location">
+                    <input
+                      type="text"
+                      value={conviction.location}
+                      onChange={(e) =>
+                        updateConviction(index, "location", e.target.value)
+                      }
+                      placeholder="Location"
+                      className="w-full py-2 px-3 rounded-md border focus:ring-2 focus:outline-none transition-colors pr-10"
+                      style={{
+                        background: "var(--color-surface)",
+                        borderColor: "var(--color-outline)",
+                        color: "var(--color-on-surface)",
+                      }}
+                    />
+                  </WithCopy>
+                  <WithCopy value={conviction.charge || ""} label="Charge">
+                    <input
+                      type="text"
+                      value={conviction.charge}
+                      onChange={(e) =>
+                        updateConviction(index, "charge", e.target.value)
+                      }
+                      placeholder="Charge"
+                      className="w-full py-2 px-3 rounded-md border focus:ring-2 focus:outline-none transition-colors pr-10"
+                      style={{
+                        background: "var(--color-surface)",
+                        borderColor: "var(--color-outline)",
+                        color: "var(--color-on-surface)",
+                      }}
+                    />
+                  </WithCopy>
+                  <WithCopy value={conviction.penalty || ""} label="Penalty">
+                    <input
+                      type="text"
+                      value={conviction.penalty}
+                      onChange={(e) =>
+                        updateConviction(index, "penalty", e.target.value)
+                      }
+                      placeholder="Penalty"
+                      className="w-full py-2 px-3 rounded-md border focus:ring-2 focus:outline-none transition-colors pr-10"
+                      style={{
+                        background: "var(--color-surface)",
+                        borderColor: "var(--color-outline)",
+                        color: "var(--color-on-surface)",
+                      }}
+                    />
+                  </WithCopy>
                   <button
                     type="button"
                     onClick={() => removeConviction(index)}
@@ -262,30 +259,26 @@ export default function TrafficConvictionsSection({
                 </>
               ) : (
                 <>
-                  <div
-                    className="py-2 px-3"
-                    style={{ color: "var(--color-on-surface)" }}
-                  >
-                    {formatDisplayDate(conviction.date)}
-                  </div>
-                  <div
-                    className="py-2 px-3"
-                    style={{ color: "var(--color-on-surface)" }}
-                  >
-                    {conviction.location}
-                  </div>
-                  <div
-                    className="py-2 px-3"
-                    style={{ color: "var(--color-on-surface)" }}
-                  >
-                    {conviction.charge}
-                  </div>
-                  <div
-                    className="py-2 px-3"
-                    style={{ color: "var(--color-on-surface)" }}
-                  >
-                    {conviction.penalty}
-                  </div>
+                  <WithCopy value={formatInputDate(conviction.date) || ""} label="Conviction date">
+                    <div className="py-2 px-3 pr-10" style={{ color: "var(--color-on-surface)" }}>
+                      {formatDisplayDate(conviction.date)}
+                    </div>
+                  </WithCopy>
+                  <WithCopy value={conviction.location || ""} label="Location">
+                    <div className="py-2 px-3 pr-10" style={{ color: "var(--color-on-surface)" }}>
+                      {conviction.location || "Not provided"}
+                    </div>
+                  </WithCopy>
+                  <WithCopy value={conviction.charge || ""} label="Charge">
+                    <div className="py-2 px-3 pr-10" style={{ color: "var(--color-on-surface)" }}>
+                      {conviction.charge || "Not provided"}
+                    </div>
+                  </WithCopy>
+                  <WithCopy value={conviction.penalty || ""} label="Penalty">
+                    <div className="py-2 px-3 pr-10" style={{ color: "var(--color-on-surface)" }}>
+                      {conviction.penalty || "Not provided"}
+                    </div>
+                  </WithCopy>
                 </>
               )}
             </div>

@@ -8,8 +8,9 @@ import {
 import OnboardingPhotoGroup from "@/app/onboarding/components/OnboardingPhotoGroup";
 import { ES3Folder } from "@/types/aws.types";
 import { useFormContext, useWatch } from "react-hook-form";
-import { useMemo, useEffect } from "react";
+import { useMemo, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { DOC_ASPECTS } from "@/lib/docAspects";
 
 function RequiredBadge({ children = "Required" }) {
   return (
@@ -36,18 +37,35 @@ export default function EligibilityDocsSection({
   const passportType = useWatch({ name: "passportType" });
   const workAuthorizationType = useWatch({ name: "workAuthorizationType" });
 
+  // Track previous passport type to avoid clearing on mount
+  const prevPassportTypeRef = useRef<EPassportType | "" | undefined>(undefined);
+
   // Clear fields when passport type changes to maintain form state consistency
   useEffect(() => {
-    if (isCA && passportType === EPassportType.CANADIAN) {
-      // Clear work authorization type since it's not needed for Canadian passports
-      setValue("workAuthorizationType", undefined);
-      // Also clear US visa and PR/Permit photos since they're not needed for Canadian passports
-      setValue("usVisaPhotos", []);
-      setValue("prPermitCitizenshipPhotos", []);
-    } else if (isCA && passportType === EPassportType.OTHERS) {
-      // When switching to "Others", clear the work authorization type to force re-selection
-      setValue("workAuthorizationType", undefined);
+    if (!isCA) return;
+
+    const prev = prevPassportTypeRef.current;
+    const curr = passportType;
+
+    // Skip clearing on the initial mount (preserve prefilled values)
+    if (prev === undefined) {
+      prevPassportTypeRef.current = curr;
+      return;
     }
+
+    // Only react when the value truly changes
+    if (curr !== prev) {
+      if (curr === EPassportType.CANADIAN) {
+        setValue("workAuthorizationType", undefined, { shouldDirty: true, shouldValidate: true });
+        setValue("usVisaPhotos", [], { shouldDirty: true });
+        setValue("prPermitCitizenshipPhotos", [], { shouldDirty: true });
+      } else if (curr === EPassportType.OTHERS) {
+        // Clear only when switching *to* Others (not on mount)
+        setValue("workAuthorizationType", undefined, { shouldDirty: true, shouldValidate: true });
+      }
+    }
+
+    prevPassportTypeRef.current = curr;
   }, [isCA, passportType, setValue]);
 
   // Determine which fields to show based on passport type
@@ -105,6 +123,7 @@ export default function EligibilityDocsSection({
               description={t("form.step2.page4.fields.healthCardDescription", "Upload clear photos of both the front and back of your health card (e.g., Ontario Health Card).")}
               folder={ES3Folder.HEALTH_CARD_PHOTOS}
               maxPhotos={2}
+              aspect={DOC_ASPECTS.ID} // Standard health card ratio (1.6)
             />
           </div>
 
@@ -177,6 +196,7 @@ export default function EligibilityDocsSection({
                     description={t("form.step2.page4.fields.passportDescription", "Upload the passport bio/data page (with your photo) and the back cover page (e.g., Canadian or foreign passport).")}
                     folder={ES3Folder.PASSPORT_PHOTOS}
                     maxPhotos={2}
+                    aspect={DOC_ASPECTS.PASSPORT} // Passport bio page ratio (1.42)
                   />
                 </div>
               )}
@@ -202,6 +222,7 @@ export default function EligibilityDocsSection({
                     description={t("form.step2.page4.fields.usVisaDescription", "Upload clear photos of your valid US visa (e.g., visitor, work, or study visa pages).")}
                     folder={ES3Folder.US_VISA_PHOTOS}
                     maxPhotos={2}
+                    aspect={DOC_ASPECTS.PASSPORT} // Visa page ratio (1.42)
                   />
                 </div>
               )}
@@ -221,6 +242,7 @@ export default function EligibilityDocsSection({
                     description={t("form.step2.page4.fields.prPermitCitizenshipDescription", "Upload clear photos of your Permanent Resident card, Work/Study Permit, or Citizenship document (e.g., PR card front & back, Work Permit letter).")}
                     folder={ES3Folder.PR_CITIZENSHIP_PHOTOS}
                     maxPhotos={2}
+                    aspect={DOC_ASPECTS.ID} // Standard card ratio (1.6)
                   />
                 </div>
               )}
@@ -241,6 +263,7 @@ export default function EligibilityDocsSection({
               description={t("form.step2.page4.fields.medicalCertificationDescription", "Upload clear photos of your valid DOT Medical Certificate (front and back if applicable).")}
               folder={ES3Folder.MEDICAL_CERT_PHOTOS}
               maxPhotos={2}
+              aspect={null} // FREE aspect for medical documents
             />
           </div>
 
@@ -261,6 +284,7 @@ export default function EligibilityDocsSection({
                   description={t("form.step2.page4.fields.passportDescriptionUS", "Upload the passport bio/data page (with your photo) and the back cover page (e.g., US passport).")}
                   folder={ES3Folder.PASSPORT_PHOTOS}
                   maxPhotos={2}
+                  aspect={DOC_ASPECTS.PASSPORT} // Passport bio page ratio (1.42)
                 />
               </div>
 
@@ -274,6 +298,7 @@ export default function EligibilityDocsSection({
                   description={t("form.step2.page4.fields.greenCardCitizenshipDescription", "Upload clear photos of your Permanent Resident card or US Citizenship document (e.g., PR card front & back, Certificate of Naturalization).")}
                   folder={ES3Folder.PR_CITIZENSHIP_PHOTOS}
                   maxPhotos={2}
+                  aspect={DOC_ASPECTS.ID} // Standard card ratio (1.6)
                 />
               </div>
             </div>

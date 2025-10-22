@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Plus, Trash2, AlertCircle, Info, Check } from "lucide-react";
 import { formatInputDate } from "@/lib/utils/dateUtils";
+import { WithCopy } from "@/components/form/WithCopy";
 import {
   validateEmployments,
   type EmploymentValidationError,
@@ -50,14 +51,28 @@ export default function EmploymentForm({
   >([]);
   const [showValidationErrors, setShowValidationErrors] = useState(false);
 
-  const formatDate = (dateString: string | Date) => {
-    if (!dateString) return "";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      month: "2-digit",
-      day: "2-digit",
-      year: "numeric",
-    });
+  const formatDisplayDate = (date: string | Date) => {
+    if (!date) return "Not provided";
+    const s = String(date);
+
+    // If already plain date (yyyy-MM-dd), format directly without timezone conversion
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+      const [year, month, day] = s.split("-");
+      return `${month}/${day}/${year}`;
+    }
+
+    // For ISO strings, use UTC methods to avoid timezone drift
+    try {
+      const dateObj = new Date(s);
+      if (isNaN(dateObj.getTime())) return s;
+
+      const year = dateObj.getUTCFullYear();
+      const month = String(dateObj.getUTCMonth() + 1).padStart(2, "0");
+      const day = String(dateObj.getUTCDate()).padStart(2, "0");
+      return `${month}/${day}/${year}`;
+    } catch {
+      return s;
+    }
   };
 
   const addEmployment = () => {
@@ -255,31 +270,33 @@ export default function EmploymentForm({
                   </label>
                   {isEditMode ? (
                     <div className="space-y-1">
-                      <input
-                        type="text"
-                        value={
-                          staged.employments?.[index]?.employerName ||
-                          employment.employerName ||
-                          ""
-                        }
-                        onChange={(e) =>
-                          updateEmployment(
-                            index,
-                            "employerName",
-                            e.target.value
-                          )
-                        }
-                        className="py-2 px-3 mt-1 block w-full rounded-md border text-sm transition-colors focus:outline-none focus:shadow-md"
-                        style={{
-                          background: "var(--color-surface)",
-                          borderColor:
-                            getFieldErrors(index, "employerName").length > 0
-                              ? "var(--color-error)"
-                              : "var(--color-outline)",
-                          color: "var(--color-on-surface)",
-                        }}
-                        placeholder="Enter employer name"
-                      />
+                      <WithCopy value={staged.employments?.[index]?.employerName || employment.employerName || ""} label="Employer name">
+                        <input
+                          type="text"
+                          value={
+                            staged.employments?.[index]?.employerName ||
+                            employment.employerName ||
+                            ""
+                          }
+                          onChange={(e) =>
+                            updateEmployment(
+                              index,
+                              "employerName",
+                              e.target.value
+                            )
+                          }
+                          className="py-2 px-3 mt-1 block w-full rounded-md border text-sm transition-colors focus:outline-none focus:shadow-md pr-10"
+                          style={{
+                            background: "var(--color-surface)",
+                            borderColor:
+                              getFieldErrors(index, "employerName").length > 0
+                                ? "var(--color-error)"
+                                : "var(--color-outline)",
+                            color: "var(--color-on-surface)",
+                          }}
+                          placeholder="Enter employer name"
+                        />
+                      </WithCopy>
                       {getFieldErrors(index, "employerName").map(
                         (error, errorIndex) => (
                           <p
@@ -293,20 +310,22 @@ export default function EmploymentForm({
                       )}
                     </div>
                   ) : (
-                    <div
-                      className="p-3 rounded-lg border"
-                      style={{
-                        background: "var(--color-surface)",
-                        borderColor: "var(--color-outline)",
-                      }}
-                    >
-                      <span
-                        className="text-sm"
-                        style={{ color: "var(--color-on-surface)" }}
+                    <WithCopy value={employment.employerName || ""} label="Employer name">
+                      <div
+                        className="p-3 rounded-lg border pr-10"
+                        style={{
+                          background: "var(--color-surface)",
+                          borderColor: "var(--color-outline)",
+                        }}
                       >
-                        {employment.employerName || "Not provided"}
-                      </span>
-                    </div>
+                        <span
+                          className="text-sm"
+                          style={{ color: "var(--color-on-surface)" }}
+                        >
+                          {employment.employerName || "Not provided"}
+                        </span>
+                      </div>
+                    </WithCopy>
                   )}
                 </div>
 
@@ -320,35 +339,37 @@ export default function EmploymentForm({
                   </label>
                   {isEditMode ? (
                     <div className="space-y-1">
-                      <input
-                        type="text"
-                        value={
-                          staged.employments?.[index]?.supervisorName ||
-                          employment.supervisorName ||
-                          ""
-                        }
-                        onChange={(e) =>
-                          updateEmployment(
-                            index,
-                            "supervisorName",
-                            e.target.value
-                          )
-                        }
-                        className={`w-full p-3 rounded-lg border text-sm transition-colors ${
-                          getFieldErrors(index, "supervisorName").length > 0
-                            ? "border-red-500"
-                            : ""
-                        }`}
-                        style={{
-                          background: "var(--color-surface)",
-                          borderColor:
+                      <WithCopy value={staged.employments?.[index]?.supervisorName || employment.supervisorName || ""} label="Supervisor name">
+                        <input
+                          type="text"
+                          value={
+                            staged.employments?.[index]?.supervisorName ||
+                            employment.supervisorName ||
+                            ""
+                          }
+                          onChange={(e) =>
+                            updateEmployment(
+                              index,
+                              "supervisorName",
+                              e.target.value
+                            )
+                          }
+                          className={`w-full p-3 rounded-lg border text-sm transition-colors pr-10 ${
                             getFieldErrors(index, "supervisorName").length > 0
-                              ? "var(--color-error)"
-                              : "var(--color-outline)",
-                          color: "var(--color-on-surface)",
-                        }}
-                        placeholder="Enter supervisor name"
-                      />
+                              ? "border-red-500"
+                              : ""
+                          }`}
+                          style={{
+                            background: "var(--color-surface)",
+                            borderColor:
+                              getFieldErrors(index, "supervisorName").length > 0
+                                ? "var(--color-error)"
+                                : "var(--color-outline)",
+                            color: "var(--color-on-surface)",
+                          }}
+                          placeholder="Enter supervisor name"
+                        />
+                      </WithCopy>
                       {getFieldErrors(index, "supervisorName").map(
                         (error, errorIndex) => (
                           <p
@@ -362,20 +383,22 @@ export default function EmploymentForm({
                       )}
                     </div>
                   ) : (
-                    <div
-                      className="p-3 rounded-lg border"
-                      style={{
-                        background: "var(--color-surface)",
-                        borderColor: "var(--color-outline)",
-                      }}
-                    >
-                      <span
-                        className="text-sm"
-                        style={{ color: "var(--color-on-surface)" }}
+                    <WithCopy value={employment.supervisorName || ""} label="Supervisor name">
+                      <div
+                        className="p-3 rounded-lg border pr-10"
+                        style={{
+                          background: "var(--color-surface)",
+                          borderColor: "var(--color-outline)",
+                        }}
                       >
-                        {employment.supervisorName || "Not provided"}
-                      </span>
-                    </div>
+                        <span
+                          className="text-sm"
+                          style={{ color: "var(--color-on-surface)" }}
+                        >
+                          {employment.supervisorName || "Not provided"}
+                        </span>
+                      </div>
+                    </WithCopy>
                   )}
                 </div>
 
@@ -389,31 +412,33 @@ export default function EmploymentForm({
                   </label>
                   {isEditMode ? (
                     <div className="space-y-1">
-                      <input
-                        type="text"
-                        value={
-                          staged.employments?.[index]?.address ||
-                          employment.address ||
-                          ""
-                        }
-                        onChange={(e) =>
-                          updateEmployment(index, "address", e.target.value)
-                        }
-                        className={`w-full p-3 rounded-lg border text-sm transition-colors ${
-                          getFieldErrors(index, "address").length > 0
-                            ? "border-red-500"
-                            : ""
-                        }`}
-                        style={{
-                          background: "var(--color-surface)",
-                          borderColor:
+                      <WithCopy value={staged.employments?.[index]?.address || employment.address || ""} label="Address">
+                        <input
+                          type="text"
+                          value={
+                            staged.employments?.[index]?.address ||
+                            employment.address ||
+                            ""
+                          }
+                          onChange={(e) =>
+                            updateEmployment(index, "address", e.target.value)
+                          }
+                          className={`w-full p-3 rounded-lg border text-sm transition-colors pr-10 ${
                             getFieldErrors(index, "address").length > 0
-                              ? "var(--color-error)"
-                              : "var(--color-outline)",
-                          color: "var(--color-on-surface)",
-                        }}
-                        placeholder="Enter street address"
-                      />
+                              ? "border-red-500"
+                              : ""
+                          }`}
+                          style={{
+                            background: "var(--color-surface)",
+                            borderColor:
+                              getFieldErrors(index, "address").length > 0
+                                ? "var(--color-error)"
+                                : "var(--color-outline)",
+                            color: "var(--color-on-surface)",
+                          }}
+                          placeholder="Enter street address"
+                        />
+                      </WithCopy>
                       {getFieldErrors(index, "address").map(
                         (error, errorIndex) => (
                           <p
@@ -427,20 +452,22 @@ export default function EmploymentForm({
                       )}
                     </div>
                   ) : (
-                    <div
-                      className="p-3 rounded-lg border"
-                      style={{
-                        background: "var(--color-surface)",
-                        borderColor: "var(--color-outline)",
-                      }}
-                    >
-                      <span
-                        className="text-sm"
-                        style={{ color: "var(--color-on-surface)" }}
+                    <WithCopy value={employment.address || ""} label="Address">
+                      <div
+                        className="p-3 rounded-lg border pr-10"
+                        style={{
+                          background: "var(--color-surface)",
+                          borderColor: "var(--color-outline)",
+                        }}
                       >
-                        {employment.address || "Not provided"}
-                      </span>
-                    </div>
+                        <span
+                          className="text-sm"
+                          style={{ color: "var(--color-on-surface)" }}
+                        >
+                          {employment.address || "Not provided"}
+                        </span>
+                      </div>
+                    </WithCopy>
                   )}
                 </div>
 
@@ -454,31 +481,33 @@ export default function EmploymentForm({
                   </label>
                   {isEditMode ? (
                     <div className="space-y-1">
-                      <input
-                        type="text"
-                        value={
-                          staged.employments?.[index]?.postalCode ||
-                          employment.postalCode ||
-                          ""
-                        }
-                        onChange={(e) =>
-                          updateEmployment(index, "postalCode", e.target.value)
-                        }
-                        className={`w-full p-3 rounded-lg border text-sm transition-colors ${
-                          getFieldErrors(index, "postalCode").length > 0
-                            ? "border-red-500"
-                            : ""
-                        }`}
-                        style={{
-                          background: "var(--color-surface)",
-                          borderColor:
+                      <WithCopy value={staged.employments?.[index]?.postalCode || employment.postalCode || ""} label="Postal code">
+                        <input
+                          type="text"
+                          value={
+                            staged.employments?.[index]?.postalCode ||
+                            employment.postalCode ||
+                            ""
+                          }
+                          onChange={(e) =>
+                            updateEmployment(index, "postalCode", e.target.value)
+                          }
+                          className={`w-full p-3 rounded-lg border text-sm transition-colors pr-10 ${
                             getFieldErrors(index, "postalCode").length > 0
-                              ? "var(--color-error)"
-                              : "var(--color-outline)",
-                          color: "var(--color-on-surface)",
-                        }}
-                        placeholder="Enter postal code"
-                      />
+                              ? "border-red-500"
+                              : ""
+                          }`}
+                          style={{
+                            background: "var(--color-surface)",
+                            borderColor:
+                              getFieldErrors(index, "postalCode").length > 0
+                                ? "var(--color-error)"
+                                : "var(--color-outline)",
+                            color: "var(--color-on-surface)",
+                          }}
+                          placeholder="Enter postal code"
+                        />
+                      </WithCopy>
                       {getFieldErrors(index, "postalCode").map(
                         (error, errorIndex) => (
                           <p
@@ -492,20 +521,22 @@ export default function EmploymentForm({
                       )}
                     </div>
                   ) : (
-                    <div
-                      className="p-3 rounded-lg border"
-                      style={{
-                        background: "var(--color-surface)",
-                        borderColor: "var(--color-outline)",
-                      }}
-                    >
-                      <span
-                        className="text-sm"
-                        style={{ color: "var(--color-on-surface)" }}
+                    <WithCopy value={employment.postalCode || ""} label="Postal code">
+                      <div
+                        className="p-3 rounded-lg border pr-10"
+                        style={{
+                          background: "var(--color-surface)",
+                          borderColor: "var(--color-outline)",
+                        }}
                       >
-                        {employment.postalCode || "Not provided"}
-                      </span>
-                    </div>
+                        <span
+                          className="text-sm"
+                          style={{ color: "var(--color-on-surface)" }}
+                        >
+                          {employment.postalCode || "Not provided"}
+                        </span>
+                      </div>
+                    </WithCopy>
                   )}
                 </div>
 
@@ -519,31 +550,33 @@ export default function EmploymentForm({
                   </label>
                   {isEditMode ? (
                     <div className="space-y-1">
-                      <input
-                        type="text"
-                        value={
-                          staged.employments?.[index]?.city ||
-                          employment.city ||
-                          ""
-                        }
-                        onChange={(e) =>
-                          updateEmployment(index, "city", e.target.value)
-                        }
-                        className={`w-full p-3 rounded-lg border text-sm transition-colors ${
-                          getFieldErrors(index, "city").length > 0
-                            ? "border-red-500"
-                            : ""
-                        }`}
-                        style={{
-                          background: "var(--color-surface)",
-                          borderColor:
+                      <WithCopy value={staged.employments?.[index]?.city || employment.city || ""} label="City">
+                        <input
+                          type="text"
+                          value={
+                            staged.employments?.[index]?.city ||
+                            employment.city ||
+                            ""
+                          }
+                          onChange={(e) =>
+                            updateEmployment(index, "city", e.target.value)
+                          }
+                          className={`w-full p-3 rounded-lg border text-sm transition-colors pr-10 ${
                             getFieldErrors(index, "city").length > 0
-                              ? "var(--color-error)"
-                              : "var(--color-outline)",
-                          color: "var(--color-on-surface)",
-                        }}
-                        placeholder="Enter city"
-                      />
+                              ? "border-red-500"
+                              : ""
+                          }`}
+                          style={{
+                            background: "var(--color-surface)",
+                            borderColor:
+                              getFieldErrors(index, "city").length > 0
+                                ? "var(--color-error)"
+                                : "var(--color-outline)",
+                            color: "var(--color-on-surface)",
+                          }}
+                          placeholder="Enter city"
+                        />
+                      </WithCopy>
                       {getFieldErrors(index, "city").map(
                         (error, errorIndex) => (
                           <p
@@ -557,20 +590,22 @@ export default function EmploymentForm({
                       )}
                     </div>
                   ) : (
-                    <div
-                      className="p-3 rounded-lg border"
-                      style={{
-                        background: "var(--color-surface)",
-                        borderColor: "var(--color-outline)",
-                      }}
-                    >
-                      <span
-                        className="text-sm"
-                        style={{ color: "var(--color-on-surface)" }}
+                    <WithCopy value={employment.city || ""} label="City">
+                      <div
+                        className="p-3 rounded-lg border pr-10"
+                        style={{
+                          background: "var(--color-surface)",
+                          borderColor: "var(--color-outline)",
+                        }}
                       >
-                        {employment.city || "Not provided"}
-                      </span>
-                    </div>
+                        <span
+                          className="text-sm"
+                          style={{ color: "var(--color-on-surface)" }}
+                        >
+                          {employment.city || "Not provided"}
+                        </span>
+                      </div>
+                    </WithCopy>
                   )}
                 </div>
 
@@ -584,35 +619,37 @@ export default function EmploymentForm({
                   </label>
                   {isEditMode ? (
                     <div className="space-y-1">
-                      <input
-                        type="text"
-                        value={
-                          staged.employments?.[index]?.stateOrProvince ||
-                          employment.stateOrProvince ||
-                          ""
-                        }
-                        onChange={(e) =>
-                          updateEmployment(
-                            index,
-                            "stateOrProvince",
-                            e.target.value
-                          )
-                        }
-                        className={`w-full p-3 rounded-lg border text-sm transition-colors ${
-                          getFieldErrors(index, "stateOrProvince").length > 0
-                            ? "border-red-500"
-                            : ""
-                        }`}
-                        style={{
-                          background: "var(--color-surface)",
-                          borderColor:
+                      <WithCopy value={staged.employments?.[index]?.stateOrProvince || employment.stateOrProvince || ""} label="State/Province">
+                        <input
+                          type="text"
+                          value={
+                            staged.employments?.[index]?.stateOrProvince ||
+                            employment.stateOrProvince ||
+                            ""
+                          }
+                          onChange={(e) =>
+                            updateEmployment(
+                              index,
+                              "stateOrProvince",
+                              e.target.value
+                            )
+                          }
+                          className={`w-full p-3 rounded-lg border text-sm transition-colors pr-10 ${
                             getFieldErrors(index, "stateOrProvince").length > 0
-                              ? "var(--color-error)"
-                              : "var(--color-outline)",
-                          color: "var(--color-on-surface)",
-                        }}
-                        placeholder="Enter state or province"
-                      />
+                              ? "border-red-500"
+                              : ""
+                          }`}
+                          style={{
+                            background: "var(--color-surface)",
+                            borderColor:
+                              getFieldErrors(index, "stateOrProvince").length > 0
+                                ? "var(--color-error)"
+                                : "var(--color-outline)",
+                            color: "var(--color-on-surface)",
+                          }}
+                          placeholder="Enter state or province"
+                        />
+                      </WithCopy>
                       {getFieldErrors(index, "stateOrProvince").map(
                         (error, errorIndex) => (
                           <p
@@ -626,20 +663,22 @@ export default function EmploymentForm({
                       )}
                     </div>
                   ) : (
-                    <div
-                      className="p-3 rounded-lg border"
-                      style={{
-                        background: "var(--color-surface)",
-                        borderColor: "var(--color-outline)",
-                      }}
-                    >
-                      <span
-                        className="text-sm"
-                        style={{ color: "var(--color-on-surface)" }}
+                    <WithCopy value={employment.stateOrProvince || ""} label="State/Province">
+                      <div
+                        className="p-3 rounded-lg border pr-10"
+                        style={{
+                          background: "var(--color-surface)",
+                          borderColor: "var(--color-outline)",
+                        }}
                       >
-                        {employment.stateOrProvince || "Not provided"}
-                      </span>
-                    </div>
+                        <span
+                          className="text-sm"
+                          style={{ color: "var(--color-on-surface)" }}
+                        >
+                          {employment.stateOrProvince || "Not provided"}
+                        </span>
+                      </div>
+                    </WithCopy>
                   )}
                 </div>
 
@@ -653,31 +692,33 @@ export default function EmploymentForm({
                   </label>
                   {isEditMode ? (
                     <div className="space-y-1">
-                      <input
-                        type="tel"
-                        value={
-                          staged.employments?.[index]?.phone1 ||
-                          employment.phone1 ||
-                          ""
-                        }
-                        onChange={(e) =>
-                          updateEmployment(index, "phone1", e.target.value)
-                        }
-                        className={`w-full p-3 rounded-lg border text-sm transition-colors ${
-                          getFieldErrors(index, "phone1").length > 0
-                            ? "border-red-500"
-                            : ""
-                        }`}
-                        style={{
-                          background: "var(--color-surface)",
-                          borderColor:
+                      <WithCopy value={staged.employments?.[index]?.phone1 || employment.phone1 || ""} label="Phone 1">
+                        <input
+                          type="tel"
+                          value={
+                            staged.employments?.[index]?.phone1 ||
+                            employment.phone1 ||
+                            ""
+                          }
+                          onChange={(e) =>
+                            updateEmployment(index, "phone1", e.target.value)
+                          }
+                          className={`w-full p-3 rounded-lg border text-sm transition-colors pr-10 ${
                             getFieldErrors(index, "phone1").length > 0
-                              ? "var(--color-error)"
-                              : "var(--color-outline)",
-                          color: "var(--color-on-surface)",
-                        }}
-                        placeholder="Enter primary phone number"
-                      />
+                              ? "border-red-500"
+                              : ""
+                          }`}
+                          style={{
+                            background: "var(--color-surface)",
+                            borderColor:
+                              getFieldErrors(index, "phone1").length > 0
+                                ? "var(--color-error)"
+                                : "var(--color-outline)",
+                            color: "var(--color-on-surface)",
+                          }}
+                          placeholder="Enter primary phone number"
+                        />
+                      </WithCopy>
                       {getFieldErrors(index, "phone1").map(
                         (error, errorIndex) => (
                           <p
@@ -691,20 +732,22 @@ export default function EmploymentForm({
                       )}
                     </div>
                   ) : (
-                    <div
-                      className="p-3 rounded-lg border"
-                      style={{
-                        background: "var(--color-surface)",
-                        borderColor: "var(--color-outline)",
-                      }}
-                    >
-                      <span
-                        className="text-sm"
-                        style={{ color: "var(--color-on-surface)" }}
+                    <WithCopy value={employment.phone1 || ""} label="Phone 1">
+                      <div
+                        className="p-3 rounded-lg border pr-10"
+                        style={{
+                          background: "var(--color-surface)",
+                          borderColor: "var(--color-outline)",
+                        }}
                       >
-                        {employment.phone1 || "Not provided"}
-                      </span>
-                    </div>
+                        <span
+                          className="text-sm"
+                          style={{ color: "var(--color-on-surface)" }}
+                        >
+                          {employment.phone1 || "Not provided"}
+                        </span>
+                      </div>
+                    </WithCopy>
                   )}
                 </div>
 
@@ -717,39 +760,43 @@ export default function EmploymentForm({
                     Phone 2 (Optional)
                   </label>
                   {isEditMode ? (
-                    <input
-                      type="tel"
-                      value={
-                        staged.employments?.[index]?.phone2 ||
-                        employment.phone2 ||
-                        ""
-                      }
-                      onChange={(e) =>
-                        updateEmployment(index, "phone2", e.target.value)
-                      }
-                      className="w-full p-3 rounded-lg border text-sm transition-colors"
-                      style={{
-                        background: "var(--color-surface)",
-                        borderColor: "var(--color-outline)",
-                        color: "var(--color-on-surface)",
-                      }}
-                      placeholder="Enter secondary phone number"
-                    />
+                    <WithCopy value={staged.employments?.[index]?.phone2 || employment.phone2 || ""} label="Phone 2">
+                      <input
+                        type="tel"
+                        value={
+                          staged.employments?.[index]?.phone2 ||
+                          employment.phone2 ||
+                          ""
+                        }
+                        onChange={(e) =>
+                          updateEmployment(index, "phone2", e.target.value)
+                        }
+                        className="w-full p-3 rounded-lg border text-sm transition-colors pr-10"
+                        style={{
+                          background: "var(--color-surface)",
+                          borderColor: "var(--color-outline)",
+                          color: "var(--color-on-surface)",
+                        }}
+                        placeholder="Enter secondary phone number"
+                      />
+                    </WithCopy>
                   ) : (
-                    <div
-                      className="p-3 rounded-lg border"
-                      style={{
-                        background: "var(--color-surface)",
-                        borderColor: "var(--color-outline)",
-                      }}
-                    >
-                      <span
-                        className="text-sm"
-                        style={{ color: "var(--color-on-surface)" }}
+                    <WithCopy value={employment.phone2 || ""} label="Phone 2">
+                      <div
+                        className="p-3 rounded-lg border pr-10"
+                        style={{
+                          background: "var(--color-surface)",
+                          borderColor: "var(--color-outline)",
+                        }}
                       >
-                        {employment.phone2 || "Not provided"}
-                      </span>
-                    </div>
+                        <span
+                          className="text-sm"
+                          style={{ color: "var(--color-on-surface)" }}
+                        >
+                          {employment.phone2 || "Not provided"}
+                        </span>
+                      </div>
+                    </WithCopy>
                   )}
                 </div>
 
@@ -763,31 +810,33 @@ export default function EmploymentForm({
                   </label>
                   {isEditMode ? (
                     <div className="space-y-1">
-                      <input
-                        type="email"
-                        value={
-                          staged.employments?.[index]?.email ||
-                          employment.email ||
-                          ""
-                        }
-                        onChange={(e) =>
-                          updateEmployment(index, "email", e.target.value)
-                        }
-                        className={`w-full p-3 rounded-lg border text-sm transition-colors ${
-                          getFieldErrors(index, "email").length > 0
-                            ? "border-red-500"
-                            : ""
-                        }`}
-                        style={{
-                          background: "var(--color-surface)",
-                          borderColor:
+                      <WithCopy value={staged.employments?.[index]?.email || employment.email || ""} label="Email">
+                        <input
+                          type="email"
+                          value={
+                            staged.employments?.[index]?.email ||
+                            employment.email ||
+                            ""
+                          }
+                          onChange={(e) =>
+                            updateEmployment(index, "email", e.target.value)
+                          }
+                          className={`w-full p-3 rounded-lg border text-sm transition-colors pr-10 ${
                             getFieldErrors(index, "email").length > 0
-                              ? "var(--color-error)"
-                              : "var(--color-outline)",
-                          color: "var(--color-on-surface)",
-                        }}
-                        placeholder="Enter email address"
-                      />
+                              ? "border-red-500"
+                              : ""
+                          }`}
+                          style={{
+                            background: "var(--color-surface)",
+                            borderColor:
+                              getFieldErrors(index, "email").length > 0
+                                ? "var(--color-error)"
+                                : "var(--color-outline)",
+                            color: "var(--color-on-surface)",
+                          }}
+                          placeholder="Enter email address"
+                        />
+                      </WithCopy>
                       {getFieldErrors(index, "email").map(
                         (error, errorIndex) => (
                           <p
@@ -801,20 +850,22 @@ export default function EmploymentForm({
                       )}
                     </div>
                   ) : (
-                    <div
-                      className="p-3 rounded-lg border"
-                      style={{
-                        background: "var(--color-surface)",
-                        borderColor: "var(--color-outline)",
-                      }}
-                    >
-                      <span
-                        className="text-sm"
-                        style={{ color: "var(--color-on-surface)" }}
+                    <WithCopy value={employment.email || ""} label="Email">
+                      <div
+                        className="p-3 rounded-lg border pr-10"
+                        style={{
+                          background: "var(--color-surface)",
+                          borderColor: "var(--color-outline)",
+                        }}
                       >
-                        {employment.email || "Not provided"}
-                      </span>
-                    </div>
+                        <span
+                          className="text-sm"
+                          style={{ color: "var(--color-on-surface)" }}
+                        >
+                          {employment.email || "Not provided"}
+                        </span>
+                      </div>
+                    </WithCopy>
                   )}
                 </div>
 
@@ -828,35 +879,37 @@ export default function EmploymentForm({
                   </label>
                   {isEditMode ? (
                     <div className="space-y-1">
-                      <input
-                        type="text"
-                        value={
-                          staged.employments?.[index]?.positionHeld ||
-                          employment.positionHeld ||
-                          ""
-                        }
-                        onChange={(e) =>
-                          updateEmployment(
-                            index,
-                            "positionHeld",
-                            e.target.value
-                          )
-                        }
-                        className={`w-full p-3 rounded-lg border text-sm transition-colors ${
-                          getFieldErrors(index, "positionHeld").length > 0
-                            ? "border-red-500"
-                            : ""
-                        }`}
-                        style={{
-                          background: "var(--color-surface)",
-                          borderColor:
+                      <WithCopy value={staged.employments?.[index]?.positionHeld || employment.positionHeld || ""} label="Position held">
+                        <input
+                          type="text"
+                          value={
+                            staged.employments?.[index]?.positionHeld ||
+                            employment.positionHeld ||
+                            ""
+                          }
+                          onChange={(e) =>
+                            updateEmployment(
+                              index,
+                              "positionHeld",
+                              e.target.value
+                            )
+                          }
+                          className={`w-full p-3 rounded-lg border text-sm transition-colors pr-10 ${
                             getFieldErrors(index, "positionHeld").length > 0
-                              ? "var(--color-error)"
-                              : "var(--color-outline)",
-                          color: "var(--color-on-surface)",
-                        }}
-                        placeholder="Enter position held"
-                      />
+                              ? "border-red-500"
+                              : ""
+                          }`}
+                          style={{
+                            background: "var(--color-surface)",
+                            borderColor:
+                              getFieldErrors(index, "positionHeld").length > 0
+                                ? "var(--color-error)"
+                                : "var(--color-outline)",
+                            color: "var(--color-on-surface)",
+                          }}
+                          placeholder="Enter position held"
+                        />
+                      </WithCopy>
                       {getFieldErrors(index, "positionHeld").map(
                         (error, errorIndex) => (
                           <p
@@ -870,20 +923,22 @@ export default function EmploymentForm({
                       )}
                     </div>
                   ) : (
-                    <div
-                      className="p-3 rounded-lg border"
-                      style={{
-                        background: "var(--color-surface)",
-                        borderColor: "var(--color-outline)",
-                      }}
-                    >
-                      <span
-                        className="text-sm"
-                        style={{ color: "var(--color-on-surface)" }}
+                    <WithCopy value={employment.positionHeld || ""} label="Position held">
+                      <div
+                        className="p-3 rounded-lg border pr-10"
+                        style={{
+                          background: "var(--color-surface)",
+                          borderColor: "var(--color-outline)",
+                        }}
                       >
-                        {employment.positionHeld || "Not provided"}
-                      </span>
-                    </div>
+                        <span
+                          className="text-sm"
+                          style={{ color: "var(--color-on-surface)" }}
+                        >
+                          {employment.positionHeld || "Not provided"}
+                        </span>
+                      </div>
+                    </WithCopy>
                   )}
                 </div>
 
@@ -897,30 +952,32 @@ export default function EmploymentForm({
                   </label>
                   {isEditMode ? (
                     <div className="space-y-1">
-                      <input
-                        type="date"
-                        value={
-                          formatInputDate(
-                            staged.employments?.[index]?.from || employment.from
-                          ) || ""
-                        }
-                        onChange={(e) =>
-                          updateEmployment(index, "from", e.target.value)
-                        }
-                        className={`w-full p-3 rounded-lg border text-sm transition-colors ${
-                          getFieldErrors(index, "from").length > 0
-                            ? "border-red-500"
-                            : ""
-                        }`}
-                        style={{
-                          background: "var(--color-surface)",
-                          borderColor:
+                      <WithCopy value={formatInputDate(staged.employments?.[index]?.from || employment.from) || ""} label="From date">
+                        <input
+                          type="date"
+                          value={
+                            formatInputDate(
+                              staged.employments?.[index]?.from || employment.from
+                            ) || ""
+                          }
+                          onChange={(e) =>
+                            updateEmployment(index, "from", e.target.value)
+                          }
+                          className={`w-full p-3 rounded-lg border text-sm transition-colors pr-10 ${
                             getFieldErrors(index, "from").length > 0
-                              ? "var(--color-error)"
-                              : "var(--color-outline)",
-                          color: "var(--color-on-surface)",
-                        }}
-                      />
+                              ? "border-red-500"
+                              : ""
+                          }`}
+                          style={{
+                            background: "var(--color-surface)",
+                            borderColor:
+                              getFieldErrors(index, "from").length > 0
+                                ? "var(--color-error)"
+                                : "var(--color-outline)",
+                            color: "var(--color-on-surface)",
+                          }}
+                        />
+                      </WithCopy>
                       {getFieldErrors(index, "from").map(
                         (error, errorIndex) => (
                           <p
@@ -934,22 +991,22 @@ export default function EmploymentForm({
                       )}
                     </div>
                   ) : (
-                    <div
-                      className="p-3 rounded-lg border"
-                      style={{
-                        background: "var(--color-surface)",
-                        borderColor: "var(--color-outline)",
-                      }}
-                    >
-                      <span
-                        className="text-sm"
-                        style={{ color: "var(--color-on-surface)" }}
+                    <WithCopy value={formatInputDate(employment.from) || ""} label="From date">
+                      <div
+                        className="p-3 rounded-lg border pr-10"
+                        style={{
+                          background: "var(--color-surface)",
+                          borderColor: "var(--color-outline)",
+                        }}
                       >
-                        {employment.from
-                          ? formatDate(employment.from)
-                          : "Not provided"}
-                      </span>
-                    </div>
+                        <span
+                          className="text-sm"
+                          style={{ color: "var(--color-on-surface)" }}
+                        >
+                          {formatDisplayDate(employment.from)}
+                        </span>
+                      </div>
+                    </WithCopy>
                   )}
                 </div>
 
@@ -963,30 +1020,32 @@ export default function EmploymentForm({
                   </label>
                   {isEditMode ? (
                     <div className="space-y-1">
-                      <input
-                        type="date"
-                        value={
-                          formatInputDate(
-                            staged.employments?.[index]?.to || employment.to
-                          ) || ""
-                        }
-                        onChange={(e) =>
-                          updateEmployment(index, "to", e.target.value)
-                        }
-                        className={`w-full p-3 rounded-lg border text-sm transition-colors ${
-                          getFieldErrors(index, "to").length > 0
-                            ? "border-red-500"
-                            : ""
-                        }`}
-                        style={{
-                          background: "var(--color-surface)",
-                          borderColor:
+                      <WithCopy value={formatInputDate(staged.employments?.[index]?.to || employment.to) || ""} label="To date">
+                        <input
+                          type="date"
+                          value={
+                            formatInputDate(
+                              staged.employments?.[index]?.to || employment.to
+                            ) || ""
+                          }
+                          onChange={(e) =>
+                            updateEmployment(index, "to", e.target.value)
+                          }
+                          className={`w-full p-3 rounded-lg border text-sm transition-colors pr-10 ${
                             getFieldErrors(index, "to").length > 0
-                              ? "var(--color-error)"
-                              : "var(--color-outline)",
-                          color: "var(--color-on-surface)",
-                        }}
-                      />
+                              ? "border-red-500"
+                              : ""
+                          }`}
+                          style={{
+                            background: "var(--color-surface)",
+                            borderColor:
+                              getFieldErrors(index, "to").length > 0
+                                ? "var(--color-error)"
+                                : "var(--color-outline)",
+                            color: "var(--color-on-surface)",
+                          }}
+                        />
+                      </WithCopy>
                       {getFieldErrors(index, "to").map((error, errorIndex) => (
                         <p
                           key={errorIndex}
@@ -998,22 +1057,22 @@ export default function EmploymentForm({
                       ))}
                     </div>
                   ) : (
-                    <div
-                      className="p-3 rounded-lg border"
-                      style={{
-                        background: "var(--color-surface)",
-                        borderColor: "var(--color-outline)",
-                      }}
-                    >
-                      <span
-                        className="text-sm"
-                        style={{ color: "var(--color-on-surface)" }}
+                    <WithCopy value={formatInputDate(employment.to) || ""} label="To date">
+                      <div
+                        className="p-3 rounded-lg border pr-10"
+                        style={{
+                          background: "var(--color-surface)",
+                          borderColor: "var(--color-outline)",
+                        }}
                       >
-                        {employment.to
-                          ? formatDate(employment.to)
-                          : "Not provided"}
-                      </span>
-                    </div>
+                        <span
+                          className="text-sm"
+                          style={{ color: "var(--color-on-surface)" }}
+                        >
+                          {formatDisplayDate(employment.to)}
+                        </span>
+                      </div>
+                    </WithCopy>
                   )}
                 </div>
 
@@ -1027,31 +1086,33 @@ export default function EmploymentForm({
                   </label>
                   {isEditMode ? (
                     <div className="space-y-1">
-                      <input
-                        type="text"
-                        value={
-                          staged.employments?.[index]?.salary ||
-                          employment.salary ||
-                          ""
-                        }
-                        onChange={(e) =>
-                          updateEmployment(index, "salary", e.target.value)
-                        }
-                        className={`w-full p-3 rounded-lg border text-sm transition-colors ${
-                          getFieldErrors(index, "salary").length > 0
-                            ? "border-red-500"
-                            : ""
-                        }`}
-                        style={{
-                          background: "var(--color-surface)",
-                          borderColor:
+                      <WithCopy value={staged.employments?.[index]?.salary || employment.salary || ""} label="Salary">
+                        <input
+                          type="text"
+                          value={
+                            staged.employments?.[index]?.salary ||
+                            employment.salary ||
+                            ""
+                          }
+                          onChange={(e) =>
+                            updateEmployment(index, "salary", e.target.value)
+                          }
+                          className={`w-full p-3 rounded-lg border text-sm transition-colors pr-10 ${
                             getFieldErrors(index, "salary").length > 0
-                              ? "var(--color-error)"
-                              : "var(--color-outline)",
-                          color: "var(--color-on-surface)",
-                        }}
-                        placeholder="$0.50/mile or $25/hr"
-                      />
+                              ? "border-red-500"
+                              : ""
+                          }`}
+                          style={{
+                            background: "var(--color-surface)",
+                            borderColor:
+                              getFieldErrors(index, "salary").length > 0
+                                ? "var(--color-error)"
+                                : "var(--color-outline)",
+                            color: "var(--color-on-surface)",
+                          }}
+                          placeholder="$0.50/mile or $25/hr"
+                        />
+                      </WithCopy>
                       {getFieldErrors(index, "salary").map(
                         (error, errorIndex) => (
                           <p
@@ -1065,22 +1126,24 @@ export default function EmploymentForm({
                       )}
                     </div>
                   ) : (
-                    <div
-                      className="p-3 rounded-lg border"
-                      style={{
-                        background: "var(--color-surface)",
-                        borderColor: "var(--color-outline)",
-                      }}
-                    >
-                      <span
-                        className="text-sm"
-                        style={{ color: "var(--color-on-surface)" }}
+                    <WithCopy value={employment.salary ? String(employment.salary) : ""} label="Salary">
+                      <div
+                        className="p-3 rounded-lg border pr-10"
+                        style={{
+                          background: "var(--color-surface)",
+                          borderColor: "var(--color-outline)",
+                        }}
                       >
-                        {employment.salary
-                          ? String(employment.salary)
-                          : "Not provided"}
-                      </span>
-                    </div>
+                        <span
+                          className="text-sm"
+                          style={{ color: "var(--color-on-surface)" }}
+                        >
+                          {employment.salary
+                            ? String(employment.salary)
+                            : "Not provided"}
+                        </span>
+                      </div>
+                    </WithCopy>
                   )}
                 </div>
 
@@ -1094,35 +1157,37 @@ export default function EmploymentForm({
                   </label>
                   {isEditMode ? (
                     <div className="space-y-1">
-                      <input
-                        type="text"
-                        value={
-                          staged.employments?.[index]?.reasonForLeaving ||
-                          employment.reasonForLeaving ||
-                          ""
-                        }
-                        onChange={(e) =>
-                          updateEmployment(
-                            index,
-                            "reasonForLeaving",
-                            e.target.value
-                          )
-                        }
-                        className={`w-full p-3 rounded-lg border text-sm transition-colors ${
-                          getFieldErrors(index, "reasonForLeaving").length > 0
-                            ? "border-red-500"
-                            : ""
-                        }`}
-                        style={{
-                          background: "var(--color-surface)",
-                          borderColor:
+                      <WithCopy value={staged.employments?.[index]?.reasonForLeaving || employment.reasonForLeaving || ""} label="Reason for leaving">
+                        <input
+                          type="text"
+                          value={
+                            staged.employments?.[index]?.reasonForLeaving ||
+                            employment.reasonForLeaving ||
+                            ""
+                          }
+                          onChange={(e) =>
+                            updateEmployment(
+                              index,
+                              "reasonForLeaving",
+                              e.target.value
+                            )
+                          }
+                          className={`w-full p-3 rounded-lg border text-sm transition-colors pr-10 ${
                             getFieldErrors(index, "reasonForLeaving").length > 0
-                              ? "var(--color-error)"
-                              : "var(--color-outline)",
-                          color: "var(--color-on-surface)",
-                        }}
-                        placeholder="Enter reason for leaving"
-                      />
+                              ? "border-red-500"
+                              : ""
+                          }`}
+                          style={{
+                            background: "var(--color-surface)",
+                            borderColor:
+                              getFieldErrors(index, "reasonForLeaving").length > 0
+                                ? "var(--color-error)"
+                                : "var(--color-outline)",
+                            color: "var(--color-on-surface)",
+                          }}
+                          placeholder="Enter reason for leaving"
+                        />
+                      </WithCopy>
                       {getFieldErrors(index, "reasonForLeaving").map(
                         (error, errorIndex) => (
                           <p
@@ -1136,20 +1201,22 @@ export default function EmploymentForm({
                       )}
                     </div>
                   ) : (
-                    <div
-                      className="p-3 rounded-lg border"
-                      style={{
-                        background: "var(--color-surface)",
-                        borderColor: "var(--color-outline)",
-                      }}
-                    >
-                      <span
-                        className="text-sm"
-                        style={{ color: "var(--color-on-surface)" }}
+                    <WithCopy value={employment.reasonForLeaving || ""} label="Reason for leaving">
+                      <div
+                        className="p-3 rounded-lg border pr-10"
+                        style={{
+                          background: "var(--color-surface)",
+                          borderColor: "var(--color-outline)",
+                        }}
                       >
-                        {employment.reasonForLeaving || "Not provided"}
-                      </span>
-                    </div>
+                        <span
+                          className="text-sm"
+                          style={{ color: "var(--color-on-surface)" }}
+                        >
+                          {employment.reasonForLeaving || "Not provided"}
+                        </span>
+                      </div>
+                    </WithCopy>
                   )}
                 </div>
               </div>

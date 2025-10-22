@@ -1,6 +1,7 @@
 "use client";
 
 import { IApplicationFormPage1 } from "@/types/applicationForm.types";
+import { WithCopy } from "@/components/form/WithCopy";
 
 interface PlaceOfBirthSectionProps {
   data: IApplicationFormPage1;
@@ -31,7 +32,7 @@ export default function PlaceOfBirthSection({
         <div
           className="w-2 h-8 rounded-full"
           style={{ background: "var(--color-secondary)" }}
-        ></div>
+        />
         <h3
           className="text-xl font-bold"
           style={{ color: "var(--color-on-surface)" }}
@@ -41,6 +42,7 @@ export default function PlaceOfBirthSection({
       </div>
 
       <div className="space-y-4">
+        {/* City of Birth */}
         <div className="space-y-2">
           <label
             className="text-sm font-medium"
@@ -49,36 +51,41 @@ export default function PlaceOfBirthSection({
             City of Birth
           </label>
           {isEditMode ? (
-            <input
-              type="text"
-              value={formData.birthCity || ""}
-              onChange={(e) => updateField("birthCity", e.target.value)}
-              className="w-full p-3 rounded-lg border text-sm transition-colors"
-              style={{
-                background: "var(--color-surface)",
-                borderColor: "var(--color-outline)",
-                color: "var(--color-on-surface)",
-              }}
-              placeholder="Enter city of birth"
-            />
+            <WithCopy value={formData.birthCity || ""} label="City of birth">
+              <input
+                type="text"
+                value={formData.birthCity || ""}
+                onChange={(e) => updateField("birthCity", e.target.value)}
+                className="w-full p-3 rounded-lg border text-sm transition-colors pr-10"
+                style={{
+                  background: "var(--color-surface)",
+                  borderColor: "var(--color-outline)",
+                  color: "var(--color-on-surface)",
+                }}
+                placeholder="Enter city of birth"
+              />
+            </WithCopy>
           ) : (
-            <div
-              className="p-3 rounded-lg border"
-              style={{
-                background: "var(--color-surface)",
-                borderColor: "var(--color-outline)",
-              }}
-            >
-              <span
-                className="text-sm"
-                style={{ color: "var(--color-on-surface)" }}
+            <WithCopy value={formData.birthCity || ""} label="City of birth">
+              <div
+                className="p-3 rounded-lg border pr-10"
+                style={{
+                  background: "var(--color-surface)",
+                  borderColor: "var(--color-outline)",
+                }}
               >
-                {formData.birthCity || "Not provided"}
-              </span>
-            </div>
+                <span
+                  className="text-sm"
+                  style={{ color: "var(--color-on-surface)" }}
+                >
+                  {formData.birthCity || "Not provided"}
+                </span>
+              </div>
+            </WithCopy>
           )}
         </div>
 
+        {/* State or Province */}
         <div className="space-y-2">
           <label
             className="text-sm font-medium"
@@ -87,38 +94,49 @@ export default function PlaceOfBirthSection({
             State or Province
           </label>
           {isEditMode ? (
-            <input
-              type="text"
+            <WithCopy
               value={formData.birthStateOrProvince || ""}
-              onChange={(e) =>
-                updateField("birthStateOrProvince", e.target.value)
-              }
-              className="w-full p-3 rounded-lg border text-sm transition-colors"
-              style={{
-                background: "var(--color-surface)",
-                borderColor: "var(--color-outline)",
-                color: "var(--color-on-surface)",
-              }}
-              placeholder="Enter province or state of birth"
-            />
-          ) : (
-            <div
-              className="p-3 rounded-lg border"
-              style={{
-                background: "var(--color-surface)",
-                borderColor: "var(--color-outline)",
-              }}
+              label="State or province of birth"
             >
-              <span
-                className="text-sm"
-                style={{ color: "var(--color-on-surface)" }}
+              <input
+                type="text"
+                value={formData.birthStateOrProvince || ""}
+                onChange={(e) =>
+                  updateField("birthStateOrProvince", e.target.value)
+                }
+                className="w-full p-3 rounded-lg border text-sm transition-colors pr-10"
+                style={{
+                  background: "var(--color-surface)",
+                  borderColor: "var(--color-outline)",
+                  color: "var(--color-on-surface)",
+                }}
+                placeholder="Enter province or state of birth"
+              />
+            </WithCopy>
+          ) : (
+            <WithCopy
+              value={formData.birthStateOrProvince || ""}
+              label="State or province of birth"
+            >
+              <div
+                className="p-3 rounded-lg border pr-10"
+                style={{
+                  background: "var(--color-surface)",
+                  borderColor: "var(--color-outline)",
+                }}
               >
-                {formData.birthStateOrProvince || "Not provided"}
-              </span>
-            </div>
+                <span
+                  className="text-sm"
+                  style={{ color: "var(--color-on-surface)" }}
+                >
+                  {formData.birthStateOrProvince || "Not provided"}
+                </span>
+              </div>
+            </WithCopy>
           )}
         </div>
 
+        {/* Country of Birth */}
         <div className="space-y-2">
           <label
             className="text-sm font-medium"
@@ -127,33 +145,43 @@ export default function PlaceOfBirthSection({
             Country of Birth
           </label>
           {isEditMode ? (
-            <input
-              type="text"
+            <WithCopy
               value={formData.birthCountry || ""}
-              onChange={(e) => updateField("birthCountry", e.target.value)}
-              className="w-full p-3 rounded-lg border text-sm transition-colors"
-              style={{
-                background: "var(--color-surface)",
-                borderColor: "var(--color-outline)",
-                color: "var(--color-on-surface)",
-              }}
-              placeholder="Enter country of birth"
-            />
-          ) : (
-            <div
-              className="p-3 rounded-lg border"
-              style={{
-                background: "var(--color-surface)",
-                borderColor: "var(--color-outline)",
-              }}
+              label="Country of birth"
             >
-              <span
-                className="text-sm"
-                style={{ color: "var(--color-on-surface)" }}
+              <input
+                type="text"
+                value={formData.birthCountry || ""}
+                onChange={(e) => updateField("birthCountry", e.target.value)}
+                className="w-full p-3 rounded-lg border text-sm transition-colors pr-10"
+                style={{
+                  background: "var(--color-surface)",
+                  borderColor: "var(--color-outline)",
+                  color: "var(--color-on-surface)",
+                }}
+                placeholder="Enter country of birth"
+              />
+            </WithCopy>
+          ) : (
+            <WithCopy
+              value={formData.birthCountry || ""}
+              label="Country of birth"
+            >
+              <div
+                className="p-3 rounded-lg border pr-10"
+                style={{
+                  background: "var(--color-surface)",
+                  borderColor: "var(--color-outline)",
+                }}
               >
-                {formData.birthCountry || "Not provided"}
-              </span>
-            </div>
+                <span
+                  className="text-sm"
+                  style={{ color: "var(--color-on-surface)" }}
+                >
+                  {formData.birthCountry || "Not provided"}
+                </span>
+              </div>
+            </WithCopy>
           )}
         </div>
       </div>

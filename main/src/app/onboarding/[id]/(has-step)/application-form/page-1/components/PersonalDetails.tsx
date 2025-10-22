@@ -12,8 +12,8 @@
 
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useState, useCallback } from "react";
-import { Eye, EyeOff, Camera, X } from "lucide-react";
+import { useState, useCallback, useEffect } from "react";
+import { Eye, EyeOff, X } from "lucide-react";
 import Image from "next/image";
 import { uploadToS3Presigned } from "@/lib/utils/s3Upload";
 import { ES3Folder } from "@/types/aws.types";
@@ -28,6 +28,9 @@ import type { IOnboardingTrackerContext } from "@/types/onboardingTracker.types"
 import { ECountryCode } from "@/types/shared.types";
 import { COMPANIES } from "@/constants/companies";
 import { useCountrySelection } from "@/hooks/useCountrySelection";
+import { useCroppedUpload } from "@/hooks/useCroppedUpload";
+import { DOC_ASPECTS } from "@/lib/docAspects";
+import UploadPicker from "@/components/media/UploadPicker";
 
 // Helpers
 const formatPhoneNumber = (value: string) => {
@@ -71,10 +74,16 @@ export default function PersonalDetails({
     control,
   } = useFormContext<ApplicationFormPage1Schema>();
 
+  // register the field so RHF tracks touched/dirty/errors as before
+  useEffect(() => {
+    register("sinPhoto");
+  }, [register]);
+
   const mounted = useMounted();
   const { t } = useTranslation("common");
   const { id } = useParams<{ id: string }>();
   const { selectedCountryCode } = useCountrySelection();
+  const { openCrop, CropModalPortal } = useCroppedUpload();
 
   //  WATCH ALL FIELDS UP FRONT (no hooks in JSX, no conditional hooks)
   const sinValue = useWatch({ control, name: "sin" });
@@ -201,6 +210,7 @@ export default function PersonalDetails({
     originalName: "",
   };
 
+
   const handleSinPhotoUpload = async (file: File | null) => {
     if (!file) {
       setValue("sinPhoto", EMPTY_PHOTO, { shouldValidate: true });
@@ -214,19 +224,33 @@ export default function PersonalDetails({
     setSinPhotoMessage("");
 
     try {
-      const result = await uploadToS3Presigned({
+      // 1) open cropper (drivers will preview/adjust)
+      const cropResult = await openCrop({
         file,
+        aspect: DOC_ASPECTS.FREE,   // SIN can be card or document format
+        targetWidth: 1600,
+        jpegQuality: 0.9,
+      });
+
+      // Handle user cancellation or HEIC files that can't be cropped
+      if (!cropResult) {
+        // User cancelled or HEIC detected; just reset UI quietly
+        setSinPhotoStatus("idle");
+        return;
+      }
+
+      const { file: croppedFile, previewDataUrl } = cropResult;
+
+      // 2) upload using your existing util (unchanged)
+      const result = await uploadToS3Presigned({
+        file: croppedFile,
         folder: ES3Folder.SIN_PHOTOS,
         trackerId: id,
       });
 
+      // 3) update form and preview with processed image
       setValue("sinPhoto", result, { shouldValidate: true });
-
-      const reader = new FileReader();
-      reader.onload = (ev) =>
-        setSinPhotoPreview(String(ev.target?.result || ""));
-      reader.readAsDataURL(file);
-
+      setSinPhotoPreview(previewDataUrl);
       setSinPhotoStatus("idle");
       setSinPhotoMessage("Upload successful");
     } catch (error: any) {
@@ -520,14 +544,15 @@ export default function PersonalDetails({
           <label className="block text-sm font-medium text-gray-700 mb-1">
             {t("form.step2.page1.fields.sinPhoto")}
           </label>
+
           {sinPhotoPreview || sinPhotoUrl ? (
             <div className="relative">
               <Image
                 src={sinPhotoPreview || sinPhotoUrl || ""}
                 alt="SIN Card Preview"
-                width={400}
-                height={128}
-                className="w-full h-32 object-cover rounded-lg border border-gray-300"
+                width={800}
+                height={400}
+                className="w-full h-40 object-contain rounded-lg border border-gray-300 bg-white"
               />
               <button
                 type="button"
@@ -542,25 +567,13 @@ export default function PersonalDetails({
               </button>
             </div>
           ) : (
-            <label
-              htmlFor="sinPhoto"
-              className="cursor-pointer flex flex-col items-center justify-center h-10 px-4 mt-1 w-full text-sm text-gray-600 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 hover:border-gray-400 transition-all duration-200 group"
-            >
-              <Camera className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
-              <span className="font-medium text-gray-400 text-xs">
-                {t("form.step2.page1.fields.sinPhotoDesc")}
-              </span>
-            </label>
+            <UploadPicker
+              label={t("form.step2.page1.fields.sinPhotoDesc")}
+              onPick={(file) => handleSinPhotoUpload(file)}
+              accept="image/*,.heic,.heif"
+              className="w-full"
+            />
           )}
-          <input
-            id="sinPhoto"
-            type="file"
-            accept="image/*"
-            {...register("sinPhoto")}
-            onChange={(e) => handleSinPhotoUpload(e.target.files?.[0] || null)}
-            data-field="sinPhoto"
-            className="hidden"
-          />
           {sinPhotoStatus !== "uploading" && errors.sinPhoto && (
             <p className="text-red-500 text-sm mt-1">
               {errors.sinPhoto.message?.toString() || "SIN photo is required"}
@@ -709,6 +722,9 @@ export default function PersonalDetails({
           error={errors.emergencyContactPhone}
         />
       </div>
+
+      {/* Crop modal portal */}
+      {CropModalPortal}
     </section>
   );
 }

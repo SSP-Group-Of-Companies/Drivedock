@@ -45,6 +45,7 @@ export default function BankingInfoSection() {
           description={t("form.step2.page4.fields.bankingInfoPhotosDescription")}
           folder={ES3Folder.BANKING_INFO_PHOTOS}
           maxPhotos={2}
+          aspect={null} // FREE aspect for banking documents
         />
         {errors.bankingInfoPhotos && <p className="text-red-500 text-xs mt-1">{errors.bankingInfoPhotos.message?.toString()}</p>}
       </div>

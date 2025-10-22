@@ -13,6 +13,7 @@ import ImageZoomModal from "./ImageZoomModal";
 
 interface ImageGallerySectionProps {
   licenses: ILicenseEntry[];
+  sinPhoto?: IFileAsset; // Add SIN photo prop
   incorporatePhotos: IFileAsset[];
   hstPhotos: IFileAsset[];
   bankingInfoPhotos: IFileAsset[];
@@ -45,6 +46,7 @@ interface GalleryItem {
 
 export default function ImageGallerySection({
   licenses,
+  sinPhoto,
   incorporatePhotos,
   hstPhotos,
   bankingInfoPhotos,
@@ -119,6 +121,8 @@ export default function ImageGallerySection({
         return ES3Folder.LICENSES;
       case "fastCard":
         return ES3Folder.FAST_CARD_PHOTOS;
+      case "sin":
+        return ES3Folder.SIN_PHOTOS;
       case "incorporate":
         return ES3Folder.INCORPORATION_PHOTOS;
       case "hst":
@@ -145,6 +149,18 @@ export default function ImageGallerySection({
   const isUS = countryCode === ECountryCode.US;
 
   const galleryItems: GalleryItem[] = [
+    // SIN photo - from page1 (always show, it's required)
+    {
+      id: "sin",
+      title: "SIN Card",
+      photos: sinPhoto ? [sinPhoto] : [],
+      type: "sin",
+      hasFrontBack: false,
+      maxPhotos: 1,
+      required: true,
+      fieldKey: "sinPhoto",
+    },
+
     // License photos - only the primary license (index 0) has photos
     ...(licenses.length > 0
       ? [
@@ -355,8 +371,10 @@ export default function ImageGallerySection({
         // Create new photo object with actual S3 data
         const newPhoto: IFileAsset = result;
 
-        // Handle Fast Card photos differently since they're object properties, not arrays
-        if (item.type === "fastCard") {
+        // Handle SIN photo - single photo field
+        if (item.type === "sin") {
+          onStage({ sinPhoto: newPhoto });
+        } else if (item.type === "fastCard") {
           // Find which photo is missing (front or back)
           const currentPhotos = item.photos;
           if (currentPhotos.length === 0) {
@@ -438,6 +456,13 @@ export default function ImageGallerySection({
 
   // Removes a photo from staged state for any gallery item shape
   const _removePhotoFromState = (item: GalleryItem, photoIndex: number) => {
+    if (item.type === "sin") {
+      // SIN photo is a single photo field, not an array
+      onStage({ sinPhoto: undefined });
+      setCurrentPhotoIndex(0);
+      return;
+    }
+
     if (item.type === "fastCard") {
       const currentPhotos = item.photos;
       const photoToDelete = currentPhotos[photoIndex];
@@ -562,8 +587,10 @@ export default function ImageGallerySection({
         // Create new photo object with actual S3 data
         const newPhoto: IFileAsset = result;
 
-        // Handle Fast Card photos differently since they're object properties, not arrays
-        if (item.type === "fastCard") {
+        // Handle SIN photo - single photo field
+        if (item.type === "sin") {
+          onStage({ sinPhoto: newPhoto });
+        } else if (item.type === "fastCard") {
           const currentPhotos = item.photos;
           const photoToReplace = currentPhotos[photoIndex];
 
@@ -648,6 +675,64 @@ export default function ImageGallerySection({
       console.error("Failed to download image:", error);
       setUploadError("Failed to download image. Please try again.");
     }
+  };
+
+  // Handle crop commit - upload and stage the cropped image
+  const handleCropCommit = async (blob: Blob) => {
+    if (!selectedItemData) return;
+    
+    try {
+      const folder = getS3FolderForType(selectedItemData.type);
+      const file = new File([blob], `crop-${Date.now()}.jpg`, { type: "image/jpeg" });
+      const asset = await uploadToS3Presigned({ file, folder, trackerId });
+
+      // Replace correct slot & stage (this flips dirty)
+      replaceAssetAndStage(selectedItemData, currentPhotoIndex, asset);
+    } catch (error: any) {
+      console.error("Failed to save cropped image:", error);
+      setUploadError("Failed to save cropped image. Please try again.");
+    }
+  };
+
+  // Helper function to replace asset and stage (reuse existing logic)
+  const replaceAssetAndStage = (item: GalleryItem, photoIndex: number, asset: IFileAsset) => {
+    const current = item.photos[photoIndex];
+
+    if (item.type === "sin") {
+      onStage({ sinPhoto: asset });
+      return;
+    }
+
+    if (item.type === "fastCard") {
+      const isFront = current === fastCard?.fastCardFrontPhoto;
+      onStage({
+        fastCard: {
+          ...fastCard,
+          ...(isFront ? { fastCardFrontPhoto: asset } : { fastCardBackPhoto: asset }),
+        },
+      });
+      return;
+    }
+
+    if (item.type === "license") {
+      const isFront = current === licenses[0]?.licenseFrontPhoto;
+      const updated = [...licenses];
+      updated[0] = {
+        ...updated[0],
+        ...(isFront ? { licenseFrontPhoto: asset } : { licenseBackPhoto: asset }),
+      };
+      onStage({ licenses: updated });
+      return;
+    }
+
+    // Array-based collections stay index-based
+    onStage((prev: any) => {
+      const prevArr: IFileAsset[] = Array.isArray(prev?.[item.fieldKey])
+        ? prev[item.fieldKey]
+        : item.photos || [];
+      const next = prevArr.map((p, i) => (i === photoIndex ? asset : p));
+      return { ...prev, [item.fieldKey]: next };
+    });
   };
 
   const handleZoomImage = () => {
@@ -1210,6 +1295,9 @@ export default function ImageGallerySection({
             handleDownloadImage(currentPhoto, selectedItemData.title, getPhotoLabel(selectedItemData, currentPhotoIndex));
           }
         }}
+        enableCrop={isEditMode}
+        cropAspect={null} // Free crop
+        onCropCommit={handleCropCommit}
       />
     </div>
   );

@@ -35,6 +35,14 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
     if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
 
+    // Check if flatbed training is not applicable for this driver
+    if (onboardingDoc.needsFlatbedTraining === false) {
+      return successResponse(200, "flatbed training not applicable", {
+        onboardingContext: buildTrackerContext(onboardingDoc, null, true),
+        flatbedTraining: null,
+      });
+    }
+
     if (!hasReachedStep(onboardingDoc, EStepPath.FLATBED_TRAINING)) {
       return errorResponse(403, "driver hasn't reached this step yet");
     }

@@ -9,8 +9,12 @@ import {
   RotateCw, 
   Download,
   Maximize2,
-  Minimize2
+  Minimize2,
+  Crop
 } from "lucide-react";
+import Cropper from "react-cropper";
+import type { ReactCropperElement } from "react-cropper";
+import "cropperjs/dist/cropper.css";
 
 interface ImageZoomModalProps {
   isOpen: boolean;
@@ -19,6 +23,11 @@ interface ImageZoomModalProps {
   imageAlt: string;
   imageTitle?: string;
   onDownload?: () => void;
+  
+  // Cropping
+  enableCrop?: boolean;        // default true
+  cropAspect?: number | null;  // null = free
+  onCropCommit?: (blob: Blob) => Promise<void> | void;
 }
 
 interface ZoomState {
@@ -43,6 +52,9 @@ export default function ImageZoomModal({
   imageAlt,
   imageTitle,
   onDownload,
+  enableCrop = true,
+  cropAspect = null,
+  onCropCommit,
 }: ImageZoomModalProps) {
   const [zoomState, setZoomState] = useState<ZoomState>({
     scale: 1,
@@ -56,9 +68,12 @@ export default function ImageZoomModal({
 
   const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
   const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const [isCropMode, setIsCropMode] = useState(false);
+  const [isSavingCrop, setIsSavingCrop] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const imageContainerRef = useRef<HTMLDivElement>(null);
-  const wheelTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const cropperRef = useRef<ReactCropperElement>(null);
+  const wheelTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scaleRef = useRef<number>(1); // Ref to track scale without causing re-renders
 
   // Reset all state when modal opens/closes or image changes
@@ -75,6 +90,8 @@ export default function ImageZoomModal({
       });
       setIsImageLoaded(false);
       setImageDimensions({ width: 0, height: 0 });
+      setIsCropMode(false);
+      setIsSavingCrop(false);
       scaleRef.current = 1;
     }
   }, [isOpen, imageUrl]); // Reset when imageUrl changes too
@@ -95,57 +112,46 @@ export default function ImageZoomModal({
     const handleKeyDown = (e: KeyboardEvent) => {
       switch (e.key) {
         case "Escape":
+          if (isSavingCrop) {
+            // Don't allow closing while saving crop
+            return;
+          }
           onClose();
+          break;
+        case "c":
+        case "C":
+          if (enableCrop && !isSavingCrop) {
+            e.preventDefault();
+            setIsCropMode(!isCropMode);
+          }
           break;
         case "=":
         case "+":
-          e.preventDefault();
-          setZoomState(prev => {
-            const newScale = Math.min(MAX_SCALE, prev.scale + SCALE_STEP);
-            scaleRef.current = newScale;
-            return { ...prev, scale: newScale };
-          });
+          if (!isCropMode) {
+            e.preventDefault();
+            setZoomState(prev => {
+              const newScale = Math.min(MAX_SCALE, prev.scale + SCALE_STEP);
+              scaleRef.current = newScale;
+              return { ...prev, scale: newScale };
+            });
+          }
           break;
         case "-":
-          e.preventDefault();
-          setZoomState(prev => {
-            const newScale = Math.max(MIN_SCALE, prev.scale - SCALE_STEP);
-            scaleRef.current = newScale;
-            return { ...prev, scale: newScale };
-          });
+          if (!isCropMode) {
+            e.preventDefault();
+            setZoomState(prev => {
+              const newScale = Math.max(MIN_SCALE, prev.scale - SCALE_STEP);
+              scaleRef.current = newScale;
+              return { ...prev, scale: newScale };
+            });
+          }
           break;
         case "0":
-          e.preventDefault();
-          scaleRef.current = 1;
-          setZoomState({
-            scale: 1,
-            translateX: 0,
-            translateY: 0,
-            rotation: 0,
-            isDragging: false,
-            dragStart: { x: 0, y: 0 },
-            lastPan: { x: 0, y: 0 },
-          });
-          break;
-        case "r":
-          e.preventDefault();
-          setZoomState(prev => ({
-            ...prev,
-            rotation: (prev.rotation + ROTATION_STEP) % 360,
-          }));
-          break;
-        case "f":
-          e.preventDefault();
-          if (containerRef.current && imageDimensions.width && imageDimensions.height) {
-            const containerRect = containerRef.current.getBoundingClientRect();
-            const containerWidth = containerRect.width - 100;
-            const containerHeight = containerRect.height - 200;
-            const scaleX = containerWidth / imageDimensions.width;
-            const scaleY = containerHeight / imageDimensions.height;
-            const fitScale = Math.min(scaleX, scaleY, 1);
-            scaleRef.current = fitScale;
+          if (!isCropMode) {
+            e.preventDefault();
+            scaleRef.current = 1;
             setZoomState({
-              scale: fitScale,
+              scale: 1,
               translateX: 0,
               translateY: 0,
               rotation: 0,
@@ -155,28 +161,62 @@ export default function ImageZoomModal({
             });
           }
           break;
+        case "r":
+          if (!isCropMode) {
+            e.preventDefault();
+            setZoomState(prev => ({
+              ...prev,
+              rotation: (prev.rotation + ROTATION_STEP) % 360,
+            }));
+          }
+          break;
+        case "f":
+          if (!isCropMode) {
+            e.preventDefault();
+            if (containerRef.current && imageDimensions.width && imageDimensions.height) {
+              const containerRect = containerRef.current.getBoundingClientRect();
+              const containerWidth = containerRect.width - 100;
+              const containerHeight = containerRect.height - 200;
+              const scaleX = containerWidth / imageDimensions.width;
+              const scaleY = containerHeight / imageDimensions.height;
+              const fitScale = Math.min(scaleX, scaleY, 1);
+              scaleRef.current = fitScale;
+              setZoomState({
+                scale: fitScale,
+                translateX: 0,
+                translateY: 0,
+                rotation: 0,
+                isDragging: false,
+                dragStart: { x: 0, y: 0 },
+                lastPan: { x: 0, y: 0 },
+              });
+            }
+          }
+          break;
         case "ArrowLeft":
         case "ArrowRight":
         case "ArrowUp":
         case "ArrowDown":
-          e.preventDefault();
-          if (scaleRef.current > 1) {
-            setZoomState(prev => {
-              let deltaX = 0;
-              let deltaY = 0;
-              
-              if (e.key === "ArrowLeft") deltaX = 50;
-              if (e.key === "ArrowRight") deltaX = -50;
-              if (e.key === "ArrowUp") deltaY = 50;
-              if (e.key === "ArrowDown") deltaY = -50;
+          if (!isCropMode) {
+            e.preventDefault();
+            if (scaleRef.current > 1) {
+              setZoomState(prev => {
+                let deltaX = 0;
+                let deltaY = 0;
+                
+                if (e.key === "ArrowLeft") deltaX = 50;
+                if (e.key === "ArrowRight") deltaX = -50;
+                if (e.key === "ArrowUp") deltaY = 50;
+                if (e.key === "ArrowDown") deltaY = -50;
 
-              return {
-                ...prev,
-                translateX: prev.translateX + deltaX,
-                translateY: prev.translateY + deltaY,
-                lastPan: { x: prev.translateX + deltaX, y: prev.translateY + deltaY },
-              };
-            });
+                return {
+                  ...prev,
+                  translateX: prev.translateX + deltaX,
+                  translateY: prev.translateY + deltaY,
+                  lastPan: { x: prev.translateX + deltaX, y: prev.translateY + deltaY },
+                };
+              });
+            }
           }
           break;
       }
@@ -184,10 +224,12 @@ export default function ImageZoomModal({
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose, imageDimensions]);
+  }, [isOpen, onClose, imageDimensions, enableCrop, isCropMode, isSavingCrop]);
 
   // Handle wheel zoom with debouncing to prevent oscillation
   const handleWheel = useCallback((e: WheelEvent) => {
+    if (isCropMode) return; // Disable wheel zoom in crop mode
+    
     e.preventDefault();
     e.stopPropagation();
 
@@ -209,7 +251,7 @@ export default function ImageZoomModal({
         };
       });
     }, 10); // Small debounce to batch rapid wheel events
-  }, []);
+  }, [isCropMode]);
 
   // Add wheel event listener to the image container
   useEffect(() => {
@@ -225,6 +267,7 @@ export default function ImageZoomModal({
 
   // Mouse drag handlers
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (isCropMode) return; // Disable drag in crop mode
     e.preventDefault();
     setZoomState(prev => {
       if (prev.scale <= 1) return prev;
@@ -235,7 +278,7 @@ export default function ImageZoomModal({
         dragStart: { x: e.clientX, y: e.clientY },
       };
     });
-  }, []);
+  }, [isCropMode]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     setZoomState(prev => {
@@ -269,6 +312,7 @@ export default function ImageZoomModal({
 
   // Touch handlers for mobile
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (isCropMode) return; // Disable touch pan in crop mode
     if (e.touches.length === 1) {
       const touch = e.touches[0];
       setZoomState(prev => {
@@ -281,9 +325,10 @@ export default function ImageZoomModal({
         };
       });
     }
-  }, []);
+  }, [isCropMode]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (isCropMode) return; // Disable touch pan in crop mode
     if (e.touches.length === 1) {
       const touch = e.touches[0];
       setZoomState(prev => {
@@ -299,7 +344,7 @@ export default function ImageZoomModal({
         };
       });
     }
-  }, []);
+  }, [isCropMode]);
 
   const handleTouchEnd = useCallback(() => {
     setZoomState(prev => {
@@ -376,6 +421,25 @@ export default function ImageZoomModal({
     });
   }, [imageDimensions]);
 
+  // Apply crop function
+  const applyCrop = useCallback(async () => {
+    if (!onCropCommit || !cropperRef.current) return;
+    setIsSavingCrop(true);
+    try {
+      const canvas = cropperRef.current.cropper.getCroppedCanvas({
+        maxWidth: 2400,
+        maxHeight: 2400,
+      });
+      const blob = await new Promise<Blob>((res, rej) =>
+        canvas.toBlob((b: Blob | null) => (b ? res(b) : rej(new Error("Crop failed"))), "image/jpeg", 0.9)
+      );
+      await onCropCommit(blob);      // parent uploads + stages -> dirty flips
+      setIsCropMode(false);
+    } finally {
+      setIsSavingCrop(false);
+    }
+  }, [onCropCommit]);
+
   // Handle image load - only set dimensions once
   const handleImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const img = e.target as HTMLImageElement;
@@ -398,7 +462,12 @@ export default function ImageZoomModal({
         backgroundColor: "rgba(0, 0, 0, 0.9)",
         backdropFilter: "blur(4px)",
       }}
-      onClick={onClose}
+      onClick={(e) => {
+        // Prevent backdrop close while saving crop
+        if (e.target === e.currentTarget && !isSavingCrop) {
+          onClose();
+        }
+      }}
     >
       {/* Main container */}
       <div
@@ -431,8 +500,9 @@ export default function ImageZoomModal({
               
               <button
                 onClick={onClose}
-                className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
-                title="Close (Esc)"
+                disabled={isSavingCrop}
+                className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title={isSavingCrop ? "Saving crop..." : "Close (Esc)"}
               >
                 <X className="h-5 w-5" />
               </button>
@@ -445,115 +515,175 @@ export default function ImageZoomModal({
           ref={imageContainerRef}
           className="flex-1 flex items-center justify-center p-8 pt-20 pb-20"
         >
-          <div
-            className="relative"
-            style={{
-              cursor: zoomState.scale > 1 ? (zoomState.isDragging ? "grabbing" : "grab") : "default",
-              userSelect: "none",
-            }}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-          >
-            {/* Show loading state while image is loading */}
-            {!isImageLoaded && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-white text-sm">Loading...</div>
-              </div>
-            )}
-            
-            <Image
-              src={imageUrl}
-              alt={imageAlt}
-              width={imageDimensions.width || 800}
-              height={imageDimensions.height || 600}
-              className="max-w-none select-none"
+          {isCropMode ? (
+            <div className="w-full h-full flex items-center justify-center">
+              <Cropper
+                ref={cropperRef}
+                src={imageUrl}
+                style={{ height: "80vh", width: "80vw" }}
+                aspectRatio={cropAspect ?? NaN}
+                guides={true}
+                cropBoxMovable={true}
+                cropBoxResizable={true}
+                ready={() => {
+                  // Sync rotation from zoom state
+                  if (cropperRef.current?.cropper) {
+                    cropperRef.current.cropper.rotateTo(zoomState.rotation);
+                  }
+                }}
+              />
+            </div>
+          ) : (
+            <div
+              className="relative"
               style={{
-                transform: `
-                  scale(${zoomState.scale}) 
-                  translate(${zoomState.translateX / zoomState.scale}px, ${zoomState.translateY / zoomState.scale}px) 
-                  rotate(${zoomState.rotation}deg)
-                `,
-                transformOrigin: "center center",
-                transition: zoomState.isDragging ? "none" : "transform 0.1s ease-out",
-                opacity: isImageLoaded ? 1 : 0,
-                maxWidth: "90vw",
-                maxHeight: "calc(100vh - 240px)",
-                objectFit: "contain",
+                cursor: zoomState.scale > 1 ? (zoomState.isDragging ? "grabbing" : "grab") : "default",
+                userSelect: "none",
               }}
-              onLoad={handleImageLoad}
-              draggable={false}
-              unoptimized // Prevent Next.js optimization which can cause blur
-              priority
-            />
-          </div>
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
+              {/* Show loading state while image is loading */}
+              {!isImageLoaded && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="text-white text-sm">Loading...</div>
+                </div>
+              )}
+              
+              <Image
+                src={imageUrl}
+                alt={imageAlt}
+                width={imageDimensions.width || 800}
+                height={imageDimensions.height || 600}
+                className="max-w-none select-none"
+                style={{
+                  transform: `
+                    scale(${zoomState.scale}) 
+                    translate(${zoomState.translateX / zoomState.scale}px, ${zoomState.translateY / zoomState.scale}px) 
+                    rotate(${zoomState.rotation}deg)
+                  `,
+                  transformOrigin: "center center",
+                  transition: zoomState.isDragging ? "none" : "transform 0.1s ease-out",
+                  opacity: isImageLoaded ? 1 : 0,
+                  maxWidth: "90vw",
+                  maxHeight: "calc(100vh - 240px)",
+                  objectFit: "contain",
+                }}
+                onLoad={handleImageLoad}
+                draggable={false}
+                unoptimized // Prevent Next.js optimization which can cause blur
+                priority
+              />
+            </div>
+          )}
         </div>
 
         {/* Controls */}
         <div className="absolute bottom-0 left-0 right-0 z-10 p-4 bg-gradient-to-t from-black/80 to-transparent">
           <div className="flex items-center justify-center gap-4">
-            {/* Zoom controls */}
-            <div className="flex items-center gap-2 bg-black/50 rounded-lg p-2">
-              <button
-                onClick={handleZoomOut}
-                disabled={zoomState.scale <= MIN_SCALE}
-                className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Zoom out (-)"
-              >
-                <ZoomOut className="h-5 w-5" />
-              </button>
-              
-              <span className="text-white text-sm font-medium min-w-[60px] text-center">
-                {Math.round(zoomState.scale * 100)}%
-              </span>
-              
-              <button
-                onClick={handleZoomIn}
-                disabled={zoomState.scale >= MAX_SCALE}
-                className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Zoom in (+)"
-              >
-                <ZoomIn className="h-5 w-5" />
-              </button>
-            </div>
+            {isCropMode ? (
+              /* Crop controls */
+              <div className="flex items-center gap-2 bg-black/50 rounded-lg p-2">
+                <button
+                  onClick={applyCrop}
+                  disabled={isSavingCrop}
+                  className="px-4 py-2 bg-green-600 text-white rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSavingCrop ? "Saving..." : "Apply Crop"}
+                </button>
+                <button
+                  onClick={() => setIsCropMode(false)}
+                  disabled={isSavingCrop}
+                  className="px-4 py-2 bg-gray-600 text-white rounded disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              /* Zoom controls */
+              <>
+                <div className="flex items-center gap-2 bg-black/50 rounded-lg p-2">
+                  <button
+                    onClick={handleZoomOut}
+                    disabled={zoomState.scale <= MIN_SCALE}
+                    className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Zoom out (-)"
+                  >
+                    <ZoomOut className="h-5 w-5" />
+                  </button>
+                  
+                  <span className="text-white text-sm font-medium min-w-[60px] text-center">
+                    {Math.round(zoomState.scale * 100)}%
+                  </span>
+                  
+                  <button
+                    onClick={handleZoomIn}
+                    disabled={zoomState.scale >= MAX_SCALE}
+                    className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Zoom in (+)"
+                  >
+                    <ZoomIn className="h-5 w-5" />
+                  </button>
+                </div>
 
-            {/* Fit to screen */}
-            <button
-              onClick={handleFitToScreen}
-              className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
-              title="Fit to screen (F)"
-            >
-              <Maximize2 className="h-5 w-5" />
-            </button>
+                {/* Fit to screen */}
+                <button
+                  onClick={handleFitToScreen}
+                  className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
+                  title="Fit to screen (F)"
+                >
+                  <Maximize2 className="h-5 w-5" />
+                </button>
 
-            {/* Rotate */}
-            <button
-              onClick={handleRotate}
-              className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
-              title="Rotate (R)"
-            >
-              <RotateCw className="h-5 w-5" />
-            </button>
+                {/* Rotate */}
+                <button
+                  onClick={handleRotate}
+                  className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
+                  title="Rotate (R)"
+                >
+                  <RotateCw className="h-5 w-5" />
+                </button>
 
-            {/* Reset */}
-            <button
-              onClick={handleReset}
-              className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
-              title="Reset (0)"
-            >
-              <Minimize2 className="h-5 w-5" />
-            </button>
+                {/* Reset */}
+                <button
+                  onClick={handleReset}
+                  className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
+                  title="Reset (0)"
+                >
+                  <Minimize2 className="h-5 w-5" />
+                </button>
+
+                {/* Crop toggle */}
+                {enableCrop && (
+                  <button
+                    onClick={() => setIsCropMode(true)}
+                    className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
+                    title="Crop image (C)"
+                    aria-pressed={isCropMode}
+                  >
+                    <Crop className="h-5 w-5" />
+                  </button>
+                )}
+              </>
+            )}
           </div>
 
           {/* Instructions */}
           <div className="mt-4 text-center">
             <p className="text-xs text-gray-400">
-              Use mouse wheel to zoom • Drag to pan • Arrow keys to move • 
-              <span className="hidden sm:inline"> Keyboard shortcuts: + - 0 R F</span>
+              {isCropMode ? (
+                "Drag to move crop area • Drag corners to resize • Adjust crop box to remove unwanted edges"
+              ) : (
+                <>
+                  Use mouse wheel to zoom • Drag to pan • Arrow keys to move • 
+                  <span className="hidden sm:inline"> Keyboard shortcuts: + - 0 R F C</span>
+                </>
+              )}
             </p>
           </div>
         </div>

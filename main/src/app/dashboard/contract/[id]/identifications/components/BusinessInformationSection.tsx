@@ -3,6 +3,7 @@
 import React from "react";
 import { useEditMode } from "../../components/EditModeContext";
 import { Building2 } from "lucide-react";
+import { WithCopy } from "@/components/form/WithCopy";
 
 interface BusinessInformationSectionProps {
   hstNumber: string;
@@ -51,20 +52,22 @@ export default function BusinessInformationSection({
             >
               Business Name
             </label>
-            <input
-              type="text"
-              value={businessName || ""}
-              onChange={(e) => onStage({ businessName: e.target.value })}
-              disabled={!isEditMode}
-              className="w-full px-3 py-2 border rounded-lg text-sm transition-colors"
-              style={{
-                background: isEditMode
-                  ? "var(--color-surface)"
-                  : "var(--color-surface-variant)",
-                borderColor: "var(--color-outline)",
-                color: "var(--color-on-surface)",
-              }}
-            />
+            <WithCopy value={businessName || ""} label="Business name">
+              <input
+                type="text"
+                value={businessName || ""}
+                onChange={(e) => onStage({ businessName: e.target.value })}
+                disabled={!isEditMode}
+                className="w-full px-3 py-2 border rounded-lg text-sm transition-colors pr-10"
+                style={{
+                  background: isEditMode
+                    ? "var(--color-surface)"
+                    : "var(--color-surface-variant)",
+                  borderColor: "var(--color-outline)",
+                  color: "var(--color-on-surface)",
+                }}
+              />
+            </WithCopy>
           </div>
 
           <div>
@@ -74,20 +77,22 @@ export default function BusinessInformationSection({
             >
               HST Number
             </label>
-            <input
-              type="text"
-              value={hstNumber || ""}
-              onChange={(e) => onStage({ hstNumber: e.target.value })}
-              disabled={!isEditMode}
-              className="w-full px-3 py-2 border rounded-lg text-sm transition-colors"
-              style={{
-                background: isEditMode
-                  ? "var(--color-surface)"
-                  : "var(--color-surface-variant)",
-                borderColor: "var(--color-outline)",
-                color: "var(--color-on-surface)",
-              }}
-            />
+            <WithCopy value={hstNumber || ""} label="HST number">
+              <input
+                type="text"
+                value={hstNumber || ""}
+                onChange={(e) => onStage({ hstNumber: e.target.value })}
+                disabled={!isEditMode}
+                className="w-full px-3 py-2 border rounded-lg text-sm transition-colors pr-10"
+                style={{
+                  background: isEditMode
+                    ? "var(--color-surface)"
+                    : "var(--color-surface-variant)",
+                  borderColor: "var(--color-outline)",
+                  color: "var(--color-on-surface)",
+                }}
+              />
+            </WithCopy>
           </div>
         </div>
 

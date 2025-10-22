@@ -5,6 +5,8 @@ import { useEditMode } from "../../components/EditModeContext";
 import { ILicenseEntry } from "@/types/applicationForm.types";
 import { ELicenseType } from "@/types/shared.types";
 import { Plus, X } from "lucide-react";
+import { WithCopy } from "@/components/form/WithCopy";
+import { formatInputDate } from "@/lib/utils/dateUtils";
 
 interface DriverLicenseSectionProps {
   licenses: ILicenseEntry[];
@@ -39,19 +41,6 @@ export default function DriverLicenseSection({
     }
   };
 
-  const formatInputDate = (date: string | Date | undefined): string => {
-    if (!date) return "";
-    if (typeof date === "string") {
-      try {
-        const dateObj = new Date(date);
-        if (isNaN(dateObj.getTime())) return "";
-        return dateObj.toISOString().split("T")[0];
-      } catch {
-        return "";
-      }
-    }
-    return date.toISOString().split("T")[0];
-  };
 
   return (
     <div
@@ -133,27 +122,29 @@ export default function DriverLicenseSection({
                 >
                   License Number
                 </label>
-                <input
-                  type="text"
-                  value={license.licenseNumber || ""}
-                  onChange={(e) => {
-                    const newLicenses = [...licenses];
-                    newLicenses[index] = {
-                      ...license,
-                      licenseNumber: e.target.value,
-                    };
-                    onStage({ licenses: newLicenses });
-                  }}
-                  disabled={!isEditMode}
-                  className="w-full px-3 py-2 border rounded-lg text-sm transition-colors"
-                  style={{
-                    background: isEditMode
-                      ? "var(--color-surface)"
-                      : "var(--color-surface-variant)",
-                    borderColor: "var(--color-outline)",
-                    color: "var(--color-on-surface)",
-                  }}
-                />
+                <WithCopy value={license.licenseNumber || ""} label="License number">
+                  <input
+                    type="text"
+                    value={license.licenseNumber || ""}
+                    onChange={(e) => {
+                      const newLicenses = [...licenses];
+                      newLicenses[index] = {
+                        ...license,
+                        licenseNumber: e.target.value,
+                      };
+                      onStage({ licenses: newLicenses });
+                    }}
+                    disabled={!isEditMode}
+                    className="w-full px-3 py-2 border rounded-lg text-sm transition-colors pr-10"
+                    style={{
+                      background: isEditMode
+                        ? "var(--color-surface)"
+                        : "var(--color-surface-variant)",
+                      borderColor: "var(--color-outline)",
+                      color: "var(--color-on-surface)",
+                    }}
+                  />
+                </WithCopy>
               </div>
 
               <div>
@@ -163,27 +154,29 @@ export default function DriverLicenseSection({
                 >
                   Province/State
                 </label>
-                <input
-                  type="text"
-                  value={license.licenseStateOrProvince || ""}
-                  onChange={(e) => {
-                    const newLicenses = [...licenses];
-                    newLicenses[index] = {
-                      ...license,
-                      licenseStateOrProvince: e.target.value,
-                    };
-                    onStage({ licenses: newLicenses });
-                  }}
-                  disabled={!isEditMode}
-                  className="w-full px-3 py-2 border rounded-lg text-sm transition-colors"
-                  style={{
-                    background: isEditMode
-                      ? "var(--color-surface)"
-                      : "var(--color-surface-variant)",
-                    borderColor: "var(--color-outline)",
-                    color: "var(--color-on-surface)",
-                  }}
-                />
+                <WithCopy value={license.licenseStateOrProvince || ""} label="Province/State">
+                  <input
+                    type="text"
+                    value={license.licenseStateOrProvince || ""}
+                    onChange={(e) => {
+                      const newLicenses = [...licenses];
+                      newLicenses[index] = {
+                        ...license,
+                        licenseStateOrProvince: e.target.value,
+                      };
+                      onStage({ licenses: newLicenses });
+                    }}
+                    disabled={!isEditMode}
+                    className="w-full px-3 py-2 border rounded-lg text-sm transition-colors pr-10"
+                    style={{
+                      background: isEditMode
+                        ? "var(--color-surface)"
+                        : "var(--color-surface-variant)",
+                      borderColor: "var(--color-outline)",
+                      color: "var(--color-on-surface)",
+                    }}
+                  />
+                </WithCopy>
               </div>
 
               <div>
@@ -193,27 +186,29 @@ export default function DriverLicenseSection({
                 >
                   License Type
                 </label>
-                <input
-                  type="text"
-                  value={license.licenseType || ""}
-                  onChange={(e) => {
-                    const newLicenses = [...licenses];
-                    newLicenses[index] = {
-                      ...license,
-                      licenseType: e.target.value as ELicenseType,
-                    };
-                    onStage({ licenses: newLicenses });
-                  }}
-                  disabled={!isEditMode}
-                  className="w-full px-3 py-2 border rounded-lg text-sm transition-colors"
-                  style={{
-                    background: isEditMode
-                      ? "var(--color-surface)"
-                      : "var(--color-surface-variant)",
-                    borderColor: "var(--color-outline)",
-                    color: "var(--color-on-surface)",
-                  }}
-                />
+                <WithCopy value={license.licenseType || ""} label="License type">
+                  <input
+                    type="text"
+                    value={license.licenseType || ""}
+                    onChange={(e) => {
+                      const newLicenses = [...licenses];
+                      newLicenses[index] = {
+                        ...license,
+                        licenseType: e.target.value as ELicenseType,
+                      };
+                      onStage({ licenses: newLicenses });
+                    }}
+                    disabled={!isEditMode}
+                    className="w-full px-3 py-2 border rounded-lg text-sm transition-colors pr-10"
+                    style={{
+                      background: isEditMode
+                        ? "var(--color-surface)"
+                        : "var(--color-surface-variant)",
+                      borderColor: "var(--color-outline)",
+                      color: "var(--color-on-surface)",
+                    }}
+                  />
+                </WithCopy>
               </div>
 
               <div>
@@ -223,29 +218,31 @@ export default function DriverLicenseSection({
                 >
                   Expiry Date
                 </label>
-                <div className="relative">
-                  <input
-                    type="date"
-                    value={formatInputDate(license.licenseExpiry)}
-                    onChange={(e) => {
-                      const newLicenses = [...licenses];
-                      newLicenses[index] = {
-                        ...license,
-                        licenseExpiry: e.target.value,
-                      };
-                      onStage({ licenses: newLicenses });
-                    }}
-                    disabled={!isEditMode}
-                    className="w-full px-3 py-2 border rounded-lg text-sm transition-colors"
-                    style={{
-                      background: isEditMode
-                        ? "var(--color-surface)"
-                        : "var(--color-surface-variant)",
-                      borderColor: "var(--color-outline)",
-                      color: "var(--color-on-surface)",
-                    }}
-                  />
-                </div>
+                <WithCopy value={formatInputDate(license.licenseExpiry) || ""} label="Expiry date">
+                  <div className="relative">
+                    <input
+                      type="date"
+                      value={formatInputDate(license.licenseExpiry)}
+                      onChange={(e) => {
+                        const newLicenses = [...licenses];
+                        newLicenses[index] = {
+                          ...license,
+                          licenseExpiry: e.target.value,
+                        };
+                        onStage({ licenses: newLicenses });
+                      }}
+                      disabled={!isEditMode}
+                      className="w-full px-3 py-2 border rounded-lg text-sm transition-colors pr-10"
+                      style={{
+                        background: isEditMode
+                          ? "var(--color-surface)"
+                          : "var(--color-surface-variant)",
+                        borderColor: "var(--color-outline)",
+                        color: "var(--color-on-surface)",
+                      }}
+                    />
+                  </div>
+                </WithCopy>
               </div>
             </div>
           </div>

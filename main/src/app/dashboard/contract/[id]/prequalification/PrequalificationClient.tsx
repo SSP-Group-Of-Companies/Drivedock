@@ -2,60 +2,51 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import UpdateSubmitBar from "../safety-processing/components/UpdateSubmitBar";
 import { useContract } from "@/hooks/dashboard/contract/useContract";
-import { type PrequalificationsResponse } from "@/app/api/v1/admin/onboarding/[id]/prequalifications/types";
+import { usePrequalification, useUpdatePrequalification } from "@/hooks/dashboard/contract/usePrequalification";
 import { useDashboardPageLoading } from "@/hooks/useDashboardPageLoading";
 import { useDashboardLoading } from "@/store/useDashboardLoading";
 import DashboardFormWizard from "../components/DashboardFormWizard";
+import { useEditMode } from "../components/EditModeContext";
 import { OptionalsSection, MandatorySection, CategoriesSection } from "./components";
 import StepNotCompletedMessage from "../components/StepNotCompletedMessage";
 import { getCompanyById } from "@/constants/companies";
 
 
-// Helper function for API calls
-async function fetchPrequalifications(trackerId: string): Promise<PrequalificationsResponse> {
-  const response = await fetch(`/api/v1/admin/onboarding/${trackerId}/prequalifications`);
-  if (!response.ok) {
-    // Check if it's a 401 error and include the error message
-    if (response.status === 401) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(`401: ${errorData.message || 'Driver hasn\'t completed this step yet'}`);
-    }
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-  return response.json();
-}
-
 export default function PrequalificationClient({ trackerId }: { trackerId: string }) {
   const { data: contractData, isLoading: isContractLoading } = useContract(trackerId);
   const { hideLoader } = useDashboardPageLoading();
   const { isVisible: isDashboardLoaderVisible } = useDashboardLoading();
-    const [shouldRender, setShouldRender] = useState(false);
-  
-  // Direct state management instead of hooks
-  const [prequalData, setPrequalData] = useState<PrequalificationsResponse | null>(null);
-  const [isPrequalLoading, setIsPrequalLoading] = useState(true);
-  const [prequalError, setPrequalError] = useState<Error | null>(null);
-  
-  // Fetch prequalification data
-  useEffect(() => {
-    const loadPrequalifications = async () => {
-      try {
-        setIsPrequalLoading(true);
-        setPrequalError(null);
-        const data = await fetchPrequalifications(trackerId);
-        setPrequalData(data);
-      } catch (err) {
-        setPrequalError(err instanceof Error ? err : new Error('Failed to load prequalifications'));
-      } finally {
-        setIsPrequalLoading(false);
-      }
-    };
+  const { isEditMode } = useEditMode();
+  const [shouldRender, setShouldRender] = useState(false);
+  // unified submit bar handles messaging; no page-level banner
 
-    if (trackerId) {
-      loadPrequalifications();
+  // React Query hooks
+  const { 
+    data: prequalData, 
+    isLoading: isPrequalLoading, 
+    error,
+    isError 
+  } = usePrequalification(trackerId);
+  
+  const updateMutation = useUpdatePrequalification(trackerId);
+
+  // Staged changes (page-level) - like safety processing
+  const [staged, setStaged] = useState<Record<string, any>>({});
+
+  const hasUnsavedChanges = Object.keys(staged).length > 0;
+
+  const clearStaged = () => setStaged({});
+
+  // Merge-friendly staged updater used across sections
+  const stageUpdate = (changes: any) => {
+    if (typeof changes === "function") {
+      setStaged((prev) => changes(prev));
+    } else {
+      setStaged((prev) => ({ ...prev, ...changes }));
     }
-  }, [trackerId]);
+  };
   
   // Progressive loading: Show layout first, then content
   useEffect(() => {
@@ -68,10 +59,47 @@ export default function PrequalificationClient({ trackerId }: { trackerId: strin
     }
   }, [contractData, isContractLoading, hideLoader]);
 
+  const handleSave = async () => {
+    if (!hasUnsavedChanges) return;
 
+    // Prepare the data in the format the API expects
+    const dataToSend = {
+      canDriveManual: staged.canDriveManual !== undefined 
+        ? staged.canDriveManual 
+        : prequalData?.data?.preQualifications?.canDriveManual,
+      faultAccidentIn3Years: staged.faultAccidentIn3Years !== undefined 
+        ? staged.faultAccidentIn3Years 
+        : prequalData?.data?.preQualifications?.faultAccidentIn3Years,
+      zeroPointsOnAbstract: staged.zeroPointsOnAbstract !== undefined 
+        ? staged.zeroPointsOnAbstract 
+        : prequalData?.data?.preQualifications?.zeroPointsOnAbstract,
+      noUnpardonedCriminalRecord: staged.noUnpardonedCriminalRecord !== undefined 
+        ? staged.noUnpardonedCriminalRecord 
+        : prequalData?.data?.preQualifications?.noUnpardonedCriminalRecord,
+      driverType: staged.driverType !== undefined 
+        ? staged.driverType 
+        : prequalData?.data?.preQualifications?.driverType,
+      haulPreference: staged.haulPreference !== undefined 
+        ? staged.haulPreference 
+        : prequalData?.data?.preQualifications?.haulPreference,
+      teamStatus: staged.teamStatus !== undefined 
+        ? staged.teamStatus 
+        : prequalData?.data?.preQualifications?.teamStatus,
+      flatbedExperience: staged.flatbedExperience !== undefined 
+        ? staged.flatbedExperience 
+        : prequalData?.data?.preQualifications?.flatbedExperience,
+    };
+
+    try {
+      await updateMutation.mutateAsync(dataToSend);
+      clearStaged();
+    } catch (error) {
+      throw error instanceof Error ? error : new Error("Failed to save changes");
+    }
+  };
 
   // Check for 401 error (step not completed) - MUST be before loading check
-  if (prequalError && prequalError.message.includes("401")) {
+  if (isError && error && error.message.includes("401")) {
     return (
       <StepNotCompletedMessage 
         stepName="Prequalifications"
@@ -141,24 +169,31 @@ export default function PrequalificationClient({ trackerId }: { trackerId: strin
       {/* Form Wizard Progress */}
       <DashboardFormWizard contractContext={ctx} />
 
-
-
       {/* Prequalification Content */}
       <div className="rounded-xl border p-8 shadow-sm dark:shadow-none" style={{
         background: "var(--color-card)",
         borderColor: "var(--color-outline)",
       }}>
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-xl font-semibold" style={{ color: "var(--color-on-surface)" }}>Prequalification</h1>
+        {/* Unified submit bar */}
+        <UpdateSubmitBar dirty={hasUnsavedChanges} busy={updateMutation.isPending} onSubmit={handleSave} onDiscard={clearStaged} />
+
+        {/* Edit Mode Status - Right Aligned */}
+        <div className="flex justify-end mb-4">
           <div className="flex items-center gap-2">
-            <span className="text-sm" style={{ color: "var(--color-on-surface-variant)" }}>
+            <span
+              className="text-sm"
+              style={{ color: "var(--color-on-surface-variant)" }}
+            >
               Edit Mode:
             </span>
-            <span className="px-2 py-1 rounded text-xs font-medium" style={{
-              background: "var(--color-surface-variant)",
-              color: "var(--color-on-surface-variant)",
-            }}>
-              DISABLED (Read-only driver answers)
+            <span
+              className={`px-2 py-1 rounded text-xs font-medium ${
+                isEditMode
+                  ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                  : "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
+              }`}
+            >
+              {isEditMode ? "ON" : "OFF"}
             </span>
           </div>
         </div>
@@ -169,6 +204,9 @@ export default function PrequalificationClient({ trackerId }: { trackerId: strin
           <div className="lg:col-span-1 xl:col-span-4">
             <OptionalsSection 
               data={prequalData?.data?.preQualifications || {}} 
+              staged={staged}
+              onStage={stageUpdate}
+              isEditMode={isEditMode}
               company={company}
             />
           </div>
@@ -183,7 +221,12 @@ export default function PrequalificationClient({ trackerId }: { trackerId: strin
           
           {/* Categories Section - Wider for choice options */}
           <div className="lg:col-span-2 xl:col-span-5">
-            <CategoriesSection data={prequalData?.data?.preQualifications || {}} />
+            <CategoriesSection 
+              data={prequalData?.data?.preQualifications || {}}
+              staged={staged}
+              onStage={stageUpdate}
+              isEditMode={isEditMode}
+            />
           </div>
         </div>
       </div>
