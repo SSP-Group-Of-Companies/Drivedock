@@ -4,6 +4,8 @@ import React, { useState } from "react";
 import { useEditMode } from "@/app/dashboard/contract/[id]/components/EditModeContext";
 import { ICriminalRecordEntry } from "@/types/applicationForm.types";
 import { Plus, X } from "lucide-react";
+import { formatInputDate } from "@/lib/utils/dateUtils";
+import { WithCopy } from "@/components/form/WithCopy";
 
 interface CriminalRecordsSectionProps {
   data: ICriminalRecordEntry[];
@@ -53,43 +55,30 @@ export default function CriminalRecordsSection({ data, initialHas, onStage }: Cr
     onStage(updated);
   };
 
-  const formatInputDate = (date: string | Date) => {
-    if (!date) return "";
-    if (typeof date === "string") {
-      // Handle ISO date strings for HTML date input
-      try {
-        const dateObj = new Date(date);
-        if (isNaN(dateObj.getTime())) return "";
-        return dateObj.toISOString().split("T")[0];
-      } catch {
-        return "";
-      }
+  const formatDisplayDate = (date: string | Date) => {
+    if (!date) return "Not provided";
+    const s = String(date);
+
+    // If already plain date (yyyy-MM-dd), format directly without timezone conversion
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+      const [year, month, day] = s.split("-");
+      return `${month}/${day}/${year}`;
     }
-    return date.toISOString().split("T")[0];
+
+    // For ISO strings, use UTC methods to avoid timezone drift
+    try {
+      const dateObj = new Date(s);
+      if (isNaN(dateObj.getTime())) return s;
+
+      const year = dateObj.getUTCFullYear();
+      const month = String(dateObj.getUTCMonth() + 1).padStart(2, "0");
+      const day = String(dateObj.getUTCDate()).padStart(2, "0");
+      return `${month}/${day}/${year}`;
+    } catch {
+      return s;
+    }
   };
 
-  const formatDisplayDate = (date: string | Date) => {
-    if (!date) return "";
-    if (typeof date === "string") {
-      // Handle ISO date strings
-      try {
-        const dateObj = new Date(date);
-        if (isNaN(dateObj.getTime())) return date; // Return original if invalid
-        return dateObj.toLocaleDateString("en-CA", {
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-        });
-      } catch {
-        return date; // Return original if parsing fails
-      }
-    }
-    return date.toLocaleDateString("en-CA", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    });
-  };
 
   return (
     <section 
@@ -170,44 +159,50 @@ export default function CriminalRecordsSection({ data, initialHas, onStage }: Cr
           </div>
 
           {localData.map((record, index) => (
-            <div key={index} className="grid grid-cols-3 gap-4 items-center relative">
+            <div key={index} className="grid grid-cols-3 gap-2 items-center relative">
               {isEditMode ? (
                 <>
-                  <input
-                    type="text"
-                    value={record.offense}
-                    onChange={(e) => updateCriminalRecord(index, "offense", e.target.value)}
-                    placeholder="Offense"
-                    className="py-2 px-3 rounded-md border focus:ring-2 focus:outline-none transition-colors"
-                    style={{
-                      background: "var(--color-surface)",
-                      borderColor: "var(--color-outline)",
-                      color: "var(--color-on-surface)",
-                    }}
-                  />
-                  <input
-                    type="date"
-                    value={formatInputDate(record.dateOfSentence)}
-                    onChange={(e) => updateCriminalRecord(index, "dateOfSentence", e.target.value)}
-                    className="py-2 px-3 rounded-md border focus:ring-2 focus:outline-none transition-colors"
-                    style={{
-                      background: "var(--color-surface)",
-                      borderColor: "var(--color-outline)",
-                      color: "var(--color-on-surface)",
-                    }}
-                  />
-                  <input
-                    type="text"
-                    value={record.courtLocation}
-                    onChange={(e) => updateCriminalRecord(index, "courtLocation", e.target.value)}
-                    placeholder="Court Location"
-                    className="py-2 px-3 rounded-md border focus:ring-2 focus:outline-none transition-colors"
-                    style={{
-                      background: "var(--color-surface)",
-                      borderColor: "var(--color-outline)",
-                      color: "var(--color-on-surface)",
-                    }}
-                  />
+                  <WithCopy value={record.offense || ""} label="Offense">
+                    <input
+                      type="text"
+                      value={record.offense}
+                      onChange={(e) => updateCriminalRecord(index, "offense", e.target.value)}
+                      placeholder="Offense"
+                      className="w-full py-2 px-3 rounded-md border focus:ring-2 focus:outline-none transition-colors pr-10"
+                      style={{
+                        background: "var(--color-surface)",
+                        borderColor: "var(--color-outline)",
+                        color: "var(--color-on-surface)",
+                      }}
+                    />
+                  </WithCopy>
+                  <WithCopy value={formatInputDate(record.dateOfSentence) || ""} label="Date of sentence">
+                    <input
+                      type="date"
+                      value={formatInputDate(record.dateOfSentence)}
+                      onChange={(e) => updateCriminalRecord(index, "dateOfSentence", e.target.value)}
+                      className="w-full py-2 px-3 rounded-md border focus:ring-2 focus:outline-none transition-colors pr-9"
+                      style={{
+                        background: "var(--color-surface)",
+                        borderColor: "var(--color-outline)",
+                        color: "var(--color-on-surface)",
+                      }}
+                    />
+                  </WithCopy>
+                  <WithCopy value={record.courtLocation || ""} label="Court location">
+                    <input
+                      type="text"
+                      value={record.courtLocation}
+                      onChange={(e) => updateCriminalRecord(index, "courtLocation", e.target.value)}
+                      placeholder="Court Location"
+                      className="w-full py-2 px-3 rounded-md border focus:ring-2 focus:outline-none transition-colors pr-10"
+                      style={{
+                        background: "var(--color-surface)",
+                        borderColor: "var(--color-outline)",
+                        color: "var(--color-on-surface)",
+                      }}
+                    />
+                  </WithCopy>
                   <button
                     type="button"
                     onClick={() => removeCriminalRecord(index)}
@@ -218,15 +213,21 @@ export default function CriminalRecordsSection({ data, initialHas, onStage }: Cr
                 </>
               ) : (
                 <>
-                  <div className="py-2 px-3" style={{ color: "var(--color-on-surface)" }}>
-                    {record.offense}
-                  </div>
-                  <div className="py-2 px-3" style={{ color: "var(--color-on-surface)" }}>
-                    {formatDisplayDate(record.dateOfSentence)}
-                  </div>
-                  <div className="py-2 px-3" style={{ color: "var(--color-on-surface)" }}>
-                    {record.courtLocation}
-                  </div>
+                  <WithCopy value={record.offense || ""} label="Offense">
+                    <div className="py-2 px-3 pr-10" style={{ color: "var(--color-on-surface)" }}>
+                      {record.offense || "Not provided"}
+                    </div>
+                  </WithCopy>
+                  <WithCopy value={formatInputDate(record.dateOfSentence) || ""} label="Date of sentence">
+                    <div className="py-2 px-3 pr-10" style={{ color: "var(--color-on-surface)" }}>
+                      {formatDisplayDate(record.dateOfSentence)}
+                    </div>
+                  </WithCopy>
+                  <WithCopy value={record.courtLocation || ""} label="Court location">
+                    <div className="py-2 px-3 pr-10" style={{ color: "var(--color-on-surface)" }}>
+                      {record.courtLocation || "Not provided"}
+                    </div>
+                  </WithCopy>
                 </>
               )}
             </div>

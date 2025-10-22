@@ -4,6 +4,8 @@ import React, { useState } from "react";
 import { useEditMode } from "@/app/dashboard/contract/[id]/components/EditModeContext";
 import { IAccidentEntry } from "@/types/applicationForm.types";
 import { Plus, X } from "lucide-react";
+import { formatInputDate } from "@/lib/utils/dateUtils";
+import { WithCopy } from "@/components/form/WithCopy";
 
 interface AccidentReportSectionProps {
   data: IAccidentEntry[];
@@ -55,43 +57,30 @@ export default function AccidentReportSection({ data, initialHas, onStage }: Acc
     onStage(updated);
   };
 
-  const formatInputDate = (date: string | Date) => {
-    if (!date) return "";
-    if (typeof date === "string") {
-      // Handle ISO date strings for HTML date input
-      try {
-        const dateObj = new Date(date);
-        if (isNaN(dateObj.getTime())) return "";
-        return dateObj.toISOString().split("T")[0];
-      } catch {
-        return "";
-      }
+  const formatDisplayDate = (date: string | Date) => {
+    if (!date) return "Not provided";
+    const s = String(date);
+
+    // If already plain date (yyyy-MM-dd), format directly without timezone conversion
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+      const [year, month, day] = s.split("-");
+      return `${month}/${day}/${year}`;
     }
-    return date.toISOString().split("T")[0];
+
+    // For ISO strings, use UTC methods to avoid timezone drift
+    try {
+      const dateObj = new Date(s);
+      if (isNaN(dateObj.getTime())) return s;
+
+      const year = dateObj.getUTCFullYear();
+      const month = String(dateObj.getUTCMonth() + 1).padStart(2, "0");
+      const day = String(dateObj.getUTCDate()).padStart(2, "0");
+      return `${month}/${day}/${year}`;
+    } catch {
+      return s;
+    }
   };
 
-  const formatDisplayDate = (date: string | Date) => {
-    if (!date) return "";
-    if (typeof date === "string") {
-      // Handle ISO date strings
-      try {
-        const dateObj = new Date(date);
-        if (isNaN(dateObj.getTime())) return date; // Return original if invalid
-        return dateObj.toLocaleDateString("en-CA", {
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-        });
-      } catch {
-        return date; // Return original if parsing fails
-      }
-    }
-    return date.toLocaleDateString("en-CA", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    });
-  };
 
   return (
     <section 
@@ -184,62 +173,72 @@ export default function AccidentReportSection({ data, initialHas, onStage }: Acc
           </div>
 
           {localData.map((accident, index) => (
-            <div key={index} className="grid grid-cols-4 gap-4 items-center relative">
+            <div key={index} className="grid grid-cols-4 gap-2 items-center relative">
               {isEditMode ? (
                 <>
-                  <input
-                    type="date"
-                    value={formatInputDate(accident.date)}
-                    onChange={(e) => updateAccident(index, "date", e.target.value)}
-                    className="py-2 px-3 rounded-md border focus:ring-2 focus:outline-none transition-colors"
-                    style={{
-                      background: "var(--color-surface)",
-                      borderColor: "var(--color-outline)",
-                      color: "var(--color-on-surface)",
-                    }}
-                  />
-                  <input
-                    type="text"
-                    value={accident.natureOfAccident}
-                    onChange={(e) => updateAccident(index, "natureOfAccident", e.target.value)}
-                    placeholder="e.g., Rear end, Head-On"
-                    className="py-2 px-3 rounded-md border focus:ring-2 focus:outline-none transition-colors"
-                    style={{
-                      background: "var(--color-surface)",
-                      borderColor: "var(--color-outline)",
-                      color: "var(--color-on-surface)",
-                    }}
-                  />
-                  <input
-                    type="number"
-                    value={(accident as any).fatalities ?? ""}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      updateAccident(index, "fatalities", val === "" ? (undefined as unknown as number) : Math.max(0, Number(val)));
-                    }}
-                    min="0"
-                    className="py-2 px-3 rounded-md border focus:ring-2 focus:outline-none transition-colors"
-                    style={{
-                      background: "var(--color-surface)",
-                      borderColor: "var(--color-outline)",
-                      color: "var(--color-on-surface)",
-                    }}
-                  />
-                  <input
-                    type="number"
-                    value={(accident as any).injuries ?? ""}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      updateAccident(index, "injuries", val === "" ? (undefined as unknown as number) : Math.max(0, Number(val)));
-                    }}
-                    min="0"
-                    className="py-2 px-3 rounded-md border focus:ring-2 focus:outline-none transition-colors"
-                    style={{
-                      background: "var(--color-surface)",
-                      borderColor: "var(--color-outline)",
-                      color: "var(--color-on-surface)",
-                    }}
-                  />
+                  <WithCopy value={formatInputDate(accident.date) || ""} label="Accident date">
+                    <input
+                      type="date"
+                      value={formatInputDate(accident.date)}
+                      onChange={(e) => updateAccident(index, "date", e.target.value)}
+                      className="w-full py-2 px-3 rounded-md border focus:ring-2 focus:outline-none transition-colors pr-9"
+                      style={{
+                        background: "var(--color-surface)",
+                        borderColor: "var(--color-outline)",
+                        color: "var(--color-on-surface)",
+                      }}
+                    />
+                  </WithCopy>
+                  <WithCopy value={accident.natureOfAccident || ""} label="Nature of accident">
+                    <input
+                      type="text"
+                      value={accident.natureOfAccident}
+                      onChange={(e) => updateAccident(index, "natureOfAccident", e.target.value)}
+                      placeholder="e.g., Rear end, Head-On"
+                      className="w-full py-2 px-3 rounded-md border focus:ring-2 focus:outline-none transition-colors pr-10"
+                      style={{
+                        background: "var(--color-surface)",
+                        borderColor: "var(--color-outline)",
+                        color: "var(--color-on-surface)",
+                      }}
+                    />
+                  </WithCopy>
+                  <WithCopy value={(accident as any).fatalities !== undefined ? String((accident as any).fatalities) : ""} label="Fatalities">
+                    <input
+                      type="number"
+                      value={(accident as any).fatalities ?? ""}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        updateAccident(index, "fatalities", val === "" ? (undefined as unknown as number) : Math.max(0, Number(val)));
+                      }}
+                      min="0"
+                      placeholder="Fatalities"
+                      className="w-full py-2 px-3 rounded-md border focus:ring-2 focus:outline-none transition-colors pr-10"
+                      style={{
+                        background: "var(--color-surface)",
+                        borderColor: "var(--color-outline)",
+                        color: "var(--color-on-surface)",
+                      }}
+                    />
+                  </WithCopy>
+                  <WithCopy value={(accident as any).injuries !== undefined ? String((accident as any).injuries) : ""} label="Injuries">
+                    <input
+                      type="number"
+                      value={(accident as any).injuries ?? ""}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        updateAccident(index, "injuries", val === "" ? (undefined as unknown as number) : Math.max(0, Number(val)));
+                      }}
+                      min="0"
+                      placeholder="Injuries"
+                      className="w-full py-2 px-3 rounded-md border focus:ring-2 focus:outline-none transition-colors pr-10"
+                      style={{
+                        background: "var(--color-surface)",
+                        borderColor: "var(--color-outline)",
+                        color: "var(--color-on-surface)",
+                      }}
+                    />
+                  </WithCopy>
                   <button
                     type="button"
                     onClick={() => removeAccident(index)}
@@ -250,18 +249,26 @@ export default function AccidentReportSection({ data, initialHas, onStage }: Acc
                 </>
               ) : (
                 <>
-                  <div className="py-2 px-3" style={{ color: "var(--color-on-surface)" }}>
-                    {formatDisplayDate(accident.date)}
-                  </div>
-                  <div className="py-2 px-3" style={{ color: "var(--color-on-surface)" }}>
-                    {accident.natureOfAccident}
-                  </div>
-                  <div className="py-2 px-3" style={{ color: "var(--color-on-surface)" }}>
-                    {accident.fatalities}
-                  </div>
-                  <div className="py-2 px-3" style={{ color: "var(--color-on-surface)" }}>
-                    {accident.injuries}
-                  </div>
+                  <WithCopy value={formatInputDate(accident.date) || ""} label="Accident date">
+                    <div className="py-2 px-3 pr-10" style={{ color: "var(--color-on-surface)" }}>
+                      {formatDisplayDate(accident.date)}
+                    </div>
+                  </WithCopy>
+                  <WithCopy value={accident.natureOfAccident || ""} label="Nature of accident">
+                    <div className="py-2 px-3 pr-10" style={{ color: "var(--color-on-surface)" }}>
+                      {accident.natureOfAccident || "Not provided"}
+                    </div>
+                  </WithCopy>
+                  <WithCopy value={(accident as any).fatalities !== undefined ? String((accident as any).fatalities) : ""} label="Fatalities">
+                    <div className="py-2 px-3 pr-10" style={{ color: "var(--color-on-surface)" }}>
+                      {(accident as any).fatalities !== undefined ? (accident as any).fatalities : "Not provided"}
+                    </div>
+                  </WithCopy>
+                  <WithCopy value={(accident as any).injuries !== undefined ? String((accident as any).injuries) : ""} label="Injuries">
+                    <div className="py-2 px-3 pr-10" style={{ color: "var(--color-on-surface)" }}>
+                      {(accident as any).injuries !== undefined ? (accident as any).injuries : "Not provided"}
+                    </div>
+                  </WithCopy>
                 </>
               )}
             </div>

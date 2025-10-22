@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useEditMode } from "../../components/EditModeContext";
 import { type ITruckDetails } from "@/types/applicationForm.types";
 import { Truck } from "lucide-react";
+import { WithCopy } from "@/components/form/WithCopy";
 
 interface TruckDetailsSectionProps {
   truckDetails?: ITruckDetails;
@@ -122,9 +123,13 @@ export default function TruckDetailsSection({
                 >
                   VIN
                 </label>
-                <p style={{ color: "var(--color-on-surface)" }}>
-                  {truckDetails.vin}
-                </p>
+                <WithCopy value={truckDetails.vin || ""} label="VIN">
+                  <div className="p-3 rounded-lg border pr-10" style={{ background: "var(--color-surface)", borderColor: "var(--color-outline)" }}>
+                    <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
+                      {truckDetails.vin}
+                    </span>
+                  </div>
+                </WithCopy>
               </div>
             )}
             {truckDetails?.make && (
@@ -135,9 +140,13 @@ export default function TruckDetailsSection({
                 >
                   Make
                 </label>
-                <p style={{ color: "var(--color-on-surface)" }}>
-                  {truckDetails.make}
-                </p>
+                <WithCopy value={truckDetails.make || ""} label="Make">
+                  <div className="p-3 rounded-lg border pr-10" style={{ background: "var(--color-surface)", borderColor: "var(--color-outline)" }}>
+                    <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
+                      {truckDetails.make}
+                    </span>
+                  </div>
+                </WithCopy>
               </div>
             )}
             {truckDetails?.model && (
@@ -148,9 +157,13 @@ export default function TruckDetailsSection({
                 >
                   Model
                 </label>
-                <p style={{ color: "var(--color-on-surface)" }}>
-                  {truckDetails.model}
-                </p>
+                <WithCopy value={truckDetails.model || ""} label="Model">
+                  <div className="p-3 rounded-lg border pr-10" style={{ background: "var(--color-surface)", borderColor: "var(--color-outline)" }}>
+                    <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
+                      {truckDetails.model}
+                    </span>
+                  </div>
+                </WithCopy>
               </div>
             )}
             {truckDetails?.year && (
@@ -161,9 +174,13 @@ export default function TruckDetailsSection({
                 >
                   Year
                 </label>
-                <p style={{ color: "var(--color-on-surface)" }}>
-                  {truckDetails.year}
-                </p>
+                <WithCopy value={truckDetails.year || ""} label="Year">
+                  <div className="p-3 rounded-lg border pr-10" style={{ background: "var(--color-surface)", borderColor: "var(--color-outline)" }}>
+                    <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
+                      {truckDetails.year}
+                    </span>
+                  </div>
+                </WithCopy>
               </div>
             )}
             {truckDetails?.province && (
@@ -174,9 +191,13 @@ export default function TruckDetailsSection({
                 >
                   Province
                 </label>
-                <p style={{ color: "var(--color-on-surface)" }}>
-                  {truckDetails.province}
-                </p>
+                <WithCopy value={truckDetails.province || ""} label="Province">
+                  <div className="p-3 rounded-lg border pr-10" style={{ background: "var(--color-surface)", borderColor: "var(--color-outline)" }}>
+                    <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
+                      {truckDetails.province}
+                    </span>
+                  </div>
+                </WithCopy>
               </div>
             )}
             {truckDetails?.truckUnitNumber && (
@@ -187,9 +208,13 @@ export default function TruckDetailsSection({
                 >
                   Truck/Unit No
                 </label>
-                <p style={{ color: "var(--color-on-surface)" }}>
-                  {truckDetails.truckUnitNumber}
-                </p>
+                <WithCopy value={truckDetails.truckUnitNumber || ""} label="Truck/Unit No">
+                  <div className="p-3 rounded-lg border pr-10" style={{ background: "var(--color-surface)", borderColor: "var(--color-outline)" }}>
+                    <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
+                      {truckDetails.truckUnitNumber}
+                    </span>
+                  </div>
+                </WithCopy>
               </div>
             )}
             {truckDetails?.plateNumber && (
@@ -200,9 +225,13 @@ export default function TruckDetailsSection({
                 >
                   Plate No
                 </label>
-                <p style={{ color: "var(--color-on-surface)" }}>
-                  {truckDetails.plateNumber}
-                </p>
+                <WithCopy value={truckDetails.plateNumber || ""} label="Plate No">
+                  <div className="p-3 rounded-lg border pr-10" style={{ background: "var(--color-surface)", borderColor: "var(--color-outline)" }}>
+                    <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
+                      {truckDetails.plateNumber}
+                    </span>
+                  </div>
+                </WithCopy>
               </div>
             )}
             {truckDetails?.employeeNumber && (
@@ -213,9 +242,13 @@ export default function TruckDetailsSection({
                 >
                   Employee Number
                 </label>
-                <p style={{ color: "var(--color-on-surface)" }}>
-                  {truckDetails.employeeNumber}
-                </p>
+                <WithCopy value={truckDetails.employeeNumber || ""} label="Employee Number">
+                  <div className="p-3 rounded-lg border pr-10" style={{ background: "var(--color-surface)", borderColor: "var(--color-outline)" }}>
+                    <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
+                      {truckDetails.employeeNumber}
+                    </span>
+                  </div>
+                </WithCopy>
               </div>
             )}
           </div>
@@ -271,18 +304,20 @@ export default function TruckDetailsSection({
             >
               VIN
             </label>
-            <input
-              type="text"
-              value={truckDetails?.vin || ""}
-              onChange={(e) => handleFieldChange("vin", e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg text-sm transition-colors"
-              style={{
-                borderColor: "var(--color-outline)",
-                background: "var(--color-surface)",
-                color: "var(--color-on-surface)",
-              }}
-              placeholder="Enter VIN"
-            />
+            <WithCopy value={truckDetails?.vin || ""} label="VIN">
+              <input
+                type="text"
+                value={truckDetails?.vin || ""}
+                onChange={(e) => handleFieldChange("vin", e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg text-sm transition-colors pr-10"
+                style={{
+                  borderColor: "var(--color-outline)",
+                  background: "var(--color-surface)",
+                  color: "var(--color-on-surface)",
+                }}
+                placeholder="Enter VIN"
+              />
+            </WithCopy>
           </div>
 
           <div>
@@ -292,18 +327,20 @@ export default function TruckDetailsSection({
             >
               Make
             </label>
-            <input
-              type="text"
-              value={truckDetails?.make}
-              onChange={(e) => handleFieldChange("make", e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg text-sm transition-colors"
-              style={{
-                borderColor: "var(--color-outline)",
-                background: "var(--color-surface)",
-                color: "var(--color-on-surface)",
-              }}
-              placeholder="Enter Make"
-            />
+            <WithCopy value={truckDetails?.make || ""} label="Make">
+              <input
+                type="text"
+                value={truckDetails?.make}
+                onChange={(e) => handleFieldChange("make", e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg text-sm transition-colors pr-10"
+                style={{
+                  borderColor: "var(--color-outline)",
+                  background: "var(--color-surface)",
+                  color: "var(--color-on-surface)",
+                }}
+                placeholder="Enter Make"
+              />
+            </WithCopy>
           </div>
 
           <div>
@@ -313,18 +350,20 @@ export default function TruckDetailsSection({
             >
               Model
             </label>
-            <input
-              type="text"
-              value={truckDetails?.model}
-              onChange={(e) => handleFieldChange("model", e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg text-sm transition-colors"
-              style={{
-                borderColor: "var(--color-outline)",
-                background: "var(--color-surface)",
-                color: "var(--color-on-surface)",
-              }}
-              placeholder="Enter Model"
-            />
+            <WithCopy value={truckDetails?.model || ""} label="Model">
+              <input
+                type="text"
+                value={truckDetails?.model}
+                onChange={(e) => handleFieldChange("model", e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg text-sm transition-colors pr-10"
+                style={{
+                  borderColor: "var(--color-outline)",
+                  background: "var(--color-surface)",
+                  color: "var(--color-on-surface)",
+                }}
+                placeholder="Enter Model"
+              />
+            </WithCopy>
           </div>
 
           <div>
@@ -334,18 +373,20 @@ export default function TruckDetailsSection({
             >
               Year
             </label>
-            <input
-              type="text"
-              value={truckDetails?.year}
-              onChange={(e) => handleFieldChange("year", e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg text-sm transition-colors"
-              style={{
-                borderColor: "var(--color-outline)",
-                background: "var(--color-surface)",
-                color: "var(--color-on-surface)",
-              }}
-              placeholder="Enter Year"
-            />
+            <WithCopy value={truckDetails?.year || ""} label="Year">
+              <input
+                type="text"
+                value={truckDetails?.year}
+                onChange={(e) => handleFieldChange("year", e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg text-sm transition-colors pr-10"
+                style={{
+                  borderColor: "var(--color-outline)",
+                  background: "var(--color-surface)",
+                  color: "var(--color-on-surface)",
+                }}
+                placeholder="Enter Year"
+              />
+            </WithCopy>
           </div>
 
           <div>
@@ -355,18 +396,20 @@ export default function TruckDetailsSection({
             >
               Province
             </label>
-            <input
-              type="text"
-              value={truckDetails?.province}
-              onChange={(e) => handleFieldChange("province", e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg text-sm transition-colors"
-              style={{
-                borderColor: "var(--color-outline)",
-                background: "var(--color-surface)",
-                color: "var(--color-on-surface)",
-              }}
-              placeholder="Enter Province"
-            />
+            <WithCopy value={truckDetails?.province || ""} label="Province">
+              <input
+                type="text"
+                value={truckDetails?.province}
+                onChange={(e) => handleFieldChange("province", e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg text-sm transition-colors pr-10"
+                style={{
+                  borderColor: "var(--color-outline)",
+                  background: "var(--color-surface)",
+                  color: "var(--color-on-surface)",
+                }}
+                placeholder="Enter Province"
+              />
+            </WithCopy>
           </div>
 
           <div>
@@ -376,20 +419,22 @@ export default function TruckDetailsSection({
             >
               Truck/Unit No
             </label>
-            <input
-              type="text"
-              value={truckDetails?.truckUnitNumber}
-              onChange={(e) =>
-                handleFieldChange("truckUnitNumber", e.target.value)
-              }
-              className="w-full px-3 py-2 border rounded-lg text-sm transition-colors"
-              style={{
-                borderColor: "var(--color-outline)",
-                background: "var(--color-surface)",
-                color: "var(--color-on-surface)",
-              }}
-              placeholder="Enter Truck/Unit No"
-            />
+            <WithCopy value={truckDetails?.truckUnitNumber || ""} label="Truck/Unit No">
+              <input
+                type="text"
+                value={truckDetails?.truckUnitNumber}
+                onChange={(e) =>
+                  handleFieldChange("truckUnitNumber", e.target.value)
+                }
+                className="w-full px-3 py-2 border rounded-lg text-sm transition-colors pr-10"
+                style={{
+                  borderColor: "var(--color-outline)",
+                  background: "var(--color-surface)",
+                  color: "var(--color-on-surface)",
+                }}
+                placeholder="Enter Truck/Unit No"
+              />
+            </WithCopy>
           </div>
 
           <div>
@@ -399,18 +444,20 @@ export default function TruckDetailsSection({
             >
               Plate No
             </label>
-            <input
-              type="text"
-              value={truckDetails?.plateNumber}
-              onChange={(e) => handleFieldChange("plateNumber", e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg text-sm transition-colors"
-              style={{
-                borderColor: "var(--color-outline)",
-                background: "var(--color-surface)",
-                color: "var(--color-on-surface)",
-              }}
-              placeholder="Enter Plate No"
-            />
+            <WithCopy value={truckDetails?.plateNumber || ""} label="Plate No">
+              <input
+                type="text"
+                value={truckDetails?.plateNumber}
+                onChange={(e) => handleFieldChange("plateNumber", e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg text-sm transition-colors pr-10"
+                style={{
+                  borderColor: "var(--color-outline)",
+                  background: "var(--color-surface)",
+                  color: "var(--color-on-surface)",
+                }}
+                placeholder="Enter Plate No"
+              />
+            </WithCopy>
           </div>
 
           <div>
@@ -420,18 +467,20 @@ export default function TruckDetailsSection({
             >
               Employee Number
             </label>
-            <input
-              type="text"
-              value={truckDetails?.employeeNumber}
-              onChange={(e) => handleFieldChange("employeeNumber", e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg text-sm transition-colors"
-              style={{
-                borderColor: "var(--color-outline)",
-                background: "var(--color-surface)",
-                color: "var(--color-on-surface)",
-              }}
-              placeholder="Enter Employee Number"
-            />
+            <WithCopy value={truckDetails?.employeeNumber || ""} label="Employee Number">
+              <input
+                type="text"
+                value={truckDetails?.employeeNumber}
+                onChange={(e) => handleFieldChange("employeeNumber", e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg text-sm transition-colors pr-10"
+                style={{
+                  borderColor: "var(--color-outline)",
+                  background: "var(--color-surface)",
+                  color: "var(--color-on-surface)",
+                }}
+                placeholder="Enter Employee Number"
+              />
+            </WithCopy>
           </div>
         </div>
       </div>

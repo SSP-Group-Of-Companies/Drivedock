@@ -452,3 +452,19 @@ body {
     filter: invert(1) hue-rotate(180deg) saturate(0.7);
   }
 }
+
+/* Dashboard-specific date picker styling for dark mode */
+.dashboard input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: none; /* Reset any existing filters */
+  opacity: 1;
+}
+
+.dark .dashboard input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) hue-rotate(180deg) saturate(0.8);
+  opacity: 1;
+}
+
+/* Ensure the calendar icon is visible in both light and dark modes for dashboard */
+.dashboard input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 0.8;
+}

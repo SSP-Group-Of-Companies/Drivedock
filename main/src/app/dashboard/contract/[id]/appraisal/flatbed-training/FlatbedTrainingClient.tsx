@@ -11,6 +11,7 @@ import { useEditMode } from "../../components/EditModeContext";
 import { FlatbedTrainingContent } from "./components";
 import UpdateSubmitBar from "../../safety-processing/components/UpdateSubmitBar";
 import StepNotCompletedMessage from "../../components/StepNotCompletedMessage";
+import FlatbedNotApplicableMessage from "./components/FlatbedNotApplicableMessage";
 import type { IFileAsset } from "@/types/shared.types";
 
 type StagedFlatbed = {
@@ -64,6 +65,11 @@ export default function FlatbedTrainingClient({ trackerId }: { trackerId: string
     await updateMutation.mutateAsync(payload);
     clearStaged();
   };
+
+  // Check if flatbed training is not applicable for this driver
+  if (flatbedData?.data?.onboardingContext?.needsFlatbedTraining === false) {
+    return <FlatbedNotApplicableMessage trackerId={trackerId} />;
+  }
 
   if (isError && error && (error.message.includes("401") || error.message.includes("403"))) {
     return (

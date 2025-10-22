@@ -5,6 +5,8 @@ import { useEditMode } from "../../components/EditModeContext";
 import { IFastCard } from "@/types/applicationForm.types";
 import { ECountryCode } from "@/types/shared.types";
 import { CreditCard } from "lucide-react";
+import { WithCopy } from "@/components/form/WithCopy";
+import { formatInputDate } from "@/lib/utils/dateUtils";
 
 interface FastCardSectionProps {
   fastCard?: IFastCard;
@@ -19,19 +21,6 @@ export default function FastCardSection({
 }: FastCardSectionProps) {
   const { isEditMode } = useEditMode();
 
-  const formatInputDate = (date: string | Date | undefined): string => {
-    if (!date) return "";
-    if (typeof date === "string") {
-      try {
-        const dateObj = new Date(date);
-        if (isNaN(dateObj.getTime())) return "";
-        return dateObj.toISOString().split("T")[0];
-      } catch {
-        return "";
-      }
-    }
-    return date.toISOString().split("T")[0];
-  };
 
   // Only show for Canadian drivers
   if (countryCode !== ECountryCode.CA) {
@@ -71,27 +60,29 @@ export default function FastCardSection({
           >
             Fast Card Number
           </label>
-          <input
-            type="text"
-            value={fastCard?.fastCardNumber || ""}
-            onChange={(e) => {
-              onStage({
-                fastCard: {
-                  ...fastCard,
-                  fastCardNumber: e.target.value,
-                },
-              });
-            }}
-            disabled={!isEditMode}
-            className="w-full px-3 py-2 border rounded-lg text-sm transition-colors"
-            style={{
-              background: isEditMode
-                ? "var(--color-surface)"
-                : "var(--color-surface-variant)",
-              borderColor: "var(--color-outline)",
-              color: "var(--color-on-surface)",
-            }}
-          />
+          <WithCopy value={fastCard?.fastCardNumber || ""} label="Fast card number">
+            <input
+              type="text"
+              value={fastCard?.fastCardNumber || ""}
+              onChange={(e) => {
+                onStage({
+                  fastCard: {
+                    ...fastCard,
+                    fastCardNumber: e.target.value,
+                  },
+                });
+              }}
+              disabled={!isEditMode}
+              className="w-full px-3 py-2 border rounded-lg text-sm transition-colors pr-10"
+              style={{
+                background: isEditMode
+                  ? "var(--color-surface)"
+                  : "var(--color-surface-variant)",
+                borderColor: "var(--color-outline)",
+                color: "var(--color-on-surface)",
+              }}
+            />
+          </WithCopy>
         </div>
 
         <div>
@@ -101,29 +92,31 @@ export default function FastCardSection({
           >
             Expiry Date
           </label>
-          <div className="relative">
-            <input
-              type="date"
-              value={formatInputDate(fastCard?.fastCardExpiry || "")}
-              onChange={(e) => {
-                onStage({
-                  fastCard: {
-                    ...fastCard,
-                    fastCardExpiry: e.target.value,
-                  },
-                });
-              }}
-              disabled={!isEditMode}
-              className="w-full px-3 py-2 border rounded-lg text-sm transition-colors"
-              style={{
-                background: isEditMode
-                  ? "var(--color-surface)"
-                  : "var(--color-surface-variant)",
-                borderColor: "var(--color-outline)",
-                color: "var(--color-on-surface)",
-              }}
-            />
-          </div>
+          <WithCopy value={formatInputDate(fastCard?.fastCardExpiry) || ""} label="Expiry date">
+            <div className="relative">
+              <input
+                type="date"
+                value={formatInputDate(fastCard?.fastCardExpiry || "")}
+                onChange={(e) => {
+                  onStage({
+                    fastCard: {
+                      ...fastCard,
+                      fastCardExpiry: e.target.value,
+                    },
+                  });
+                }}
+                disabled={!isEditMode}
+                className="w-full px-3 py-2 border rounded-lg text-sm transition-colors pr-10"
+                style={{
+                  background: isEditMode
+                    ? "var(--color-surface)"
+                    : "var(--color-surface-variant)",
+                  borderColor: "var(--color-outline)",
+                  color: "var(--color-on-surface)",
+                }}
+              />
+            </div>
+          </WithCopy>
         </div>
       </div>
     </div>
