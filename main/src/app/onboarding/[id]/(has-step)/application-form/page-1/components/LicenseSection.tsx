@@ -45,7 +45,9 @@ export default function LicenseSection() {
     name: "licenses",
   });
 
-  const [frontPhotoPreview, setFrontPhotoPreview] = useState<string | null>(null);
+  const [frontPhotoPreview, setFrontPhotoPreview] = useState<string | null>(
+    null
+  );
   const [backPhotoPreview, setBackPhotoPreview] = useState<string | null>(null);
   const [licenseExpiryWarnings, setLicenseExpiryWarnings] = useState<{
     [key: number]: string;
@@ -65,8 +67,12 @@ export default function LicenseSection() {
     control,
     name: "licenses",
   });
-  const [frontPhotoStatus, setFrontPhotoStatus] = useState<"idle" | "uploading" | "deleting" | "error">("idle");
-  const [backPhotoStatus, setBackPhotoStatus] = useState<"idle" | "uploading" | "deleting" | "error">("idle");
+  const [frontPhotoStatus, setFrontPhotoStatus] = useState<
+    "idle" | "uploading" | "deleting" | "error"
+  >("idle");
+  const [backPhotoStatus, setBackPhotoStatus] = useState<
+    "idle" | "uploading" | "deleting" | "error"
+  >("idle");
   const [frontPhotoMessage, setFrontPhotoMessage] = useState("");
   const [backPhotoMessage, setBackPhotoMessage] = useState("");
 
@@ -106,7 +112,9 @@ export default function LicenseSection() {
 
       // Check if date is between 31-60 days (show warning but allow proceeding)
       if (selectedDate <= sixtyDaysFromNow) {
-        const daysUntilExpiry = Math.ceil((selectedDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+        const daysUntilExpiry = Math.ceil(
+          (selectedDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+        );
         if (selectedDate <= thirtyDaysFromNow) {
           setError(`licenses.${index}.licenseExpiry`, {
             type: "manual",
@@ -126,12 +134,21 @@ export default function LicenseSection() {
     [setError, clearErrors, setLicenseExpiryWarnings]
   );
 
-  const handleLicensePhotoUpload = async (file: File | null, side: "front" | "back") => {
-    const fieldKey = side === "front" ? "licenses.0.licenseFrontPhoto" : "licenses.0.licenseBackPhoto";
+  const handleLicensePhotoUpload = async (
+    file: File | null,
+    side: "front" | "back"
+  ) => {
+    const fieldKey =
+      side === "front"
+        ? "licenses.0.licenseFrontPhoto"
+        : "licenses.0.licenseBackPhoto";
 
-    const setPreview = side === "front" ? setFrontPhotoPreview : setBackPhotoPreview;
-    const setStatus = side === "front" ? setFrontPhotoStatus : setBackPhotoStatus;
-    const setMessage = side === "front" ? setFrontPhotoMessage : setBackPhotoMessage;
+    const setPreview =
+      side === "front" ? setFrontPhotoPreview : setBackPhotoPreview;
+    const setStatus =
+      side === "front" ? setFrontPhotoStatus : setBackPhotoStatus;
+    const setMessage =
+      side === "front" ? setFrontPhotoMessage : setBackPhotoMessage;
 
     if (!file) {
       setValue(fieldKey, undefined, {
@@ -172,12 +189,21 @@ export default function LicenseSection() {
     }
   };
 
-  const handleLicensePhotoRemove = async (side: "front" | "back", s3Key: string) => {
-    const fieldKey = side === "front" ? "licenses.0.licenseFrontPhoto" : "licenses.0.licenseBackPhoto";
+  const handleLicensePhotoRemove = async (
+    side: "front" | "back",
+    s3Key: string
+  ) => {
+    const fieldKey =
+      side === "front"
+        ? "licenses.0.licenseFrontPhoto"
+        : "licenses.0.licenseBackPhoto";
 
-    const setPreview = side === "front" ? setFrontPhotoPreview : setBackPhotoPreview;
-    const setStatus = side === "front" ? setFrontPhotoStatus : setBackPhotoStatus;
-    const setMessage = side === "front" ? setFrontPhotoMessage : setBackPhotoMessage;
+    const setPreview =
+      side === "front" ? setFrontPhotoPreview : setBackPhotoPreview;
+    const setStatus =
+      side === "front" ? setFrontPhotoStatus : setBackPhotoStatus;
+    const setMessage =
+      side === "front" ? setFrontPhotoMessage : setBackPhotoMessage;
 
     setStatus("deleting");
     setMessage("");
@@ -203,7 +229,8 @@ export default function LicenseSection() {
     setStatus("idle");
   };
 
-  const licenseErrors = errors.licenses as FieldErrors<ApplicationFormPage1Schema>["licenses"];
+  const licenseErrors =
+    errors.licenses as FieldErrors<ApplicationFormPage1Schema>["licenses"];
 
   const canAddMore = fields.length < 3;
 
@@ -219,7 +246,13 @@ export default function LicenseSection() {
       const backUrl = methods.getValues("licenses.0.licenseBackPhoto.url");
       if (backUrl) setBackPhotoPreview(backUrl);
     }
-  }, [frontPhotoPreview, frontPhotoS3Key, backPhotoPreview, backPhotoS3Key, methods]);
+  }, [
+    frontPhotoPreview,
+    frontPhotoS3Key,
+    backPhotoPreview,
+    backPhotoS3Key,
+    methods,
+  ]);
 
   // Validate license expiry dates when they change
   useEffect(() => {
@@ -238,7 +271,9 @@ export default function LicenseSection() {
     const currentFieldIndices = fields.map((_, index) => index);
 
     // Remove warnings for licenses that no longer exist
-    const warningsToRemove = currentWarningKeys.filter((key) => !currentFieldIndices.includes(key));
+    const warningsToRemove = currentWarningKeys.filter(
+      (key) => !currentFieldIndices.includes(key)
+    );
     if (warningsToRemove.length > 0) {
       setLicenseExpiryWarnings((prev) => {
         const newWarnings = { ...prev };
@@ -252,12 +287,21 @@ export default function LicenseSection() {
   if (!mounted) return null;
   return (
     <section className="space-y-6 border border-gray-200 p-6 rounded-lg bg-white/80 shadow-sm">
-      <h2 className="text-center text-lg font-semibold text-gray-800">{t("form.step2.page1.sections.license")}</h2>
+      <h2 className="text-center text-lg font-semibold text-gray-800">
+        {t("form.step2.page1.sections.license")}
+      </h2>
 
       {fields.map((field, index) => (
-        <div key={field.id} className="space-y-4 border border-gray-300 p-4 rounded-lg relative bg-white">
+        <div
+          key={field.id}
+          className="space-y-4 border border-gray-300 p-4 rounded-lg relative bg-white"
+        >
           <div className="flex justify-between items-center">
-            <h4 className="text-md font-medium text-gray-500">{index === 0 ? t("form.step2.page1.sections.license") : `${t("form.step2.page1.sections.license")} ${index + 1}`}</h4>
+            <h4 className="text-md font-medium text-gray-500">
+              {index === 0
+                ? t("form.step2.page1.sections.license")
+                : `${t("form.step2.page1.sections.license")} ${index + 1}`}
+            </h4>
             {index > 0 && (
               <button
                 type="button"
@@ -272,29 +316,43 @@ export default function LicenseSection() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t("form.step2.page1.fields.licenseNumber")}</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t("form.step2.page1.fields.licenseNumber")}
+              </label>
               <input
                 type="text"
                 {...register(`licenses.${index}.licenseNumber`)}
                 className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
                 data-field={`licenses.${index}.licenseNumber`}
               />
-              {licenseErrors?.[index]?.licenseNumber && <p className="text-red-500 text-sm mt-1">{licenseErrors?.[index]?.licenseNumber?.message}</p>}
+              {licenseErrors?.[index]?.licenseNumber && (
+                <p className="text-red-500 text-sm mt-1">
+                  {licenseErrors?.[index]?.licenseNumber?.message}
+                </p>
+              )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t("form.step2.page1.fields.licenseProvince")}</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t("form.step2.page1.fields.licenseProvince")}
+              </label>
               <input
                 type="text"
                 {...register(`licenses.${index}.licenseStateOrProvince`)}
                 className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
                 data-field={`licenses.${index}.licenseStateOrProvince`}
               />
-              {licenseErrors?.[index]?.licenseStateOrProvince && <p className="text-red-500 text-sm mt-1">{licenseErrors?.[index]?.licenseStateOrProvince?.message}</p>}
+              {licenseErrors?.[index]?.licenseStateOrProvince && (
+                <p className="text-red-500 text-sm mt-1">
+                  {licenseErrors?.[index]?.licenseStateOrProvince?.message}
+                </p>
+              )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t("form.step2.page1.fields.licenseType")}</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t("form.step2.page1.fields.licenseType")}
+              </label>
 
               {index === 0 ? (
                 <input
@@ -320,18 +378,28 @@ export default function LicenseSection() {
                 </select>
               )}
 
-              {licenseErrors?.[index]?.licenseType && <p className="text-red-500 text-sm mt-1">{licenseErrors?.[index]?.licenseType?.message}</p>}
+              {licenseErrors?.[index]?.licenseType && (
+                <p className="text-red-500 text-sm mt-1">
+                  {licenseErrors?.[index]?.licenseType?.message}
+                </p>
+              )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t("form.step2.page1.fields.licenseExpiry")}</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t("form.step2.page1.fields.licenseExpiry")}
+              </label>
               <input
                 type="date"
                 {...register(`licenses.${index}.licenseExpiry`)}
                 className="py-2 px-3 mt-1 block w-full rounded-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md"
                 data-field={`licenses.${index}.licenseExpiry`}
               />
-              {licenseErrors?.[index]?.licenseExpiry && <p className="text-red-500 text-sm mt-1">{licenseErrors?.[index]?.licenseExpiry?.message}</p>}
+              {licenseErrors?.[index]?.licenseExpiry && (
+                <p className="text-red-500 text-sm mt-1">
+                  {licenseErrors?.[index]?.licenseExpiry?.message}
+                </p>
+              )}
               {licenseExpiryWarnings[index] && (
                 <p className="text-yellow-600 text-sm mt-1 flex items-center">
                   <AlertTriangle className="w-4 h-4 mr-1" />
@@ -346,14 +414,27 @@ export default function LicenseSection() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
               {/* License Front Photo Upload */}
               <div data-field="licenses.0.licenseFrontPhoto">
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t("form.step2.page1.fields.licenseFrontPhoto")}</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t("form.step2.page1.fields.licenseFrontPhoto")}
+                </label>
                 {frontPhotoPreview ? (
                   <div className="relative">
-                    <Image src={frontPhotoPreview} alt="License Front Preview" width={400} height={128} className="w-full h-32 object-cover rounded-lg border border-gray-300" />
+                    <Image
+                      src={frontPhotoPreview}
+                      alt="License Front Preview"
+                      width={400}
+                      height={128}
+                      className="w-full h-32 object-cover rounded-lg border border-gray-300"
+                    />
                     <button
                       type="button"
-                      onClick={() => handleLicensePhotoRemove("front", frontPhotoS3Key)}
-                      disabled={frontPhotoStatus === "uploading" || frontPhotoStatus === "deleting"}
+                      onClick={() =>
+                        handleLicensePhotoRemove("front", frontPhotoS3Key)
+                      }
+                      disabled={
+                        frontPhotoStatus === "uploading" ||
+                        frontPhotoStatus === "deleting"
+                      }
                       className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
                     >
                       <X size={12} />
@@ -365,7 +446,9 @@ export default function LicenseSection() {
                     className="cursor-pointer flex flex-col items-center justify-center py-6 px-4 mt-1 w-full text-sm text-gray-600 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 hover:border-gray-400 transition-all duration-200 group"
                   >
                     <Camera className="w-8 h-8 text-gray-400 mb-2 group-hover:text-gray-600" />
-                    <span className="font-medium text-gray-400">{t("form.step2.page1.fields.licensePhotoDesc")}</span>
+                    <span className="font-medium text-gray-400">
+                      {t("form.step2.page1.fields.licensePhotoDesc")}
+                    </span>
                   </label>
                 )}
                 <input
@@ -373,11 +456,21 @@ export default function LicenseSection() {
                   type="file"
                   accept="image/*"
                   {...register(`licenses.0.licenseFrontPhoto`)}
-                  onChange={(e) => handleLicensePhotoUpload(e.target.files?.[0] || null, "front")}
+                  onChange={(e) =>
+                    handleLicensePhotoUpload(
+                      e.target.files?.[0] || null,
+                      "front"
+                    )
+                  }
                   data-field="licenses.0.licenseFrontPhoto"
                   className="hidden"
                 />
-                {frontPhotoStatus !== "uploading" && licenseErrors?.[0]?.licenseFrontPhoto && <p className="text-red-500 text-sm mt-1">{licenseErrors?.[0]?.licenseFrontPhoto?.message?.toString()}</p>}
+                {frontPhotoStatus !== "uploading" &&
+                  licenseErrors?.[0]?.licenseFrontPhoto && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {licenseErrors?.[0]?.licenseFrontPhoto?.message?.toString()}
+                    </p>
+                  )}
 
                 {frontPhotoStatus === "uploading" && (
                   <div className="text-yellow-600 text-sm mt-1 flex items-center">
@@ -393,21 +486,44 @@ export default function LicenseSection() {
                   </div>
                 )}
 
-                {frontPhotoStatus === "error" && <p className="text-red-500 text-sm mt-1">{frontPhotoMessage}</p>}
+                {frontPhotoStatus === "error" && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {frontPhotoMessage}
+                  </p>
+                )}
 
-                {!licenseErrors?.[0]?.licenseFrontPhoto && frontPhotoStatus === "idle" && frontPhotoMessage && <p className="text-green-600 text-sm mt-1">{frontPhotoMessage}</p>}
+                {!licenseErrors?.[0]?.licenseFrontPhoto &&
+                  frontPhotoStatus === "idle" &&
+                  frontPhotoMessage && (
+                    <p className="text-green-600 text-sm mt-1">
+                      {frontPhotoMessage}
+                    </p>
+                  )}
               </div>
 
               {/* License Back Photo Upload */}
               <div data-field="licenses.0.licenseBackPhoto">
-                <label className="block text-sm font-medium text-gray-700 mb-1">{t("form.step2.page1.fields.licenseBackPhoto")}</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t("form.step2.page1.fields.licenseBackPhoto")}
+                </label>
                 {backPhotoPreview ? (
                   <div className="relative">
-                    <Image src={backPhotoPreview} alt="License Back Preview" width={400} height={128} className="w-full h-32 object-cover rounded-lg border border-gray-300" />
+                    <Image
+                      src={backPhotoPreview}
+                      alt="License Back Preview"
+                      width={400}
+                      height={128}
+                      className="w-full h-32 object-cover rounded-lg border border-gray-300"
+                    />
                     <button
                       type="button"
-                      onClick={() => handleLicensePhotoRemove("back", backPhotoS3Key)}
-                      disabled={backPhotoStatus === "uploading" || backPhotoStatus === "deleting"}
+                      onClick={() =>
+                        handleLicensePhotoRemove("back", backPhotoS3Key)
+                      }
+                      disabled={
+                        backPhotoStatus === "uploading" ||
+                        backPhotoStatus === "deleting"
+                      }
                       className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
                     >
                       <X size={12} />
@@ -419,7 +535,9 @@ export default function LicenseSection() {
                     className="cursor-pointer flex flex-col items-center justify-center py-6 px-4 mt-1 w-full text-sm text-gray-600 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 hover:bg-gray-100 hover:border-gray-400 transition-all duration-200 group"
                   >
                     <Camera className="w-8 h-8 text-gray-400 mb-2 group-hover:text-gray-600" />
-                    <span className="font-medium text-gray-400">{t("form.step2.page1.fields.licensePhotoDesc")}</span>
+                    <span className="font-medium text-gray-400">
+                      {t("form.step2.page1.fields.licensePhotoDesc")}
+                    </span>
                   </label>
                 )}
                 <input
@@ -427,11 +545,21 @@ export default function LicenseSection() {
                   type="file"
                   accept="image/*"
                   {...register(`licenses.0.licenseBackPhoto`)}
-                  onChange={(e) => handleLicensePhotoUpload(e.target.files?.[0] || null, "back")}
+                  onChange={(e) =>
+                    handleLicensePhotoUpload(
+                      e.target.files?.[0] || null,
+                      "back"
+                    )
+                  }
                   data-field="licenses.0.licenseBackPhoto"
                   className="hidden"
                 />
-                {backPhotoStatus !== "uploading" && licenseErrors?.[0]?.licenseBackPhoto && <p className="text-red-500 text-sm mt-1">{licenseErrors?.[0]?.licenseBackPhoto?.message?.toString()}</p>}
+                {backPhotoStatus !== "uploading" &&
+                  licenseErrors?.[0]?.licenseBackPhoto && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {licenseErrors?.[0]?.licenseBackPhoto?.message?.toString()}
+                    </p>
+                  )}
 
                 {backPhotoStatus === "uploading" && (
                   <div className="text-yellow-600 text-sm mt-1 flex items-center">
@@ -447,9 +575,19 @@ export default function LicenseSection() {
                   </div>
                 )}
 
-                {backPhotoStatus === "error" && <p className="text-red-500 text-sm mt-1">{backPhotoMessage}</p>}
+                {backPhotoStatus === "error" && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {backPhotoMessage}
+                  </p>
+                )}
 
-                {!licenseErrors?.[0]?.licenseBackPhoto && backPhotoStatus === "idle" && backPhotoMessage && <p className="text-green-600 text-sm mt-1">{backPhotoMessage}</p>}
+                {!licenseErrors?.[0]?.licenseBackPhoto &&
+                  backPhotoStatus === "idle" &&
+                  backPhotoMessage && (
+                    <p className="text-green-600 text-sm mt-1">
+                      {backPhotoMessage}
+                    </p>
+                  )}
               </div>
             </div>
           )}
