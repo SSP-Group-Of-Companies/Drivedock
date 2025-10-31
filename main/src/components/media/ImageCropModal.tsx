@@ -74,27 +74,7 @@ const customCropperStyles = `
     background-color: #007bff !important;
   }
   
-  /* Responsive padding - applied to modal wrapper, not cropper container */
-  .image-crop-modal .cropper-container {
-    padding: 10px !important;
-  }
-  
-  @media (max-width: 768px) {
-    .image-crop-modal .cropper-container {
-      padding: 20px !important;
-    }
-  }
-  
-  /* Make the crop box have more breathing room */
-  .image-crop-modal .cropper-container .cropper-crop-box {
-    margin: 5px !important;
-  }
-  
-  @media (max-width: 768px) {
-    .image-crop-modal .cropper-container .cropper-crop-box {
-      margin: 10px !important;
-    }
-  }
+  /* Do not add padding/margin to Cropper's internal layout boxes. */
   
   /* Ensure touch targets are large enough */
   .image-crop-modal .cropper-container .cropper-crop-box .cropper-point {
@@ -412,7 +392,7 @@ export default function ImageCropModal({
           </svg>
         </button>
 
-        <div className="flex-1 min-h-0">
+        <div className="flex-1 min-h-0 p-3 sm:p-0">
           <Cropper
             ref={cropperRef}
             src={imageSrc}
