@@ -32,6 +32,7 @@ import {
   uploadToS3Presigned,
   deleteTempFiles,
   isTempKey,
+  getDownloadUrlFromS3Key,
 } from "@/lib/utils/s3Upload";
 import ImageZoomModal from "./ImageZoomModal";
 
@@ -706,39 +707,45 @@ export default function ImageGallerySection({
     input.click();
   };
 
-  // Download image function
+  // helper to support legacy assets that only have a URL
+  function extractS3KeyFromUrl(url?: string): string | undefined {
+    if (!url) return undefined;
+    try {
+      const u = new URL(url);
+      // For URLs like https://<bucket>.s3.<region>.amazonaws.com/<KEY...>
+      return u.pathname.replace(/^\/+/, "");
+    } catch {
+      return undefined;
+    }
+  }
+
   const handleDownloadImage = async (
     photo: IFileAsset,
     itemTitle: string,
     photoLabel: string
   ) => {
     try {
-      const response = await fetch(photo.url);
-      const blob = await response.blob();
-
-      // Create a temporary URL for the blob
-      const url = window.URL.createObjectURL(blob);
-
-      // Create a temporary anchor element to trigger download
-      const link = document.createElement("a");
-      link.href = url;
-
-      // Generate filename from item title and photo label
-      const filename = `${itemTitle.replace(/\s+/g, "_")}_${photoLabel.replace(
+      // Build a safe base name; server will append the correct extension if missing
+      const base = `${itemTitle.replace(/\s+/g, "_")}_${photoLabel.replace(
         /\s+/g,
         "_"
-      )}.jpg`;
-      link.download = filename;
+      )}`;
 
-      // Append to body, click, and remove
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      // Prefer s3Key; otherwise derive from legacy public URL
+      const key = photo.s3Key || extractS3KeyFromUrl(photo.url);
+      if (!key) throw new Error("File is missing S3 key/url.");
 
-      // Clean up the temporary URL
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Failed to download image:", error);
+      // Ask backend for a presigned GET that forces download with Content-Disposition
+      const url = await getDownloadUrlFromS3Key({ s3Key: key, filename: base });
+
+      // Trigger a navigation download (no CORS, no blobs)
+      const a = document.createElement("a");
+      a.href = url;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (err) {
+      console.error("Failed to download image:", err);
       setUploadError("Failed to download image. Please try again.");
     }
   };
