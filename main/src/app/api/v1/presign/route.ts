@@ -8,7 +8,7 @@ import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
 import { parseJsonBody } from "@/lib/utils/reqParser";
 import { AWS_BUCKET_NAME, AWS_REGION } from "@/config/env";
 
-/** Allowed mime types per folder */
+/** Allowed mimeTypes per folder */
 const IMAGE_ONLY = [EFileMimeType.JPEG, EFileMimeType.JPG, EFileMimeType.PNG] as const;
 const IMAGES_AND_DOCS = [EFileMimeType.JPEG, EFileMimeType.JPG, EFileMimeType.PNG, EFileMimeType.PDF, EFileMimeType.DOC, EFileMimeType.DOCX] as const;
 
