@@ -5,6 +5,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { formatInputDate } from "@/lib/utils/dateUtils";
 import { IApplicationFormPage1 } from "@/types/applicationForm.types";
+import { ECountryCode } from "@/types/shared.types";
 import { WithCopy } from "@/components/form/WithCopy";
 
 interface PersonalInformationSectionProps {
@@ -16,9 +17,10 @@ interface PersonalInformationSectionProps {
   prequalificationData?: {
     statusInCanada?: string;
   };
+  countryCode?: ECountryCode;
 }
 
-export default function PersonalInformationSection({ data, isEditMode, staged, onStage, trackerId, prequalificationData }: PersonalInformationSectionProps) {
+export default function PersonalInformationSection({ data, isEditMode, staged, onStage, trackerId, prequalificationData, countryCode }: PersonalInformationSectionProps) {
   const [showSIN, setShowSIN] = useState(false);
 
   // Merge staged changes with original data for display
@@ -67,6 +69,16 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
   };
 
   const calculatedAge = formData.dob ? calculateAge(formData.dob) : null;
+
+  // Country-aware labels (match onboarding behavior)
+  const cc = countryCode ?? ECountryCode.CA;
+  const isUS = cc === ECountryCode.US;
+  const idAcronym = isUS ? "SSN" : "SIN";
+  const idFull = isUS ? "Social Security Number" : "Social Insurance Number";
+  const idLabel = `${idAcronym} (${idFull})`;
+  const idPhotoLabel = `${idAcronym} Card Photo`;
+  const idIssueDateLabel = `${idAcronym} Issue Date`;
+  const idExpiryDateLabel = `${idAcronym} Expiry Date`;
 
   const updateField = (field: keyof typeof formData, value: any) => {
     onStage({ [field]: value });
@@ -187,7 +199,7 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <label className="text-sm font-medium" style={{ color: "var(--color-on-surface-variant)" }}>
-              SIN (Social Insurance Number)
+              {idLabel}
             </label>
             <div className="relative">
               {isEditMode ? (
@@ -229,7 +241,7 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
 
           <div className="space-y-2">
             <label className="text-sm font-medium" style={{ color: "var(--color-on-surface-variant)" }}>
-              SIN Card Photo
+              {idPhotoLabel}
             </label>
 
             {/* View-only: Click behavior depends on context */}
@@ -241,7 +253,7 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
                 style={{ background: "var(--color-surface)", borderColor: "var(--color-outline-variant)" }}
               >
                 <div className="relative inline-block">
-                  <Image src={formData.sinPhoto.url} alt="SIN Card" width={240} height={140} className="mx-auto rounded-lg object-contain max-h-40 w-auto" />
+                  <Image src={formData.sinPhoto.url} alt={`${idAcronym} Card`} width={240} height={140} className="mx-auto rounded-lg object-contain max-h-40 w-auto" />
                 </div>
 
                 {/* Hover overlay */}
@@ -282,10 +294,10 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <label className="text-sm font-medium" style={{ color: "var(--color-on-surface-variant)" }}>
-              SIN Issue Date
+              {idIssueDateLabel}
             </label>
             {isEditMode ? (
-              <WithCopy value={formatInputDate(formData.sinIssueDate) || ""} label="SIN issue date">
+              <WithCopy value={formatInputDate(formData.sinIssueDate) || ""} label={`${idAcronym} issue date`}>
                 <input
                   type="date"
                   value={formatInputDate(formData.sinIssueDate) || ""}
@@ -299,7 +311,7 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
                 />
               </WithCopy>
             ) : (
-              <WithCopy value={formatInputDate(formData.sinIssueDate) || ""} label="SIN issue date">
+              <WithCopy value={formatInputDate(formData.sinIssueDate) || ""} label={`${idAcronym} issue date`}>
                 <div
                   className="p-3 rounded-lg border pr-10"
                   style={{
@@ -319,10 +331,10 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
           {prequalificationData?.statusInCanada === "Work Permit" && (
             <div className="space-y-2">
               <label className="text-sm font-medium" style={{ color: "var(--color-on-surface-variant)" }}>
-                SIN Expiry Date
+                {idExpiryDateLabel}
               </label>
               {isEditMode ? (
-                <WithCopy value={formatInputDate(formData.sinExpiryDate) || ""} label="SIN expiry date">
+                <WithCopy value={formatInputDate(formData.sinExpiryDate) || ""} label={`${idAcronym} expiry date`}>
                   <input
                     type="date"
                     value={formatInputDate(formData.sinExpiryDate) || ""}
@@ -337,7 +349,7 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
                   />
                 </WithCopy>
               ) : (
-                <WithCopy value={formatInputDate(formData.sinExpiryDate) || ""} label="SIN expiry date">
+                <WithCopy value={formatInputDate(formData.sinExpiryDate) || ""} label={`${idAcronym} expiry date`}>
                   <div
                     className="p-3 rounded-lg border pr-10"
                     style={{

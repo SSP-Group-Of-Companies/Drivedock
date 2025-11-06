@@ -3,11 +3,27 @@
 
 // Reuse the styled sections from the contract personal-details page
 import { PersonalInformationSection, PlaceOfBirthSection, AddressHistorySection } from "@/app/dashboard/contract/[id]/personal-details/components";
+import { getCompanyById } from "@/constants/companies";
+import { ECountryCode } from "@/types/shared.types";
 
-export default function PersonalDetailsCard({ personal, prequal }: { personal: any; prequal: { statusInCanada?: string } | any }) {
+export default function PersonalDetailsCard({
+  personal,
+  prequal,
+  companyId,
+  preApprovalCountryCode,
+}: {
+  personal: any;
+  prequal: { statusInCanada?: string } | any;
+  companyId?: string;
+  preApprovalCountryCode?: ECountryCode;
+}) {
   const isEditMode = false; // Always read-only for invitation review
   const staged = {};
   const noop = () => {};
+
+  // Determine country code from company or pre-approval (for dynamic SSN/SIN labels)
+  const selectedCompany = companyId ? getCompanyById(companyId) : null;
+  const effectiveCountryCode = selectedCompany?.countryCode ?? preApprovalCountryCode ?? ECountryCode.CA;
 
   return (
     <div className="rounded-xl border p-8 shadow-sm dark:shadow-none" style={{ background: "var(--color-card)", borderColor: "var(--color-outline)" }}>
@@ -28,7 +44,14 @@ export default function PersonalDetailsCard({ personal, prequal }: { personal: a
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
         {/* Left: Personal info (bigger) */}
         <div className="xl:col-span-7">
-          <PersonalInformationSection data={personal} isEditMode={isEditMode} staged={staged} onStage={noop} prequalificationData={{ statusInCanada: prequal?.statusInCanada }} />
+          <PersonalInformationSection
+            data={personal}
+            isEditMode={isEditMode}
+            staged={staged}
+            onStage={noop}
+            prequalificationData={{ statusInCanada: prequal?.statusInCanada }}
+            countryCode={effectiveCountryCode}
+          />
         </div>
 
         {/* Right: Place of Birth + Address history */}

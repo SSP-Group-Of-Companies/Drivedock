@@ -17,6 +17,8 @@ import {
 } from "./components";
 import { validateAddresses } from "@/app/api/v1/admin/onboarding/[id]/application-form/personal-details/addressValidation";
 import StepNotCompletedMessage from "../components/StepNotCompletedMessage";
+import { getCompanyById } from "@/constants/companies";
+import { ECountryCode } from "@/types/shared.types";
 
 
 export default function PersonalDetailsClient({
@@ -116,6 +118,8 @@ export default function PersonalDetailsClient({
 
   const personalData = personalDetailsData.data.personalDetails;
   const ctx = contractData;
+  const countryCode =
+    getCompanyById(contractData.companyId)?.countryCode ?? ECountryCode.CA;
 
   const handleSave = async () => {
     if (!hasUnsavedChanges) return;
@@ -219,6 +223,7 @@ export default function PersonalDetailsClient({
               }
               trackerId={trackerId}
               prequalificationData={prequalificationData?.data?.preQualifications}
+              countryCode={countryCode}
             />
           </div>
 

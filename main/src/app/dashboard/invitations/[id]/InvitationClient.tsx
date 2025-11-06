@@ -152,7 +152,12 @@ export default function InvitationClient({ trackerId }: { trackerId: string }) {
       <PrequalificationCard prequal={payload.preQualifications} companyId={companyId} preApprovalCountryCode={preApprovalCountryCode as any} />
 
       {/* Personal Details (read-only) */}
-      <PersonalDetailsCard personal={payload.personalDetails} prequal={payload.preQualifications} />
+      <PersonalDetailsCard
+        personal={payload.personalDetails}
+        prequal={payload.preQualifications}
+        companyId={companyId}
+        preApprovalCountryCode={preApprovalCountryCode as any}
+      />
     </motion.div>
   );
 }
