@@ -237,7 +237,6 @@ export default function PrintClient({ trackerId }: Readonly<{ trackerId: string 
             / Road Test unlock after <span className="font-medium">Drive Test</span>. Others unlock after <span className="font-medium">Policies & Consents</span>.
           </span>
         </div>
-        ```
         {/* GRID */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {pdfList.map((item, index) => {
