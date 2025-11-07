@@ -1,3 +1,4 @@
+// main/src/lib/pdf/utils/frontendPdfUtils.ts
 import { ECompanyId, getCompanyById } from "@/constants/companies";
 import { ECountryCode } from "@/types/shared.types";
 
@@ -7,14 +8,16 @@ type IPdfListItem = {
   needsSafetyAdminId: boolean;
 };
 
-export const getCompanyPdfList = (
-  companyId: ECompanyId,
-  onboardingId: string
-): IPdfListItem[] => {
+export const getCompanyPdfList = (companyId: ECompanyId, onboardingId: string): IPdfListItem[] => {
   const isCa = getCompanyById(companyId)?.countryCode === ECountryCode.CA;
 
   const apiBase = `/api/v1/admin/onboarding/${onboardingId}/filled-pdf`;
   const base: IPdfListItem[] = [
+    {
+      label: "Pre-Qualifications",
+      apiUrl: `${apiBase}/prequalifications`,
+      needsSafetyAdminId: true,
+    },
     {
       label: "Company Policy",
       apiUrl: `${apiBase}/company-policy`,
