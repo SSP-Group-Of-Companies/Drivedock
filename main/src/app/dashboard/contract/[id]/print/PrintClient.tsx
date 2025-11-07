@@ -224,7 +224,6 @@ export default function PrintClient({ trackerId }: Readonly<{ trackerId: string 
               </div>
             </motion.div>
           )}
-        Here you go—Pre-Qualifications note comes first now: ```tsx
         <div
           className="mb-6 rounded-lg p-3 text-xs flex items-center gap-2"
           style={{
