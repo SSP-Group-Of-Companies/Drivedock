@@ -75,10 +75,7 @@ export default function PersonalDetails({
     control,
   } = useFormContext<ApplicationFormPage1Schema>();
 
-  // Scanbot modal state (for SIN photo)
-  const [showScanbotScanner, setShowScanbotScanner] = useState(false);
-
-  // register the field so RHF tracks touched/dirty/errors as before
+  // Make sure RHF knows about sinPhoto field
   useEffect(() => {
     register("sinPhoto");
   }, [register]);
@@ -89,7 +86,10 @@ export default function PersonalDetails({
   const { selectedCountryCode } = useCountrySelection();
   const { openCrop, CropModalPortal } = useCroppedUpload();
 
-  //  WATCH ALL FIELDS UP FRONT (no hooks in JSX, no conditional hooks)
+  // Scanbot modal state
+  const [showScanbotScanner, setShowScanbotScanner] = useState(false);
+
+  //  WATCH ALL FIELDS
   const sinValue = useWatch({ control, name: "sin" });
   const genderValue = useWatch({ control, name: "gender" });
   const dobValue = useWatch({ control, name: "dob" });
@@ -121,11 +121,10 @@ export default function PersonalDetails({
 
   const calculatedAge = dobValue ? calculateAge(dobValue) : null;
 
-  // Check if user has Work Permit status from prequalification data
+  // Work Permit?
   const hasWorkPermitStatus =
     prequalificationData?.statusInCanada === "Work Permit";
 
-  // Determine the label based on country code
   const getSINLabel = () => {
     if (onboardingContext?.companyId) {
       const company = COMPANIES.find(
@@ -219,6 +218,7 @@ export default function PersonalDetails({
     originalName: "",
   };
 
+  // === SIN PHOTO: core upload handler (used by both UploadPicker & Scanbot) ===
   const handleSinPhotoUpload = async (file: File | null) => {
     if (!file) {
       setValue("sinPhoto", EMPTY_PHOTO, { shouldValidate: true });
@@ -232,31 +232,30 @@ export default function PersonalDetails({
     setSinPhotoMessage("");
 
     try {
-      // 1) open cropper (drivers will preview/adjust)
+      // 1) Optional crop step (still useful even after Scanbot)
       const cropResult = await openCrop({
         file,
-        aspect: DOC_ASPECTS.FREE, // SIN can be card or document format
+        aspect: DOC_ASPECTS.FREE, // SIN can be card or document
         targetWidth: 1600,
         jpegQuality: 0.9,
       });
 
-      // Handle user cancellation or HEIC files that can't be cropped
       if (!cropResult) {
-        // User cancelled or HEIC detected; just reset UI quietly
+        // user cancelled crop
         setSinPhotoStatus("idle");
         return;
       }
 
       const { file: croppedFile, previewDataUrl } = cropResult;
 
-      // 2) upload using your existing util (unchanged)
+      // 2) Upload to S3 – unchanged
       const result = await uploadToS3Presigned({
         file: croppedFile,
         folder: ES3Folder.SIN_PHOTOS,
         trackerId: id,
       });
 
-      // 3) update form and preview with processed image
+      // 3) Store in form + preview
       setValue("sinPhoto", result, { shouldValidate: true });
       setSinPhotoPreview(previewDataUrl);
       setSinPhotoStatus("idle");
@@ -292,12 +291,20 @@ export default function PersonalDetails({
     setSinPhotoStatus("idle");
   };
 
+  // When Scanbot returns, feed its File into the same upload flow
+  const handleScanbotResult = async (file: File | null) => {
+    setShowScanbotScanner(false);
+    if (file) {
+      await handleSinPhotoUpload(file);
+    }
+  };
+
   // 👇 early return AFTER all hooks
   if (!mounted) return null;
 
   return (
     <section className="space-y-6 border border-gray-200 p-6 rounded-lg bg-white/80 shadow-sm">
-      {/* Hidden fields to prevent autocomplete - more aggressive approach */}
+      {/* Hidden fields to prevent autocomplete */}
       <input
         type="text"
         style={{ display: "none" }}
@@ -350,13 +357,13 @@ export default function PersonalDetails({
         <TextInput
           name="lastName"
           label={t("form.step2.page1.fields.lastName")}
-          placeholder="Deo"
+          placeholder="Doe"
           error={errors.lastName}
           register={register}
           autoComplete="new-password"
         />
 
-        {/* Email Address */}
+        {/* Email */}
         <TextInput
           name="email"
           label={t("form.step2.page1.fields.email")}
@@ -366,7 +373,7 @@ export default function PersonalDetails({
           autoComplete="new-password"
         />
 
-        {/* Gender Selection */}
+        {/* Gender */}
         <div data-field="gender">
           <label className="block text-sm font-medium text-gray-700 mb-2">
             {t("form.step2.page1.fields.gender")}
@@ -444,7 +451,7 @@ export default function PersonalDetails({
             {showSIN ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
 
-          {/* SIN Validation Status */}
+          {/* SIN validation status messages */}
           {sinValidationStatus === "checking" && (
             <div className="text-yellow-600 text-sm mt-1 flex items-center">
               <p className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-600 mr-2"></p>
@@ -522,7 +529,7 @@ export default function PersonalDetails({
           )}
         </div>
 
-        {/* SIN Expiry Date - Only for Work Permit holders */}
+        {/* SIN Expiry (Work Permit only) */}
         {hasWorkPermitStatus && (
           <div>
             <label className="block text-sm font-medium text-gray-700">
@@ -547,7 +554,7 @@ export default function PersonalDetails({
           </div>
         )}
 
-        {/* SIN Photo Upload - Full Width */}
+        {/* SIN Photo Upload / Scan – FULL WIDTH */}
         <div className="md:col-span-2" data-field="sinPhoto.s3Key">
           <label className="block text-sm font-medium text-gray-700 mb-1">
             {t("form.step2.page1.fields.sinPhoto")}
@@ -575,22 +582,24 @@ export default function PersonalDetails({
               </button>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="flex flex-col md:flex-row gap-3">
               <UploadPicker
                 label={t("form.step2.page1.fields.sinPhotoDesc")}
                 onPick={(file) => handleSinPhotoUpload(file)}
                 accept="image/*,.heic,.heif"
                 className="w-full"
               />
+
               <button
                 type="button"
-                className="text-xs px-3 py-1.5 rounded border border-slate-300 text-slate-700 hover:bg-slate-50"
                 onClick={() => setShowScanbotScanner(true)}
+                className="inline-flex items-center justify-center rounded-md border border-[#0071BC] px-4 py-2 text-xs md:text-sm font-medium text-[#0071BC] hover:bg-[#0071BC]/5 transition-colors"
               >
-                Scan with camera (beta)
+                Use camera scanner (recommended)
               </button>
             </div>
           )}
+
           {sinPhotoStatus !== "uploading" && errors.sinPhoto && (
             <p className="text-red-500 text-sm mt-1">
               {errors.sinPhoto.message?.toString() || "SIN photo is required"}
@@ -705,7 +714,7 @@ export default function PersonalDetails({
           )}
         </div>
 
-        {/* Phone: Home */}
+        {/* Phones & Emergency contact (unchanged) */}
         <PhoneInput
           name="phoneHome"
           label={t("form.step2.page1.fields.phoneHome")}
@@ -714,7 +723,6 @@ export default function PersonalDetails({
           error={errors.phoneHome}
         />
 
-        {/* Phone: Cell */}
         <PhoneInput
           name="phoneCell"
           label={t("form.step2.page1.fields.phoneCell")}
@@ -723,7 +731,6 @@ export default function PersonalDetails({
           error={errors.phoneCell}
         />
 
-        {/* Emergency Contact */}
         <TextInput
           name="emergencyContactName"
           label={t("form.step2.page1.fields.emergencyContactName")}
@@ -740,20 +747,15 @@ export default function PersonalDetails({
         />
       </div>
 
-      {/* Crop modal portal */}
-      {CropModalPortal}
-
-      {/* Scanbot document scanner modal */}
+      {/* Scanbot scanner modal */}
       <ScanbotDocumentScannerModal
         open={showScanbotScanner}
         onClose={() => setShowScanbotScanner(false)}
-        onResult={(_file) => {
-          // For now, the modal just logs the Scanbot result in the console.
-          // Once we know the exact shape, we'll:
-          // 1) convert it to a File, and
-          // 2) call handleSinPhotoUpload(file) here.
-        }}
+        onResult={handleScanbotResult}
       />
+
+      {/* Crop modal portal */}
+      {CropModalPortal}
     </section>
   );
 }

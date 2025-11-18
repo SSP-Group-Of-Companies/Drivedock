@@ -23,21 +23,49 @@ export function ScanbotDocumentScannerModal({
 
     (async () => {
       try {
-        // 1) Init SDK
+        // 1) Initialize Scanbot SDK
         await initScanbotSdk();
+        if (cancelled) return;
 
-        // 2) RTU UI config – no containerId needed
+        // 2) Configure ready-to-use document scanning UI
         const config = new ScanbotSDK.UI.Config.DocumentScanningFlow();
 
-        // 3) Open scanner UI
+        // 3) Start scanner
         const result = await ScanbotSDK.UI.createDocumentScanner(config);
         if (cancelled) return;
 
-        // 🔍 For now: just log what Scanbot returns
-        console.log("Scanbot document scanner result:", result);
+        const document = result?.document;
+        const pages = document?.pages ?? [];
 
-        // We’re not converting to File yet – just reporting “no file”
-        onResult(null);
+        // User cancelled / no pages
+        if (!document || pages.length === 0) {
+          onResult(null);
+          return;
+        }
+
+        const firstPage = pages[0];
+
+        // 4) Load processed (cropped + deskewed) image
+        const image = await firstPage.loadDocumentImage();
+        if (!image) {
+          onResult(null);
+          return;
+        }
+
+        // 5) Convert Scanbot image → JPEG bytes
+        // Scanbot typings are generic; at runtime this is a byte buffer.
+        const jpegBytes = await image.toJpeg(90);
+
+        // 6) Wrap into Blob/File – treat jpegBytes as a BlobPart
+        const blobPart = jpegBytes as unknown as BlobPart;
+
+        const blob = new Blob([blobPart], { type: "image/jpeg" });
+
+        const file = new File([blob], `sin-scan-${Date.now()}.jpg`, {
+          type: "image/jpeg",
+        });
+
+        onResult(file);
       } catch (err) {
         console.error("Scanbot scanner failed:", err);
         onResult(null);
@@ -55,7 +83,6 @@ export function ScanbotDocumentScannerModal({
 
   if (!open) return null;
 
-  // Simple overlay while Scanbot’s own UI takes over the viewport
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 text-white text-sm">
       Starting document scanner...
