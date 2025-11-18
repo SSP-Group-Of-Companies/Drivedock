@@ -31,6 +31,7 @@ import { useCountrySelection } from "@/hooks/useCountrySelection";
 import { useCroppedUpload } from "@/hooks/useCroppedUpload";
 import { DOC_ASPECTS } from "@/lib/docAspects";
 import UploadPicker from "@/components/media/UploadPicker";
+import { ScanbotDocumentScannerModal } from "@/components/media/ScanbotDocumentScannerModal";
 
 // Helpers
 const formatPhoneNumber = (value: string) => {
@@ -73,6 +74,9 @@ export default function PersonalDetails({
     formState: { errors },
     control,
   } = useFormContext<ApplicationFormPage1Schema>();
+
+  // Scanbot modal state (for SIN photo)
+  const [showScanbotScanner, setShowScanbotScanner] = useState(false);
 
   // register the field so RHF tracks touched/dirty/errors as before
   useEffect(() => {
@@ -121,16 +125,21 @@ export default function PersonalDetails({
   const hasWorkPermitStatus =
     prequalificationData?.statusInCanada === "Work Permit";
 
-  // Clear company selection when resuming an application to prevent conflicts
-  // Company store removed from pre-approval; no-op here
-
   // Determine the label based on country code
   const getSINLabel = () => {
     if (onboardingContext?.companyId) {
-      const company = COMPANIES.find((c) => c.id === onboardingContext.companyId);
-      if (company) return company.countryCode === ECountryCode.US ? "SSN (Social Security Number)" : "SIN (Social Insurance Number)";
+      const company = COMPANIES.find(
+        (c) => c.id === onboardingContext.companyId
+      );
+      if (company)
+        return company.countryCode === ECountryCode.US
+          ? "SSN (Social Security Number)"
+          : "SIN (Social Insurance Number)";
     }
-    if (selectedCountryCode) return selectedCountryCode === ECountryCode.US ? "SSN (Social Security Number)" : "SIN (Social Insurance Number)";
+    if (selectedCountryCode)
+      return selectedCountryCode === ECountryCode.US
+        ? "SSN (Social Security Number)"
+        : "SIN (Social Insurance Number)";
     return t("form.step2.page1.fields.sin");
   };
 
@@ -210,7 +219,6 @@ export default function PersonalDetails({
     originalName: "",
   };
 
-
   const handleSinPhotoUpload = async (file: File | null) => {
     if (!file) {
       setValue("sinPhoto", EMPTY_PHOTO, { shouldValidate: true });
@@ -227,7 +235,7 @@ export default function PersonalDetails({
       // 1) open cropper (drivers will preview/adjust)
       const cropResult = await openCrop({
         file,
-        aspect: DOC_ASPECTS.FREE,   // SIN can be card or document format
+        aspect: DOC_ASPECTS.FREE, // SIN can be card or document format
         targetWidth: 1600,
         jpegQuality: 0.9,
       });
@@ -567,12 +575,21 @@ export default function PersonalDetails({
               </button>
             </div>
           ) : (
-            <UploadPicker
-              label={t("form.step2.page1.fields.sinPhotoDesc")}
-              onPick={(file) => handleSinPhotoUpload(file)}
-              accept="image/*,.heic,.heif"
-              className="w-full"
-            />
+            <div className="space-y-2">
+              <UploadPicker
+                label={t("form.step2.page1.fields.sinPhotoDesc")}
+                onPick={(file) => handleSinPhotoUpload(file)}
+                accept="image/*,.heic,.heif"
+                className="w-full"
+              />
+              <button
+                type="button"
+                className="text-xs px-3 py-1.5 rounded border border-slate-300 text-slate-700 hover:bg-slate-50"
+                onClick={() => setShowScanbotScanner(true)}
+              >
+                Scan with camera (beta)
+              </button>
+            </div>
           )}
           {sinPhotoStatus !== "uploading" && errors.sinPhoto && (
             <p className="text-red-500 text-sm mt-1">
@@ -725,6 +742,18 @@ export default function PersonalDetails({
 
       {/* Crop modal portal */}
       {CropModalPortal}
+
+      {/* Scanbot document scanner modal */}
+      <ScanbotDocumentScannerModal
+        open={showScanbotScanner}
+        onClose={() => setShowScanbotScanner(false)}
+        onResult={(_file) => {
+          // For now, the modal just logs the Scanbot result in the console.
+          // Once we know the exact shape, we'll:
+          // 1) convert it to a File, and
+          // 2) call handleSinPhotoUpload(file) here.
+        }}
+      />
     </section>
   );
 }

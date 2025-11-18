@@ -41,6 +41,7 @@
     "react-i18next": "^15.6.0",
     "react-signature-canvas": "^1.1.0-alpha.2",
     "safe-buffer": "^5.2.1",
+    "scanbot-web-sdk": "^8.0.0",
     "uuid": "^11.1.0",
     "zod": "^4.0.10",
     "zustand": "^5.0.6"
