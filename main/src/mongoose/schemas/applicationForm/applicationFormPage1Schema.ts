@@ -1,9 +1,10 @@
-// src/mongoose/models/applicationForm/page1.schema.ts
+// src/mongoose/models/applicationForm/applicationFormPage1Schema.ts
 import { decryptString } from "@/lib/utils/cryptoUtils";
 import { EGender, Iaddress, IApplicationFormPage1, ILicenseEntry } from "@/types/applicationForm.types";
-import { ELicenseType, isImageMime } from "@/types/shared.types"; // if ELicenseType still lives here
+import { ELicenseType } from "@/types/shared.types"; // if ELicenseType still lives here
 import { Schema } from "mongoose";
 import { fileSchema } from "../sharedSchemas";
+import { imageOrPdfFieldValidator } from "../sharedValidators";
 
 const addressSchema = new Schema<Iaddress>({
   address: { type: String, required: [true, "Address is required."] },
@@ -13,26 +14,6 @@ const addressSchema = new Schema<Iaddress>({
   from: { type: Date, required: [true, "Address 'from' date is required."] },
   to: { type: Date, required: [true, "Address 'to' date is required."] },
 });
-
-/**
- * Shared image validator:
- * - Allows undefined/null (so "required" can handle presence separately where needed).
- * - If object exists but mimeType is missing -> "mimeType is missing in <field>".
- * - If mimeType exists but not an image -> "<field> must be an image."
- */
-const imageFieldValidator = {
-  validator: function (v: any) {
-    if (!v) return true; // let "required" handle absence where applicable
-    if (!v.mimeType) return false; // triggers message → mimeType missing
-    return isImageMime(v.mimeType); // triggers message → must be an image
-  },
-  message: function (props: any) {
-    const v = props?.value;
-    const path = String(props?.path ?? "file");
-    if (v && !v.mimeType) return `mimeType is missing in ${path}.`;
-    return `${path} must be an image.`;
-  },
-};
 
 const licenseSchema = new Schema<ILicenseEntry>({
   licenseNumber: { type: String, required: [true, "License number is required."] },
@@ -51,12 +32,12 @@ const licenseSchema = new Schema<ILicenseEntry>({
   licenseFrontPhoto: {
     type: fileSchema,
     required: false,
-    validate: imageFieldValidator,
+    validate: imageOrPdfFieldValidator,
   },
   licenseBackPhoto: {
     type: fileSchema,
     required: false,
-    validate: imageFieldValidator,
+    validate: imageOrPdfFieldValidator,
   },
 });
 
@@ -81,7 +62,7 @@ export const applicationFormPage1Schema = new Schema<IApplicationFormPage1>(
     sinPhoto: {
       type: fileSchema,
       required: [true, "Sin photo is required"],
-      validate: imageFieldValidator,
+      validate: imageOrPdfFieldValidator,
     },
 
     dob: { type: Date, required: [true, "Date of birth is required."] },

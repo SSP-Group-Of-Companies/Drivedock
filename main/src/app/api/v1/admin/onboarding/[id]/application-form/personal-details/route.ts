@@ -1,3 +1,4 @@
+// api/v1/admin/onboarding/[id]/application-form/personal-details/route.ts
 import { NextRequest } from "next/server";
 import { decryptString, encryptString, hashString } from "@/lib/utils/cryptoUtils";
 import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
@@ -16,6 +17,20 @@ import { parseJsonBody } from "@/lib/utils/reqParser";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
 import PreQualifications from "@/mongoose/models/Prequalifications";
 import { guard } from "@/lib/utils/auth/authUtils";
+import { imageOrPdfFieldValidator } from "@/mongoose/schemas/sharedValidators";
+
+function validateImageOrPdfField(fileLike: any, path: string): string | null {
+  if (!fileLike) return null; // only validate when provided
+
+  const ok = imageOrPdfFieldValidator.validator(fileLike);
+  if (ok) return null;
+
+  // reuse the same error message logic as Mongoose
+  return imageOrPdfFieldValidator.message({
+    path,
+    value: fileLike,
+  });
+}
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -39,6 +54,28 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const body = await parseJsonBody<any>(req);
     const page1 = body?.personalDetails as IApplicationFormPage1 | undefined;
     if (!page1) return errorResponse(400, "Missing 'personalDetails' in request body");
+
+    // ---- Early MIME-type guard for SIN + license photos (no DB hit yet) ----
+    const sinPhotoError = validateImageOrPdfField(page1.sinPhoto, "personalDetails.sinPhoto");
+    if (sinPhotoError) {
+      return errorResponse(400, sinPhotoError);
+    }
+
+    if (Array.isArray(page1.licenses)) {
+      for (let i = 0; i < page1.licenses.length; i++) {
+        const lic = page1.licenses[i];
+
+        const frontErr = validateImageOrPdfField(lic?.licenseFrontPhoto, `personalDetails.licenses.${i}.licenseFrontPhoto`);
+        if (frontErr) {
+          return errorResponse(400, frontErr);
+        }
+
+        const backErr = validateImageOrPdfField(lic?.licenseBackPhoto, `personalDetails.licenses.${i}.licenseBackPhoto`);
+        if (backErr) {
+          return errorResponse(400, backErr);
+        }
+      }
+    }
 
     // Sanitize + basic validations (business rules for page1 only)
     const newSin = String(page1.sin ?? "").replace(/\D/g, "");

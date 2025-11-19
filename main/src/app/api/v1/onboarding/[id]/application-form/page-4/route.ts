@@ -1,3 +1,4 @@
+// src/app/api/v1/onboarding/[id]/application-form/page-4/route.ts
 import { NextRequest } from "next/server";
 import { AppError, errorResponse, successResponse } from "@/lib/utils/apiResponse";
 import connectDB from "@/lib/utils/connectDB";
@@ -6,7 +7,7 @@ import { advanceProgress, buildTrackerContext, hasReachedStep, isInvitationAppro
 import { deleteS3Objects, finalizeAsset, finalizeAssetVector, buildFinalDest } from "@/lib/utils/s3Upload";
 import { COMPANIES } from "@/constants/companies";
 import { EStepPath } from "@/types/onboardingTracker.types";
-import { ECountryCode, IFileAsset } from "@/types/shared.types";
+import { ECountryCode, EFileMimeType, IFileAsset } from "@/types/shared.types";
 import { isValidObjectId } from "mongoose";
 import { S3_TEMP_FOLDER } from "@/constants/aws";
 import { parseJsonBody } from "@/lib/utils/reqParser";
@@ -107,6 +108,28 @@ function validateBusinessAllOrNothing(b: Partial<IApplicationFormPage4>) {
   if (hst < 1 || hst > 2) throw new AppError(400, `hstPhotos must have 1–2 photos. You sent ${hst}.`);
 
   return { mode: "validate" as const };
+}
+
+const isPdfMime = (asset?: IFileAsset | null) => {
+  if (!asset) return false;
+  const mime = String(asset.mimeType || "").toLowerCase();
+  return mime === EFileMimeType.PDF;
+};
+
+function ensurePdfArray(files: IFileAsset[] | undefined, label: string) {
+  if (!Array.isArray(files)) return;
+  files.forEach((file, idx) => {
+    if (!isPdfMime(file)) {
+      throw new AppError(400, `${label} file #${idx + 1} must be a PDF document`);
+    }
+  });
+}
+
+function ensurePdfSingle(file: IFileAsset | undefined | null, label: string) {
+  if (!file) return;
+  if (!isPdfMime(file)) {
+    throw new AppError(400, `${label} must be a PDF document`);
+  }
 }
 
 export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
@@ -226,6 +249,23 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       hasKey(body, "fastCard") &&
       body.fastCard &&
       (isNonEmptyString(body.fastCard.fastCardNumber) || !!body.fastCard.fastCardExpiry || !!body.fastCard.fastCardFrontPhoto || !!body.fastCard.fastCardBackPhoto);
+
+    // =========================
+    // 4.5) Enforce all documents are PDFs
+    // =========================
+    ensurePdfArray(body.passportPhotos, "Passport photos");
+    ensurePdfArray(body.prPermitCitizenshipPhotos, "PR/Permit/Citizenship photos");
+    ensurePdfArray(body.healthCardPhotos, "Health card photos");
+    ensurePdfArray(body.medicalCertificationPhotos, "Medical certification photos");
+    ensurePdfArray(body.usVisaPhotos, "US visa photos");
+    ensurePdfArray(body.hstPhotos, "HST photos");
+    ensurePdfArray(body.incorporatePhotos, "Incorporation photos");
+    ensurePdfArray(body.bankingInfoPhotos, "Banking info photos");
+
+    if (body.fastCard) {
+      ensurePdfSingle(body.fastCard.fastCardFrontPhoto, "FAST card front photo");
+      ensurePdfSingle(body.fastCard.fastCardBackPhoto, "FAST card back photo");
+    }
 
     // =========================
     // Phase 1: write page4 only (raw body, no S3 finalize yet)

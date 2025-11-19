@@ -1,3 +1,4 @@
+// src/app/api/v1/onboarding/application-form/route.ts
 import { NextRequest } from "next/server";
 import { encryptString, hashString } from "@/lib/utils/cryptoUtils";
 import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
@@ -12,7 +13,7 @@ import { hasRecentAddressCoverage } from "@/lib/utils/hasMinimumAddressDuration"
 import { advanceProgress, buildTrackerContext, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
 import { S3_SUBMISSIONS_FOLDER, S3_TEMP_FOLDER } from "@/constants/aws";
 import { ES3Folder } from "@/types/aws.types";
-import { ECountryCode, ELicenseType } from "@/types/shared.types";
+import { ECountryCode, EFileMimeType, ELicenseType } from "@/types/shared.types";
 import { isValidEmail, isValidPhoneNumber, isValidDOB, isValidSIN, isValidSINIssueDate, isValidGender } from "@/lib/utils/validationUtils";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
 import { createOnboardingSessionAndCookie } from "@/lib/utils/auth/onboardingSession";
@@ -52,6 +53,9 @@ export async function POST(req: NextRequest) {
     if (!isValidSINIssueDate(page1.sinIssueDate)) return errorResponse(400, "Invalid SIN issue date");
     if (!isValidGender(page1.gender)) return errorResponse(400, "Invalid gender");
     if (!hasRecentAddressCoverage(page1.addresses)) return errorResponse(400, "Address history must cover 5 years");
+    if (!page1.sinPhoto || !page1.sinPhoto.mimeType) return errorResponse(400, "SIN document is required and must be a PDF file");
+    const sinMime = String(page1.sinPhoto.mimeType).toLowerCase();
+    if (sinMime !== EFileMimeType.PDF) return errorResponse(400, "SIN document must be a PDF file");
 
     const licenses = page1.licenses;
     if (!Array.isArray(licenses) || licenses.length === 0) return errorResponse(400, "'licenses' must be a non-empty array");
@@ -60,6 +64,26 @@ export async function POST(req: NextRequest) {
     if (firstLicense.licenseType !== ELicenseType.AZ) return errorResponse(400, "First license must be of type AZ");
 
     if (!firstLicense.licenseFrontPhoto || !firstLicense.licenseBackPhoto) return errorResponse(400, "First license must include both front and back photos");
+
+    // Validate each license's photos are PDFs
+    for (let i = 0; i < licenses.length; i++) {
+      const lic = licenses[i];
+      const idx = i + 1;
+
+      if (lic.licenseFrontPhoto) {
+        const mimeFront = String(lic.licenseFrontPhoto.mimeType || "").toLowerCase();
+        if (mimeFront !== EFileMimeType.PDF) {
+          return errorResponse(400, `License #${idx} front document must be a PDF file`);
+        }
+      }
+
+      if (lic.licenseBackPhoto) {
+        const mimeBack = String(lic.licenseBackPhoto.mimeType || "").toLowerCase();
+        if (mimeBack !== EFileMimeType.PDF) {
+          return errorResponse(400, `License #${idx} back document must be a PDF file`);
+        }
+      }
+    }
 
     if (countryCode === ECountryCode.CA) {
       const { canCrossBorderUSA, hasFASTCard, statusInCanada } = prequalifications;
