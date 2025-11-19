@@ -1,4 +1,4 @@
-// app/api/v1/admin/onboarding/[id]/application-form/identifications/route.ts
+// api/v1/admin/onboarding/[id]/application-form/identifications/route.ts
 import { NextRequest } from "next/server";
 import { isValidObjectId } from "mongoose";
 
