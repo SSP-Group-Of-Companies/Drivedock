@@ -1,3 +1,4 @@
+// main/src/app/api/v1/presign/route.ts
 import { NextRequest } from "next/server";
 import { randomUUID } from "crypto";
 import { ES3Folder, IPresignRequest, IPresignResponse } from "@/types/aws.types";
@@ -10,24 +11,37 @@ import { AWS_BUCKET_NAME, AWS_REGION } from "@/config/env";
 
 /** Allowed mimeTypes per folder */
 const IMAGE_ONLY = [EFileMimeType.JPEG, EFileMimeType.JPG, EFileMimeType.PNG] as const;
+
 const IMAGES_AND_DOCS = [EFileMimeType.JPEG, EFileMimeType.JPG, EFileMimeType.PNG, EFileMimeType.PDF, EFileMimeType.DOC, EFileMimeType.DOCX] as const;
 
-const FOLDER_ALLOWED_MIME: Partial<Record<ES3Folder, readonly EFileMimeType[]>> = {
-  [ES3Folder.DRUG_TEST_DOCS]: IMAGES_AND_DOCS,
-  [ES3Folder.CARRIERS_EDGE_CERTIFICATES]: IMAGES_AND_DOCS,
-  [ES3Folder.FLATBED_TRAINING_CERTIFICATES]: IMAGES_AND_DOCS,
-};
+const PDF_ONLY = [EFileMimeType.PDF] as const;
 
-const MAX_FILE_SIZES_MB: Partial<Record<ES3Folder, number>> = {
-  [ES3Folder.SIGNATURES]: DEFAULT_FILE_SIZE_LIMIT_MB,
-  [ES3Folder.INCORPORATION_PHOTOS]: DEFAULT_FILE_SIZE_LIMIT_MB,
-  [ES3Folder.HST_PHOTOS]: DEFAULT_FILE_SIZE_LIMIT_MB,
-  [ES3Folder.MEDICAL_CERT_PHOTOS]: DEFAULT_FILE_SIZE_LIMIT_MB,
-  [ES3Folder.FAST_CARD_PHOTOS]: DEFAULT_FILE_SIZE_LIMIT_MB,
-  [ES3Folder.DRUG_TEST_DOCS]: DEFAULT_FILE_SIZE_LIMIT_MB,
-  [ES3Folder.CARRIERS_EDGE_CERTIFICATES]: DEFAULT_FILE_SIZE_LIMIT_MB,
-  [ES3Folder.DRIVE_TEST]: DEFAULT_FILE_SIZE_LIMIT_MB,
-  [ES3Folder.FLATBED_TRAINING_CERTIFICATES]: DEFAULT_FILE_SIZE_LIMIT_MB,
+/**
+ * Folder → allowed mimetypes mapping
+ *
+ * - CARRIERS_EDGE_CERTIFICATES, DRUG_TEST_DOCS, FLATBED_TRAINING_CERTIFICATES: images + docs
+ * - SIGNATURES: images only
+ * - All others: pdf only
+ */
+const FOLDER_ALLOWED_MIME: Record<ES3Folder, readonly EFileMimeType[]> = {
+  [ES3Folder.CARRIERS_EDGE_CERTIFICATES]: IMAGES_AND_DOCS,
+  [ES3Folder.DRUG_TEST_DOCS]: IMAGES_AND_DOCS,
+  [ES3Folder.FLATBED_TRAINING_CERTIFICATES]: IMAGES_AND_DOCS,
+
+  [ES3Folder.SIGNATURES]: IMAGE_ONLY,
+
+  [ES3Folder.LICENSES]: PDF_ONLY,
+  [ES3Folder.HEALTH_CARD_PHOTOS]: PDF_ONLY,
+  [ES3Folder.PASSPORT_PHOTOS]: PDF_ONLY,
+  [ES3Folder.PR_CITIZENSHIP_PHOTOS]: PDF_ONLY,
+  [ES3Folder.INCORPORATION_PHOTOS]: PDF_ONLY,
+  [ES3Folder.HST_PHOTOS]: PDF_ONLY,
+  [ES3Folder.BANKING_INFO_PHOTOS]: PDF_ONLY,
+  [ES3Folder.US_VISA_PHOTOS]: PDF_ONLY,
+  [ES3Folder.SIN_PHOTOS]: PDF_ONLY,
+  [ES3Folder.MEDICAL_CERT_PHOTOS]: PDF_ONLY,
+  [ES3Folder.FAST_CARD_PHOTOS]: PDF_ONLY,
+  [ES3Folder.DRIVE_TEST]: PDF_ONLY,
 };
 
 /** Mimetype → extension mapping */
@@ -53,9 +67,9 @@ export async function POST(req: NextRequest) {
       return errorResponse(400, `Invalid folder. Must be one of: ${Object.values(ES3Folder).join(", ")}`);
     }
 
-    const allowed = FOLDER_ALLOWED_MIME[folder] ?? IMAGE_ONLY;
     const normalizedMime = (mimeType as string).toLowerCase() as EFileMimeType;
 
+    const allowed = FOLDER_ALLOWED_MIME[folder];
     if (!allowed.includes(normalizedMime)) {
       return errorResponse(400, `Invalid file type for ${folder}. Allowed: ${allowed.join(", ")}`);
     }
@@ -65,7 +79,7 @@ export async function POST(req: NextRequest) {
       return errorResponse(400, `Unsupported mimeType: ${mimeType}`);
     }
 
-    const maxMB = MAX_FILE_SIZES_MB[folder] ?? DEFAULT_FILE_SIZE_LIMIT_MB;
+    const maxMB = DEFAULT_FILE_SIZE_LIMIT_MB;
     if (filesize && filesize > maxMB * 1024 * 1024) {
       return errorResponse(400, `File exceeds ${maxMB}MB limit`);
     }
@@ -87,7 +101,7 @@ export async function POST(req: NextRequest) {
       url,
       publicUrl,
       expiresIn: DEFAULT_PRESIGN_EXPIRY_SECONDS,
-      mimeType: normalizedMime, // ← include canonical mimeType
+      mimeType: normalizedMime, // canonical mimeType
     };
 
     return successResponse(200, "Presigned URL generated", result);
