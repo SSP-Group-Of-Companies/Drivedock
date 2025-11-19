@@ -35,6 +35,18 @@ type UploadPickerProps = {
 
 const PDF_GUIDANCE_STORAGE_KEY = "drivedock_pdf_guidance_disabled";
 
+type Platform = "ios" | "android" | "other";
+
+/** Safe platform detection (runs only in browser) */
+function detectPlatform(): Platform {
+  if (typeof navigator === "undefined") return "other";
+  const ua = navigator.userAgent || navigator.vendor || (window as any).opera;
+
+  if (/iPhone|iPad|iPod/i.test(ua)) return "ios";
+  if (/Android/i.test(ua)) return "android";
+  return "other";
+}
+
 export default function UploadPicker({
   label = "Upload photo",
   children,
@@ -245,7 +257,13 @@ type PdfGuidanceModalProps = {
 
 function PdfGuidanceModal({ onClose, onContinue }: PdfGuidanceModalProps) {
   const [dontShowAgain, setDontShowAgain] = useState(false);
+  const [platform, setPlatform] = useState<Platform>("other");
   const titleId = useId();
+
+  // Detect platform on mount (client-only)
+  useEffect(() => {
+    setPlatform(detectPlatform());
+  }, []);
 
   return (
     <div
@@ -290,45 +308,49 @@ function PdfGuidanceModal({ onClose, onContinue }: PdfGuidanceModalProps) {
           </ul>
         </div>
 
-        {/* Store Badges Row */}
+        {/* Store Badges Row (platform aware) */}
         <div className="flex items-center justify-center gap-4 mt-4">
-          {/* App Store */}
-          <a
-            href="https://apps.apple.com/ca/app/camscanner-pdf-scanner-app/id388627783"
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center justify-center"
-          >
-            <div className="h-12 sm:h-14 w-auto flex items-center">
-              <Image
-                src="/assets/logos/Applestore.png"
-                alt="Download on the App Store"
-                className="h-full w-auto hover:opacity-90 transition"
-                width={0}
-                height={0}
-                sizes="100vw"
-              />
-            </div>
-          </a>
+          {/* App Store: show on iOS, or on desktop/other */}
+          {(platform === "ios" || platform === "other") && (
+            <a
+              href="https://apps.apple.com/ca/app/camscanner-pdf-scanner-app/id388627783"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-center"
+            >
+              <div className="h-12 sm:h-14 w-auto flex items-center">
+                <Image
+                  src="/assets/logos/Applestore.png"
+                  alt="Download on the App Store"
+                  className="h-full w-auto hover:opacity-90 transition"
+                  width={0}
+                  height={0}
+                  sizes="100vw"
+                />
+              </div>
+            </a>
+          )}
 
-          {/* Google Play */}
-          <a
-            href="https://play.google.com/store/apps/details?id=com.intsig.camscanner"
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center justify-center"
-          >
-            <div className="h-12 sm:h-14 w-auto flex items-center">
-              <Image
-                src="/assets/logos/Playstore.png"
-                alt="Get it on Google Play"
-                className="h-full w-auto hover:opacity-90 transition"
-                width={0}
-                height={0}
-                sizes="100vw"
-              />
-            </div>
-          </a>
+          {/* Google Play: show on Android, or on desktop/other */}
+          {(platform === "android" || platform === "other") && (
+            <a
+              href="https://play.google.com/store/apps/details?id=com.intsig.camscanner"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-center"
+            >
+              <div className="h-12 sm:h-14 w-auto flex items-center">
+                <Image
+                  src="/assets/logos/Playstore.png"
+                  alt="Get it on Google Play"
+                  className="h-full w-auto hover:opacity-90 transition"
+                  width={0}
+                  height={0}
+                  sizes="100vw"
+                />
+              </div>
+            </a>
+          )}
         </div>
 
         <label className="mt-4 flex items-center gap-2 text-xs text-gray-600">
