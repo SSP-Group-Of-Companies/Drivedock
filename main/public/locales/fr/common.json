@@ -242,8 +242,8 @@
           "gender": "Genre",
           "male": "Masculin",
           "female": "Féminin",
-          "sinPhoto": "Photo de la carte NAS",
-          "sinPhotoDesc": "Cliquez pour capturer ou sélectionner une image",
+          "sinPhoto": "Carte NAS (PDF)",
+          "sinPhotoDesc": "Téléversez un scan PDF clair de votre carte NAS",
           "dob": "Date de naissance",
           "canProvideProof": "Pouvez-vous fournir une preuve d’âge ?",
           "phoneHome": "Téléphone (domicile) (Optionnel)",
@@ -258,9 +258,9 @@
           "licenseProvince": "Province",
           "licenseType": "Type de permis",
           "licenseExpiry": "Date d’expiration",
-          "licenseFrontPhoto": "Photo recto du permis",
-          "licensePhotoDesc": "Cliquez pour capturer ou sélectionner une image",
-          "licenseBackPhoto": "Photo verso du permis",
+          "licenseFrontPhoto": "Permis de conduire recto (PDF)",
+          "licensePhotoDesc": "Téléversez un scan PDF clair du recto de votre permis de conduire",
+          "licenseBackPhoto": "Permis de conduire verso (PDF)",
           "address": "Adresse",
           "city": "Ville",
           "stateOrProvince": "État ou province",
@@ -380,24 +380,24 @@
           "business": {
             "title": "Détails d’incorporation",
             "disclaimer": {
-              "text": "Si vous fournissez des détails d’incorporation, vous devez remplir tous les champs et téléverser tous les documents liés dans cette section. Cela inclut le numéro de TVH, le nom de l’entreprise et les photos requises (Incorporation, TVH)."
+              "text": "Si vous fournissez des détails d'incorporation, vous devez remplir tous les champs et téléverser tous les documents liés dans cette section. Cela inclut le numéro de TVH, le nom de l'entreprise et les documents PDF requis (Incorporation, TVH)."
             }
           },
           "banking": {
             "title": "Coordonnées bancaires",
-            "requiredDisclaimer": "Les coordonnées bancaires sont obligatoires pour les candidats Société et Propriétaire‑exploitant. Téléversez une photo claire d’un chèque annulé ou d’un formulaire bancaire de dépôt direct indiquant votre nom, le numéro d’institution, le numéro de transit et le numéro de compte.",
-            "optionalDisclaimer": "Les coordonnées bancaires sont optionnelles pour les Propriétaires‑conducteurs. Si vous choisissez de les fournir maintenant, téléversez une photo claire d’un chèque annulé ou d’un formulaire bancaire de dépôt direct indiquant votre nom, le numéro d’institution, le numéro de transit et le numéro de compte afin que la paie puisse configurer votre dépôt direct."
+            "requiredDisclaimer": "Les coordonnées bancaires sont obligatoires pour les candidats Société et Propriétaire‑exploitant. Téléversez un scan PDF clair d'un chèque annulé ou d'un formulaire bancaire de dépôt direct indiquant votre nom, le numéro d'institution, le numéro de transit et le numéro de compte.",
+            "optionalDisclaimer": "Les coordonnées bancaires sont optionnelles pour les Propriétaires‑conducteurs. Si vous choisissez de les fournir maintenant, téléversez un scan PDF clair d'un chèque annulé ou d'un formulaire bancaire de dépôt direct indiquant votre nom, le numéro d'institution, le numéro de transit et le numéro de compte afin que la paie puisse configurer votre dépôt direct."
           },
           "additionalInfo": {
             "title": "Renseignements supplémentaires"
           },
           "fastCard": {
             "title": "Carte FAST",
-            "disclaimer": "Cette section est optionnelle. Toutefois, si vous fournissez des informations sur la carte FAST, vous devez remplir tous les champs et téléverser les photos du recto et du verso."
+            "disclaimer": "Cette section est optionnelle. Toutefois, si vous fournissez des informations sur la carte FAST, vous devez remplir tous les champs et téléverser les scans PDF du recto et du verso."
           },
           "eligibilityDocs": {
             "title": "Documents de santé / d'identification",
-            "description": "Veuillez fournir des photos claires et lisibles des documents de santé et d'identité requis listés ci-dessous. Tous les détails doivent être visibles (recto et verso le cas échéant). Si un document manque ou n'est pas clair, votre candidature peut être retardée."
+            "description": "Veuillez fournir des scans PDF clairs et lisibles des documents de santé et d'identité requis listés ci-dessous. Tous les détails doivent être visibles (recto et verso le cas échéant). Si un document manque ou n'est pas clair, votre candidature peut être retardée."
           },
           "workAuthorization": {
             "title": "Preuve d'autorisation de travail"
@@ -409,9 +409,9 @@
           "courtLocation": "Lieu du tribunal",
           "hstNumber": "Numéro de TVH",
           "businessName": "Nom de l'entreprise",
-          "incorporatePhotos": "Photos d'incorporation",
-          "hstPhotos": "Photos du numéro de TVH",
-          "bankingInfoPhotos": "Photos des coordonnées bancaires",
+          "incorporatePhotos": "Documents d'incorporation (PDF)",
+          "hstPhotos": "Document TVH (PDF)",
+          "bankingInfoPhotos": "Informations bancaires (PDF)",
           "denied": "Vous est-il déjà arrivé qu’un permis, une autorisation ou un droit de conduire un véhicule motorisé vous soit refusé ?",
           "suspended": "Un permis, une autorisation ou un droit vous a-t-il déjà été suspendu ou révoqué ?",
           "suspensionNotes": "Notes",
@@ -425,14 +425,14 @@
           },
           "fastNumber": "Numéro de carte FAST",
           "fastExpiry": "Date d'expiration",
-          "fastFront": "Photo recto",
-          "fastBack": "Photo verso",
-          "uploadFront": "Téléverser recto",
-          "uploadBack": "Téléverser verso",
+          "fastFront": "Carte FAST recto (PDF)",
+          "fastBack": "Carte FAST verso (PDF)",
+          "uploadFront": "Téléverser recto (PDF)",
+          "uploadBack": "Téléverser verso (PDF)",
 
           "healthCard": "Carte de santé",
-          "healthCardPhotos": "Carte de santé (recto et verso)",
-          "healthCardDescription": "Téléversez des photos claires du recto et du verso de votre carte de santé (p. ex., carte de santé de l'Ontario).",
+          "healthCardPhotos": "Carte de santé (PDF)",
+          "healthCardDescription": "Téléversez un scan PDF clair de votre carte de santé (recto et verso si applicable, p. ex., carte de santé de l'Ontario).",
 
           "passportTypeQuestion": "Quel type de passeport avez-vous ?",
           "selectPassportType": "Sélectionner le type de passeport",
@@ -449,31 +449,31 @@
           },
 
           "passport": "Passeport",
-          "passportPhotos": "Passeport (page de données et verso)",
-          "passportDescription": "Téléversez la page de données du passeport (avec votre photo) et la page de couverture arrière (p. ex., passeport canadien ou étranger).",
-          "passportDescriptionUS": "Téléversez la page de données du passeport (avec votre photo) et la page de couverture arrière (p. ex., passeport américain).",
+          "passportPhotos": "Passeport (PDF)",
+          "passportDescription": "Téléversez un scan PDF clair de la page de données de votre passeport (avec votre photo) et de la page de couverture arrière (p. ex., passeport canadien ou étranger).",
+          "passportDescriptionUS": "Téléversez un scan PDF clair de la page de données de votre passeport (avec votre photo) et de la page de couverture arrière (p. ex., passeport américain).",
 
           "usVisa": "Visa américain",
-          "usVisaPhotos": "Visa américain",
-          "usVisaDescription": "Téléversez des photos claires de votre visa américain valide (p. ex., pages de visa de visiteur, de travail ou d'études).",
+          "usVisaPhotos": "Visa américain (PDF)",
+          "usVisaDescription": "Téléversez un scan PDF clair de votre visa américain valide (p. ex., pages de visa de visiteur, de travail ou d'études).",
 
           "prPermitCitizenship": "Carte de résident permanent / Permis de travail / Citoyenneté",
-          "prPermitCitizenshipPhotos": "Résident permanent / Permis / Citoyenneté",
-          "prPermitCitizenshipDescription": "Téléversez des photos claires de votre carte de résident permanent, permis de travail/études ou document de citoyenneté (p. ex., recto et verso de la carte de RP, lettre de permis de travail).",
+          "prPermitCitizenshipPhotos": "RP/Permis/Citoyenneté (PDF)",
+          "prPermitCitizenshipDescription": "Téléversez un scan PDF clair de votre carte de résident permanent, permis de travail/études ou document de citoyenneté (p. ex., recto et verso de la carte de RP, lettre de permis de travail).",
 
           "greenCardCitizenship": "Carte verte / Citoyenneté",
-          "greenCardCitizenshipDescription": "Téléversez des photos claires de votre carte de résident permanent ou document de citoyenneté américaine (p. ex., recto et verso de la carte de RP, certificat de naturalisation).",
+          "greenCardCitizenshipDescription": "Téléversez un scan PDF clair de votre carte de résident permanent ou document de citoyenneté américaine (p. ex., recto et verso de la carte de RP, certificat de naturalisation).",
 
           "medicalCertification": "Certification médicale",
-          "medicalCertificationPhotos": "Certification médicale",
-          "medicalCertificationDescription": "Téléversez des photos claires de votre certificat médical DOT valide (recto et verso le cas échéant).",
+          "medicalCertificationPhotos": "Certificat médical (PDF)",
+          "medicalCertificationDescription": "Téléversez un scan PDF clair de votre certificat médical DOT valide (recto et verso le cas échéant).",
 
           "oneOfTheseRequired": "Un de ceux-ci requis",
           "optional": "Optionnel",
 
-          "incorporatePhotosDescription": "Téléversez des photos claires de vos documents d'incorporation d'entreprise (p. ex., articles d'incorporation, certificat d'incorporation).",
-          "hstPhotosDescription": "Téléversez une photo de votre document d'enregistrement du numéro d'entreprise TVH/TPS (p. ex., lettre d'enregistrement de l'ARC).",
-          "bankingInfoPhotosDescription": "Téléversez une photo d'un chèque annulé ou d'un formulaire de dépôt direct de votre banque (doit clairement montrer le numéro de compte et les détails de l'institution)."
+          "incorporatePhotosDescription": "Téléversez des scans PDF clairs de vos documents d'incorporation d'entreprise (p. ex., articles d'incorporation, certificat d'incorporation).",
+          "hstPhotosDescription": "Téléversez un scan PDF clair de votre document d'enregistrement du numéro d'entreprise TVH/TPS (p. ex., lettre d'enregistrement de l'ARC).",
+          "bankingInfoPhotosDescription": "Téléversez un scan PDF clair d'un chèque annulé ou d'un formulaire de dépôt direct de votre banque (doit clairement montrer le numéro de compte et les détails de l'institution)."
         },
         "placeholders": {
           "optionalDetails": "Fournissez des précisions..."
@@ -712,11 +712,11 @@
 
     "step6": {
       "title": "Test de dépistage",
-      "description": "Veuillez téléverser des photos claires de vos documents de dépistage. Vous pouvez ajouter jusqu'à {{count}} photos. Une fois téléversés, les documents seront vérifiés avant que vous puissiez continuer.",
+      "description": "Veuillez téléverser des scans PDF clairs de vos documents de dépistage. Vous pouvez ajouter jusqu'à {{count}} fichiers PDF. Une fois téléversés, les documents seront vérifiés avant que vous puissiez continuer.",
       "verified": "Documents vérifiés.",
       "pending": "Documents téléversés. Vérification en attente. Les téléversements sont désactivés.",
       "rejected": "Vos documents de test de dépistage ont été rejetés. Veuillez les téléverser à nouveau et les soumettre.",
-      "labeldriverDocuments": "Documents de test de dépistage",
+      "labeldriverDocuments": "Documents de test de dépistage (PDF)",
       "success": {
         "title": "Félicitations ! 🎉",
         "message": "Vous avez terminé avec succès votre test de dépistage ! Vos documents ont été vérifiés et approuvés. Vous pouvez maintenant passer à l'étape suivante de votre intégration.",
