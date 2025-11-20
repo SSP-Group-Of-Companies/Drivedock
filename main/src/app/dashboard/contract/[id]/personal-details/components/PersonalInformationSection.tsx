@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, EyeOff, Image as ImageIcon } from "lucide-react";
+import { Eye, EyeOff, Image as ImageIcon, FileText } from "lucide-react";
 import { useState } from "react";
 import Image from "next/image";
 import { formatInputDate } from "@/lib/utils/dateUtils";
@@ -20,7 +20,15 @@ interface PersonalInformationSectionProps {
   countryCode?: ECountryCode;
 }
 
-export default function PersonalInformationSection({ data, isEditMode, staged, onStage, trackerId, prequalificationData, countryCode }: PersonalInformationSectionProps) {
+export default function PersonalInformationSection({
+  data,
+  isEditMode,
+  staged,
+  onStage,
+  trackerId,
+  prequalificationData,
+  countryCode,
+}: PersonalInformationSectionProps) {
   const [showSIN, setShowSIN] = useState(false);
 
   // Merge staged changes with original data for display
@@ -30,8 +38,12 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
     if (!value) return "";
     const cleaned = value.replace(/\D/g, "");
     if (cleaned.length <= 3) return cleaned;
-    if (cleaned.length <= 6) return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
-    return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(6, 10)}`;
+    if (cleaned.length <= 6)
+      return `${cleaned.slice(0, 3)}-${cleaned.slice(3)}`;
+    return `${cleaned.slice(0, 3)}-${cleaned.slice(3, 6)}-${cleaned.slice(
+      6,
+      10
+    )}`;
   };
 
   const formatDisplayDate = (date: string | Date) => {
@@ -76,7 +88,7 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
   const idAcronym = isUS ? "SSN" : "SIN";
   const idFull = isUS ? "Social Security Number" : "Social Insurance Number";
   const idLabel = `${idAcronym} (${idFull})`;
-  const idPhotoLabel = `${idAcronym} Card Photo`;
+  const idPhotoLabel = `${idAcronym} Card Document`;
   const idIssueDateLabel = `${idAcronym} Issue Date`;
   const idExpiryDateLabel = `${idAcronym} Expiry Date`;
 
@@ -96,25 +108,39 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
 
     // For contract pages (has trackerId): navigate to identifications gallery
     const targetUrl = `/dashboard/contract/${trackerId}/identifications`;
-    
-    // Check if we're already on the identifications page
-    if (window.location.pathname.includes('/identifications')) {
-      // Already on identifications page, just scroll to gallery
-      const galleryElement = document.getElementById('image-gallery');
+
+    // If already on identifications page, just scroll
+    if (window.location.pathname.includes("/identifications")) {
+      const galleryElement = document.getElementById("image-gallery");
       if (galleryElement) {
-        galleryElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        galleryElement.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     } else {
-      // Navigate to identifications page with anchor
       window.location.href = `${targetUrl}#image-gallery`;
     }
   };
 
+  const sinAsset = formData?.sinPhoto;
+  const sinUrl: string | undefined = sinAsset?.url;
+  const sinMime: string | undefined = sinAsset?.mimeType;
+  const isPdf =
+    !!sinUrl &&
+    (sinMime === "application/pdf" || sinUrl.toLowerCase().endsWith(".pdf"));
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-3 pb-2 border-b" style={{ borderColor: "var(--color-outline-variant)" }}>
-        <div className="w-2 h-8 rounded-full" style={{ background: "var(--color-primary)" }}></div>
-        <h3 className="text-xl font-bold" style={{ color: "var(--color-on-surface)" }}>
+      <div
+        className="flex items-center gap-3 pb-2 border-b"
+        style={{ borderColor: "var(--color-outline-variant)" }}
+      >
+        <div
+          className="w-2 h-8 rounded-full"
+          style={{ background: "var(--color-primary)" }}
+        ></div>
+        <h3
+          className="text-xl font-bold"
+          style={{ color: "var(--color-on-surface)" }}
+        >
           Personal Information
         </h3>
       </div>
@@ -123,7 +149,10 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
         {/* Name Fields */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium" style={{ color: "var(--color-on-surface-variant)" }}>
+            <label
+              className="text-sm font-medium"
+              style={{ color: "var(--color-on-surface-variant)" }}
+            >
               First Name
             </label>
             {isEditMode ? (
@@ -150,7 +179,10 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
                     borderColor: "var(--color-outline)",
                   }}
                 >
-                  <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
+                  <span
+                    className="text-sm"
+                    style={{ color: "var(--color-on-surface)" }}
+                  >
                     {formData.firstName || "Not provided"}
                   </span>
                 </div>
@@ -159,7 +191,10 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium" style={{ color: "var(--color-on-surface-variant)" }}>
+            <label
+              className="text-sm font-medium"
+              style={{ color: "var(--color-on-surface-variant)" }}
+            >
               Last Name
             </label>
             {isEditMode ? (
@@ -186,7 +221,10 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
                     borderColor: "var(--color-outline)",
                   }}
                 >
-                  <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
+                  <span
+                    className="text-sm"
+                    style={{ color: "var(--color-on-surface)" }}
+                  >
                     {formData.lastName || "Not provided"}
                   </span>
                 </div>
@@ -197,8 +235,12 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
 
         {/* SIN Field and Photo - One Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* SIN value */}
           <div className="space-y-2">
-            <label className="text-sm font-medium" style={{ color: "var(--color-on-surface-variant)" }}>
+            <label
+              className="text-sm font-medium"
+              style={{ color: "var(--color-on-surface-variant)" }}
+            >
               {idLabel}
             </label>
             <div className="relative">
@@ -223,7 +265,10 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
                     borderColor: "var(--color-outline)",
                   }}
                 >
-                  <span className="text-sm font-mono" style={{ color: "var(--color-on-surface)" }}>
+                  <span
+                    className="text-sm font-mono"
+                    style={{ color: "var(--color-on-surface)" }}
+                  >
                     {showSIN ? formData.sin || "Not available" : "•••-•••-•••"}
                   </span>
                 </div>
@@ -234,55 +279,112 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
                 style={{ color: "var(--color-on-surface-variant)" }}
               >
-                {showSIN ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {showSIN ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
               </button>
             </div>
           </div>
 
+          {/* SIN document (image or PDF) */}
           <div className="space-y-2">
-            <label className="text-sm font-medium" style={{ color: "var(--color-on-surface-variant)" }}>
+            <label
+              className="text-sm font-medium"
+              style={{ color: "var(--color-on-surface-variant)" }}
+            >
               {idPhotoLabel}
             </label>
 
-            {/* View-only: Click behavior depends on context */}
-            {formData?.sinPhoto?.url ? (
+            {sinUrl ? (
               <button
                 type="button"
                 onClick={handleSinPhotoClick}
                 className="relative group w-full rounded-lg border-2 border-dashed p-4 text-center overflow-hidden transition-colors hover:border-blue-400"
-                style={{ background: "var(--color-surface)", borderColor: "var(--color-outline-variant)" }}
+                style={{
+                  background: "var(--color-surface)",
+                  borderColor: "var(--color-outline-variant)",
+                }}
               >
-                <div className="relative inline-block">
-                  <Image src={formData.sinPhoto.url} alt={`${idAcronym} Card`} width={240} height={140} className="mx-auto rounded-lg object-contain max-h-40 w-auto" />
-                </div>
+                {/* Inner content switches based on file type */}
+                {isPdf ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-20 h-20 rounded-lg border border-gray-300 flex items-center justify-center mx-auto bg-white/80">
+                      <FileText
+                        className="w-10 h-10"
+                        style={{ color: "var(--color-on-surface-variant)" }}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <p
+                        className="text-sm font-medium truncate max-w-[220px] mx-auto"
+                        style={{ color: "var(--color-on-surface)" }}
+                        title={sinAsset?.originalName || "SIN document.pdf"}
+                      >
+                        {sinAsset?.originalName || "SIN document.pdf"}
+                      </p>
+                      <p
+                        className="text-xs"
+                        style={{ color: "var(--color-on-surface-variant)" }}
+                      >
+                        PDF document – click to view
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="relative inline-block">
+                    <Image
+                      src={sinUrl}
+                      alt={`${idAcronym} Card`}
+                      width={240}
+                      height={140}
+                      className="mx-auto rounded-lg object-contain max-h-40 w-auto"
+                    />
+                  </div>
+                )}
 
-                {/* Hover overlay */}
+                {/* Hover overlay (works for both image & PDF) */}
                 <div
                   className="absolute inset-0 hidden group-hover:flex items-center justify-center transition-opacity"
                   style={{ background: "rgba(0,0,0,0.4)" }}
                 >
                   <Eye className="w-7 h-7 text-white" />
                 </div>
-                
+
                 {/* Helper text */}
                 <p className="absolute bottom-2 left-0 right-0 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                  {trackerId ? "Click to view/edit in Image gallery" : "Click to view full size"}
+                  {trackerId
+                    ? "Click to view/edit in Image gallery"
+                    : "Click to open document"}
                 </p>
               </button>
             ) : (
               <div
                 className="w-full rounded-lg border-2 border-dashed p-4 text-center"
-                style={{ background: "var(--color-surface)", borderColor: "var(--color-outline-variant)" }}
+                style={{
+                  background: "var(--color-surface)",
+                  borderColor: "var(--color-outline-variant)",
+                }}
               >
                 <div className="flex flex-col items-center gap-2">
-                  <ImageIcon className="w-8 h-8" style={{ color: "var(--color-on-surface-variant)" }} />
-                  <span className="text-sm" style={{ color: "var(--color-on-surface-variant)" }}>
-                    No photo uploaded
+                  <ImageIcon
+                    className="w-8 h-8"
+                    style={{ color: "var(--color-on-surface-variant)" }}
+                  />
+                  <span
+                    className="text-sm"
+                    style={{ color: "var(--color-on-surface-variant)" }}
+                  >
+                    No document uploaded
                   </span>
                 </div>
                 {trackerId && (
-                  <p className="text-xs mt-2" style={{ color: "var(--color-on-surface-variant)" }}>
-                    Go to Identifications to add photo
+                  <p
+                    className="text-xs mt-2"
+                    style={{ color: "var(--color-on-surface-variant)" }}
+                  >
+                    Go to Identifications to add document
                   </p>
                 )}
               </div>
@@ -293,11 +395,17 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
         {/* SIN Issue Date and Gender - One Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium" style={{ color: "var(--color-on-surface-variant)" }}>
+            <label
+              className="text-sm font-medium"
+              style={{ color: "var(--color-on-surface-variant)" }}
+            >
               {idIssueDateLabel}
             </label>
             {isEditMode ? (
-              <WithCopy value={formatInputDate(formData.sinIssueDate) || ""} label={`${idAcronym} issue date`}>
+              <WithCopy
+                value={formatInputDate(formData.sinIssueDate) || ""}
+                label={`${idAcronym} issue date`}
+              >
                 <input
                   type="date"
                   value={formatInputDate(formData.sinIssueDate) || ""}
@@ -311,7 +419,10 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
                 />
               </WithCopy>
             ) : (
-              <WithCopy value={formatInputDate(formData.sinIssueDate) || ""} label={`${idAcronym} issue date`}>
+              <WithCopy
+                value={formatInputDate(formData.sinIssueDate) || ""}
+                label={`${idAcronym} issue date`}
+              >
                 <div
                   className="p-3 rounded-lg border pr-10"
                   style={{
@@ -319,7 +430,10 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
                     borderColor: "var(--color-outline)",
                   }}
                 >
-                  <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
+                  <span
+                    className="text-sm"
+                    style={{ color: "var(--color-on-surface)" }}
+                  >
                     {formatDisplayDate(formData.sinIssueDate)}
                   </span>
                 </div>
@@ -330,16 +444,26 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
           {/* SIN Expiry Date - Only for Work Permit holders */}
           {prequalificationData?.statusInCanada === "Work Permit" && (
             <div className="space-y-2">
-              <label className="text-sm font-medium" style={{ color: "var(--color-on-surface-variant)" }}>
+              <label
+                className="text-sm font-medium"
+                style={{ color: "var(--color-on-surface-variant)" }}
+              >
                 {idExpiryDateLabel}
               </label>
               {isEditMode ? (
-                <WithCopy value={formatInputDate(formData.sinExpiryDate) || ""} label={`${idAcronym} expiry date`}>
+                <WithCopy
+                  value={formatInputDate(formData.sinExpiryDate) || ""}
+                  label={`${idAcronym} expiry date`}
+                >
                   <input
                     type="date"
                     value={formatInputDate(formData.sinExpiryDate) || ""}
-                    onChange={(e) => updateField("sinExpiryDate", e.target.value)}
-                    required={prequalificationData?.statusInCanada === "Work Permit"}
+                    onChange={(e) =>
+                      updateField("sinExpiryDate", e.target.value)
+                    }
+                    required={
+                      prequalificationData?.statusInCanada === "Work Permit"
+                    }
                     className="w-full p-3 rounded-lg border text-sm transition-colors pr-10"
                     style={{
                       background: "var(--color-surface)",
@@ -349,7 +473,10 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
                   />
                 </WithCopy>
               ) : (
-                <WithCopy value={formatInputDate(formData.sinExpiryDate) || ""} label={`${idAcronym} expiry date`}>
+                <WithCopy
+                  value={formatInputDate(formData.sinExpiryDate) || ""}
+                  label={`${idAcronym} expiry date`}
+                >
                   <div
                     className="p-3 rounded-lg border pr-10"
                     style={{
@@ -357,7 +484,10 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
                       borderColor: "var(--color-outline)",
                     }}
                   >
-                    <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
+                    <span
+                      className="text-sm"
+                      style={{ color: "var(--color-on-surface)" }}
+                    >
                       {formatDisplayDate(formData.sinExpiryDate)}
                     </span>
                   </div>
@@ -367,7 +497,10 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
           )}
 
           <div className="space-y-2">
-            <label className="text-sm font-medium" style={{ color: "var(--color-on-surface-variant)" }}>
+            <label
+              className="text-sm font-medium"
+              style={{ color: "var(--color-on-surface-variant)" }}
+            >
               Gender
             </label>
             {isEditMode ? (
@@ -394,7 +527,10 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
                     borderColor: "var(--color-outline)",
                   }}
                 >
-                  <span className="text-sm capitalize" style={{ color: "var(--color-on-surface)" }}>
+                  <span
+                    className="text-sm capitalize"
+                    style={{ color: "var(--color-on-surface)" }}
+                  >
                     {formData.gender || "Not provided"}
                   </span>
                 </div>
@@ -406,12 +542,18 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
         {/* Date of Birth and Proof of Age - One Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium" style={{ color: "var(--color-on-surface-variant)" }}>
+            <label
+              className="text-sm font-medium"
+              style={{ color: "var(--color-on-surface-variant)" }}
+            >
               Date of Birth
             </label>
             <div className="flex items-center gap-4">
               {isEditMode ? (
-                <WithCopy value={formatInputDate(formData.dob) || ""} label="Date of birth">
+                <WithCopy
+                  value={formatInputDate(formData.dob) || ""}
+                  label="Date of birth"
+                >
                   <input
                     type="date"
                     value={formatInputDate(formData.dob) || ""}
@@ -425,7 +567,10 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
                   />
                 </WithCopy>
               ) : (
-                <WithCopy value={formatInputDate(formData.dob) || ""} label="Date of birth">
+                <WithCopy
+                  value={formatInputDate(formData.dob) || ""}
+                  label="Date of birth"
+                >
                   <div
                     className="flex-1 p-3 rounded-lg border pr-10"
                     style={{
@@ -433,7 +578,10 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
                       borderColor: "var(--color-outline)",
                     }}
                   >
-                    <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
+                    <span
+                      className="text-sm"
+                      style={{ color: "var(--color-on-surface)" }}
+                    >
                       {formatDisplayDate(formData.dob)}
                     </span>
                   </div>
@@ -454,7 +602,10 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium" style={{ color: "var(--color-on-surface-variant)" }}>
+            <label
+              className="text-sm font-medium"
+              style={{ color: "var(--color-on-surface-variant)" }}
+            >
               Proof of Age
             </label>
             {isEditMode ? (
@@ -468,11 +619,16 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
                 <input
                   type="checkbox"
                   checked={formData.canProvideProofOfAge || false}
-                  onChange={(e) => updateField("canProvideProofOfAge", e.target.checked)}
+                  onChange={(e) =>
+                    updateField("canProvideProofOfAge", e.target.checked)
+                  }
                   className="w-5 h-5 rounded border-2"
                   style={{ borderColor: "var(--color-outline)" }}
                 />
-                <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
+                <span
+                  className="text-sm"
+                  style={{ color: "var(--color-on-surface)" }}
+                >
                   Can you provide proof of age?
                 </span>
               </div>
@@ -484,10 +640,21 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
                   borderColor: "var(--color-outline)",
                 }}
               >
-                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${formData.canProvideProofOfAge ? "border-green-500 bg-green-500" : "border-gray-300"}`}>
-                  {formData.canProvideProofOfAge && <div className="w-2 h-2 bg-white rounded-full" />}
+                <div
+                  className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                    formData.canProvideProofOfAge
+                      ? "border-green-500 bg-green-500"
+                      : "border-gray-300"
+                  }`}
+                >
+                  {formData.canProvideProofOfAge && (
+                    <div className="w-2 h-2 bg-white rounded-full" />
+                  )}
                 </div>
-                <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
+                <span
+                  className="text-sm"
+                  style={{ color: "var(--color-on-surface)" }}
+                >
                   Can you provide proof of age?
                 </span>
               </div>
@@ -498,7 +665,10 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
         {/* Phone Numbers */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium" style={{ color: "var(--color-on-surface-variant)" }}>
+            <label
+              className="text-sm font-medium"
+              style={{ color: "var(--color-on-surface-variant)" }}
+            >
               Phone (Home) (Optional)
             </label>
             {isEditMode ? (
@@ -525,8 +695,13 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
                     borderColor: "var(--color-outline)",
                   }}
                 >
-                  <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
-                    {formData.phoneHome ? formatPhoneNumber(formData.phoneHome) : "Not provided"}
+                  <span
+                    className="text-sm"
+                    style={{ color: "var(--color-on-surface)" }}
+                  >
+                    {formData.phoneHome
+                      ? formatPhoneNumber(formData.phoneHome)
+                      : "Not provided"}
                   </span>
                 </div>
               </WithCopy>
@@ -534,7 +709,10 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium" style={{ color: "var(--color-on-surface-variant)" }}>
+            <label
+              className="text-sm font-medium"
+              style={{ color: "var(--color-on-surface-variant)" }}
+            >
               Phone (Cell)
             </label>
             {isEditMode ? (
@@ -561,8 +739,13 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
                     borderColor: "var(--color-outline)",
                   }}
                 >
-                  <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
-                    {formData.phoneCell ? formatPhoneNumber(formData.phoneCell) : "Not provided"}
+                  <span
+                    className="text-sm"
+                    style={{ color: "var(--color-on-surface)" }}
+                  >
+                    {formData.phoneCell
+                      ? formatPhoneNumber(formData.phoneCell)
+                      : "Not provided"}
                   </span>
                 </div>
               </WithCopy>
@@ -572,7 +755,10 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
 
         {/* Email */}
         <div className="space-y-2">
-          <label className="text-sm font-medium" style={{ color: "var(--color-on-surface-variant)" }}>
+          <label
+            className="text-sm font-medium"
+            style={{ color: "var(--color-on-surface-variant)" }}
+          >
             Email Address
           </label>
           {isEditMode ? (
@@ -599,7 +785,10 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
                   borderColor: "var(--color-outline)",
                 }}
               >
-                <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
+                <span
+                  className="text-sm"
+                  style={{ color: "var(--color-on-surface)" }}
+                >
                   {formData.email || "Not provided"}
                 </span>
               </div>
@@ -610,15 +799,23 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
         {/* Emergency Contact */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium" style={{ color: "var(--color-on-surface-variant)" }}>
+            <label
+              className="text-sm font-medium"
+              style={{ color: "var(--color-on-surface-variant)" }}
+            >
               Emergency Contact Name
             </label>
             {isEditMode ? (
-              <WithCopy value={formData.emergencyContactName || ""} label="Emergency contact name">
+              <WithCopy
+                value={formData.emergencyContactName || ""}
+                label="Emergency contact name"
+              >
                 <input
                   type="text"
                   value={formData.emergencyContactName || ""}
-                  onChange={(e) => updateField("emergencyContactName", e.target.value)}
+                  onChange={(e) =>
+                    updateField("emergencyContactName", e.target.value)
+                  }
                   className="w-full p-3 rounded-lg border text-sm transition-colors pr-10"
                   style={{
                     background: "var(--color-surface)",
@@ -629,7 +826,10 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
                 />
               </WithCopy>
             ) : (
-              <WithCopy value={formData.emergencyContactName || ""} label="Emergency contact name">
+              <WithCopy
+                value={formData.emergencyContactName || ""}
+                label="Emergency contact name"
+              >
                 <div
                   className="p-3 rounded-lg border pr-10"
                   style={{
@@ -637,7 +837,10 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
                     borderColor: "var(--color-outline)",
                   }}
                 >
-                  <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
+                  <span
+                    className="text-sm"
+                    style={{ color: "var(--color-on-surface)" }}
+                  >
                     {formData.emergencyContactName || "Not provided"}
                   </span>
                 </div>
@@ -646,15 +849,23 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium" style={{ color: "var(--color-on-surface-variant)" }}>
+            <label
+              className="text-sm font-medium"
+              style={{ color: "var(--color-on-surface-variant)" }}
+            >
               Emergency Contact Phone
             </label>
             {isEditMode ? (
-              <WithCopy value={formData.emergencyContactPhone || ""} label="Emergency contact phone">
+              <WithCopy
+                value={formData.emergencyContactPhone || ""}
+                label="Emergency contact phone"
+              >
                 <input
                   type="tel"
                   value={formData.emergencyContactPhone || ""}
-                  onChange={(e) => updateField("emergencyContactPhone", e.target.value)}
+                  onChange={(e) =>
+                    updateField("emergencyContactPhone", e.target.value)
+                  }
                   className="w-full p-3 rounded-lg border text-sm transition-colors pr-10"
                   style={{
                     background: "var(--color-surface)",
@@ -665,7 +876,10 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
                 />
               </WithCopy>
             ) : (
-              <WithCopy value={formData.emergencyContactPhone || ""} label="Emergency contact phone">
+              <WithCopy
+                value={formData.emergencyContactPhone || ""}
+                label="Emergency contact phone"
+              >
                 <div
                   className="p-3 rounded-lg border pr-10"
                   style={{
@@ -673,8 +887,13 @@ export default function PersonalInformationSection({ data, isEditMode, staged, o
                     borderColor: "var(--color-outline)",
                   }}
                 >
-                  <span className="text-sm" style={{ color: "var(--color-on-surface)" }}>
-                    {formData.emergencyContactPhone ? formatPhoneNumber(formData.emergencyContactPhone) : "Not provided"}
+                  <span
+                    className="text-sm"
+                    style={{ color: "var(--color-on-surface)" }}
+                  >
+                    {formData.emergencyContactPhone
+                      ? formatPhoneNumber(formData.emergencyContactPhone)
+                      : "Not provided"}
                   </span>
                 </div>
               </WithCopy>
