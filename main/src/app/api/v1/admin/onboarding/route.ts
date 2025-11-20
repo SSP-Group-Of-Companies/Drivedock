@@ -204,6 +204,7 @@ export async function GET(req: NextRequest) {
 
     const ceEmailSent = toBool(searchParams.get("carriersEdgeTrainingEmailSent"));
     const dtStatus = searchParams.get("drugTestStatus") as EDrugTestStatus | null;
+    const hasTruckUnitNumber = toBool(searchParams.get("hasTruckUnitNumber"));
 
     // ---------------- pipeline ----------------
     const matchBase: Record<string, any> = { ...baseFilter };
@@ -333,6 +334,19 @@ export async function GET(req: NextRequest) {
                 "status.currentStep": EStepPath.DRUG_TEST,
                 "status.completed": false,
                 dtStatus,
+              },
+            },
+          ]
+        : []),
+      ...(hasTruckUnitNumber === true
+        ? [
+            {
+              $match: {
+                "status.completed": true,
+                truckUnitNumber: {
+                  $exists: true,
+                  $nin: [null, ""],
+                },
               },
             },
           ]
