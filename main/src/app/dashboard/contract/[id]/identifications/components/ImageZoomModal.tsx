@@ -2,15 +2,15 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
-import { 
-  X, 
-  ZoomIn, 
-  ZoomOut, 
-  RotateCw, 
+import {
+  X,
+  ZoomIn,
+  ZoomOut,
+  RotateCw,
   Download,
   Maximize2,
   Minimize2,
-  Crop
+  Crop,
 } from "lucide-react";
 import Cropper from "react-cropper";
 import type { ReactCropperElement } from "react-cropper";
@@ -23,10 +23,10 @@ interface ImageZoomModalProps {
   imageAlt: string;
   imageTitle?: string;
   onDownload?: () => void;
-  
+
   // Cropping
-  enableCrop?: boolean;        // default true
-  cropAspect?: number | null;  // null = free
+  enableCrop?: boolean; // default true
+  cropAspect?: number | null; // null = free
   onCropCommit?: (blob: Blob) => Promise<void> | void;
 }
 
@@ -66,7 +66,10 @@ export default function ImageZoomModal({
     lastPan: { x: 0, y: 0 },
   });
 
-  const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
+  const [imageDimensions, setImageDimensions] = useState({
+    width: 0,
+    height: 0,
+  });
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const [isCropMode, setIsCropMode] = useState(false);
   const [isSavingCrop, setIsSavingCrop] = useState(false);
@@ -129,7 +132,7 @@ export default function ImageZoomModal({
         case "+":
           if (!isCropMode) {
             e.preventDefault();
-            setZoomState(prev => {
+            setZoomState((prev) => {
               const newScale = Math.min(MAX_SCALE, prev.scale + SCALE_STEP);
               scaleRef.current = newScale;
               return { ...prev, scale: newScale };
@@ -139,7 +142,7 @@ export default function ImageZoomModal({
         case "-":
           if (!isCropMode) {
             e.preventDefault();
-            setZoomState(prev => {
+            setZoomState((prev) => {
               const newScale = Math.max(MIN_SCALE, prev.scale - SCALE_STEP);
               scaleRef.current = newScale;
               return { ...prev, scale: newScale };
@@ -164,7 +167,7 @@ export default function ImageZoomModal({
         case "r":
           if (!isCropMode) {
             e.preventDefault();
-            setZoomState(prev => ({
+            setZoomState((prev) => ({
               ...prev,
               rotation: (prev.rotation + ROTATION_STEP) % 360,
             }));
@@ -173,8 +176,13 @@ export default function ImageZoomModal({
         case "f":
           if (!isCropMode) {
             e.preventDefault();
-            if (containerRef.current && imageDimensions.width && imageDimensions.height) {
-              const containerRect = containerRef.current.getBoundingClientRect();
+            if (
+              containerRef.current &&
+              imageDimensions.width &&
+              imageDimensions.height
+            ) {
+              const containerRect =
+                containerRef.current.getBoundingClientRect();
               const containerWidth = containerRect.width - 100;
               const containerHeight = containerRect.height - 200;
               const scaleX = containerWidth / imageDimensions.width;
@@ -200,10 +208,10 @@ export default function ImageZoomModal({
           if (!isCropMode) {
             e.preventDefault();
             if (scaleRef.current > 1) {
-              setZoomState(prev => {
+              setZoomState((prev) => {
                 let deltaX = 0;
                 let deltaY = 0;
-                
+
                 if (e.key === "ArrowLeft") deltaX = 50;
                 if (e.key === "ArrowRight") deltaX = -50;
                 if (e.key === "ArrowUp") deltaY = 50;
@@ -213,7 +221,10 @@ export default function ImageZoomModal({
                   ...prev,
                   translateX: prev.translateX + deltaX,
                   translateY: prev.translateY + deltaY,
-                  lastPan: { x: prev.translateX + deltaX, y: prev.translateY + deltaY },
+                  lastPan: {
+                    x: prev.translateX + deltaX,
+                    y: prev.translateY + deltaY,
+                  },
                 };
               });
             }
@@ -227,31 +238,37 @@ export default function ImageZoomModal({
   }, [isOpen, onClose, imageDimensions, enableCrop, isCropMode, isSavingCrop]);
 
   // Handle wheel zoom with debouncing to prevent oscillation
-  const handleWheel = useCallback((e: WheelEvent) => {
-    if (isCropMode) return; // Disable wheel zoom in crop mode
-    
-    e.preventDefault();
-    e.stopPropagation();
+  const handleWheel = useCallback(
+    (e: WheelEvent) => {
+      if (isCropMode) return; // Disable wheel zoom in crop mode
 
-    // Clear any existing timeout
-    if (wheelTimeoutRef.current) {
-      clearTimeout(wheelTimeoutRef.current);
-    }
+      e.preventDefault();
+      e.stopPropagation();
 
-    // Debounce the zoom to prevent rapid firing
-    wheelTimeoutRef.current = setTimeout(() => {
-      const delta = e.deltaY > 0 ? -SCALE_STEP : SCALE_STEP;
-      
-      setZoomState(prev => {
-        const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, prev.scale + delta));
-        scaleRef.current = newScale;
-        return {
-          ...prev,
-          scale: newScale,
-        };
-      });
-    }, 10); // Small debounce to batch rapid wheel events
-  }, [isCropMode]);
+      // Clear any existing timeout
+      if (wheelTimeoutRef.current) {
+        clearTimeout(wheelTimeoutRef.current);
+      }
+
+      // Debounce the zoom to prevent rapid firing
+      wheelTimeoutRef.current = setTimeout(() => {
+        const delta = e.deltaY > 0 ? -SCALE_STEP : SCALE_STEP;
+
+        setZoomState((prev) => {
+          const newScale = Math.max(
+            MIN_SCALE,
+            Math.min(MAX_SCALE, prev.scale + delta)
+          );
+          scaleRef.current = newScale;
+          return {
+            ...prev,
+            scale: newScale,
+          };
+        });
+      }, 10); // Small debounce to batch rapid wheel events
+    },
+    [isCropMode]
+  );
 
   // Add wheel event listener to the image container
   useEffect(() => {
@@ -266,22 +283,25 @@ export default function ImageZoomModal({
   }, [isOpen, handleWheel]);
 
   // Mouse drag handlers
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    if (isCropMode) return; // Disable drag in crop mode
-    e.preventDefault();
-    setZoomState(prev => {
-      if (prev.scale <= 1) return prev;
-      
-      return {
-        ...prev,
-        isDragging: true,
-        dragStart: { x: e.clientX, y: e.clientY },
-      };
-    });
-  }, [isCropMode]);
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      if (isCropMode) return; // Disable drag in crop mode
+      e.preventDefault();
+      setZoomState((prev) => {
+        if (prev.scale <= 1) return prev;
+
+        return {
+          ...prev,
+          isDragging: true,
+          dragStart: { x: e.clientX, y: e.clientY },
+        };
+      });
+    },
+    [isCropMode]
+  );
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    setZoomState(prev => {
+    setZoomState((prev) => {
       if (!prev.isDragging || prev.scale <= 1) return prev;
 
       const deltaX = e.clientX - prev.dragStart.x;
@@ -296,7 +316,7 @@ export default function ImageZoomModal({
   }, []);
 
   const handleMouseUp = useCallback(() => {
-    setZoomState(prev => {
+    setZoomState((prev) => {
       if (!prev.isDragging) return prev;
 
       return {
@@ -311,43 +331,49 @@ export default function ImageZoomModal({
   }, []);
 
   // Touch handlers for mobile
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    if (isCropMode) return; // Disable touch pan in crop mode
-    if (e.touches.length === 1) {
-      const touch = e.touches[0];
-      setZoomState(prev => {
-        if (prev.scale <= 1) return prev;
-        
-        return {
-          ...prev,
-          isDragging: true,
-          dragStart: { x: touch.clientX, y: touch.clientY },
-        };
-      });
-    }
-  }, [isCropMode]);
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      if (isCropMode) return; // Disable touch pan in crop mode
+      if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        setZoomState((prev) => {
+          if (prev.scale <= 1) return prev;
 
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (isCropMode) return; // Disable touch pan in crop mode
-    if (e.touches.length === 1) {
-      const touch = e.touches[0];
-      setZoomState(prev => {
-        if (!prev.isDragging) return prev;
-        
-        const deltaX = touch.clientX - prev.dragStart.x;
-        const deltaY = touch.clientY - prev.dragStart.y;
+          return {
+            ...prev,
+            isDragging: true,
+            dragStart: { x: touch.clientX, y: touch.clientY },
+          };
+        });
+      }
+    },
+    [isCropMode]
+  );
 
-        return {
-          ...prev,
-          translateX: prev.lastPan.x + deltaX,
-          translateY: prev.lastPan.y + deltaY,
-        };
-      });
-    }
-  }, [isCropMode]);
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      if (isCropMode) return; // Disable touch pan in crop mode
+      if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        setZoomState((prev) => {
+          if (!prev.isDragging) return prev;
+
+          const deltaX = touch.clientX - prev.dragStart.x;
+          const deltaY = touch.clientY - prev.dragStart.y;
+
+          return {
+            ...prev,
+            translateX: prev.lastPan.x + deltaX,
+            translateY: prev.lastPan.y + deltaY,
+          };
+        });
+      }
+    },
+    [isCropMode]
+  );
 
   const handleTouchEnd = useCallback(() => {
-    setZoomState(prev => {
+    setZoomState((prev) => {
       if (!prev.isDragging) return prev;
 
       return {
@@ -363,7 +389,7 @@ export default function ImageZoomModal({
 
   // Zoom controls
   const handleZoomIn = useCallback(() => {
-    setZoomState(prev => {
+    setZoomState((prev) => {
       const newScale = Math.min(MAX_SCALE, prev.scale + SCALE_STEP);
       scaleRef.current = newScale;
       return { ...prev, scale: newScale };
@@ -371,7 +397,7 @@ export default function ImageZoomModal({
   }, []);
 
   const handleZoomOut = useCallback(() => {
-    setZoomState(prev => {
+    setZoomState((prev) => {
       const newScale = Math.max(MIN_SCALE, prev.scale - SCALE_STEP);
       scaleRef.current = newScale;
       return { ...prev, scale: newScale };
@@ -392,14 +418,19 @@ export default function ImageZoomModal({
   }, []);
 
   const handleRotate = useCallback(() => {
-    setZoomState(prev => ({
+    setZoomState((prev) => ({
       ...prev,
       rotation: (prev.rotation + ROTATION_STEP) % 360,
     }));
   }, []);
 
   const handleFitToScreen = useCallback(() => {
-    if (!containerRef.current || !imageDimensions.width || !imageDimensions.height) return;
+    if (
+      !containerRef.current ||
+      !imageDimensions.width ||
+      !imageDimensions.height
+    )
+      return;
 
     const containerRect = containerRef.current.getBoundingClientRect();
     const containerWidth = containerRect.width - 100;
@@ -431,9 +462,13 @@ export default function ImageZoomModal({
         maxHeight: 2400,
       });
       const blob = await new Promise<Blob>((res, rej) =>
-        canvas.toBlob((b: Blob | null) => (b ? res(b) : rej(new Error("Crop failed"))), "image/jpeg", 0.9)
+        canvas.toBlob(
+          (b: Blob | null) => (b ? res(b) : rej(new Error("Crop failed"))),
+          "image/jpeg",
+          0.9
+        )
       );
-      await onCropCommit(blob);      // parent uploads + stages -> dirty flips
+      await onCropCommit(blob); // parent uploads + stages -> dirty flips
       setIsCropMode(false);
     } finally {
       setIsSavingCrop(false);
@@ -441,17 +476,23 @@ export default function ImageZoomModal({
   }, [onCropCommit]);
 
   // Handle image load - only set dimensions once
-  const handleImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
-    const img = e.target as HTMLImageElement;
-    // Only set dimensions if they haven't been set yet or if they're different
-    setImageDimensions(prev => {
-      if (prev.width !== img.naturalWidth || prev.height !== img.naturalHeight) {
-        return { width: img.naturalWidth, height: img.naturalHeight };
-      }
-      return prev;
-    });
-    setIsImageLoaded(true);
-  }, []);
+  const handleImageLoad = useCallback(
+    (e: React.SyntheticEvent<HTMLImageElement>) => {
+      const img = e.target as HTMLImageElement;
+      // Only set dimensions if they haven't been set yet or if they're different
+      setImageDimensions((prev) => {
+        if (
+          prev.width !== img.naturalWidth ||
+          prev.height !== img.naturalHeight
+        ) {
+          return { width: img.naturalWidth, height: img.naturalHeight };
+        }
+        return prev;
+      });
+      setIsImageLoaded(true);
+    },
+    []
+  );
 
   if (!isOpen) return null;
 
@@ -486,7 +527,7 @@ export default function ImageZoomModal({
               )}
               <p className="text-sm text-gray-300 truncate">{imageAlt}</p>
             </div>
-            
+
             <div className="flex items-center gap-2">
               {onDownload && (
                 <button
@@ -497,7 +538,7 @@ export default function ImageZoomModal({
                   <Download className="h-5 w-5" />
                 </button>
               )}
-              
+
               <button
                 onClick={onClose}
                 disabled={isSavingCrop}
@@ -511,7 +552,7 @@ export default function ImageZoomModal({
         </div>
 
         {/* Image container */}
-        <div 
+        <div
           ref={imageContainerRef}
           className="flex-1 flex items-center justify-center p-8 pt-20 pb-20"
         >
@@ -537,7 +578,12 @@ export default function ImageZoomModal({
             <div
               className="relative"
               style={{
-                cursor: zoomState.scale > 1 ? (zoomState.isDragging ? "grabbing" : "grab") : "default",
+                cursor:
+                  zoomState.scale > 1
+                    ? zoomState.isDragging
+                      ? "grabbing"
+                      : "grab"
+                    : "default",
                 userSelect: "none",
               }}
               onMouseDown={handleMouseDown}
@@ -554,7 +600,7 @@ export default function ImageZoomModal({
                   <div className="text-white text-sm">Loading...</div>
                 </div>
               )}
-              
+
               <Image
                 src={imageUrl}
                 alt={imageAlt}
@@ -564,11 +610,15 @@ export default function ImageZoomModal({
                 style={{
                   transform: `
                     scale(${zoomState.scale}) 
-                    translate(${zoomState.translateX / zoomState.scale}px, ${zoomState.translateY / zoomState.scale}px) 
+                    translate(${zoomState.translateX / zoomState.scale}px, ${
+                    zoomState.translateY / zoomState.scale
+                  }px) 
                     rotate(${zoomState.rotation}deg)
                   `,
                   transformOrigin: "center center",
-                  transition: zoomState.isDragging ? "none" : "transform 0.1s ease-out",
+                  transition: zoomState.isDragging
+                    ? "none"
+                    : "transform 0.1s ease-out",
                   opacity: isImageLoaded ? 1 : 0,
                   maxWidth: "90vw",
                   maxHeight: "calc(100vh - 240px)",
@@ -616,11 +666,11 @@ export default function ImageZoomModal({
                   >
                     <ZoomOut className="h-5 w-5" />
                   </button>
-                  
+
                   <span className="text-white text-sm font-medium min-w-[60px] text-center">
                     {Math.round(zoomState.scale * 100)}%
                   </span>
-                  
+
                   <button
                     onClick={handleZoomIn}
                     disabled={zoomState.scale >= MAX_SCALE}
@@ -680,8 +730,11 @@ export default function ImageZoomModal({
                 "Drag to move crop area • Drag corners to resize • Adjust crop box to remove unwanted edges"
               ) : (
                 <>
-                  Use mouse wheel to zoom • Drag to pan • Arrow keys to move • 
-                  <span className="hidden sm:inline"> Keyboard shortcuts: + - 0 R F C</span>
+                  Use mouse wheel to zoom • Drag to pan • Arrow keys to move •
+                  <span className="hidden sm:inline">
+                    {" "}
+                    Keyboard shortcuts: + - 0 R F C
+                  </span>
                 </>
               )}
             </p>
