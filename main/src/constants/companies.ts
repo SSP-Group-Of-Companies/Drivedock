@@ -14,11 +14,7 @@ export enum ECompanyId {
   NESH = "nesh",
 }
 
-export type CanadianCompanyId =
-  | ECompanyId.SSP_CA
-  | ECompanyId.FELLOW_TRANS
-  | ECompanyId.NESH
-  | ECompanyId.WEB_FREIGHT;
+export type CanadianCompanyId = ECompanyId.SSP_CA | ECompanyId.FELLOW_TRANS | ECompanyId.NESH | ECompanyId.WEB_FREIGHT;
 
 export interface Company {
   id: string;
@@ -33,6 +29,7 @@ export interface Company {
   buttonTextColor: string;
   buttonGradient: string; // new
   hasFlatbed: boolean;
+  hasDryVan: boolean;
 }
 
 export const COMPANIES: Company[] = [
@@ -49,6 +46,7 @@ export const COMPANIES: Company[] = [
     buttonTextColor: "text-white",
     buttonGradient: "bg-gradient-to-r from-blue-700 via-blue-500 to-blue-400",
     hasFlatbed: true,
+    hasDryVan: true,
   },
   {
     id: ECompanyId.SSP_US,
@@ -62,7 +60,8 @@ export const COMPANIES: Company[] = [
     buttonColor: "",
     buttonTextColor: "text-white",
     buttonGradient: "bg-gradient-to-r from-blue-800 via-blue-600 to-blue-400",
-    hasFlatbed: false,
+    hasFlatbed: true,
+    hasDryVan: true,
   },
   {
     id: ECompanyId.FELLOW_TRANS,
@@ -77,6 +76,7 @@ export const COMPANIES: Company[] = [
     buttonTextColor: "text-white",
     buttonGradient: "bg-gradient-to-r from-red-600 via-red-500 to-pink-400",
     hasFlatbed: true,
+    hasDryVan: false,
   },
   {
     id: ECompanyId.WEB_FREIGHT,
@@ -91,6 +91,7 @@ export const COMPANIES: Company[] = [
     buttonTextColor: "text-white",
     buttonGradient: "bg-gradient-to-r from-blue-500 via-cyan-400 to-blue-300",
     hasFlatbed: true,
+    hasDryVan: false,
   },
   {
     id: ECompanyId.NESH,
@@ -103,9 +104,9 @@ export const COMPANIES: Company[] = [
     operations: "United States Operations",
     buttonColor: "",
     buttonTextColor: "text-white",
-    buttonGradient:
-      "bg-gradient-to-r from-purple-700 via-purple-500 to-pink-400",
+    buttonGradient: "bg-gradient-to-r from-purple-700 via-purple-500 to-pink-400",
     hasFlatbed: true,
+    hasDryVan: false,
   },
 ];
 
@@ -123,23 +124,20 @@ export function isCanadianCompany(companyId: string): boolean {
  * Ignores applicant experience.
  *
  * Rules:
- * - Company must operate flatbeds.
- * - Special case: SSP-Canada with DRY_VAN application → not possible.
+ * - Company must operate flatbeds (`hasFlatbed`).
+ * - If the company has dry van (`hasDryVan`) and the application type is DRY_VAN,
+ *   flatbed training is not possible.
  * - Otherwise → possible.
  */
-export function canHaveFlatbedTraining(
-  companyId: string,
-  applicationType?: ECompanyApplicationType
-): boolean {
+export function canHaveFlatbedTraining(companyId: string, applicationType?: ECompanyApplicationType): boolean {
   const company = getCompanyById(companyId);
   if (!company) return false;
 
+  // must support flatbed at all
   if (!company.hasFlatbed) return false;
 
-  if (
-    company.id === ECompanyId.SSP_CA &&
-    applicationType === ECompanyApplicationType.DRY_VAN
-  ) {
+  // global rule: DRY_VAN application at a dry-van company → no flatbed training
+  if (applicationType === ECompanyApplicationType.DRY_VAN && company.hasDryVan) {
     return false;
   }
 
