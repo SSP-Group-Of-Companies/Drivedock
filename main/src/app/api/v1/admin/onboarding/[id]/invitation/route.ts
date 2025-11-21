@@ -11,7 +11,7 @@ import ApplicationForm from "@/mongoose/models/ApplicationForm";
 import OnboardingSession from "@/mongoose/models/OnboardingSession";
 
 import { buildTrackerContext, isInvitationApproved } from "@/lib/utils/onboardingUtils";
-import { getCompanyById, needsFlatbedTraining, ECompanyId as CompanyEnum, ECompanyApplicationType } from "@/constants/companies";
+import { getCompanyById, needsFlatbedTraining, ECompanyApplicationType } from "@/constants/companies";
 import { readMongooseRefField } from "@/lib/utils/mongooseRef";
 import type { IPreQualificationsDoc } from "@/types/preQualifications.types";
 import { deleteS3Objects } from "@/lib/utils/s3Upload";
@@ -159,9 +159,15 @@ export const POST = async (req: NextRequest, { params }: { params: Promise<{ id:
       (onboardingDoc as any).preApprovalCountryCode = sel.countryCode;
     }
 
-    // SSP-CA requires applicationType
-    if (companyId === CompanyEnum.SSP_CA && (!applicationType || !Object.values(ECompanyApplicationType).includes(applicationType))) {
-      return errorResponse(400, "applicationType is required for SSP-Canada");
+    // Companies with dry-van operations require applicationType (FLATBED vs DRY_VAN)
+    const requiresApplicationType = sel.hasDryVan === true;
+
+    let resolvedApplicationType: ECompanyApplicationType | undefined = undefined;
+    if (requiresApplicationType) {
+      if (!applicationType || !Object.values(ECompanyApplicationType).includes(applicationType)) {
+        return errorResponse(400, "applicationType is required for companies with dry-van operations");
+      }
+      resolvedApplicationType = applicationType;
     }
 
     // Gather driver info BEFORE save (email & names)
@@ -169,7 +175,9 @@ export const POST = async (req: NextRequest, { params }: { params: Promise<{ id:
 
     // Update DB
     onboardingDoc.companyId = companyId;
-    if (companyId === CompanyEnum.SSP_CA) (onboardingDoc as any).applicationType = applicationType;
+    if (requiresApplicationType) {
+      (onboardingDoc as any).applicationType = resolvedApplicationType;
+    }
 
     // Recompute flatbed training requirement
     const preQualification = readMongooseRefField<IPreQualificationsDoc>(onboardingDoc.forms?.preQualification as any);
