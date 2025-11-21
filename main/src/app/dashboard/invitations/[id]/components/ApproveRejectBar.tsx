@@ -3,18 +3,38 @@
 
 import { useMemo, useState } from "react";
 import ConfirmModal from "./ConfirmModal";
-import { COMPANIES, ECompanyId } from "@/constants/companies";
+import {
+  COMPANIES,
+  getCompanyById,
+  ECompanyApplicationType,
+  type Company,
+} from "@/constants/companies";
 import { ECountryCode } from "@/types/shared.types";
 
-function CompanySelect({ value, onChange, countryCode }: { value?: string; onChange: (v: string) => void; countryCode?: ECountryCode | null }) {
+function CompanySelect({
+  value,
+  onChange,
+  countryCode,
+}: {
+  value?: string;
+  onChange: (v: string) => void;
+  countryCode?: ECountryCode | null;
+}) {
   const options = useMemo(() => {
-    const list = countryCode ? COMPANIES.filter((c) => c.countryCode === countryCode) : COMPANIES;
+    const list = countryCode
+      ? COMPANIES.filter((c) => c.countryCode === countryCode)
+      : COMPANIES;
     return list.map((c) => ({ id: c.id, name: c.name }));
   }, [countryCode]);
+
   return (
     <select
       className="rounded-md border px-2 py-1 text-sm w-full"
-      style={{ borderColor: "var(--color-outline)", background: "var(--color-surface)", color: "var(--color-on-surface)" }}
+      style={{
+        borderColor: "var(--color-outline)",
+        background: "var(--color-surface)",
+        color: "var(--color-on-surface)",
+      }}
       value={value || ""}
       onChange={(e) => onChange(e.target.value)}
     >
@@ -30,20 +50,55 @@ function CompanySelect({ value, onChange, countryCode }: { value?: string; onCha
   );
 }
 
-function ApplicationTypeSelect({ value, onChange, visible }: { value?: string; onChange: (v: string) => void; visible: boolean }) {
-  if (!visible) return null;
+function ApplicationTypeSelect({
+  value,
+  onChange,
+  company,
+}: {
+  value?: string;
+  onChange: (v: string) => void;
+  company?: Company | null;
+}) {
+  // Only show if the company exists and has dry-van operations.
+  // Backend requires applicationType whenever hasDryVan === true.
+  if (!company || !company.hasDryVan) return null;
+
+  // Build options from company capabilities:
+  const options: { value: ECompanyApplicationType; label: string }[] = [];
+
+  if (company.hasFlatbed) {
+    options.push({
+      value: ECompanyApplicationType.FLATBED,
+      label: "Flatbed",
+    });
+  }
+
+  if (company.hasDryVan) {
+    options.push({
+      value: ECompanyApplicationType.DRY_VAN,
+      label: "Dry Van",
+    });
+  }
+
   return (
     <select
       className="rounded-md border px-2 py-1 text-sm w-full"
-      style={{ borderColor: "var(--color-outline)", background: "var(--color-surface)", color: "var(--color-on-surface)" }}
+      style={{
+        borderColor: "var(--color-outline)",
+        background: "var(--color-surface)",
+        color: "var(--color-on-surface)",
+      }}
       value={value || ""}
       onChange={(e) => onChange(e.target.value)}
     >
       <option value="" disabled>
         Select application type
       </option>
-      <option value="FLAT_BED">Flatbed</option>
-      <option value="DRY_VAN">Dry Van</option>
+      {options.map((opt) => (
+        <option key={opt.value} value={opt.value}>
+          {opt.label}
+        </option>
+      ))}
     </select>
   );
 }
@@ -55,7 +110,10 @@ export default function ApproveRejectBar({
   countryCode,
 }: {
   busy: "approve" | "reject" | null;
-  onApprove: (opts: { companyId: string; applicationType?: string }) => Promise<void> | void;
+  onApprove: (opts: {
+    companyId: string;
+    applicationType?: string;
+  }) => Promise<void> | void;
   onReject: (reason?: string) => Promise<void> | void;
   countryCode?: ECountryCode | null;
 }) {
@@ -63,7 +121,14 @@ export default function ApproveRejectBar({
   const [rejectOpen, setRejectOpen] = useState(false);
   const [companyId, setCompanyId] = useState<string>("");
   const [applicationType, setApplicationType] = useState<string>("");
-  const showAppType = companyId === ECompanyId.SSP_CA;
+
+  const selectedCompany = useMemo(
+    () => (companyId ? getCompanyById(companyId) : undefined),
+    [companyId]
+  );
+
+  // Companies with dry-van operations require applicationType (SSP_CA, SSP_US, etc.)
+  const requiresApplicationType = !!selectedCompany?.hasDryVan;
 
   return (
     <>
@@ -76,21 +141,43 @@ export default function ApproveRejectBar({
         }}
       >
         <div>
-          <h2 className="text-lg font-semibold" style={{ color: "var(--color-on-surface)" }}>
+          <h2
+            className="text-lg font-semibold"
+            style={{ color: "var(--color-on-surface)" }}
+          >
             Invitation Review
           </h2>
-          <p className="text-sm" style={{ color: "var(--color-on-surface-variant)" }}>
-            Approve to add this driver to onboarding, or reject to permanently delete the application and files.
+          <p
+            className="text-sm"
+            style={{ color: "var(--color-on-surface-variant)" }}
+          >
+            Approve to add this driver to onboarding, or reject to permanently
+            delete the application and files.
           </p>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
           <div className="w-64">
-            <CompanySelect value={companyId} onChange={setCompanyId} countryCode={countryCode} />
+            <CompanySelect
+              value={companyId}
+              onChange={(id) => {
+                setCompanyId(id);
+                // If we change company, and the new company does not support current type,
+                // we keep it simple and let the user re-select if needed.
+                setApplicationType("");
+              }}
+              countryCode={countryCode}
+            />
           </div>
+
           <div className="w-56">
-            <ApplicationTypeSelect visible={showAppType} value={applicationType} onChange={setApplicationType} />
+            <ApplicationTypeSelect
+              company={selectedCompany || null}
+              value={applicationType}
+              onChange={setApplicationType}
+            />
           </div>
+
           <button
             type="button"
             onClick={() => setRejectOpen(true)}
@@ -100,10 +187,16 @@ export default function ApproveRejectBar({
           >
             {busy === "reject" ? "Rejecting…" : "Reject"}
           </button>
+
           <button
             type="button"
             onClick={() => setApproveOpen(true)}
-            disabled={busy === "reject" || busy === "approve" || !companyId || (showAppType && !applicationType)}
+            disabled={
+              busy === "reject" ||
+              busy === "approve" ||
+              !companyId ||
+              (requiresApplicationType && !applicationType)
+            }
             className="rounded-lg px-3 py-2 text-sm text-white disabled:opacity-60"
             style={{ background: "var(--color-success)" }}
           >
@@ -122,7 +215,13 @@ export default function ApproveRejectBar({
         busy={busy === "approve"}
         onClose={() => setApproveOpen(false)}
         onConfirm={async () => {
-          await onApprove({ companyId, applicationType: showAppType ? applicationType || undefined : undefined });
+          await onApprove({
+            companyId,
+            applicationType:
+              requiresApplicationType && applicationType
+                ? applicationType
+                : undefined,
+          });
           setApproveOpen(false);
         }}
       />
