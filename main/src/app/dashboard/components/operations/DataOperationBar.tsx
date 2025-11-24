@@ -203,6 +203,20 @@ export default function DataOperationBar({
   const showCE = selectedCategory === "carriers-edge-training";
   const showDT = selectedCategory === "drug-test";
 
+  // Completed / truck filter tri-state helpers
+  const completedFlag = query.completed;
+  const hasTruckFlag = query.hasTruckUnitNumber;
+
+  // In "all completed" state (completed=true, hasTruckFlag undefined),
+  // both checkboxes render as checked.
+  const isCompletedWithoutChecked =
+    completedFlag === true &&
+    (hasTruckFlag === false || typeof hasTruckFlag === "undefined");
+
+  const isCompletedWithChecked =
+    completedFlag === true &&
+    (hasTruckFlag === true || typeof hasTruckFlag === "undefined");
+
   // Labels for CE/DT custom single-selects
   const ceLabel = useMemo(() => {
     if (typeof query.carriersEdgeTrainingEmailSent === "boolean") {
@@ -517,53 +531,128 @@ export default function DataOperationBar({
                       >
                         {showCompletedToggle && (
                           <>
-                            {/* Completed only */}
-                            <label className="flex items-center gap-2 text-sm">
-                              <input
-                                type="checkbox"
-                                className="h-4 w-4"
-                                checked={query.completed === true}
-                                onChange={(e) => {
-                                  const checked = e.target.checked;
-
-                                  if (!checked) {
-                                    // If we stop filtering by completed at all, clear the truck sub-filter too.
-                                    onCompletedWithTruckToggle?.(undefined);
-                                  } else {
-                                    // Switching to completed-only clears in-progress step.
-                                    onStepFilterChange?.(undefined);
-                                  }
-
-                                  onCompletedToggle?.(
-                                    checked ? true : undefined
-                                  );
-                                }}
-                              />
-                              <span>Completed applications</span>
-                            </label>
-                            {/* Completed + truck/unit number */}
+                            {/* Completed – WITHOUT truck/unit assigned */}
                             {onCompletedWithTruckToggle && (
                               <label className="flex items-center gap-2 text-sm">
                                 <input
                                   type="checkbox"
                                   className="h-4 w-4"
-                                  checked={query.hasTruckUnitNumber === true}
+                                  checked={isCompletedWithoutChecked}
                                   onChange={(e) => {
                                     const checked = e.target.checked;
+                                    const { completed, hasTruckUnitNumber } =
+                                      query;
+
+                                    let nextCompleted: boolean | undefined =
+                                      completed;
+                                    let nextHasTruck: boolean | undefined =
+                                      hasTruckUnitNumber;
 
                                     if (checked) {
-                                      // This filter always means "completed AND has truck"
-                                      onCompletedToggle?.(true);
-                                      onStepFilterChange?.(undefined); // clear in-progress step if any
-                                      onCompletedWithTruckToggle?.(true);
+                                      // Turning ON "without"
+                                      if (
+                                        completed === true &&
+                                        hasTruckUnitNumber === true
+                                      ) {
+                                        // was: only WITH → now BOTH
+                                        nextCompleted = true;
+                                        nextHasTruck = undefined;
+                                      } else {
+                                        // default: only WITHOUT
+                                        nextCompleted = true;
+                                        nextHasTruck = false;
+                                      }
                                     } else {
-                                      onCompletedWithTruckToggle?.(undefined);
+                                      // Turning OFF "without"
+                                      if (
+                                        completed === true &&
+                                        hasTruckUnitNumber === false
+                                      ) {
+                                        // was: only WITHOUT → now none
+                                        nextCompleted = undefined;
+                                        nextHasTruck = undefined;
+                                      } else if (
+                                        completed === true &&
+                                        typeof hasTruckUnitNumber ===
+                                          "undefined"
+                                      ) {
+                                        // was: BOTH → now only WITH
+                                        nextCompleted = true;
+                                        nextHasTruck = true;
+                                      }
                                     }
+
+                                    onCompletedWithTruckToggle(nextHasTruck);
+                                    onCompletedToggle(nextCompleted);
                                   }}
                                 />
-                                <span>Completed & Truck No assigned</span>
+                                <span>
+                                  Completed – without truck/unit assigned
+                                </span>
                               </label>
                             )}
+
+                            {/* Completed – WITH truck/unit assigned */}
+                            {onCompletedWithTruckToggle && (
+                              <label className="flex items-center gap-2 text-sm">
+                                <input
+                                  type="checkbox"
+                                  className="h-4 w-4"
+                                  checked={isCompletedWithChecked}
+                                  onChange={(e) => {
+                                    const checked = e.target.checked;
+                                    const { completed, hasTruckUnitNumber } =
+                                      query;
+
+                                    let nextCompleted: boolean | undefined =
+                                      completed;
+                                    let nextHasTruck: boolean | undefined =
+                                      hasTruckUnitNumber;
+
+                                    if (checked) {
+                                      // Turning ON "with"
+                                      if (
+                                        completed === true &&
+                                        hasTruckUnitNumber === false
+                                      ) {
+                                        // was: only WITHOUT → now BOTH
+                                        nextCompleted = true;
+                                        nextHasTruck = undefined;
+                                      } else {
+                                        // default: only WITH
+                                        nextCompleted = true;
+                                        nextHasTruck = true;
+                                      }
+                                    } else {
+                                      // Turning OFF "with"
+                                      if (
+                                        completed === true &&
+                                        hasTruckUnitNumber === true
+                                      ) {
+                                        // was: only WITH → now none
+                                        nextCompleted = undefined;
+                                        nextHasTruck = undefined;
+                                      } else if (
+                                        completed === true &&
+                                        typeof hasTruckUnitNumber ===
+                                          "undefined"
+                                      ) {
+                                        // was: BOTH → now only WITHOUT
+                                        nextCompleted = true;
+                                        nextHasTruck = false;
+                                      }
+                                    }
+
+                                    onCompletedWithTruckToggle(nextHasTruck);
+                                    onCompletedToggle(nextCompleted);
+                                  }}
+                                />
+                                <span>
+                                  Completed – with truck/unit assigned
+                                </span>
+                              </label>
+                            )}
+
                             {/* In-progress only */}
                             <label className="flex items-center gap-2 text-sm">
                               <input
@@ -572,20 +661,21 @@ export default function DataOperationBar({
                                 checked={query.completed === false}
                                 onChange={(e) => {
                                   const checked = e.target.checked;
+
                                   if (checked) {
-                                    // Moving to in-progress: clear truck-only completed sub-filter
+                                    // Moving to in-progress: clear *any* completed / truck filters
                                     onCompletedWithTruckToggle?.(undefined);
+                                    onCompletedToggle?.(false);
                                   } else {
-                                    // Turning off in-progress: clear specific step selection.
+                                    // Turning off in-progress: clear specific step selection and completed flag
                                     onStepFilterChange?.(undefined);
+                                    onCompletedToggle?.(undefined);
                                   }
-                                  onCompletedToggle?.(
-                                    checked ? false : undefined
-                                  );
                                 }}
                               />
                               <span>In-progress applications</span>
                             </label>
+
                             {/* In-progress step filter */}
                             {onStepFilterChange && (
                               <div
@@ -673,7 +763,10 @@ export default function DataOperationBar({
                                               const nextStep = opt.value;
 
                                               if (nextStep) {
-                                                // Concrete step => force in-progress
+                                                // Concrete step => force in-progress and clear completed filters
+                                                onCompletedWithTruckToggle?.(
+                                                  undefined
+                                                );
                                                 onCompletedToggle?.(false);
                                               }
 
@@ -692,6 +785,7 @@ export default function DataOperationBar({
                             )}
                           </>
                         )}
+
                         {!lockedTerminated ? (
                           <label className="flex items-center gap-2 text-sm">
                             <input

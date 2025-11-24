@@ -44,7 +44,14 @@ function buildSort(sortParam: string | null) {
   if (!sortParam) return { spec: { updatedAt: -1 } };
   const token = sortParam.trim();
 
-  if (["driverNameAsc", "driverNameDesc", "progress:asc", "progress:desc"].includes(token)) {
+  if (
+    [
+      "driverNameAsc",
+      "driverNameDesc",
+      "progress:asc",
+      "progress:desc",
+    ].includes(token)
+  ) {
     return { token };
   }
 
@@ -66,7 +73,8 @@ async function buildBaseFilter(searchParams: URLSearchParams) {
   if (companyIds?.length) filter.companyId = { $in: companyIds };
 
   const applicationTypes = toArray(searchParams.get("applicationType"));
-  if (applicationTypes?.length) filter.applicationType = { $in: applicationTypes };
+  if (applicationTypes?.length)
+    filter.applicationType = { $in: applicationTypes };
 
   const completed = toBool(searchParams.get("completed"));
   if (typeof completed === "boolean") filter["status.completed"] = completed;
@@ -84,7 +92,10 @@ async function buildBaseFilter(searchParams: URLSearchParams) {
   // invitationApproved=false or absent -> false OR missing
   const invitationApproved = toBool(searchParams.get("invitationApproved"));
   if (invitationApproved === false) {
-    filter.$or = [{ invitationApproved: false }, { invitationApproved: { $exists: false } }];
+    filter.$or = [
+      { invitationApproved: false },
+      { invitationApproved: { $exists: false } },
+    ];
   } else {
     filter.invitationApproved = true;
   }
@@ -133,7 +144,11 @@ async function buildBaseFilter(searchParams: URLSearchParams) {
         ? tokens.map((tok) => {
             const rx = new RegExp(escapeRegex(tok), "i");
             return {
-              $or: [{ "page1.firstName": rx }, { "page1.lastName": rx }, { "page4.truckDetails.truckUnitNumber": rx }],
+              $or: [
+                { "page1.firstName": rx },
+                { "page1.lastName": rx },
+                { "page4.truckDetails.truckUnitNumber": rx },
+              ],
             };
           })
         : [];
@@ -150,7 +165,10 @@ async function buildBaseFilter(searchParams: URLSearchParams) {
           $expr: {
             $regexMatch: {
               input: {
-                $concat: [{ $ifNull: ["$page1.firstName", ""] }, { $ifNull: ["$page1.lastName", ""] }],
+                $concat: [
+                  { $ifNull: ["$page1.firstName", ""] },
+                  { $ifNull: ["$page1.lastName", ""] },
+                ],
               },
               regex: fuzzyPattern, // <- string pattern, not $regexReplace
               options: "i",
@@ -169,7 +187,10 @@ async function buildBaseFilter(searchParams: URLSearchParams) {
 
     // Constrain trackers by driverApplication (ObjectId or legacy string)
     const driverAppConstraint = {
-      $or: [{ "forms.driverApplication": { $in: objIds } }, { "forms.driverApplication": { $in: strIds } }],
+      $or: [
+        { "forms.driverApplication": { $in: objIds } },
+        { "forms.driverApplication": { $in: strIds } },
+      ],
     };
 
     if (filter.$and) filter.$and.push(driverAppConstraint);
@@ -194,16 +215,24 @@ export async function GET(req: NextRequest) {
     const dtColl = DrugTest.collection.name;
 
     const page = Math.max(1, toNumber(searchParams.get("page")) ?? 1);
-    const limit = Math.max(1, Math.min(200, toNumber(searchParams.get("limit")) ?? 20));
+    const limit = Math.max(
+      1,
+      Math.min(200, toNumber(searchParams.get("limit")) ?? 20)
+    );
     const skip = (page - 1) * limit;
 
     const sortParsed = buildSort(searchParams.get("sort") || "updatedAt:desc");
     const baseFilter = await buildBaseFilter(searchParams);
 
-    const currentStep = (searchParams.get("currentStep") || searchParams.get("status.currentStep")) as EStepPath | undefined;
+    const currentStep = (searchParams.get("currentStep") ||
+      searchParams.get("status.currentStep")) as EStepPath | undefined;
 
-    const ceEmailSent = toBool(searchParams.get("carriersEdgeTrainingEmailSent"));
-    const dtStatus = searchParams.get("drugTestStatus") as EDrugTestStatus | null;
+    const ceEmailSent = toBool(
+      searchParams.get("carriersEdgeTrainingEmailSent")
+    );
+    const dtStatus = searchParams.get(
+      "drugTestStatus"
+    ) as EDrugTestStatus | null;
     const hasTruckUnitNumber = toBool(searchParams.get("hasTruckUnitNumber"));
 
     // ---------------- pipeline ----------------
@@ -248,7 +277,11 @@ export async function GET(req: NextRequest) {
               { $eq: [{ $type: "$forms.driverApplication" }, "objectId"] },
               "$forms.driverApplication",
               {
-                $cond: [{ $eq: [{ $type: "$forms.driverApplication" }, "string"] }, { $toObjectId: "$forms.driverApplication" }, null],
+                $cond: [
+                  { $eq: [{ $type: "$forms.driverApplication" }, "string"] },
+                  { $toObjectId: "$forms.driverApplication" },
+                  null,
+                ],
               },
             ],
           },
@@ -311,8 +344,15 @@ export async function GET(req: NextRequest) {
           driverEmail: { $ifNull: ["$driverAppObj.email", null] },
           truckUnitNumber: { $ifNull: ["$driverAppObj.truckUnitNumber", null] },
           ceEmailSent: { $ifNull: [{ $first: "$ce.emailSent" }, false] },
-          dtStatus: { $ifNull: [{ $first: "$dt.status" }, EDrugTestStatus.NOT_UPLOADED] },
-          progressStepIndex: { $indexOfArray: [getOnboardingStepFlow({ needsFlatbedTraining: true }), "$status.currentStep"] },
+          dtStatus: {
+            $ifNull: [{ $first: "$dt.status" }, EDrugTestStatus.NOT_UPLOADED],
+          },
+          progressStepIndex: {
+            $indexOfArray: [
+              getOnboardingStepFlow({ needsFlatbedTraining: true }),
+              "$status.currentStep",
+            ],
+          },
         },
       },
 
@@ -347,6 +387,19 @@ export async function GET(req: NextRequest) {
                   $exists: true,
                   $nin: [null, ""],
                 },
+              },
+            },
+          ]
+        : hasTruckUnitNumber === false
+        ? [
+            {
+              $match: {
+                "status.completed": true,
+                $or: [
+                  { truckUnitNumber: { $exists: false } },
+                  { truckUnitNumber: null },
+                  { truckUnitNumber: "" },
+                ],
               },
             },
           ]
@@ -387,7 +440,9 @@ export async function GET(req: NextRequest) {
     ];
 
     const [rawItems, total, counts] = await Promise.all([
-      OnboardingTracker.aggregate(pipeline).collation({ locale: "en", strength: 2 }).allowDiskUse(true),
+      OnboardingTracker.aggregate(pipeline)
+        .collation({ locale: "en", strength: 2 })
+        .allowDiskUse(true),
       OnboardingTracker.countDocuments(matchItems),
       (async () => {
         const [all, driveTest, ce, dt] = await Promise.all([
@@ -401,7 +456,9 @@ export async function GET(req: NextRequest) {
             ...matchBase,
             "status.currentStep": EStepPath.CARRIERS_EDGE_TRAINING,
             "status.completed": false,
-            ...(typeof ceEmailSent === "boolean" ? { "forms.carriersEdgeTraining": { $exists: true } } : {}),
+            ...(typeof ceEmailSent === "boolean"
+              ? { "forms.carriersEdgeTraining": { $exists: true } }
+              : {}),
           }),
           OnboardingTracker.countDocuments({
             ...matchBase,
