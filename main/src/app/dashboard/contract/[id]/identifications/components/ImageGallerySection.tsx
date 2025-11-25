@@ -1306,36 +1306,22 @@ export default function ImageGallerySection({
                           }}
                         />
                       ) : isCurrentPhotoPdf ? (
-                        <div className="flex h-full w-full flex-col items-center justify-center gap-3 px-4 text-center">
-                          <div className="inline-flex items-center gap-2 rounded-md border px-3 py-1 bg-red-50 border-red-200 text-red-700 text-sm font-medium">
-                            <FileText className="h-4 w-4" />
-                            <span>PDF document</span>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() =>
-                              window.open(
-                                currentPhoto.url,
-                                "_blank",
-                                "noreferrer"
-                              )
-                            }
-                            className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium hover:bg-gray-50"
+                        <div className="h-full w-full bg-black/5">
+                          <iframe
+                            src={currentPhoto.url}
+                            title={`${selectedItemData.title} - ${getPhotoLabel(
+                              selectedItemData,
+                              currentPhotoIndex
+                            )} (PDF preview)`}
+                            className="w-full h-full"
                             style={{
-                              borderColor: "var(--color-outline)",
-                              color: "var(--color-on-surface)",
+                              border: "none",
                             }}
                           >
-                            <Download className="h-4 w-4" />
-                            <span>Open PDF in new tab</span>
-                          </button>
-
-                          {currentPhoto.originalName && (
-                            <p className="mt-1 text-xs text-gray-500 truncate max-w-full">
-                              {currentPhoto.originalName}
-                            </p>
-                          )}
+                            Your browser cannot display PDF previews. Use the
+                            download button in the top-right corner to view this
+                            document.
+                          </iframe>
                         </div>
                       ) : (
                         <div className="flex h-full w-full items-center justify-center">
