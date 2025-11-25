@@ -208,11 +208,6 @@ export default function DataOperationBar({
   const hasTruckFlag = query.hasTruckUnitNumber;
   const isInProgressMode = query.completed === false;
 
-  const isCompletionAny =
-    !isInProgressMode &&
-    typeof completedFlag === "undefined" &&
-    typeof hasTruckFlag === "undefined";
-
   const isCompletedAll =
     completedFlag === true && typeof hasTruckFlag === "undefined";
   const isCompletedWithTruck = completedFlag === true && hasTruckFlag === true;
@@ -314,6 +309,13 @@ export default function DataOperationBar({
     };
   }, [open, recalcFilterTop]);
   // ---------------------------------------------------------------------
+
+  const chipClass = (active: boolean) =>
+    `inline-flex items-center justify-center rounded-full border px-3 py-1 text-xs sm:text-sm transition-colors ${
+      active
+        ? "border-[var(--color-primary)] bg-[var(--color-primary-container)] text-[var(--color-primary)]"
+        : "border-[var(--color-outline)] text-[var(--color-on-surface-variant)] hover:bg-[var(--color-primary-container)]"
+    }`;
 
   return (
     <div
@@ -517,6 +519,7 @@ export default function DataOperationBar({
                       aria-hidden="true"
                     />
                   </button>
+
                   {statusOpen && (
                     <div
                       className="absolute left-0 right-0 z-[120] mt-2 rounded-xl shadow-md"
@@ -528,14 +531,14 @@ export default function DataOperationBar({
                       aria-modal="false"
                     >
                       <div
-                        className="space-y-2 p-3 sm:p-4"
+                        className="space-y-3 p-3 sm:p-4"
                         style={{ color: "var(--color-on-surface)" }}
                       >
+                        {/* Completed chips */}
                         {showCompletedToggle && (
-                          <>
-                            {/* Completed RADIO GROUP */}
+                          <div>
                             <div
-                              className="text-xs font-medium mb-1"
+                              className="text-xs font-medium mb-2"
                               style={{
                                 color: "var(--color-on-surface-variant)",
                               }}
@@ -543,129 +546,109 @@ export default function DataOperationBar({
                               Completed
                             </div>
 
-                            {/* Any completion status (no completed filter) */}
-                            <label className="flex items-center gap-2 text-sm">
-                              <input
-                                type="radio"
-                                name="completed-group"
-                                className="h-4 w-4"
-                                checked={isCompletionAny}
-                                onChange={(e) => {
-                                  if (!e.target.checked) return;
-                                  // Clear all completion/in-progress constraints
-                                  onStepFilterChange?.(undefined);
-                                  onCompletedToggle?.(undefined);
-                                  onCompletedWithTruckToggle?.(undefined);
-                                }}
-                              />
-                              <span>Any completion status</span>
-                            </label>
-
-                            {/* All completed */}
-                            <label className="flex items-center gap-2 text-sm">
-                              <input
-                                type="radio"
-                                name="completed-group"
-                                className="h-4 w-4"
-                                checked={isCompletedAll}
-                                onChange={(e) => {
-                                  if (!e.target.checked) return;
-                                  // completed=true, no truck filter
-                                  onStepFilterChange?.(undefined);
-                                  onCompletedToggle?.(true);
-                                  onCompletedWithTruckToggle?.(undefined);
-                                }}
-                              />
-                              <span>All completed</span>
-                            </label>
-
-                            {/* Completed – WITH truck/unit assigned */}
-                            {onCompletedWithTruckToggle && (
-                              <label className="flex items-center gap-2 text-sm">
-                                <input
-                                  type="radio"
-                                  name="completed-group"
-                                  className="h-4 w-4"
-                                  checked={isCompletedWithTruck}
-                                  onChange={(e) => {
-                                    if (!e.target.checked) return;
-                                    // completed=true, hasTruck=true
-                                    onStepFilterChange?.(undefined);
-                                    onCompletedToggle?.(true);
-                                    onCompletedWithTruckToggle?.(true);
-                                  }}
-                                />
-                                <span>
-                                  Completed – with truck/unit assigned
-                                </span>
-                              </label>
-                            )}
-
-                            {/* Completed – WITHOUT truck/unit assigned */}
-                            {onCompletedWithTruckToggle && (
-                              <label className="flex items-center gap-2 text-sm">
-                                <input
-                                  type="radio"
-                                  name="completed-group"
-                                  className="h-4 w-4"
-                                  checked={isCompletedWithoutTruck}
-                                  onChange={(e) => {
-                                    if (!e.target.checked) return;
-                                    // completed=true, hasTruck=false
-                                    onStepFilterChange?.(undefined);
-                                    onCompletedToggle?.(true);
-                                    onCompletedWithTruckToggle?.(false);
-                                  }}
-                                />
-                                <span>
-                                  Completed – without truck/unit assigned
-                                </span>
-                              </label>
-                            )}
-
-                            {/* In-progress only */}
-                            <label className="flex items-center gap-2 text-sm mt-2">
-                              <input
-                                type="checkbox"
-                                className="h-4 w-4"
-                                checked={query.completed === false}
-                                onChange={(e) => {
-                                  const checked = e.target.checked;
-
-                                  if (checked) {
-                                    // In-progress mode:
-                                    // - completed = false
-                                    // - clear completed subsets
-                                    onCompletedWithTruckToggle?.(undefined);
-                                    onCompletedToggle?.(false);
-                                  } else {
-                                    // Turn off in-progress:
-                                    // - clear step selection
-                                    // - clear completed flag + truck filter
+                            <div className="flex flex-wrap gap-2">
+                              {/* All completed */}
+                              <button
+                                type="button"
+                                className={chipClass(isCompletedAll)}
+                                onClick={() => {
+                                  if (isCompletedAll) {
+                                    // toggle off → no completed filter at all
                                     onStepFilterChange?.(undefined);
                                     onCompletedToggle?.(undefined);
                                     onCompletedWithTruckToggle?.(undefined);
+                                  } else {
+                                    onStepFilterChange?.(undefined);
+                                    onCompletedToggle?.(true);
+                                    onCompletedWithTruckToggle?.(undefined);
                                   }
                                 }}
-                              />
-                              <span>In-progress applications</span>
-                            </label>
+                              >
+                                All completed
+                              </button>
+
+                              {/* Completed – with truck/unit */}
+                              {onCompletedWithTruckToggle && (
+                                <button
+                                  type="button"
+                                  className={chipClass(isCompletedWithTruck)}
+                                  onClick={() => {
+                                    if (isCompletedWithTruck) {
+                                      onStepFilterChange?.(undefined);
+                                      onCompletedToggle?.(undefined);
+                                      onCompletedWithTruckToggle?.(undefined);
+                                    } else {
+                                      onStepFilterChange?.(undefined);
+                                      onCompletedToggle?.(true);
+                                      onCompletedWithTruckToggle?.(true);
+                                    }
+                                  }}
+                                >
+                                  Completed – with truck/unit
+                                </button>
+                              )}
+
+                              {/* Completed – without truck/unit */}
+                              {onCompletedWithTruckToggle && (
+                                <button
+                                  type="button"
+                                  className={chipClass(isCompletedWithoutTruck)}
+                                  onClick={() => {
+                                    if (isCompletedWithoutTruck) {
+                                      onStepFilterChange?.(undefined);
+                                      onCompletedToggle?.(undefined);
+                                      onCompletedWithTruckToggle?.(undefined);
+                                    } else {
+                                      onStepFilterChange?.(undefined);
+                                      onCompletedToggle?.(true);
+                                      onCompletedWithTruckToggle?.(false);
+                                    }
+                                  }}
+                                >
+                                  Completed – without truck/unit
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* In-progress block */}
+                        <div>
+                          <div
+                            className="text-xs font-medium mb-2"
+                            style={{
+                              color: "var(--color-on-surface-variant)",
+                            }}
+                          >
+                            In-progress
+                          </div>
+
+                          <div className="flex flex-col gap-2">
+                            {/* In-progress toggle */}
+                            <button
+                              type="button"
+                              className={chipClass(isInProgressMode)}
+                              onClick={() => {
+                                const next = !isInProgressMode;
+
+                                if (next) {
+                                  // Enter in-progress mode: completed = false, clear completed subsets
+                                  onCompletedWithTruckToggle?.(undefined);
+                                  onCompletedToggle?.(false);
+                                } else {
+                                  // Clear in-progress + step and completed filters
+                                  onStepFilterChange?.(undefined);
+                                  onCompletedToggle?.(undefined);
+                                  onCompletedWithTruckToggle?.(undefined);
+                                }
+                              }}
+                            >
+                              In-progress applications
+                            </button>
 
                             {/* In-progress step filter */}
                             {onStepFilterChange && (
-                              <div
-                                className="mt-2 space-y-1 relative"
-                                ref={stepRef}
-                              >
-                                <div
-                                  className="text-xs"
-                                  style={{
-                                    color: "var(--color-on-surface-variant)",
-                                  }}
-                                >
-                                  In-progress step
-                                </div>
-
+                              <div className="relative" ref={stepRef}>
                                 <button
                                   type="button"
                                   onClick={() => setStepOpen((v) => !v)}
@@ -737,8 +720,7 @@ export default function DataOperationBar({
                                             onClick={() => {
                                               const nextStep = opt.value;
 
-                                              // Any selection from here means:
-                                              // "Show in-progress only" and clear completed subsets.
+                                              // Any selection here ⇒ in-progress mode + clear completed subsets
                                               onCompletedWithTruckToggle?.(
                                                 undefined
                                               );
@@ -757,18 +739,26 @@ export default function DataOperationBar({
                                 )}
                               </div>
                             )}
-                          </>
-                        )}
+                          </div>
+                        </div>
 
+                        {/* Terminated */}
                         {!lockedTerminated ? (
-                          <label className="flex items-center gap-2 text-sm">
-                            <input
-                              type="checkbox"
-                              className="h-4 w-4"
-                              checked={query.terminated === true}
-                              onChange={(e) => {
-                                const checked = e.target.checked;
-                                if (checked) {
+                          <div>
+                            <div
+                              className="text-xs font-medium mb-2"
+                              style={{
+                                color: "var(--color-on-surface-variant)",
+                              }}
+                            >
+                              Terminated
+                            </div>
+                            <button
+                              type="button"
+                              className={chipClass(query.terminated === true)}
+                              onClick={() => {
+                                const next = !(query.terminated === true);
+                                if (next) {
                                   // Terminated-only view:
                                   // clear completion / in-progress filters
                                   onCompletedWithTruckToggle?.(undefined);
@@ -779,13 +769,16 @@ export default function DataOperationBar({
                                   onTerminatedToggle?.(undefined);
                                 }
                               }}
-                            />
-                            <span>Terminated applications</span>
-                          </label>
+                            >
+                              Terminated applications
+                            </button>
+                          </div>
                         ) : (
                           <span
                             className="text-sm"
-                            style={{ color: "var(--color-on-surface-variant)" }}
+                            style={{
+                              color: "var(--color-on-surface-variant)",
+                            }}
                           >
                             Terminated only
                           </span>
