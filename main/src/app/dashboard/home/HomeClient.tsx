@@ -25,16 +25,16 @@ import {
 
 export default function HomeClient() {
   // Data (React Query)
-  const { 
-    data, 
-    isLoading, 
-    isFetching, 
-    hasData, 
-    isDefinitelyEmpty, 
-    isError, 
-    error, 
-    refetch, 
-    uiQuery 
+  const {
+    data,
+    isLoading,
+    isFetching,
+    hasData,
+    isDefinitelyEmpty,
+    isError,
+    error,
+    refetch,
+    uiQuery,
   } = useOnboardingList();
 
   // URL-driven state + setters
@@ -54,7 +54,7 @@ export default function HomeClient() {
     setHasTruckUnitNumber,
   } = useAdminOnboardingQueryState();
 
-  // 🔽 single-shot clear implemented with one router.replace
+  //  single-shot clear implemented with one router.replace
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
