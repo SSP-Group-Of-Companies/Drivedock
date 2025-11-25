@@ -274,9 +274,17 @@ export function useAdminOnboardingQueryState() {
     [setMany]
   );
 
+  /**
+   * Completed flag
+   * - When completed is not true (undefined/false), we also clear hasTruckUnitNumber.
+   *   This keeps the truck filter tied strictly to completed drivers.
+   */
   const setCompleted = useCallback(
     (val?: boolean) => {
-      setMany({ completed: typeof val === "boolean" ? val : null });
+      setMany({
+        completed: typeof val === "boolean" ? val : null,
+        ...(val === true ? {} : { hasTruckUnitNumber: null }),
+      });
     },
     [setMany]
   );
@@ -288,11 +296,25 @@ export function useAdminOnboardingQueryState() {
     [setMany]
   );
 
+  /**
+   * Truck/unit flag
+   * - Any time we explicitly filter by hasTruckUnitNumber (true/false),
+   *   we also set completed=true in the SAME URL patch.
+   *   This avoids the "double click" visual bug when the UI calls
+   *   setCompleted(true) and setHasTruckUnitNumber(true/false) back-to-back.
+   */
   const setHasTruckUnitNumber = useCallback(
     (val?: boolean) => {
-      setMany({
-        hasTruckUnitNumber: typeof val === "boolean" ? val : null,
-      });
+      if (typeof val === "boolean") {
+        setMany({
+          hasTruckUnitNumber: val,
+          completed: true,
+        });
+      } else {
+        setMany({
+          hasTruckUnitNumber: null,
+        });
+      }
     },
     [setMany]
   );
