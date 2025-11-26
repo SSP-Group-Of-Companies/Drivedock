@@ -204,6 +204,17 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     const isUS = company.countryCode === ECountryCode.US;
     if (!isCanadian && !isUS) throw new AppError(400, "Unsupported applicant country for Page 4 rules.");
 
+    // HST is Canadian-only
+    console.log(body.hstNumber, body.hstPhotos);
+    if (isUS) {
+      if (hasKey(body, "hstNumber")) {
+        throw new AppError(400, "HST number must not be provided for US applicants.");
+      }
+      if (hasKey(body, "hstPhotos")) {
+        throw new AppError(400, "HST photos must not be provided for US applicants.");
+      }
+    }
+
     // Keep previous state for deletions
     const prevP1Licenses = appFormDoc.page1.licenses ?? [];
     const prevP1SinPhoto = appFormDoc.page1.sinPhoto;
@@ -289,8 +300,8 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
     // (B) Page 4 — explicit, body-driven
     {
-      // Business all-or-nothing on BODY (only if they touched business keys)
-      const bizDecision = validateBusinessAllOrNothingOnBody(body);
+      // Business all-or-nothing on BODY (only for Canadian applicants, since it uses HST fields)
+      const bizDecision = isCanadian ? validateBusinessAllOrNothingOnBody(body) : { mode: "skip" as const };
 
       // Driver-type requiredness from DB:
       //  - Owner Operator: Business is required
@@ -303,11 +314,25 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
           if (driverType === EDriverType.OwnerOperator) {
             // Business required for Owner Operator
             requirePresence(body, "businessName", "Business name");
-            if (!isNonEmptyString(body.businessName)) throw new AppError(400, "Business name is required for this applicant.");
-            requirePresence(body, "hstNumber", "HST number");
-            if (!isNonEmptyString(body.hstNumber)) throw new AppError(400, "HST number is required for this applicant.");
+            if (!isNonEmptyString(body.businessName)) {
+              throw new AppError(400, "Business name is required for this applicant.");
+            }
+
+            // Incorporation required for all Owner Operators
             expectCountRange(body, "incorporatePhotos", 1, 10, "Incorporation photos");
-            expectCountRange(body, "hstPhotos", 1, 2, "HST photos");
+
+            if (isCanadian) {
+              // HST is only required for Canadian Owner Operators
+              requirePresence(body, "hstNumber", "HST number");
+              if (!isNonEmptyString(body.hstNumber)) {
+                throw new AppError(400, "HST number is required for this applicant.");
+              }
+              expectCountRange(body, "hstPhotos", 1, 2, "HST photos");
+            } else if (isUS) {
+              // For US: explicitly forbid HST fields (already checked above, this is just extra safety)
+              forbidPresence(body, "hstNumber", "HST number");
+              forbidPresence(body, "hstPhotos", "HST photos");
+            }
           }
 
           if (driverType === EDriverType.Company || driverType === EDriverType.OwnerOperator) {
@@ -422,6 +447,10 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
             throw new AppError(400, "PR/Permit/Citizenship details are required when providing PR/Permit/Citizenship photos.");
           }
         }
+
+        // hst fields must be empty for US
+        nextP4.hstNumber = "";
+        nextP4.hstPhotos = [];
       }
 
       // Final-state enforcement based on driverType (protects against partial bodies)
@@ -439,11 +468,19 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
           if (driverType === EDriverType.OwnerOperator) {
             const nameOk = isNonEmptyString(nextP4.businessName);
-            const hstOk = isNonEmptyString(nextP4.hstNumber);
             const incOk = (nextP4.incorporatePhotos?.length ?? 0) >= 1;
-            const hstPhotosOk = (nextP4.hstPhotos?.length ?? 0) >= 1;
-            if (!nameOk || !hstOk || !incOk || !hstPhotosOk) {
-              throw new AppError(400, "Business info is required for Owner Operator.");
+
+            if (isCanadian) {
+              const hstOk = isNonEmptyString(nextP4.hstNumber);
+              const hstPhotosOk = (nextP4.hstPhotos?.length ?? 0) >= 1;
+              if (!nameOk || !hstOk || !incOk || !hstPhotosOk) {
+                throw new AppError(400, "Business info is required for Owner Operator.");
+              }
+            } else if (isUS) {
+              // Business required but HST not part of the requirement in the US
+              if (!nameOk || !incOk) {
+                throw new AppError(400, "Business info is required for Owner Operator.");
+              }
             }
           }
         }
@@ -700,15 +737,24 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
     if (!appFormDoc.page1) return errorResponse(400, "ApplicationForm Page 1 is missing");
     if (!appFormDoc.page4) return errorResponse(400, "ApplicationForm Page 4 is missing");
 
+    // Determine company / country so we can hide HST for US applicants
+    const company = COMPANIES.find((c) => c.id === onboardingDoc.companyId);
+    if (!company) return errorResponse(400, "Invalid company assigned to applicant");
+
+    const isUS = company.countryCode === ECountryCode.US;
+
     return successResponse(200, "Identifications retrieved", {
       onboardingContext: buildTrackerContext(onboardingDoc, null, true),
       licenses: appFormDoc.page1.licenses,
       sinPhoto: appFormDoc.page1.sinPhoto, // Add SIN photo from page1
-      hstNumber: appFormDoc.page4.hstNumber,
+
+      // Business section – hide HST for US drivers
+      hstNumber: isUS ? "" : appFormDoc.page4.hstNumber,
       businessName: appFormDoc.page4.businessName,
       incorporatePhotos: appFormDoc.page4.incorporatePhotos,
-      hstPhotos: appFormDoc.page4.hstPhotos,
+      hstPhotos: isUS ? [] : appFormDoc.page4.hstPhotos,
       bankingInfoPhotos: appFormDoc.page4.bankingInfoPhotos,
+
       healthCardPhotos: appFormDoc.page4.healthCardPhotos,
       medicalCertificationPhotos: appFormDoc.page4.medicalCertificationPhotos,
 

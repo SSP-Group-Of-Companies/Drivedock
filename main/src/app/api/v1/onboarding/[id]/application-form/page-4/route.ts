@@ -1,4 +1,4 @@
-// src/app/api/v1/onboarding/[id]/application-form/page-4/route.ts
+// api/v1/onboarding/[id]/application-form/page-4/route.ts
 import { NextRequest } from "next/server";
 import { AppError, errorResponse, successResponse } from "@/lib/utils/apiResponse";
 import connectDB from "@/lib/utils/connectDB";
@@ -160,6 +160,19 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     if (!company) throw new AppError(400, "Invalid company assigned to applicant");
     const isCanadian = company.countryCode === ECountryCode.CA;
     const isUS = company.countryCode === ECountryCode.US;
+    if (!isCanadian && !isUS) {
+      throw new AppError(400, "Unsupported applicant country for Page 4 rules.");
+    }
+
+    // HST is Canadian-only
+    if (isUS) {
+      if (hasKey(body, "hstNumber")) {
+        throw new AppError(400, "HST number is not accepted for US applicants.");
+      }
+      if (hasKey(body, "hstPhotos")) {
+        throw new AppError(400, "HST photos are not accepted for US applicants.");
+      }
+    }
 
     // =========================
     // 1) Required-for-all logic
@@ -253,16 +266,13 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       // Forbidden for US
       forbidNonEmpty(body, "healthCardPhotos", "Health card photos");
       forbidNonEmpty(body, "usVisaPhotos", "US visa photos");
-    } else {
-      // In case new regions ever appear, be explicit
-      throw new AppError(400, "Unsupported applicant country for Page 4 rules.");
     }
 
     // =========================
     // 3) Business section (all-or-nothing on BODY)
     // =========================
     const prev = appFormDoc.page4; // keep previous to handle deletion on explicit clear
-    const bizDecision = validateBusinessAllOrNothing(body);
+    const bizDecision = isCanadian ? validateBusinessAllOrNothing(body) : { mode: "skip" as const };
 
     // =========================
     // 3.5) Banking requiredness based on driverType from PreQualifications
@@ -352,6 +362,12 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     // Phase 2: finalize S3 files
     // =========================
     const page4Final: IApplicationFormPage4 = JSON.parse(JSON.stringify(appFormDoc.page4)) as IApplicationFormPage4;
+
+    // For US applicants, HST must not be stored
+    if (isUS) {
+      page4Final.hstNumber = "";
+      page4Final.hstPhotos = [];
+    }
 
     page4Final.hstPhotos = (await finalizeAssetVector(page4Final.hstPhotos, buildFinalDest(onboardingDoc.id, ES3Folder.HST_PHOTOS))) as IFileAsset[];
     page4Final.incorporatePhotos = (await finalizeAssetVector(page4Final.incorporatePhotos, buildFinalDest(onboardingDoc.id, ES3Folder.INCORPORATION_PHOTOS))) as IFileAsset[];
@@ -456,21 +472,52 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
       return errorResponse(403, "Please complete previous steps first");
     }
 
-    // Pull DB prequalification driverType
-    let prequalificationData: { driverType?: EDriverType } | undefined;
-    try {
-      const preQualId = onboardingDoc.forms?.preQualification;
-      if (preQualId) {
-        const preQualDoc = await PreQualifications.findById(preQualId);
-        if (preQualDoc) {
-          prequalificationData = { driverType: preQualDoc.driverType as EDriverType };
+    // Determine company / country
+    const company = COMPANIES.find((c) => c.id === onboardingDoc.companyId);
+    if (!company) {
+      return errorResponse(400, "Invalid company assigned to applicant");
+    }
+    const isUS = company.countryCode === ECountryCode.US;
+    const isCanadian = company.countryCode === ECountryCode.CA;
+
+    if (!isUS && !isCanadian) {
+      return errorResponse(400, "Unsupported applicant country for Page 4 rules.");
+    }
+
+    // Pull DB prequalification driverType – MUST exist
+    const preQualId = onboardingDoc.forms?.preQualification;
+    if (!preQualId) {
+      return errorResponse(404, "PreQualifications not linked");
+    }
+
+    const preQualDoc = await PreQualifications.findById(preQualId);
+    if (!preQualDoc) {
+      return errorResponse(404, "PreQualifications not found");
+    }
+
+    const prequalificationData: { driverType?: EDriverType } = {
+      driverType: preQualDoc.driverType as EDriverType,
+    };
+
+    // Sanitize page4 for US drivers: do not expose HST fields
+    const rawPage4 = appFormDoc.page4 ? (JSON.parse(JSON.stringify(appFormDoc.page4)) as IApplicationFormPage4) : undefined;
+
+    const page4: IApplicationFormPage4 | undefined = rawPage4
+      ? {
+          ...rawPage4,
+          ...(isUS
+            ? {
+                // US drivers should never see HST values, even if legacy data exists
+                hstNumber: "",
+                hstPhotos: [],
+              }
+            : {}),
         }
-      }
-    } catch {}
+      : undefined;
 
     const res = successResponse(200, "Page 4 data retrieved", {
       onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_4),
-      page4: appFormDoc.page4,
+      page4,
       prequalificationData,
     });
 
