@@ -164,30 +164,70 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     // =========================
     // 1) Required-for-all logic
     // =========================
-    // For US drivers: either passport OR PR/citizenship is required (not both)
-    // For Canadian drivers: both are required
+    // For US drivers: either
+    //   (passportPhotos + passportDetails)
+    // or
+    //   (prPermitCitizenshipPhotos + prPermitCitizenshipDetails)
+    // is required (not both).
+    // For Canadian drivers: existing rules stay the same.
     if (isUS) {
-      const hasPassport = body.passportPhotos && body.passportPhotos.length === 2;
-      const hasPRCitizenship = body.prPermitCitizenshipPhotos && body.prPermitCitizenshipPhotos.length >= 1 && body.prPermitCitizenshipPhotos.length <= 2;
-
-      if (!hasPassport && !hasPRCitizenship) {
-        throw new AppError(400, "US drivers must provide either passport photos (2 photos) or PR/Permit/Citizenship photos (1-2 photos)");
+      // 1.1 Immigration status is required for US applicants
+      if (!hasKey(body, "immigrationStatusInUS") || !isNonEmptyString(body.immigrationStatusInUS)) {
+        throw new AppError(400, "Immigration status in US is required.");
       }
 
-      // If passport is provided, validate it has exactly 2 photos
-      if (hasPassport) {
+      // 1.2 Bundle detection: photos + details
+      const passportPhotoCount = len(body.passportPhotos);
+      const prPhotoCount = len(body.prPermitCitizenshipPhotos);
+
+      const hasPassportPhotos = passportPhotoCount > 0;
+      const hasPassportDetails = !!body.passportDetails;
+      const hasPassportBundle = hasPassportPhotos || hasPassportDetails;
+
+      const hasPRPhotos = prPhotoCount > 0;
+      const hasPRDetails = !!body.prPermitCitizenshipDetails;
+      const hasPRBundle = hasPRPhotos || hasPRDetails;
+
+      // Must choose exactly one bundle
+      if (!hasPassportBundle && !hasPRBundle) {
+        throw new AppError(400, "US drivers must provide either passport (photos and details) or PR/Permit/Citizenship (photos and details).");
+      }
+
+      if (hasPassportBundle && hasPRBundle) {
+        throw new AppError(400, "Provide either passport (photos and details) OR PR/Permit/Citizenship (photos and details), not both.");
+      }
+
+      // If passport path selected → require both photos and details
+      if (hasPassportBundle) {
+        if (!hasPassportPhotos) {
+          throw new AppError(400, "Passport photos are required when providing passport details.");
+        }
+        if (!hasPassportDetails) {
+          throw new AppError(400, "Passport details are required when providing passport photos.");
+        }
+
+        // photos must be exactly 2, using existing helper
         expectCountExact(body, "passportPhotos", 2, "Passport photos");
       }
 
-      // If PR/citizenship is provided, validate it has 1-2 photos
-      if (hasPRCitizenship) {
+      // If PR/Permit/Citizenship path selected → require both photos and details
+      if (hasPRBundle) {
+        if (!hasPRPhotos) {
+          throw new AppError(400, "PR/Permit/Citizenship photos are required when providing PR/Permit/Citizenship details.");
+        }
+        if (!hasPRDetails) {
+          throw new AppError(400, "PR/Permit/Citizenship details are required when providing PR/Permit/Citizenship photos.");
+        }
+
+        // photos must be 1–2, using existing helper
         expectCountRange(body, "prPermitCitizenshipPhotos", 1, 2, "PR/Permit/Citizenship photos");
       }
     } else {
-      // Canadian drivers: passport type determines requirements
+      // Canadian drivers: keep existing behaviour
+      // - Passport photos always required
+      // - PR/Permit/Citizenship photos only required when passportType === "others"
       expectCountExact(body, "passportPhotos", 2, "Passport photos");
 
-      // Only require PR/Permit/Citizenship for non-Canadian passports
       if (body.passportType === "others") {
         expectCountRange(body, "prPermitCitizenshipPhotos", 1, 2, "PR/Permit/Citizenship photos");
       }

@@ -52,6 +52,10 @@ type PatchBody = {
   passportType?: IApplicationFormPage4["passportType"];
   workAuthorizationType?: IApplicationFormPage4["workAuthorizationType"];
 
+  immigrationStatusInUS?: IApplicationFormPage4["immigrationStatusInUS"];
+  passportDetails?: IApplicationFormPage4["passportDetails"];
+  prPermitCitizenshipDetails?: IApplicationFormPage4["prPermitCitizenshipDetails"];
+
   passportPhotos?: IFileAsset[];
   prPermitCitizenshipPhotos?: IFileAsset[];
   usVisaPhotos?: IFileAsset[];
@@ -344,7 +348,10 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
         ...(isUS
           ? {
               // For US drivers: include only what was provided
+              ...(body.immigrationStatusInUS ? { immigrationStatusInUS: body.immigrationStatusInUS } : ""),
+              ...(body.passportDetails ? { passportDetails: body.passportDetails } : {}),
               ...(body.passportPhotos ? { passportPhotos: body.passportPhotos } : {}),
+              ...(body.prPermitCitizenshipDetails ? { prPermitCitizenshipDetails: body.prPermitCitizenshipDetails } : {}),
               ...(body.prPermitCitizenshipPhotos ? { prPermitCitizenshipPhotos: body.prPermitCitizenshipPhotos } : {}),
             }
           : {
@@ -370,6 +377,52 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
         // Optional truck details
         ...(hasKey(body, "truckDetails") ? { truckDetails: body.truckDetails } : {}),
       };
+
+      // US-only: immigration status + passport/PR bundles (photos + details)
+      if (isUS) {
+        // 1) Immigration status is required
+        if (!nextP4.immigrationStatusInUS || !String(nextP4.immigrationStatusInUS).trim()) {
+          throw new AppError(400, "Immigration status in US is required.");
+        }
+
+        // 2) Bundle logic: (passportPhotos + passportDetails) OR (prPermitCitizenshipPhotos + prPermitCitizenshipDetails)
+        const passportPhotoCount = nextP4.passportPhotos?.length ?? 0;
+        const prPhotoCount = nextP4.prPermitCitizenshipPhotos?.length ?? 0;
+
+        const hasPassportPhotos = passportPhotoCount > 0;
+        const hasPassportDetails = !!nextP4.passportDetails;
+        const hasPassportBundle = hasPassportPhotos || hasPassportDetails;
+
+        const hasPRPhotos = prPhotoCount > 0;
+        const hasPRDetails = !!nextP4.prPermitCitizenshipDetails;
+        const hasPRBundle = hasPRPhotos || hasPRDetails;
+
+        if (!hasPassportBundle && !hasPRBundle) {
+          throw new AppError(400, "US drivers must provide either passport (photos and details) or PR/Permit/Citizenship (photos and details).");
+        }
+
+        if (hasPassportBundle && hasPRBundle) {
+          throw new AppError(400, "Provide either passport (photos and details) OR PR/Permit/Citizenship (photos and details), not both.");
+        }
+
+        if (hasPassportBundle) {
+          if (!hasPassportPhotos) {
+            throw new AppError(400, "Passport photos are required when providing passport details.");
+          }
+          if (!hasPassportDetails) {
+            throw new AppError(400, "Passport details are required when providing passport photos.");
+          }
+        }
+
+        if (hasPRBundle) {
+          if (!hasPRPhotos) {
+            throw new AppError(400, "PR/Permit/Citizenship photos are required when providing PR/Permit/Citizenship details.");
+          }
+          if (!hasPRDetails) {
+            throw new AppError(400, "PR/Permit/Citizenship details are required when providing PR/Permit/Citizenship photos.");
+          }
+        }
+      }
 
       // Final-state enforcement based on driverType (protects against partial bodies)
       try {
@@ -606,6 +659,10 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       passportType: appFormDoc.page4.passportType,
       workAuthorizationType: appFormDoc.page4.workAuthorizationType,
 
+      immigrationStatusInUS: appFormDoc.page4.immigrationStatusInUS,
+      passportDetails: appFormDoc.page4.passportDetails,
+      prPermitCitizenshipDetails: appFormDoc.page4.prPermitCitizenshipDetails,
+
       passportPhotos: appFormDoc.page4.passportPhotos,
       prPermitCitizenshipPhotos: appFormDoc.page4.prPermitCitizenshipPhotos,
       usVisaPhotos: appFormDoc.page4.usVisaPhotos,
@@ -658,6 +715,10 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
       // Passport type selection (Canadian companies only)
       passportType: appFormDoc.page4.passportType,
       workAuthorizationType: appFormDoc.page4.workAuthorizationType,
+
+      immigrationStatusInUS: appFormDoc.page4.immigrationStatusInUS,
+      passportDetails: appFormDoc.page4.passportDetails,
+      prPermitCitizenshipDetails: appFormDoc.page4.prPermitCitizenshipDetails,
 
       passportPhotos: appFormDoc.page4.passportPhotos,
       prPermitCitizenshipPhotos: appFormDoc.page4.prPermitCitizenshipPhotos,

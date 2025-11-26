@@ -1,5 +1,14 @@
 // src/mongoose/schemas/applicationForm/applicationFormPage4Schema.ts
-import { IApplicationFormPage4, ICriminalRecordEntry, IFastCard } from "@/types/applicationForm.types";
+import {
+  EImmigrationStatusUS,
+  EPrPermitDocumentType,
+  IApplicationFormPage4,
+  ICriminalRecordEntry,
+  IFastCard,
+  IMedicalCertificateDetails,
+  IPassportDetails,
+  IPrPermitDetails,
+} from "@/types/applicationForm.types";
 import { Schema } from "mongoose";
 import { fileSchema } from "../sharedSchemas";
 import { EFileMimeType, isImageMime } from "@/types/shared.types";
@@ -64,6 +73,70 @@ const fastCardSchema = new Schema<IFastCard>({
   },
 });
 
+const medicalCertificateDetailsSchema = new Schema<IMedicalCertificateDetails>(
+  {
+    documentNumber: {
+      type: String,
+      required: [true, "Medical certificate document number is required."],
+    },
+    issuingAuthority: {
+      type: String,
+      required: [true, "Medical certificate issuing authority is required."],
+    },
+    // optional – only validated as Date if present
+    expiryDate: { type: Date },
+  },
+  { _id: false }
+);
+
+const passportDetailsSchema = new Schema<IPassportDetails>(
+  {
+    documentNumber: {
+      type: String,
+      required: [true, "Passport document number is required."],
+    },
+    issuingAuthority: {
+      type: String,
+      required: [true, "Passport issuing authority is required."],
+    },
+    countryOfIssue: {
+      type: String,
+      required: [true, "Passport country of issue is required."],
+    },
+    // optional
+    expiryDate: { type: Date },
+  },
+  { _id: false }
+);
+
+const prPermitCitizenshipDetailsSchema = new Schema<IPrPermitDetails>(
+  {
+    documentType: {
+      type: String,
+      required: [true, "PR/permit/citizenship document type is required."],
+      enum: {
+        values: Object.values(EPrPermitDocumentType),
+        message: `Document type must be one of: ${Object.values(EPrPermitDocumentType)}.`,
+      },
+    },
+    documentNumber: {
+      type: String,
+      required: [true, "PR/permit/citizenship document number is required."],
+    },
+    issuingAuthority: {
+      type: String,
+      required: [true, "PR/permit/citizenship issuing authority is required."],
+    },
+    countryOfIssue: {
+      type: String,
+      required: [true, "PR/permit/citizenship country of issue is required."],
+    },
+    // optional
+    expiryDate: { type: Date },
+  },
+  { _id: false }
+);
+
 // Page 4 Schema
 export const applicationFormPage4Schema = new Schema<IApplicationFormPage4>(
   {
@@ -112,6 +185,12 @@ export const applicationFormPage4Schema = new Schema<IApplicationFormPage4>(
         { validator: maxArrayLen(2), message: "Health card files cannot exceed 2 items." },
       ],
     },
+
+    // Medical Certificate Details (US only)
+    medicalCertificateDetails: {
+      type: medicalCertificateDetailsSchema,
+    },
+
     medicalCertificationPhotos: {
       type: [fileSchema],
       default: [],
@@ -121,7 +200,7 @@ export const applicationFormPage4Schema = new Schema<IApplicationFormPage4>(
       ],
     },
 
-    // Passport type selection (Canadian companies only)
+    // Passport type selection (CA only)
     passportType: {
       type: String,
       enum: {
@@ -139,6 +218,20 @@ export const applicationFormPage4Schema = new Schema<IApplicationFormPage4>(
       default: undefined,
     },
 
+    // immigration status (US only)
+    immigrationStatusInUS: {
+      type: String,
+      enum: {
+        values: Object.values(EImmigrationStatusUS),
+        message: `Immigration status must be one of: ${Object.values(EImmigrationStatusUS)}.`,
+      },
+    },
+
+    // Passport details (US only)
+    passportDetails: {
+      type: passportDetailsSchema,
+    },
+
     passportPhotos: {
       type: [fileSchema],
       default: [],
@@ -154,6 +247,11 @@ export const applicationFormPage4Schema = new Schema<IApplicationFormPage4>(
         { validator: imageOrPdfArrayValidator, message: "All US VISA files must be images or PDFs." },
         { validator: maxArrayLen(2), message: "US VISA files cannot exceed 2 items." },
       ],
+    },
+
+    // PR/Permit/Citizenship details (US companies only)
+    prPermitCitizenshipDetails: {
+      type: prPermitCitizenshipDetailsSchema,
     },
     prPermitCitizenshipPhotos: {
       type: [fileSchema],
