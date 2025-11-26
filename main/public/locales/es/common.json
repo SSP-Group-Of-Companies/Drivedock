@@ -242,8 +242,8 @@
           "gender": "Género",
           "male": "Masculino",
           "female": "Femenino",
-          "sinPhoto": "Foto de la tarjeta SIN",
-          "sinPhotoDesc": "Haz clic para capturar o seleccionar una imagen",
+          "sinPhoto": "Tarjeta SIN (PDF)",
+          "sinPhotoDesc": "Sube un escaneo PDF claro de tu tarjeta SIN",
           "dob": "Fecha de nacimiento",
           "canProvideProof": "¿Puedes proporcionar prueba de edad?",
           "phoneHome": "Teléfono (casa) (Opcional)",
@@ -258,9 +258,9 @@
           "licenseProvince": "Provincia",
           "licenseType": "Tipo de licencia",
           "licenseExpiry": "Fecha de vencimiento",
-          "licenseFrontPhoto": "Foto frontal de la licencia",
-          "licensePhotoDesc": "Haz clic para capturar o seleccionar una imagen",
-          "licenseBackPhoto": "Foto posterior de la licencia",
+          "licenseFrontPhoto": "Licencia de conducir frontal (PDF)",
+          "licensePhotoDesc": "Sube un escaneo PDF claro del frente de tu licencia de conducir",
+          "licenseBackPhoto": "Licencia de conducir posterior (PDF)",
           "address": "Dirección",
           "city": "Ciudad",
           "stateOrProvince": "Estado o provincia",
@@ -380,24 +380,24 @@
           "business": {
             "title": "Detalles de incorporación",
             "disclaimer": {
-              "text": "Si proporcionas algún detalle de incorporación, debes completar todos los campos y subir todos los documentos relacionados en esta sección. Esto incluye el número de HST, el nombre de la empresa y las fotos requeridas (incorporación, HST)."
+              "text": "Si proporcionas algún detalle de incorporación, debes completar todos los campos y subir todos los documentos relacionados en esta sección. Esto incluye el número de HST, el nombre de la empresa y los documentos PDF requeridos (incorporación, HST)."
             }
           },
           "banking": {
             "title": "Información bancaria",
-            "requiredDisclaimer": "La información bancaria es obligatoria para solicitantes Empresa y Propietario‑operador. Sube una foto clara de un cheque anulado o de un formulario bancario de depósito directo que muestre tu nombre, número de institución, número de tránsito y número de cuenta.",
-            "optionalDisclaimer": "La información bancaria es opcional para Propietario‑conductor. Si decides proporcionarla ahora, sube una foto clara de un cheque anulado o de un formulario bancario de depósito directo que muestre tu nombre, número de institución, número de tránsito y número de cuenta, para que nómina pueda configurar tu depósito directo."
+            "requiredDisclaimer": "La información bancaria es obligatoria para solicitantes Empresa y Propietario‑operador. Sube un escaneo PDF claro de un cheque anulado o de un formulario bancario de depósito directo que muestre tu nombre, número de institución, número de tránsito y número de cuenta.",
+            "optionalDisclaimer": "La información bancaria es opcional para Propietario‑conductor. Si decides proporcionarla ahora, sube un escaneo PDF claro de un cheque anulado o de un formulario bancario de depósito directo que muestre tu nombre, número de institución, número de tránsito y número de cuenta, para que nómina pueda configurar tu depósito directo."
           },
           "additionalInfo": {
             "title": "Información adicional"
           },
           "fastCard": {
             "title": "Tarjeta FAST",
-            "disclaimer": "Esta sección es opcional. Sin embargo, si proporcionas información de la tarjeta FAST, debes completar todos los campos y subir las fotos del frente y dorso."
+            "disclaimer": "Esta sección es opcional. Sin embargo, si proporcionas información de la tarjeta FAST, debes completar todos los campos y subir los escaneos PDF del frente y dorso."
           },
           "eligibilityDocs": {
             "title": "Documentos de salud / identificación",
-            "description": "Proporciona fotos claras y legibles de los documentos de salud e identidad requeridos listados a continuación. Todos los detalles deben ser visibles (frente y dorso cuando corresponda). Si falta algún documento o no está claro, tu solicitud puede retrasarse."
+            "description": "Proporciona escaneos PDF claros y legibles de los documentos de salud e identidad requeridos listados a continuación. Todos los detalles deben ser visibles (frente y dorso cuando corresponda). Si falta algún documento o no está claro, tu solicitud puede retrasarse."
           },
           "workAuthorization": {
             "title": "Prueba de autorización de trabajo"
@@ -409,9 +409,9 @@
           "courtLocation": "Lugar del tribunal",
           "hstNumber": "Número de HST",
           "businessName": "Nombre de la empresa",
-          "incorporatePhotos": "Fotos de incorporación",
-          "hstPhotos": "Fotos del número de HST",
-          "bankingInfoPhotos": "Fotos de información bancaria",
+          "incorporatePhotos": "Documentos de incorporación (PDF)",
+          "hstPhotos": "Documento HST (PDF)",
+          "bankingInfoPhotos": "Información bancaria (PDF)",
           "denied": "¿Alguna vez te han negado una licencia, permiso o privilegio para operar un vehículo motorizado?",
           "suspended": "¿Se te ha suspendido o revocado alguna vez una licencia, permiso o privilegio?",
           "suspensionNotes": "Notas",
@@ -425,14 +425,14 @@
           },
           "fastNumber": "Número de tarjeta FAST",
           "fastExpiry": "Fecha de vencimiento",
-          "fastFront": "Foto frontal",
-          "fastBack": "Foto posterior",
-          "uploadFront": "Subir frontal",
-          "uploadBack": "Subir posterior",
+          "fastFront": "Tarjeta FAST frontal (PDF)",
+          "fastBack": "Tarjeta FAST posterior (PDF)",
+          "uploadFront": "Subir frontal (PDF)",
+          "uploadBack": "Subir posterior (PDF)",
 
           "healthCard": "Tarjeta de salud",
-          "healthCardPhotos": "Tarjeta de salud (frente y dorso)",
-          "healthCardDescription": "Sube fotos claras del frente y dorso de tu tarjeta de salud (ej., tarjeta de salud de Ontario).",
+          "healthCardPhotos": "Tarjeta de salud (PDF)",
+          "healthCardDescription": "Sube un escaneo PDF claro de tu tarjeta de salud (frente y dorso si aplica, ej., tarjeta de salud de Ontario).",
 
           "passportTypeQuestion": "¿Qué tipo de pasaporte tienes?",
           "selectPassportType": "Seleccionar tipo de pasaporte",
@@ -449,31 +449,31 @@
           },
 
           "passport": "Pasaporte",
-          "passportPhotos": "Pasaporte (página de datos y dorso)",
-          "passportDescription": "Sube la página de datos del pasaporte (con tu foto) y la página de cubierta posterior (ej., pasaporte canadiense o extranjero).",
-          "passportDescriptionUS": "Sube la página de datos del pasaporte (con tu foto) y la página de cubierta posterior (ej., pasaporte estadounidense).",
+          "passportPhotos": "Pasaporte (PDF)",
+          "passportDescription": "Sube un escaneo PDF claro de la página de datos de tu pasaporte (con tu foto) y la página de cubierta posterior (ej., pasaporte canadiense o extranjero).",
+          "passportDescriptionUS": "Sube un escaneo PDF claro de la página de datos de tu pasaporte (con tu foto) y la página de cubierta posterior (ej., pasaporte estadounidense).",
 
           "usVisa": "Visa estadounidense",
-          "usVisaPhotos": "Visa estadounidense",
-          "usVisaDescription": "Sube fotos claras de tu visa estadounidense válida (ej., páginas de visa de visitante, trabajo o estudio).",
+          "usVisaPhotos": "Visa estadounidense (PDF)",
+          "usVisaDescription": "Sube un escaneo PDF claro de tu visa estadounidense válida (ej., páginas de visa de visitante, trabajo o estudio).",
 
           "prPermitCitizenship": "Tarjeta de residente permanente / Permiso de trabajo / Ciudadanía",
-          "prPermitCitizenshipPhotos": "Residente permanente / Permiso / Ciudadanía",
-          "prPermitCitizenshipDescription": "Sube fotos claras de tu tarjeta de residente permanente, permiso de trabajo/estudio o documento de ciudadanía (ej., frente y dorso de la tarjeta de RP, carta de permiso de trabajo).",
+          "prPermitCitizenshipPhotos": "RP/Permiso/Ciudadanía (PDF)",
+          "prPermitCitizenshipDescription": "Sube un escaneo PDF claro de tu tarjeta de residente permanente, permiso de trabajo/estudio o documento de ciudadanía (ej., frente y dorso de la tarjeta de RP, carta de permiso de trabajo).",
 
           "greenCardCitizenship": "Tarjeta verde / Ciudadanía",
-          "greenCardCitizenshipDescription": "Sube fotos claras de tu tarjeta de residente permanente o documento de ciudadanía estadounidense (ej., frente y dorso de la tarjeta de RP, certificado de naturalización).",
+          "greenCardCitizenshipDescription": "Sube un escaneo PDF claro de tu tarjeta de residente permanente o documento de ciudadanía estadounidense (ej., frente y dorso de la tarjeta de RP, certificado de naturalización).",
 
           "medicalCertification": "Certificación médica",
-          "medicalCertificationPhotos": "Certificación médica",
-          "medicalCertificationDescription": "Sube fotos claras de tu certificado médico DOT válido (frente y dorso si aplica).",
+          "medicalCertificationPhotos": "Certificado médico (PDF)",
+          "medicalCertificationDescription": "Sube un escaneo PDF claro de tu certificado médico DOT válido (frente y dorso si aplica).",
 
           "oneOfTheseRequired": "Uno de estos requerido",
           "optional": "Opcional",
 
-          "incorporatePhotosDescription": "Sube fotos claras de tus documentos de incorporación empresarial (ej., artículos de incorporación, certificado de incorporación).",
-          "hstPhotosDescription": "Sube una foto de tu documento de registro del número de empresa HST/GST (ej., carta de registro de CRA).",
-          "bankingInfoPhotosDescription": "Sube una foto de un cheque cancelado o formulario de depósito directo de tu banco (debe mostrar claramente el número de cuenta y detalles de la institución)."
+          "incorporatePhotosDescription": "Sube escaneos PDF claros de tus documentos de incorporación empresarial (ej., artículos de incorporación, certificado de incorporación).",
+          "hstPhotosDescription": "Sube un escaneo PDF claro de tu documento de registro del número de empresa HST/GST (ej., carta de registro de CRA).",
+          "bankingInfoPhotosDescription": "Sube un escaneo PDF claro de un cheque cancelado o formulario de depósito directo de tu banco (debe mostrar claramente el número de cuenta y detalles de la institución)."
         },
         "placeholders": {
           "optionalDetails": "Proporciona detalles..."
@@ -712,11 +712,11 @@
 
     "step6": {
       "title": "Test de drogas",
-      "description": "Sube fotos claras de tus documentos del test de drogas. Puedes agregar hasta {{count}} fotos. Una vez subidos, los documentos se verificarán antes de que puedas continuar.",
+      "description": "Sube escaneos PDF claros de tus documentos del test de drogas. Puedes agregar hasta {{count}} archivos PDF. Una vez subidos, los documentos se verificarán antes de que puedas continuar.",
       "verified": "Documentos verificados.",
       "pending": "Documentos subidos. Verificación pendiente. Las subidas están deshabilitadas.",
       "rejected": "Tus documentos de prueba de drogas fueron rechazados. Por favor vuelve a subir y reenviar.",
-      "labeldriverDocuments": "Documentos del test de drogas",
+      "labeldriverDocuments": "Documentos del test de drogas (PDF)",
       "success": {
         "title": "¡Felicidades! 🎉",
         "message": "¡Has completado con éxito tu Test de drogas! Tus documentos han sido verificados y aprobados. Ahora puedes continuar con el siguiente paso de tu incorporación.",

@@ -9,7 +9,7 @@ import {
   EPassportType,
   EWorkAuthorizationType,
 } from "@/types/applicationForm.types";
-import { IFileAsset, ECountryCode } from "@/types/shared.types";
+import { IFileAsset, ECountryCode, isImageMime } from "@/types/shared.types";
 import {
   Image as ImageIcon,
   ChevronLeft,
@@ -25,6 +25,7 @@ import {
   XCircle,
   Download,
   ZoomIn,
+  FileText,
 } from "lucide-react";
 import { ES3Folder } from "@/types/aws.types";
 import { useParams } from "next/navigation";
@@ -68,6 +69,15 @@ interface GalleryItem {
   fieldKey: string; // For updating the correct field
   businessValidation?: boolean; // For business section validation
 }
+
+// helpers to classify asset types
+const isImageAsset = (asset?: IFileAsset | null) =>
+  !!asset && isImageMime(asset.mimeType || "");
+
+const isPdfAsset = (asset?: IFileAsset | null) =>
+  !!asset &&
+  (asset.mimeType?.toLowerCase() === "application/pdf" ||
+    asset.url?.toLowerCase().endsWith(".pdf"));
 
 export default function ImageGallerySection({
   licenses,
@@ -341,6 +351,9 @@ export default function ImageGallerySection({
   );
   const currentPhoto = selectedItemData?.photos[currentPhotoIndex];
 
+  const isCurrentPhotoImage = isImageAsset(currentPhoto);
+  const isCurrentPhotoPdf = isPdfAsset(currentPhoto);
+
   const handleItemSelect = (itemId: string) => {
     setSelectedItem(itemId);
     setCurrentPhotoIndex(0);
@@ -389,10 +402,10 @@ export default function ImageGallerySection({
       return;
     }
 
-    // Create a file input for photo upload
+    // Create a file input for upload (now supports images + PDFs)
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = "image/*";
+    input.accept = "image/*,application/pdf";
     input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) return;
@@ -493,7 +506,7 @@ export default function ImageGallerySection({
       } catch (error: any) {
         setIsUploading(false);
         setUploadError(
-          error?.message || "Failed to upload photo. Please try again."
+          error?.message || "Failed to upload file. Please try again."
         );
       }
     };
@@ -620,10 +633,10 @@ export default function ImageGallerySection({
   };
 
   const handleEditPhoto = async (item: GalleryItem, photoIndex: number) => {
-    // Create a file input for photo replacement
+    // Create a file input for photo replacement (supports images + PDFs)
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = "image/*";
+    input.accept = "image/*,application/pdf";
     input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0];
       if (!file) return;
@@ -700,7 +713,7 @@ export default function ImageGallerySection({
       } catch (error: any) {
         setIsUploading(false);
         setUploadError(
-          error?.message || "Failed to replace photo. Please try again."
+          error?.message || "Failed to replace file. Please try again."
         );
       }
     };
@@ -745,8 +758,8 @@ export default function ImageGallerySection({
       a.click();
       a.remove();
     } catch (err) {
-      console.error("Failed to download image:", err);
-      setUploadError("Failed to download image. Please try again.");
+      console.error("Failed to download file:", err);
+      setUploadError("Failed to download file. Please try again.");
     }
   };
 
@@ -819,7 +832,7 @@ export default function ImageGallerySection({
   };
 
   const handleZoomImage = () => {
-    if (currentPhoto?.url) {
+    if (currentPhoto?.url && isCurrentPhotoImage) {
       setIsZoomModalOpen(true);
     }
   };
@@ -940,6 +953,8 @@ export default function ImageGallerySection({
       </div>
     );
   }
+
+  const zoomImageUrl = isCurrentPhotoImage ? currentPhoto?.url || "" : "";
 
   return (
     <div
@@ -1259,7 +1274,7 @@ export default function ImageGallerySection({
             {/* Photo Display */}
             {selectedItemData.photos.length > 0 ? (
               <div className="space-y-4">
-                {/* Main Image */}
+                {/* Main Image / PDF */}
                 <div className="relative">
                   <div
                     className="relative w-full h-96 rounded-xl border overflow-hidden shadow-sm"
@@ -1269,26 +1284,55 @@ export default function ImageGallerySection({
                     }}
                   >
                     {currentPhoto?.url ? (
-                      <Image
-                        src={currentPhoto.url}
-                        alt={`${selectedItemData.title} - ${getPhotoLabel(
-                          selectedItemData,
-                          currentPhotoIndex
-                        )}`}
-                        fill
-                        className="object-contain cursor-pointer transition-transform hover:scale-105"
-                        onClick={() =>
-                          isEditMode &&
-                          handleEditPhoto(selectedItemData, currentPhotoIndex)
-                        }
-                        title={isEditMode ? "Click to replace photo" : ""}
-                        onError={() => {
-                          console.error(
-                            "Image failed to load:",
-                            currentPhoto.url
-                          );
-                        }}
-                      />
+                      isCurrentPhotoImage ? (
+                        <Image
+                          src={currentPhoto.url}
+                          alt={`${selectedItemData.title} - ${getPhotoLabel(
+                            selectedItemData,
+                            currentPhotoIndex
+                          )}`}
+                          fill
+                          className="object-contain cursor-pointer transition-transform hover:scale-105"
+                          onClick={() =>
+                            isEditMode &&
+                            handleEditPhoto(selectedItemData, currentPhotoIndex)
+                          }
+                          title={isEditMode ? "Click to replace photo" : ""}
+                          onError={() => {
+                            console.error(
+                              "Image failed to load:",
+                              currentPhoto.url
+                            );
+                          }}
+                        />
+                      ) : isCurrentPhotoPdf ? (
+                        <div className="h-full w-full bg-black/5">
+                          <iframe
+                            src={currentPhoto.url}
+                            title={`${selectedItemData.title} - ${getPhotoLabel(
+                              selectedItemData,
+                              currentPhotoIndex
+                            )} (PDF preview)`}
+                            className="w-full h-full"
+                            style={{
+                              border: "none",
+                            }}
+                          >
+                            Your browser cannot display PDF previews. Use the
+                            download button in the top-right corner to view this
+                            document.
+                          </iframe>
+                        </div>
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center">
+                          <p
+                            className="text-sm"
+                            style={{ color: "var(--color-on-surface)" }}
+                          >
+                            Unsupported file type
+                          </p>
+                        </div>
+                      )
                     ) : (
                       <div className="flex items-center justify-center h-full">
                         <Camera
@@ -1302,21 +1346,23 @@ export default function ImageGallerySection({
                   {/* Action Buttons */}
                   {currentPhoto?.url && (
                     <div className="absolute top-4 right-4 flex gap-2">
-                      {/* Zoom Button */}
-                      <button
-                        onClick={handleZoomImage}
-                        className="p-2 rounded-full shadow-lg transition-all hover:scale-110"
-                        style={{
-                          background: "var(--color-surface)",
-                          color: "var(--color-on-surface)",
-                          border: "1px solid var(--color-outline)",
-                        }}
-                        title="Zoom image"
-                      >
-                        <ZoomIn className="h-5 w-5" />
-                      </button>
+                      {/* Zoom Button (images only) */}
+                      {isCurrentPhotoImage && (
+                        <button
+                          onClick={handleZoomImage}
+                          className="p-2 rounded-full shadow-lg transition-all hover:scale-110"
+                          style={{
+                            background: "var(--color-surface)",
+                            color: "var(--color-on-surface)",
+                            border: "1px solid var(--color-outline)",
+                          }}
+                          title="Zoom image"
+                        >
+                          <ZoomIn className="h-5 w-5" />
+                        </button>
+                      )}
 
-                      {/* Download Button */}
+                      {/* Download Button (images + PDFs) */}
                       <button
                         onClick={() =>
                           handleDownloadImage(
@@ -1330,7 +1376,7 @@ export default function ImageGallerySection({
                           background: "var(--color-primary)",
                           color: "var(--color-on-primary)",
                         }}
-                        title="Download image"
+                        title="Download file"
                       >
                         <Download className="h-5 w-5" />
                       </button>
@@ -1398,7 +1444,7 @@ export default function ImageGallerySection({
                         disabled={isUploading || isDeleting}
                         className="p-2 rounded-lg transition-colors hover:bg-blue-50"
                         style={{ color: "var(--color-primary)" }}
-                        title="Replace photo"
+                        title="Replace file"
                       >
                         <Upload className="h-4 w-4" />
                       </button>
@@ -1409,7 +1455,7 @@ export default function ImageGallerySection({
                         disabled={isUploading || isDeleting}
                         className="p-2 rounded-lg transition-colors hover:bg-red-50 disabled:opacity-50"
                         style={{ color: "var(--color-error)" }}
-                        title="Delete photo"
+                        title="Delete file"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -1436,7 +1482,7 @@ export default function ImageGallerySection({
                               : "var(--color-outline)",
                         }}
                       >
-                        {photo?.url ? (
+                        {photo?.url && isImageAsset(photo) ? (
                           <Image
                             src={photo.url}
                             alt={`${selectedItemData.title} - ${getPhotoLabel(
@@ -1449,6 +1495,10 @@ export default function ImageGallerySection({
                               console.error("Image failed to load:", photo.url);
                             }}
                           />
+                        ) : photo?.url && isPdfAsset(photo) ? (
+                          <div className="flex h-full w-full items-center justify-center rounded-lg bg-red-50 border border-red-200">
+                            <FileText className="h-5 w-5 text-red-600" />
+                          </div>
                         ) : (
                           <div
                             className="w-full h-full flex items-center justify-center rounded-lg"
@@ -1486,14 +1536,14 @@ export default function ImageGallerySection({
                     className="text-lg font-medium mb-2"
                     style={{ color: "var(--color-on-surface)" }}
                   >
-                    No photos uploaded yet
+                    No files uploaded yet
                   </p>
                   {isEditMode && (
                     <p
                       className="text-sm"
                       style={{ color: "var(--color-on-surface-variant)" }}
                     >
-                      Click &quot;Add Photo&quot; to upload your first image
+                      Click &quot;Add Photo&quot; to upload your first file
                     </p>
                   )}
                 </div>
@@ -1517,18 +1567,18 @@ export default function ImageGallerySection({
                 className="text-sm"
                 style={{ color: "var(--color-on-surface-variant)" }}
               >
-                Choose from the navigation above to view and manage photos
+                Choose from the navigation above to view and manage files
               </p>
             </div>
           </div>
         )}
       </div>
 
-      {/* Image Zoom Modal */}
+      {/* Image Zoom Modal (images only) */}
       <ImageZoomModal
-        isOpen={isZoomModalOpen}
+        isOpen={isZoomModalOpen && !!zoomImageUrl}
         onClose={handleCloseZoomModal}
-        imageUrl={currentPhoto?.url || ""}
+        imageUrl={zoomImageUrl}
         imageAlt={`${selectedItemData?.title || ""} - ${
           selectedItemData
             ? getPhotoLabel(selectedItemData, currentPhotoIndex)
@@ -1544,7 +1594,7 @@ export default function ImageGallerySection({
             );
           }
         }}
-        enableCrop={isEditMode}
+        enableCrop={isEditMode && isCurrentPhotoImage}
         cropAspect={null} // Free crop
         onCropCommit={handleCropCommit}
       />

@@ -43,6 +43,7 @@ export type QueryShape = {
   applicationType?: string[]; // csv
   completed?: boolean;
   terminated?: boolean;
+  hasTruckUnitNumber?: boolean;
 
   createdAtFrom?: string; // ISO date
   createdAtTo?: string; // ISO date
@@ -63,6 +64,7 @@ export type ApiParams = {
   applicationType?: string; // csv
   completed?: boolean;
   terminated?: boolean;
+  hasTruckUnitNumber?: boolean;
   createdAtFrom?: string;
   createdAtTo?: string;
 
@@ -105,6 +107,7 @@ export function useAdminOnboardingQueryState() {
     const applicationType = toArray(sp.get("applicationType"));
     const completed = toBool(sp.get("completed"));
     const terminated = toBool(sp.get("terminated"));
+    const hasTruckUnitNumber = toBool(sp.get("hasTruckUnitNumber"));
 
     const createdAtFrom = sp.get("createdAtFrom") ?? undefined;
     const createdAtTo = sp.get("createdAtTo") ?? undefined;
@@ -140,6 +143,7 @@ export function useAdminOnboardingQueryState() {
       applicationType,
       completed,
       terminated,
+      hasTruckUnitNumber,
       createdAtFrom,
       createdAtTo,
       currentTab,
@@ -160,10 +164,17 @@ export function useAdminOnboardingQueryState() {
       applicationType: query.applicationType?.join(","),
       completed: query.completed,
       terminated: query.terminated,
+      hasTruckUnitNumber: query.hasTruckUnitNumber,
       createdAtFrom: query.createdAtFrom,
       createdAtTo: query.createdAtTo,
     };
 
+    // Default: pass through the currentStep (used for "in-progress step" filter on All tab)
+    if (query.currentStep) {
+      p.currentStep = query.currentStep;
+    }
+
+    // Tabs override semantics as before
     if (query.currentTab === "drive-test") {
       p.currentStep = "drive-test" as EStepPath;
     } else if (query.currentTab === "carriers-edge-training") {
@@ -263,9 +274,17 @@ export function useAdminOnboardingQueryState() {
     [setMany]
   );
 
+  /**
+   * Completed flag
+   * - When completed is not true (undefined/false), we also clear hasTruckUnitNumber.
+   *   This keeps the truck filter tied strictly to completed drivers.
+   */
   const setCompleted = useCallback(
     (val?: boolean) => {
-      setMany({ completed: typeof val === "boolean" ? val : null });
+      setMany({
+        completed: typeof val === "boolean" ? val : null,
+        ...(val === true ? {} : { hasTruckUnitNumber: null }),
+      });
     },
     [setMany]
   );
@@ -273,6 +292,39 @@ export function useAdminOnboardingQueryState() {
   const setTerminated = useCallback(
     (val?: boolean) => {
       setMany({ terminated: typeof val === "boolean" ? val : null });
+    },
+    [setMany]
+  );
+
+  /**
+   * Truck/unit flag
+   * - Any time we explicitly filter by hasTruckUnitNumber (true/false),
+   *   we also set completed=true in the SAME URL patch.
+   *   This avoids the "double click" visual bug when the UI calls
+   *   setCompleted(true) and setHasTruckUnitNumber(true/false) back-to-back.
+   */
+  const setHasTruckUnitNumber = useCallback(
+    (val?: boolean) => {
+      if (typeof val === "boolean") {
+        setMany({
+          hasTruckUnitNumber: val,
+          completed: true,
+        });
+      } else {
+        setMany({
+          hasTruckUnitNumber: null,
+        });
+      }
+    },
+    [setMany]
+  );
+
+  /** Set the currentStep explicitly (used for "in-progress step" filter on All tab) */
+  const setCurrentStep = useCallback(
+    (step?: EStepPath) => {
+      setMany({
+        currentStep: step ?? null,
+      });
     },
     [setMany]
   );
@@ -342,6 +394,8 @@ export function useAdminOnboardingQueryState() {
     setCreatedRange,
     setCompleted,
     setTerminated,
+    setHasTruckUnitNumber,
+    setCurrentStep,
     setTab,
     setCEState,
     setDTState,

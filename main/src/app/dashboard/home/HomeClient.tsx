@@ -25,16 +25,16 @@ import {
 
 export default function HomeClient() {
   // Data (React Query)
-  const { 
-    data, 
-    isLoading, 
-    isFetching, 
-    hasData, 
-    isDefinitelyEmpty, 
-    isError, 
-    error, 
-    refetch, 
-    uiQuery 
+  const {
+    data,
+    isLoading,
+    isFetching,
+    hasData,
+    isDefinitelyEmpty,
+    isError,
+    error,
+    refetch,
+    uiQuery,
   } = useOnboardingList();
 
   // URL-driven state + setters
@@ -50,9 +50,11 @@ export default function HomeClient() {
     setCompanyIds,
     setApplicationTypes,
     setCreatedRange,
+    setCurrentStep,
+    setHasTruckUnitNumber,
   } = useAdminOnboardingQueryState();
 
-  // 🔽 single-shot clear implemented with one router.replace
+  //  single-shot clear implemented with one router.replace
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -60,7 +62,7 @@ export default function HomeClient() {
   const clearAllFilters = () => {
     const sp = new URLSearchParams(searchParams.toString());
 
-    // remove everything that’s a filter/search/slice of the grid
+    // remove everything that's a filter/search/slice of the grid
     [
       "driverName",
       "companyId",
@@ -71,6 +73,8 @@ export default function HomeClient() {
       "drugTestDocumentsUploaded",
       "completed",
       "terminated",
+      "currentStep",
+      "hasTruckUnitNumber",
       "page",
     ].forEach((k) => sp.delete(k));
 
@@ -132,6 +136,8 @@ export default function HomeClient() {
         onCompanyChange={setCompanyIds}
         onApplicationTypeChange={setApplicationTypes}
         onCreatedRangeChange={setCreatedRange}
+        onStepFilterChange={setCurrentStep}
+        onCompletedWithTruckToggle={setHasTruckUnitNumber}
         onClearAll={clearAllFilters}
       />
 

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useId, useRef, useState } from "react";
+import Image from "next/image";
 import { Camera, Image as ImageIcon } from "lucide-react";
 
 type UploadPickerProps = {
@@ -10,14 +11,14 @@ type UploadPickerProps = {
   children?: React.ReactNode;
   /** Called with the chosen File (or null if user cancels). */
   onPick: (file: File | null) => void | Promise<void>;
-  /** Accept types (default images only) */
+  /** Accept types (default depends on mode) */
   accept?: string;
   /** Disable the trigger */
   disabled?: boolean;
   /** optional aria-label for the trigger */
   ariaLabel?: string;
 
-  /** Action sheet button labels */
+  /** Action sheet button labels (image mode only) */
   cameraText?: string; // default: "Take photo (camera)"
   filesText?: string; // default: "Choose from files"
 
@@ -25,28 +26,58 @@ type UploadPickerProps = {
   className?: string;
   /** If true, show icon + helper text default tile */
   showDefaultTile?: boolean;
+
+  /** "image" keeps current behaviour; "pdf" disables camera + uses file-only flow. */
+  mode?: "image" | "pdf";
+  /** Show PDF guidance popup before opening file picker (only in pdf mode). */
+  showPdfGuidance?: boolean;
 };
+
+const PDF_GUIDANCE_STORAGE_KEY = "drivedock_pdf_guidance_disabled";
+
+type Platform = "ios" | "android" | "other";
+
+/** Safe platform detection (runs only in browser) */
+function detectPlatform(): Platform {
+  if (typeof navigator === "undefined") return "other";
+  const ua = navigator.userAgent || navigator.vendor || (window as any).opera;
+
+  if (/iPhone|iPad|iPod/i.test(ua)) return "ios";
+  if (/Android/i.test(ua)) return "android";
+  return "other";
+}
 
 export default function UploadPicker({
   label = "Upload photo",
   children,
   onPick,
-  accept = "image/*,.heic,.heif",
+  accept,
   disabled,
   ariaLabel,
   cameraText = "Take photo (camera)",
   filesText = "Choose from files",
   className,
   showDefaultTile = true,
+  mode = "image",
+  showPdfGuidance = false,
 }: UploadPickerProps) {
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const [open, setOpen] = useState(false);
+
+  const [open, setOpen] = useState(false); // image-mode action sheet
+  const [pdfModalOpen, setPdfModalOpen] = useState(false);
+
   const menuId = useId();
   const btnId = useId();
 
-  // close on outside click / escape
+  const isPdfMode = mode === "pdf";
+
+  // Effective accept attribute (default differs by mode if caller doesn't override)
+  const effectiveAccept =
+    accept ?? (isPdfMode ? "application/pdf" : "image/*,.heic,.heif");
+
+  // close on outside click / escape (for the image-mode action sheet only)
   useEffect(() => {
     function onDoc(e: MouseEvent) {
       if (!open) return;
@@ -77,6 +108,48 @@ export default function UploadPicker({
     }
   }
 
+  function shouldShowPdfGuidance(): boolean {
+    if (!isPdfMode || !showPdfGuidance) return false;
+    try {
+      const stored = window.localStorage.getItem(PDF_GUIDANCE_STORAGE_KEY);
+      // If user disabled it earlier, don't show again
+      if (stored === "1") return false;
+    } catch {
+      // if localStorage fails, fall back to showing once
+    }
+    return true;
+  }
+
+  function handleTriggerClick() {
+    if (disabled) return;
+
+    if (isPdfMode) {
+      // PDF flow: guidance modal (if enabled), then direct file picker
+      if (shouldShowPdfGuidance()) {
+        setPdfModalOpen(true);
+      } else {
+        fileInputRef.current?.click();
+      }
+      return;
+    }
+
+    // Image mode: open/close the action sheet
+    setOpen((v) => !v);
+  }
+
+  function handlePdfModalContinue(dontShowAgain: boolean) {
+    if (dontShowAgain) {
+      try {
+        window.localStorage.setItem(PDF_GUIDANCE_STORAGE_KEY, "1");
+      } catch {
+        // ignore
+      }
+    }
+    setPdfModalOpen(false);
+    // After acknowledgement, open file picker
+    fileInputRef.current?.click();
+  }
+
   return (
     <div ref={wrapperRef} className={`relative ${className || ""}`}>
       {/* Trigger */}
@@ -85,10 +158,10 @@ export default function UploadPicker({
         type="button"
         disabled={disabled}
         aria-label={ariaLabel || label}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        aria-controls={menuId}
-        onClick={() => setOpen((v) => !v)}
+        aria-haspopup={!isPdfMode ? "menu" : undefined}
+        aria-expanded={!isPdfMode ? open : undefined}
+        aria-controls={!isPdfMode ? menuId : undefined}
+        onClick={handleTriggerClick}
         className={
           children
             ? "w-full"
@@ -98,14 +171,15 @@ export default function UploadPicker({
         {children ??
           (showDefaultTile && (
             <>
+              {/* Icon can stay the same; label text we can change at call sites */}
               <Camera className="w-4 h-4 text-gray-400 group-hover:text-gray-600" />
               <span className="font-medium text-gray-400 text-xs">{label}</span>
             </>
           ))}
       </button>
 
-      {/* Action sheet */}
-      {open && (
+      {/* Image-mode action sheet (camera + files). Not used in pdf mode. */}
+      {!isPdfMode && open && (
         <div
           id={menuId}
           role="menu"
@@ -141,28 +215,171 @@ export default function UploadPicker({
       )}
 
       {/* Hidden inputs */}
-      {/* 1) Camera-only (iOS will open camera directly) */}
-      <input
-        ref={cameraInputRef}
-        type="file"
-        accept={accept}
-        capture="environment"
-        className="hidden"
-        onChange={(e) =>
-          handleChange(e.currentTarget, e.target.files?.[0] || null)
-        }
-        // do not register with RHF, we manage via onPick()
-      />
-      {/* 2) File picker (shows Take Photo / Photo Library / Browse on iOS) */}
+      {/* 1) Camera-only (iOS will open camera directly) — only when in image mode */}
+      {!isPdfMode && (
+        <input
+          ref={cameraInputRef}
+          type="file"
+          accept={effectiveAccept}
+          capture="environment"
+          className="hidden"
+          onChange={(e) =>
+            handleChange(e.currentTarget, e.target.files?.[0] || null)
+          }
+        />
+      )}
+      {/* 2) File picker (shows Take Photo / Photo Library / Browse on iOS in image mode; file browser in pdf mode) */}
       <input
         ref={fileInputRef}
         type="file"
-        accept={accept}
+        accept={effectiveAccept}
         className="hidden"
         onChange={(e) =>
           handleChange(e.currentTarget, e.target.files?.[0] || null)
         }
       />
+
+      {/* PDF guidance modal */}
+      {isPdfMode && showPdfGuidance && pdfModalOpen && (
+        <PdfGuidanceModal
+          onClose={() => setPdfModalOpen(false)}
+          onContinue={handlePdfModalContinue}
+        />
+      )}
+    </div>
+  );
+}
+
+type PdfGuidanceModalProps = {
+  onClose: () => void;
+  onContinue: (dontShowAgain: boolean) => void;
+};
+
+function PdfGuidanceModal({ onClose, onContinue }: PdfGuidanceModalProps) {
+  const [dontShowAgain, setDontShowAgain] = useState(false);
+  const [platform, setPlatform] = useState<Platform>("other");
+  const titleId = useId();
+
+  // Detect platform on mount (client-only)
+  useEffect(() => {
+    setPlatform(detectPlatform());
+  }, []);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center px-4"
+      aria-modal="true"
+      role="dialog"
+      aria-labelledby={titleId}
+    >
+      <div
+        className="fixed inset-0 bg-black/40"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <div className="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+        <h2 id={titleId} className="text-lg font-semibold text-gray-900">
+          Use a clear PDF scan
+        </h2>
+
+        <p className="mt-3 text-sm text-gray-700 leading-5">
+          For security checks and document processing, we can only accept{" "}
+          <span className="font-semibold">PDF files</span> with clear, readable
+          scans. Please avoid photos with glare, shadows, or background clutter.
+        </p>
+
+        <p className="mt-3 text-sm text-gray-700 leading-5">
+          You&apos;ll see this reminder when uploading documents on other file
+          fields as well. You can turn it off below if you don&apos;t need to be
+          reminded again.
+        </p>
+
+        <div className="mt-4 space-y-2 text-sm text-gray-700">
+          <p className="font-medium">
+            You can use any phone scanner app, for example:
+          </p>
+          <ul className="list-disc list-inside space-y-1">
+            <li>Apple Notes → Scan Document (iPhone)</li>
+            <li>CamScanner (recommended)</li>
+            <li>
+              Your phone&apos;s built-in &quot;Scan&quot; option in Files or
+              Camera
+            </li>
+          </ul>
+        </div>
+
+        {/* Store Badges Row (platform aware) */}
+        <div className="flex items-center justify-center gap-4 mt-4">
+          {/* App Store: show on iOS, or on desktop/other */}
+          {(platform === "ios" || platform === "other") && (
+            <a
+              href="https://apps.apple.com/ca/app/camscanner-pdf-scanner-app/id388627783"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-center"
+            >
+              <div className="h-12 sm:h-14 w-auto flex items-center">
+                <Image
+                  src="/assets/logos/Applestore.png"
+                  alt="Download on the App Store"
+                  className="h-full w-auto hover:opacity-90 transition"
+                  width={0}
+                  height={0}
+                  sizes="100vw"
+                />
+              </div>
+            </a>
+          )}
+
+          {/* Google Play: show on Android, or on desktop/other */}
+          {(platform === "android" || platform === "other") && (
+            <a
+              href="https://play.google.com/store/apps/details?id=com.intsig.camscanner"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-center"
+            >
+              <div className="h-12 sm:h-14 w-auto flex items-center">
+                <Image
+                  src="/assets/logos/Playstore.png"
+                  alt="Get it on Google Play"
+                  className="h-full w-auto hover:opacity-90 transition"
+                  width={0}
+                  height={0}
+                  sizes="100vw"
+                />
+              </div>
+            </a>
+          )}
+        </div>
+
+        <label className="mt-4 flex items-center gap-2 text-xs text-gray-600">
+          <input
+            type="checkbox"
+            className="rounded border-gray-300"
+            checked={dontShowAgain}
+            onChange={(e) => setDontShowAgain(e.target.checked)}
+          />
+          Don&apos;t show this reminder again on this device.
+        </label>
+
+        <div className="mt-5 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => onContinue(dontShowAgain)}
+            className="px-4 py-1.5 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+          >
+            Continue to upload PDF
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -202,7 +202,7 @@
         "driverType": "Which type of driver are you?",
         "haulPreference": "Which do you prefer?",
         "teamStatus": "Are you part of a team or driving solo?",
-        
+
         "flatbedExperience": "Do you have flatbed experience?",
 
         "yes": "Yes",
@@ -248,8 +248,8 @@
           "gender": "Gender",
           "male": "Male",
           "female": "Female",
-          "sinPhoto": "SIN Card Photo",
-          "sinPhotoDesc": "Click to capture or select an image",
+          "sinPhoto": "SIN Card (PDF)",
+          "sinPhotoDesc": "Upload a clear PDF scan of your SIN card",
           "dob": "Date of Birth",
           "canProvideProof": "Can you provide proof of age?",
           "phoneHome": "Phone (Home) (Optional)",
@@ -264,9 +264,9 @@
           "licenseProvince": "Province",
           "licenseType": "License Type",
           "licenseExpiry": "Expiry Date",
-          "licenseFrontPhoto": "License Front Photo",
-          "licensePhotoDesc": "Click to capture or select an image",
-          "licenseBackPhoto": "License Back Photo",
+          "licenseFrontPhoto": "Driver License Front (PDF)",
+          "licensePhotoDesc": "Upload a clear PDF scan of your driver license front",
+          "licenseBackPhoto": "Driver License Back (PDF)",
           "address": "Address",
           "city": "City",
           "stateOrProvince": "State or Province",
@@ -397,24 +397,24 @@
           "business": {
             "title": "Incorporate Details",
             "disclaimer": {
-              "text": "If you provide any incorporation detail, you must complete every field and upload all related documents in this section. This includes HST Number, Business Name, and the required photos (Incorporation, HST)."
+              "text": "If you provide any incorporation detail, you must complete every field and upload all related documents in this section. This includes HST Number, Business Name, and the required PDF documents (Incorporation, HST)."
             }
           },
           "banking": {
             "title": "Banking Information",
-            "requiredDisclaimer": "Banking information is required for Company and Owner Operator applicants. Upload a clear photo of a void cheque or a bank-issued direct deposit form showing your name, institution number, transit number, and account number.",
-            "optionalDisclaimer": "Banking information is optional for Owner Drivers. If you choose to provide it now, upload a clear photo of a void cheque or a bank-issued direct deposit form that shows your name, institution number, transit number, and account number so payroll can set up your direct deposit."
+            "requiredDisclaimer": "Banking information is required for Company and Owner Operator applicants. Upload a clear PDF scan of a void cheque or a bank-issued direct deposit form showing your name, institution number, transit number, and account number.",
+            "optionalDisclaimer": "Banking information is optional for Owner Drivers. If you choose to provide it now, upload a clear PDF scan of a void cheque or a bank-issued direct deposit form that shows your name, institution number, transit number, and account number so payroll can set up your direct deposit."
           },
           "additionalInfo": {
             "title": "Additional Info"
           },
           "fastCard": {
             "title": "FAST Card",
-            "disclaimer": "This section is optional. However, if you provide any FAST Card information, you must complete all fields and upload both front and back photos."
+            "disclaimer": "This section is optional. However, if you provide any FAST Card information, you must complete all fields and upload both front and back PDF scans."
           },
           "eligibilityDocs": {
             "title": "Health / Identification Documents",
-            "description": "Please provide clear and readable photos of the required health and identity documents listed below. All details must be visible (front and back where applicable). If any document is missing or unclear, your application may be delayed."
+            "description": "Please provide clear and readable PDF scans of the required health and identity documents listed below. All details must be visible (front and back where applicable). If any document is missing or unclear, your application may be delayed."
           },
           "workAuthorization": {
             "title": "Proof of Work Authorization"
@@ -426,9 +426,9 @@
           "courtLocation": "Court Location",
           "hstNumber": "HST Number",
           "businessName": "Business Name",
-          "incorporatePhotos": "Incorporate Photos",
-          "hstPhotos": "HST Business Number Photos",
-          "bankingInfoPhotos": "Banking Info Photos",
+          "incorporatePhotos": "Incorporation Documents (PDF)",
+          "hstPhotos": "HST Document (PDF)",
+          "bankingInfoPhotos": "Banking Information (PDF)",
           "denied": "Have you ever been denied a license, permit or privilege to operate a motor vehicle?",
           "suspended": "Has any license, permit or privilege ever been suspended or revoked?",
           "suspensionNotes": "Notes",
@@ -442,14 +442,14 @@
           },
           "fastNumber": "FAST Card Number",
           "fastExpiry": "Expiry Date",
-          "fastFront": "Photo Front",
-          "fastBack": "Photo Back",
-          "uploadFront": "Upload Front",
-          "uploadBack": "Upload Back",
+          "fastFront": "FAST Card Front (PDF)",
+          "fastBack": "FAST Card Back (PDF)",
+          "uploadFront": "Upload Front (PDF)",
+          "uploadBack": "Upload Back (PDF)",
 
           "healthCard": "Health Card",
-          "healthCardPhotos": "Health Card (Front & Back)",
-          "healthCardDescription": "Upload clear photos of both the front and back of your health card (e.g., Ontario Health Card).",
+          "healthCardPhotos": "Health Card (PDF)",
+          "healthCardDescription": "Upload a clear PDF scan of your health card (front and back if applicable, e.g., Ontario Health Card).",
 
           "passportTypeQuestion": "What type of passport do you have?",
           "selectPassportType": "Select passport type",
@@ -466,31 +466,31 @@
           },
 
           "passport": "Passport",
-          "passportPhotos": "Passport (Bio & Back)",
-          "passportDescription": "Upload the passport bio/data page (with your photo) and the back cover page (e.g., Canadian or foreign passport).",
-          "passportDescriptionUS": "Upload the passport bio/data page (with your photo) and the back cover page (e.g., US passport).",
+          "passportPhotos": "Passport (PDF)",
+          "passportDescription": "Upload a clear PDF scan of your passport bio/data page (with your photo) and the back cover page (e.g., Canadian or foreign passport).",
+          "passportDescriptionUS": "Upload a clear PDF scan of your passport bio/data page (with your photo) and the back cover page (e.g., US passport).",
 
           "usVisa": "US Visa",
-          "usVisaPhotos": "US Visa",
-          "usVisaDescription": "Upload clear photos of your valid US visa (e.g., visitor, work, or study visa pages).",
+          "usVisaPhotos": "US Visa (PDF)",
+          "usVisaDescription": "Upload a clear PDF scan of your valid US visa (e.g., visitor, work, or study visa pages).",
 
           "prPermitCitizenship": "PR Card/ Work Permit / Citizenship",
-          "prPermitCitizenshipPhotos": "PR / Permit / Citizenship",
-          "prPermitCitizenshipDescription": "Upload clear photos of your Permanent Resident card, Work/Study Permit, or Citizenship document (e.g., PR card front & back, Work Permit letter).",
+          "prPermitCitizenshipPhotos": "PR/Permit/Citizenship (PDF)",
+          "prPermitCitizenshipDescription": "Upload a clear PDF scan of your Permanent Resident card, Work/Study Permit, or Citizenship document (e.g., PR card front & back, Work Permit letter).",
 
           "greenCardCitizenship": "Green Card / Citizenship",
-          "greenCardCitizenshipDescription": "Upload clear photos of your Permanent Resident card or US Citizenship document (e.g., PR card front & back, Certificate of Naturalization).",
+          "greenCardCitizenshipDescription": "Upload a clear PDF scan of your Permanent Resident card or US Citizenship document (e.g., PR card front & back, Certificate of Naturalization).",
 
           "medicalCertification": "Medical Certification",
-          "medicalCertificationPhotos": "Medical Certification",
-          "medicalCertificationDescription": "Upload clear photos of your valid DOT Medical Certificate (front and back if applicable).",
+          "medicalCertificationPhotos": "Medical Certificate (PDF)",
+          "medicalCertificationDescription": "Upload a clear PDF scan of your valid DOT Medical Certificate (front and back if applicable).",
 
           "oneOfTheseRequired": "One of these required",
           "optional": "Optional",
 
-          "incorporatePhotosDescription": "Upload clear photos of your business incorporation documents (e.g., Articles of Incorporation, Certificate of Incorporation).",
-          "hstPhotosDescription": "Upload a photo of your HST/GST business number registration document (e.g., CRA registration letter).",
-          "bankingInfoPhotosDescription": "Upload a photo of a void cheque or direct deposit form from your bank (must clearly show account number and institution details)."
+          "incorporatePhotosDescription": "Upload clear PDF scans of your business incorporation documents (e.g., Articles of Incorporation, Certificate of Incorporation).",
+          "hstPhotosDescription": "Upload a clear PDF scan of your HST/GST business number registration document (e.g., CRA registration letter).",
+          "bankingInfoPhotosDescription": "Upload a clear PDF scan of a void cheque or direct deposit form from your bank (must clearly show account number and institution details)."
         },
         "placeholders": {
           "optionalDetails": "Provide details..."
@@ -729,11 +729,11 @@
 
     "step6": {
       "title": "Drug Test",
-      "description": "Please upload clear photos of your drug test documents. You can add up to {{count}} photos. Once uploaded, documents will be verified before you can continue.",
+      "description": "Please upload clear PDF scans of your drug test documents. You can add up to {{count}} PDF files. Once uploaded, documents will be verified before you can continue.",
       "verified": "Documents verified.",
       "pending": "Documents uploaded. Pending verification. Uploads are disabled.",
       "rejected": "Your drug test documents were rejected. Please re-upload and re-submit.",
-      "labeldriverDocuments": "Drug Test Documents",
+      "labeldriverDocuments": "Drug Test Documents (PDF)",
       "success": {
         "title": "Congratulations! 🎉",
         "message": "You have successfully completed your Drug Test! Your documents have been verified and approved. You can now proceed to the next step of your onboarding process.",

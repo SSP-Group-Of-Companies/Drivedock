@@ -13,7 +13,7 @@
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useState, useEffect, useCallback } from "react";
-import { ELicenseType } from "@/types/shared.types";
+import { ELicenseType, EFileMimeType } from "@/types/shared.types";
 import { FieldErrors } from "react-hook-form";
 import { Upload, X, AlertTriangle, Trash2 } from "lucide-react";
 import Image from "next/image";
@@ -24,8 +24,6 @@ import { useParams } from "next/navigation";
 //components, types and hooks imports
 import useMounted from "@/hooks/useMounted";
 import { ApplicationFormPage1Schema } from "@/lib/zodSchemas/applicationFormPage1.schema";
-import { useCroppedUpload } from "@/hooks/useCroppedUpload";
-import { DOC_ASPECTS } from "@/lib/docAspects";
 import UploadPicker from "@/components/media/UploadPicker";
 
 export default function LicenseSection() {
@@ -39,12 +37,9 @@ export default function LicenseSection() {
     setValue,
     setError,
     clearErrors,
-  } = useFormContext();
+  } = useFormContext<ApplicationFormPage1Schema>();
 
   const { id } = useParams<{ id: string }>();
-  
-  // Initialize crop upload hook
-  const { openCrop, CropModalPortal } = useCroppedUpload();
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -67,6 +62,23 @@ export default function LicenseSection() {
     control,
     name: "licenses.0.licenseBackPhoto.s3Key",
   });
+
+  // Watch full photo objects so we can detect PDF vs image (for preview mode)
+  const frontPhotoData = useWatch({
+    control,
+    name: "licenses.0.licenseFrontPhoto",
+  }) as any;
+  const backPhotoData = useWatch({
+    control,
+    name: "licenses.0.licenseBackPhoto",
+  }) as any;
+
+  const isPdfFront =
+    frontPhotoData?.mimeType === EFileMimeType.PDF ||
+    frontPhotoData?.url?.toLowerCase().endsWith(".pdf");
+  const isPdfBack =
+    backPhotoData?.mimeType === EFileMimeType.PDF ||
+    backPhotoData?.url?.toLowerCase().endsWith(".pdf");
 
   // Watch all license expiry dates for validation
   const licenseExpiryDates = useWatch({
@@ -140,6 +152,14 @@ export default function LicenseSection() {
     [setError, clearErrors, setLicenseExpiryWarnings]
   );
 
+  const EMPTY_PHOTO = {
+    s3Key: "",
+    url: "",
+    mimeType: "",
+    sizeBytes: 0,
+    originalName: "",
+  };
+
   const handleLicensePhotoUpload = async (
     file: File | null,
     side: "front" | "back"
@@ -157,7 +177,7 @@ export default function LicenseSection() {
       side === "front" ? setFrontPhotoMessage : setBackPhotoMessage;
 
     if (!file) {
-      setValue(fieldKey, undefined, {
+      setValue(fieldKey, EMPTY_PHOTO, {
         shouldValidate: true,
         shouldDirty: true,
       });
@@ -167,38 +187,42 @@ export default function LicenseSection() {
       return;
     }
 
-    // Open the cropping modal with ID aspect ratio (1.6)
-    const cropResult = await openCrop({
-      file,
-      aspect: DOC_ASPECTS.ID, // 1.6 for driver's license
-    });
-
-    // User cancelled or HEIC bypass returned null
-    if (!cropResult) {
+    // Enforce PDF only on client-side, aligning with updated presign route
+    const lowerType = file.type?.toLowerCase() || "";
+    const isPdfByMime = lowerType === EFileMimeType.PDF;
+    const isPdfByName = file.name?.toLowerCase().endsWith(".pdf");
+    if (!isPdfByMime && !isPdfByName) {
+      setStatus("error");
+      setMessage(
+        "Please upload a PDF file for your driver’s license (front/back)."
+      );
       return;
     }
-
-    const { file: croppedFile, previewDataUrl } = cropResult;
 
     setStatus("uploading");
     setMessage("");
 
     try {
       const result = await uploadToS3Presigned({
-        file: croppedFile,
+        file,
         folder: ES3Folder.LICENSES,
         trackerId: id,
+        // extra safety: backend expects PDF_ONLY for LICENSES
+        allowedMimeTypes: [EFileMimeType.PDF],
       });
 
       setValue(fieldKey, result, { shouldValidate: true, shouldDirty: true });
-      setPreview(previewDataUrl);
+      // We render PDFs as a card, so no inline image preview needed
+      setPreview(null);
 
       setStatus("idle");
       setMessage("Upload successful");
     } catch (error: any) {
       console.error(`License ${side} upload error:`, error);
       setStatus("error");
-      setMessage(error.message || `Failed to upload ${side} photo.`);
+      setMessage(
+        error.message || `Failed to upload ${side} document. Please use a PDF.`
+      );
     }
   };
 
@@ -229,15 +253,18 @@ export default function LicenseSection() {
           body: JSON.stringify({ keys: [s3Key] }),
         });
 
-        setMessage("Photo removed");
+        setMessage("Document removed");
       } catch (err) {
-        console.error(`Failed to delete temp S3 ${side} photo:`, err);
+        console.error(`Failed to delete temp S3 ${side} document:`, err);
         setStatus("error");
         setMessage("Delete failed");
       }
     }
 
-    setValue(fieldKey, undefined, { shouldValidate: true, shouldDirty: true });
+    setValue(fieldKey, EMPTY_PHOTO, {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
     setPreview(null);
     setStatus("idle");
   };
@@ -247,7 +274,7 @@ export default function LicenseSection() {
 
   const canAddMore = fields.length < 3;
 
-  const methods = useFormContext();
+  const methods = useFormContext<ApplicationFormPage1Schema>();
 
   // Register license photo fields with RHF
   useEffect(() => {
@@ -431,39 +458,85 @@ export default function LicenseSection() {
           {/* Photo upload fields - only show for first license */}
           {index === 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-              {/* License Front Photo Upload */}
+              {/* License Front Document Upload */}
               <div data-field="licenses.0.licenseFrontPhoto">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   {t("form.step2.page1.fields.licenseFrontPhoto")}
                 </label>
                 {frontPhotoPreview ? (
-                  <div className="relative">
-                    <Image
-                      src={frontPhotoPreview}
-                      alt="License Front Preview"
-                      width={400}
-                      height={128}
-                      className="w-full h-32 object-contain rounded-lg border border-gray-300 bg-white"
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleLicensePhotoRemove("front", frontPhotoS3Key)
-                      }
-                      disabled={
-                        frontPhotoStatus === "uploading" ||
-                        frontPhotoStatus === "deleting"
-                      }
-                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
-                    >
-                      <X size={12} />
-                    </button>
-                  </div>
+                  isPdfFront ? (
+                    // PDF card preview
+                    <div className="relative flex items-center justify-between rounded-lg border border-gray-300 bg-white px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-8 items-center justify-center rounded-md bg-red-50 border border-red-200 text-xs font-semibold text-red-700">
+                          PDF
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium text-gray-800">
+                            License (front) document uploaded
+                          </span>
+                          <span className="text-xs text-gray-500 truncate max-w-[220px]">
+                            {frontPhotoData?.originalName || "PDF file"}
+                          </span>
+                          {frontPhotoData?.url && (
+                            <a
+                              href={frontPhotoData.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="mt-0.5 text-xs text-blue-600 hover:underline"
+                            >
+                              View PDF
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleLicensePhotoRemove("front", frontPhotoS3Key)
+                        }
+                        disabled={
+                          frontPhotoStatus === "uploading" ||
+                          frontPhotoStatus === "deleting"
+                        }
+                        className="ml-3 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ) : (
+                    // Backwards-compat: image preview for existing image data
+                    <div className="relative">
+                      <Image
+                        src={frontPhotoPreview}
+                        alt="License Front Preview"
+                        width={400}
+                        height={128}
+                        className="w-full h-32 object-contain rounded-lg border border-gray-300 bg-white"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleLicensePhotoRemove("front", frontPhotoS3Key)
+                        }
+                        disabled={
+                          frontPhotoStatus === "uploading" ||
+                          frontPhotoStatus === "deleting"
+                        }
+                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  )
                 ) : (
                   <UploadPicker
                     label={t("form.step2.page1.fields.licensePhotoDesc")}
                     onPick={(file) => handleLicensePhotoUpload(file, "front")}
-                    accept="image/*,.heic,.heif"
+                    // PDF-only: no camera; also shows the same guidance (but respects global toggle)
+                    mode="pdf"
+                    showPdfGuidance
+                    accept="application/pdf"
                     className="w-full"
                   />
                 )}
@@ -503,39 +576,84 @@ export default function LicenseSection() {
                   )}
               </div>
 
-              {/* License Back Photo Upload */}
+              {/* License Back Document Upload */}
               <div data-field="licenses.0.licenseBackPhoto">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   {t("form.step2.page1.fields.licenseBackPhoto")}
                 </label>
                 {backPhotoPreview ? (
-                  <div className="relative">
-                    <Image
-                      src={backPhotoPreview}
-                      alt="License Back Preview"
-                      width={400}
-                      height={128}
-                      className="w-full h-32 object-contain rounded-lg border border-gray-300 bg-white"
-                    />
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleLicensePhotoRemove("back", backPhotoS3Key)
-                      }
-                      disabled={
-                        backPhotoStatus === "uploading" ||
-                        backPhotoStatus === "deleting"
-                      }
-                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
-                    >
-                      <X size={12} />
-                    </button>
-                  </div>
+                  isPdfBack ? (
+                    // PDF card preview
+                    <div className="relative flex items-center justify-between rounded-lg border border-gray-300 bg-white px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-8 items-center justify-center rounded-md bg-red-50 border border-red-200 text-xs font-semibold text-red-700">
+                          PDF
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium text-gray-800">
+                            License (back) document uploaded
+                          </span>
+                          <span className="text-xs text-gray-500 truncate max-w-[220px]">
+                            {backPhotoData?.originalName || "PDF file"}
+                          </span>
+                          {backPhotoData?.url && (
+                            <a
+                              href={backPhotoData.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="mt-0.5 text-xs text-blue-600 hover:underline"
+                            >
+                              View PDF
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleLicensePhotoRemove("back", backPhotoS3Key)
+                        }
+                        disabled={
+                          backPhotoStatus === "uploading" ||
+                          backPhotoStatus === "deleting"
+                        }
+                        className="ml-3 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ) : (
+                    // Backwards-compat: image preview for existing image data
+                    <div className="relative">
+                      <Image
+                        src={backPhotoPreview}
+                        alt="License Back Preview"
+                        width={400}
+                        height={128}
+                        className="w-full h-32 object-contain rounded-lg border border-gray-300 bg-white"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleLicensePhotoRemove("back", backPhotoS3Key)
+                        }
+                        disabled={
+                          backPhotoStatus === "uploading" ||
+                          backPhotoStatus === "deleting"
+                        }
+                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  )
                 ) : (
                   <UploadPicker
                     label={t("form.step2.page1.fields.licensePhotoDesc")}
                     onPick={(file) => handleLicensePhotoUpload(file, "back")}
-                    accept="image/*,.heic,.heif"
+                    mode="pdf"
+                    showPdfGuidance
+                    accept="application/pdf"
                     className="w-full"
                   />
                 )}
@@ -599,9 +717,6 @@ export default function LicenseSection() {
           {t("form.step2.page1.actions.addLicense")}
         </button>
       )}
-      
-      {/* Crop Modal Portal */}
-      {CropModalPortal}
     </section>
   );
 }

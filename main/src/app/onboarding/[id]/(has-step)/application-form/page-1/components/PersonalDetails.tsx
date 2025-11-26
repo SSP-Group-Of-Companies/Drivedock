@@ -25,11 +25,9 @@ import TextInput from "@/app/onboarding/components/TextInput";
 import PhoneInput from "@/app/onboarding/components/PhoneInput";
 import type { ApplicationFormPage1Schema } from "@/lib/zodSchemas/applicationFormPage1.schema";
 import type { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
-import { ECountryCode } from "@/types/shared.types";
+import { ECountryCode, EFileMimeType } from "@/types/shared.types";
 import { COMPANIES } from "@/constants/companies";
 import { useCountrySelection } from "@/hooks/useCountrySelection";
-import { useCroppedUpload } from "@/hooks/useCroppedUpload";
-import { DOC_ASPECTS } from "@/lib/docAspects";
 import UploadPicker from "@/components/media/UploadPicker";
 
 // Helpers
@@ -83,7 +81,6 @@ export default function PersonalDetails({
   const { t } = useTranslation("common");
   const { id } = useParams<{ id: string }>();
   const { selectedCountryCode } = useCountrySelection();
-  const { openCrop, CropModalPortal } = useCroppedUpload();
 
   //  WATCH ALL FIELDS UP FRONT (no hooks in JSX, no conditional hooks)
   const sinValue = useWatch({ control, name: "sin" });
@@ -121,16 +118,21 @@ export default function PersonalDetails({
   const hasWorkPermitStatus =
     prequalificationData?.statusInCanada === "Work Permit";
 
-  // Clear company selection when resuming an application to prevent conflicts
-  // Company store removed from pre-approval; no-op here
-
   // Determine the label based on country code
   const getSINLabel = () => {
     if (onboardingContext?.companyId) {
-      const company = COMPANIES.find((c) => c.id === onboardingContext.companyId);
-      if (company) return company.countryCode === ECountryCode.US ? "SSN (Social Security Number)" : "SIN (Social Insurance Number)";
+      const company = COMPANIES.find(
+        (c) => c.id === onboardingContext.companyId
+      );
+      if (company)
+        return company.countryCode === ECountryCode.US
+          ? "SSN (Social Security Number)"
+          : "SIN (Social Insurance Number)";
     }
-    if (selectedCountryCode) return selectedCountryCode === ECountryCode.US ? "SSN (Social Security Number)" : "SIN (Social Insurance Number)";
+    if (selectedCountryCode)
+      return selectedCountryCode === ECountryCode.US
+        ? "SSN (Social Security Number)"
+        : "SIN (Social Insurance Number)";
     return t("form.step2.page1.fields.sin");
   };
 
@@ -210,8 +212,8 @@ export default function PersonalDetails({
     originalName: "",
   };
 
-
   const handleSinPhotoUpload = async (file: File | null) => {
+    // Clear
     if (!file) {
       setValue("sinPhoto", EMPTY_PHOTO, { shouldValidate: true });
       setSinPhotoPreview(null);
@@ -220,43 +222,41 @@ export default function PersonalDetails({
       return;
     }
 
+    // Enforce PDF only on the client side (aligns with backend presign route)
+    const lowerType = file.type?.toLowerCase() || "";
+    const isPdfByMime = lowerType === EFileMimeType.PDF;
+    const isPdfByName = file.name?.toLowerCase().endsWith(".pdf");
+    if (!isPdfByMime && !isPdfByName) {
+      setSinPhotoStatus("error");
+      setSinPhotoMessage("Please upload a PDF file for your SIN/SSN document.");
+      return;
+    }
+
     setSinPhotoStatus("uploading");
     setSinPhotoMessage("");
 
     try {
-      // 1) open cropper (drivers will preview/adjust)
-      const cropResult = await openCrop({
-        file,
-        aspect: DOC_ASPECTS.FREE,   // SIN can be card or document format
-        targetWidth: 1600,
-        jpegQuality: 0.9,
-      });
-
-      // Handle user cancellation or HEIC files that can't be cropped
-      if (!cropResult) {
-        // User cancelled or HEIC detected; just reset UI quietly
-        setSinPhotoStatus("idle");
-        return;
-      }
-
-      const { file: croppedFile, previewDataUrl } = cropResult;
-
-      // 2) upload using your existing util (unchanged)
+      // Direct PDF upload (no cropping)
       const result = await uploadToS3Presigned({
-        file: croppedFile,
+        file,
         folder: ES3Folder.SIN_PHOTOS,
         trackerId: id,
+        // extra safety: only allow PDFs here
+        allowedMimeTypes: [EFileMimeType.PDF],
       });
 
-      // 3) update form and preview with processed image
+      // Update form
       setValue("sinPhoto", result, { shouldValidate: true });
-      setSinPhotoPreview(previewDataUrl);
+      // No inline image preview for PDF (we show a PDF card below)
+      setSinPhotoPreview(null);
       setSinPhotoStatus("idle");
       setSinPhotoMessage("Upload successful");
     } catch (error: any) {
-      console.error("SIN photo upload failed:", error);
+      console.error("SIN document upload failed:", error);
       setSinPhotoStatus("error");
-      setSinPhotoMessage(error.message || "Upload failed");
+      setSinPhotoMessage(
+        error?.message || "Upload failed. Please try again with a PDF file."
+      );
     }
   };
 
@@ -271,7 +271,7 @@ export default function PersonalDetails({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ keys: [sinPhotoS3Key] }),
         });
-        setSinPhotoMessage("Photo removed");
+        setSinPhotoMessage("Document removed");
       } catch (err) {
         console.error("Failed to delete temp S3 file:", err);
         setSinPhotoStatus("error");
@@ -283,6 +283,10 @@ export default function PersonalDetails({
     setSinPhotoPreview(null);
     setSinPhotoStatus("idle");
   };
+
+  const isPdfSin =
+    sinPhoto?.mimeType === EFileMimeType.PDF ||
+    (sinPhotoUrl && sinPhotoUrl.toLowerCase().endsWith(".pdf"));
 
   // 👇 early return AFTER all hooks
   if (!mounted) return null;
@@ -539,44 +543,89 @@ export default function PersonalDetails({
           </div>
         )}
 
-        {/* SIN Photo Upload - Full Width */}
+        {/* SIN Document Upload - Full Width */}
         <div className="md:col-span-2" data-field="sinPhoto.s3Key">
           <label className="block text-sm font-medium text-gray-700 mb-1">
             {t("form.step2.page1.fields.sinPhoto")}
           </label>
 
           {sinPhotoPreview || sinPhotoUrl ? (
-            <div className="relative">
-              <Image
-                src={sinPhotoPreview || sinPhotoUrl || ""}
-                alt="SIN Card Preview"
-                width={800}
-                height={400}
-                className="w-full h-40 object-contain rounded-lg border border-gray-300 bg-white"
-              />
-              <button
-                type="button"
-                onClick={handleSinPhotoRemove}
-                disabled={
-                  sinPhotoStatus === "uploading" ||
-                  sinPhotoStatus === "deleting"
-                }
-                className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
-              >
-                <X size={12} />
-              </button>
-            </div>
+            isPdfSin ? (
+              // PDF preview card
+              <div className="relative flex items-center justify-between rounded-lg border border-gray-300 bg-white px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-8 items-center justify-center rounded-md bg-red-50 border border-red-200 text-xs font-semibold text-red-700">
+                    PDF
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-gray-800">
+                      SIN / SSN document uploaded
+                    </span>
+                    <span className="text-xs text-gray-500 truncate max-w-[220px]">
+                      {sinPhoto?.originalName || "PDF file"}
+                    </span>
+                    {sinPhotoUrl && (
+                      <a
+                        href={sinPhotoUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-0.5 text-xs text-blue-600 hover:underline"
+                      >
+                        View PDF
+                      </a>
+                    )}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSinPhotoRemove}
+                  disabled={
+                    sinPhotoStatus === "uploading" ||
+                    sinPhotoStatus === "deleting"
+                  }
+                  className="ml-3 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            ) : (
+              // Backwards-compat: if existing data is an image, keep old preview behaviour
+              <div className="relative">
+                <Image
+                  src={sinPhotoPreview || sinPhotoUrl || ""}
+                  alt="SIN Card Preview"
+                  width={800}
+                  height={400}
+                  className="w-full h-40 object-contain rounded-lg border border-gray-300 bg-white"
+                />
+                <button
+                  type="button"
+                  onClick={handleSinPhotoRemove}
+                  disabled={
+                    sinPhotoStatus === "uploading" ||
+                    sinPhotoStatus === "deleting"
+                  }
+                  className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+            )
           ) : (
             <UploadPicker
               label={t("form.step2.page1.fields.sinPhotoDesc")}
-              onPick={(file) => handleSinPhotoUpload(file)}
-              accept="image/*,.heic,.heif"
+              onPick={handleSinPhotoUpload}
+              // PDF-only mode: no camera, plus global guidance modal
+              mode="pdf"
+              showPdfGuidance
+              accept="application/pdf"
               className="w-full"
             />
           )}
           {sinPhotoStatus !== "uploading" && errors.sinPhoto && (
             <p className="text-red-500 text-sm mt-1">
-              {errors.sinPhoto.message?.toString() || "SIN photo is required"}
+              {errors.sinPhoto.message?.toString() ||
+                "SIN document is required"}
             </p>
           )}
           {sinPhotoStatus === "uploading" && (
@@ -722,9 +771,6 @@ export default function PersonalDetails({
           error={errors.emergencyContactPhone}
         />
       </div>
-
-      {/* Crop modal portal */}
-      {CropModalPortal}
     </section>
   );
 }

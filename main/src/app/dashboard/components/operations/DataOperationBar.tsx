@@ -15,6 +15,7 @@ import type {
   SortToken,
   CategoryTab,
 } from "@/hooks/dashboard/useAdminOnboardingQueryState";
+import { EStepPath } from "@/types/onboardingTracker.types";
 
 import CompanyFilter from "./CompanyFilter";
 import ApplicationTypeFilter from "./ApplicationTypeFilter";
@@ -38,6 +39,8 @@ type Props = Readonly<{
   lockedTerminated?: boolean;
   showCompletedToggle?: boolean;
   onCategoryChange?: (tab: CategoryTab) => void;
+  onStepFilterChange?: (step?: EStepPath) => void;
+  onCompletedWithTruckToggle?: (value?: boolean) => void;
   onClearAll?: () => void;
 }>;
 
@@ -67,6 +70,8 @@ export default function DataOperationBar({
   lockedTerminated = false,
   showCompletedToggle = true,
   onCategoryChange,
+  onStepFilterChange,
+  onCompletedWithTruckToggle,
   onClearAll,
 }: Props) {
   const [search, setSearch] = useState(query.driverName ?? "");
@@ -76,6 +81,26 @@ export default function DataOperationBar({
   const [statusOpen, setStatusOpen] = useState(false);
   const statusRef = useRef<HTMLDivElement | null>(null);
 
+  // In-progress step filter options
+  const IN_PROGRESS_STEPS: readonly EStepPath[] = useMemo(
+    () => [
+      EStepPath.APPLICATION_PAGE_1,
+      EStepPath.APPLICATION_PAGE_2,
+      EStepPath.APPLICATION_PAGE_3,
+      EStepPath.APPLICATION_PAGE_4,
+      EStepPath.APPLICATION_PAGE_5,
+      EStepPath.POLICIES_CONSENTS,
+    ],
+    []
+  );
+
+  const isInProgressStep = useCallback(
+    (step?: EStepPath): step is EStepPath => {
+      return !!step && IN_PROGRESS_STEPS.includes(step);
+    },
+    [IN_PROGRESS_STEPS]
+  );
+
   // CE/DT single-select dropdowns
   const [ceOpen, setCeOpen] = useState(false);
   const ceRef = useRef<HTMLDivElement | null>(null);
@@ -84,6 +109,9 @@ export default function DataOperationBar({
 
   const [sortOpen, setSortOpen] = useState(false);
   const sortRef = useRef<HTMLDivElement | null>(null);
+
+  const [stepOpen, setStepOpen] = useState(false);
+  const stepRef = useRef<HTMLDivElement | null>(null);
 
   // Sync from URL
   useEffect(() => setSearch(query.driverName ?? ""), [query.driverName]);
@@ -114,10 +142,12 @@ export default function DataOperationBar({
         setCeOpen(false);
       if (dtOpen && dtRef.current && !dtRef.current.contains(target))
         setDtOpen(false);
+      if (stepOpen && stepRef.current && !stepRef.current.contains(target))
+        setStepOpen(false);
     }
     document.addEventListener("mousedown", onDocClick);
     return () => document.removeEventListener("mousedown", onDocClick);
-  }, [open, statusOpen, sortOpen, ceOpen, dtOpen]);
+  }, [open, statusOpen, sortOpen, ceOpen, dtOpen, stepOpen]);
 
   // Close on Escape
   useEffect(() => {
@@ -128,6 +158,7 @@ export default function DataOperationBar({
       setSortOpen(false);
       setCeOpen(false);
       setDtOpen(false);
+      setStepOpen(false);
     }
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
@@ -172,6 +203,17 @@ export default function DataOperationBar({
   const showCE = selectedCategory === "carriers-edge-training";
   const showDT = selectedCategory === "drug-test";
 
+  // ----- Completed / truck state for UI -----
+  const completedFlag = query.completed;
+  const hasTruckFlag = query.hasTruckUnitNumber;
+  const isInProgressMode = query.completed === false;
+
+  const isCompletedAll =
+    completedFlag === true && typeof hasTruckFlag === "undefined";
+  const isCompletedWithTruck = completedFlag === true && hasTruckFlag === true;
+  const isCompletedWithoutTruck =
+    completedFlag === true && hasTruckFlag === false;
+
   // Labels for CE/DT custom single-selects
   const ceLabel = useMemo(() => {
     if (typeof query.carriersEdgeTrainingEmailSent === "boolean") {
@@ -189,6 +231,29 @@ export default function DataOperationBar({
     return "All";
   }, [query.drugTestDocumentsUploaded]);
 
+  const stepLabel = useMemo(() => {
+    if (!isInProgressStep(query.currentStep)) {
+      return "Any in-progress step";
+    }
+
+    switch (query.currentStep) {
+      case EStepPath.APPLICATION_PAGE_1:
+        return "Application form – Page 1";
+      case EStepPath.APPLICATION_PAGE_2:
+        return "Application form – Page 2";
+      case EStepPath.APPLICATION_PAGE_3:
+        return "Application form – Page 3";
+      case EStepPath.APPLICATION_PAGE_4:
+        return "Application form – Page 4";
+      case EStepPath.APPLICATION_PAGE_5:
+        return "Application form – Page 5";
+      case EStepPath.POLICIES_CONSENTS:
+        return "Policies & consents";
+      default:
+        return "Any in-progress step";
+    }
+  }, [query.currentStep, isInProgressStep]);
+
   // Active filter count (for the Filter by button badge)
   const activeFilterCount = useMemo(() => {
     let count = 0;
@@ -205,6 +270,8 @@ export default function DataOperationBar({
     if (typeof query.drugTestDocumentsUploaded === "boolean") count += 1;
     if (typeof query.completed === "boolean") count += 1;
     if (typeof query.terminated === "boolean") count += 1;
+    if (typeof query.hasTruckUnitNumber === "boolean") count += 1;
+    if (isInProgressStep(query.currentStep)) count += 1;
     return count;
   }, [
     query.companyId,
@@ -215,9 +282,12 @@ export default function DataOperationBar({
     query.drugTestDocumentsUploaded,
     query.completed,
     query.terminated,
+    query.hasTruckUnitNumber,
+    query.currentStep,
+    isInProgressStep,
   ]);
 
-  // ---------- NEW: Filter dropdown viewport anchoring (mobile) ----------
+  // ---------- Filter dropdown viewport anchoring (mobile) ----------
   const filterBtnRef = useRef<HTMLButtonElement | null>(null);
   const [filterTop, setFilterTop] = useState(0);
 
@@ -239,6 +309,13 @@ export default function DataOperationBar({
     };
   }, [open, recalcFilterTop]);
   // ---------------------------------------------------------------------
+
+  const chipClass = (active: boolean) =>
+    `inline-flex items-center justify-center rounded-full border px-3 py-1 text-xs sm:text-sm transition-colors ${
+      active
+        ? "border-[var(--color-primary)] bg-[var(--color-primary-container)] text-[var(--color-primary)]"
+        : "border-[var(--color-outline)] text-[var(--color-on-surface-variant)] hover:bg-[var(--color-primary-container)]"
+    }`;
 
   return (
     <div
@@ -344,7 +421,7 @@ export default function DataOperationBar({
               } z-[100] mt-2 w-[calc(100vw-2rem)] max-w-xl lg:max-w-2xl xl:max-w-3xl rounded-xl shadow-lg overflow-visible
                 ${open ? "block" : "hidden"}`}
               style={{
-                top: isMobile ? filterTop : undefined, // NEW dynamic top on mobile
+                top: isMobile ? filterTop : undefined, // dynamic top on mobile
                 backgroundColor: "var(--color-card)",
               }}
               role="menu"
@@ -442,6 +519,7 @@ export default function DataOperationBar({
                       aria-hidden="true"
                     />
                   </button>
+
                   {statusOpen && (
                     <div
                       className="absolute left-0 right-0 z-[120] mt-2 rounded-xl shadow-md"
@@ -453,42 +531,254 @@ export default function DataOperationBar({
                       aria-modal="false"
                     >
                       <div
-                        className="space-y-2 p-3 sm:p-4"
+                        className="space-y-3 p-3 sm:p-4"
                         style={{ color: "var(--color-on-surface)" }}
                       >
+                        {/* Completed chips */}
                         {showCompletedToggle && (
-                          <label className="flex items-center gap-2 text-sm">
-                            <input
-                              type="checkbox"
-                              className="h-4 w-4"
-                              checked={query.completed === true}
-                              onChange={(e) =>
-                                onCompletedToggle(
-                                  e.target.checked ? true : undefined
-                                )
-                              }
-                            />
-                            <span>Completed applications</span>
-                          </label>
+                          <div>
+                            <div
+                              className="text-xs font-medium mb-2"
+                              style={{
+                                color: "var(--color-on-surface-variant)",
+                              }}
+                            >
+                              Completed
+                            </div>
+
+                            <div className="flex flex-wrap gap-2">
+                              {/* All completed */}
+                              <button
+                                type="button"
+                                className={chipClass(isCompletedAll)}
+                                onClick={() => {
+                                  if (isCompletedAll) {
+                                    // toggle off → no completed filter at all
+                                    onStepFilterChange?.(undefined);
+                                    onCompletedToggle?.(undefined);
+                                    onCompletedWithTruckToggle?.(undefined);
+                                  } else {
+                                    onStepFilterChange?.(undefined);
+                                    onCompletedToggle?.(true);
+                                    onCompletedWithTruckToggle?.(undefined);
+                                  }
+                                }}
+                              >
+                                All completed
+                              </button>
+
+                              {/* Completed – with truck/unit */}
+                              {onCompletedWithTruckToggle && (
+                                <button
+                                  type="button"
+                                  className={chipClass(isCompletedWithTruck)}
+                                  onClick={() => {
+                                    if (isCompletedWithTruck) {
+                                      onStepFilterChange?.(undefined);
+                                      onCompletedToggle?.(undefined);
+                                      onCompletedWithTruckToggle?.(undefined);
+                                    } else {
+                                      onStepFilterChange?.(undefined);
+                                      onCompletedToggle?.(true);
+                                      onCompletedWithTruckToggle?.(true);
+                                    }
+                                  }}
+                                >
+                                  Completed – with truck/unit
+                                </button>
+                              )}
+
+                              {/* Completed – without truck/unit */}
+                              {onCompletedWithTruckToggle && (
+                                <button
+                                  type="button"
+                                  className={chipClass(isCompletedWithoutTruck)}
+                                  onClick={() => {
+                                    if (isCompletedWithoutTruck) {
+                                      onStepFilterChange?.(undefined);
+                                      onCompletedToggle?.(undefined);
+                                      onCompletedWithTruckToggle?.(undefined);
+                                    } else {
+                                      onStepFilterChange?.(undefined);
+                                      onCompletedToggle?.(true);
+                                      onCompletedWithTruckToggle?.(false);
+                                    }
+                                  }}
+                                >
+                                  Completed – without truck/unit
+                                </button>
+                              )}
+                            </div>
+                          </div>
                         )}
+
+                        {/* In-progress block */}
+                        <div>
+                          <div
+                            className="text-xs font-medium mb-2"
+                            style={{
+                              color: "var(--color-on-surface-variant)",
+                            }}
+                          >
+                            In-progress
+                          </div>
+
+                          <div className="flex flex-col gap-2">
+                            {/* In-progress toggle */}
+                            <button
+                              type="button"
+                              className={chipClass(isInProgressMode)}
+                              onClick={() => {
+                                const next = !isInProgressMode;
+
+                                if (next) {
+                                  // Enter in-progress mode: completed = false, clear completed subsets
+                                  onCompletedWithTruckToggle?.(undefined);
+                                  onCompletedToggle?.(false);
+                                } else {
+                                  // Clear in-progress + step and completed filters
+                                  onStepFilterChange?.(undefined);
+                                  onCompletedToggle?.(undefined);
+                                  onCompletedWithTruckToggle?.(undefined);
+                                }
+                              }}
+                            >
+                              In-progress applications
+                            </button>
+
+                            {/* In-progress step filter */}
+                            {onStepFilterChange && (
+                              <div className="relative" ref={stepRef}>
+                                <button
+                                  type="button"
+                                  onClick={() => setStepOpen((v) => !v)}
+                                  aria-expanded={stepOpen}
+                                  className="inline-flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                                  style={{
+                                    backgroundColor: "var(--color-surface)",
+                                    color: "var(--color-on-surface)",
+                                    border: "1px solid var(--color-outline)",
+                                  }}
+                                >
+                                  <span className="truncate">{stepLabel}</span>
+                                  <ChevronDown
+                                    className={`h-4 w-4 shrink-0 transition-transform ${
+                                      stepOpen ? "rotate-180" : ""
+                                    }`}
+                                    aria-hidden="true"
+                                  />
+                                </button>
+
+                                {stepOpen && (
+                                  <div
+                                    className="absolute left-0 right-0 z-[130] mt-2 rounded-xl shadow-md"
+                                    style={{
+                                      backgroundColor: "var(--color-card)",
+                                      border: "1px solid var(--color-outline)",
+                                    }}
+                                    role="listbox"
+                                    aria-label="In-progress step"
+                                  >
+                                    <ul className="py-2">
+                                      {[
+                                        {
+                                          label: "Any in-progress step",
+                                          value: undefined,
+                                        },
+                                        {
+                                          label: "Application form – Page 1",
+                                          value: EStepPath.APPLICATION_PAGE_1,
+                                        },
+                                        {
+                                          label: "Application form – Page 2",
+                                          value: EStepPath.APPLICATION_PAGE_2,
+                                        },
+                                        {
+                                          label: "Application form – Page 3",
+                                          value: EStepPath.APPLICATION_PAGE_3,
+                                        },
+                                        {
+                                          label: "Application form – Page 4",
+                                          value: EStepPath.APPLICATION_PAGE_4,
+                                        },
+                                        {
+                                          label: "Application form – Page 5",
+                                          value: EStepPath.APPLICATION_PAGE_5,
+                                        },
+                                        {
+                                          label: "Policies & consents",
+                                          value: EStepPath.POLICIES_CONSENTS,
+                                        },
+                                      ].map((opt) => (
+                                        <li key={String(opt.value ?? "any")}>
+                                          <button
+                                            type="button"
+                                            className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-[var(--color-primary-container)] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                                            style={{
+                                              color: "var(--color-on-surface)",
+                                            }}
+                                            onClick={() => {
+                                              const nextStep = opt.value;
+
+                                              // Any selection here ⇒ in-progress mode + clear completed subsets
+                                              onCompletedWithTruckToggle?.(
+                                                undefined
+                                              );
+                                              onCompletedToggle?.(false);
+
+                                              onStepFilterChange(nextStep);
+                                              setStepOpen(false);
+                                            }}
+                                          >
+                                            {opt.label}
+                                          </button>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Terminated */}
                         {!lockedTerminated ? (
-                          <label className="flex items-center gap-2 text-sm">
-                            <input
-                              type="checkbox"
-                              className="h-4 w-4"
-                              checked={query.terminated === true}
-                              onChange={(e) =>
-                                onTerminatedToggle(
-                                  e.target.checked ? true : undefined
-                                )
-                              }
-                            />
-                            <span>Terminated applications</span>
-                          </label>
+                          <div>
+                            <div
+                              className="text-xs font-medium mb-2"
+                              style={{
+                                color: "var(--color-on-surface-variant)",
+                              }}
+                            >
+                              Terminated
+                            </div>
+                            <button
+                              type="button"
+                              className={chipClass(query.terminated === true)}
+                              onClick={() => {
+                                const next = !(query.terminated === true);
+                                if (next) {
+                                  // Terminated-only view:
+                                  // clear completion / in-progress filters
+                                  onCompletedWithTruckToggle?.(undefined);
+                                  onCompletedToggle?.(undefined);
+                                  onStepFilterChange?.(undefined);
+                                  onTerminatedToggle?.(true);
+                                } else {
+                                  onTerminatedToggle?.(undefined);
+                                }
+                              }}
+                            >
+                              Terminated applications
+                            </button>
+                          </div>
                         ) : (
                           <span
                             className="text-sm"
-                            style={{ color: "var(--color-on-surface-variant)" }}
+                            style={{
+                              color: "var(--color-on-surface-variant)",
+                            }}
                           >
                             Terminated only
                           </span>
@@ -661,12 +951,13 @@ export default function DataOperationBar({
                     type="button"
                     onClick={() => {
                       setSearch(""); // Clear local input immediately for UX
-                      onClearAll?.(); // Let HomeClient do a single router.replace with all params wiped
+                      onClearAll?.(); // router.replace with all params wiped
                       // Close the filter panels
                       setOpen(false);
                       setStatusOpen(false);
-                      setCeOpen?.(false);
-                      setDtOpen?.(false);
+                      setCeOpen(false);
+                      setDtOpen(false);
+                      setStepOpen(false);
                     }}
                     className="rounded-lg px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 cursor-pointer"
                     style={{

@@ -11,14 +11,28 @@ interface PhoneInputProps {
   disabled?: boolean;
 }
 
-export default function PhoneInput({ name, label, value, onChange, error, disabled = false }: PhoneInputProps) {
+export default function PhoneInput({
+  name,
+  label,
+  value,
+  onChange,
+  error,
+  disabled = false,
+}: PhoneInputProps) {
   return (
-    <div>
+    <div className="w-full">
       <label className="block text-sm font-medium text-gray-700">{label}</label>
-      <div className="relative mt-1">
-        <div className="flex">
+
+      <div className="relative mt-1 w-full">
+        <div className="flex w-full">
           {/* Country Code */}
-          <div className={`flex items-center px-3 py-2 border border-r-0 border-gray-300 rounded-l-md text-sm font-medium ${disabled ? "bg-gray-100 text-gray-400" : "bg-gray-50 text-gray-700"}`}>
+          <div
+            className={`flex-shrink-0 flex items-center px-3 py-2 border border-r-0 border-gray-300 rounded-l-md text-sm font-medium ${
+              disabled
+                ? "bg-gray-100 text-gray-400"
+                : "bg-gray-50 text-gray-700"
+            }`}
+          >
             +1
           </div>
 
@@ -37,13 +51,16 @@ export default function PhoneInput({ name, label, value, onChange, error, disabl
             disabled={disabled}
             data-lpignore="true"
             data-form-type="other"
-            className={`flex-1 py-2 px-3 border border-gray-300 rounded-r-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md focus:border-transparent ${
+            className={`flex-1 min-w-0 py-2 px-3 border border-gray-300 rounded-r-md shadow-sm focus:ring-sky-500 focus:outline-none focus:shadow-md focus:border-transparent ${
               disabled ? "bg-gray-100 text-gray-400 cursor-not-allowed" : ""
             }`}
           />
         </div>
       </div>
-      {error && <p className="text-red-500 text-sm mt-1">{error.message?.toString()}</p>}
+
+      {error && (
+        <p className="text-red-500 text-sm mt-1">{error.message?.toString()}</p>
+      )}
     </div>
   );
 }
