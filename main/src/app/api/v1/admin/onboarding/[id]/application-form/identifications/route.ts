@@ -47,6 +47,7 @@ type PatchBody = {
 
   healthCardPhotos?: IFileAsset[];
   medicalCertificationPhotos?: IFileAsset[];
+  medicalCertificateDetails?: IApplicationFormPage4["medicalCertificateDetails"];
 
   // Passport type selection (Canadian companies only)
   passportType?: IApplicationFormPage4["passportType"];
@@ -188,6 +189,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       businessKeysPresentInBody(body) ||
       hasKey(body, "healthCardPhotos") ||
       hasKey(body, "medicalCertificationPhotos") ||
+      hasKey(body, "medicalCertificateDetails") ||
       hasKey(body, "passportPhotos") ||
       hasKey(body, "prPermitCitizenshipPhotos") ||
       hasKey(body, "usVisaPhotos") ||
@@ -271,8 +273,22 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       // STRICT: even an empty medicalCertificationPhotos key is disallowed
       forbidPresence(body, "medicalCertificationPhotos", "Medical certification photos");
     } else if (isUS) {
+      // Photos required
       requirePresence(body, "medicalCertificationPhotos", "Medical certification photos");
       expectCountRange(body, "medicalCertificationPhotos", 1, 2, "Medical certification photos");
+
+      // NEW: details required
+      requirePresence(body, "medicalCertificateDetails", "Medical certificate details");
+      const mcd = body.medicalCertificateDetails;
+
+      if (!mcd || !isNonEmptyString(mcd.documentNumber)) {
+        throw new AppError(400, "Medical certificate document number is required for US applicants.");
+      }
+      if (!isNonEmptyString(mcd.issuingAuthority)) {
+        throw new AppError(400, "Medical certificate issuing authority is required for US applicants.");
+      }
+      // mcd.expiryDate stays optional
+
       // STRICT: even empty keys are disallowed
       forbidPresence(body, "healthCardPhotos", "Health card photos");
       forbidPresence(body, "usVisaPhotos", "US visa photos");
@@ -378,6 +394,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
               ...(body.passportPhotos ? { passportPhotos: body.passportPhotos } : {}),
               ...(body.prPermitCitizenshipDetails ? { prPermitCitizenshipDetails: body.prPermitCitizenshipDetails } : {}),
               ...(body.prPermitCitizenshipPhotos ? { prPermitCitizenshipPhotos: body.prPermitCitizenshipPhotos } : {}),
+              ...(body.medicalCertificateDetails ? { medicalCertificateDetails: body.medicalCertificateDetails } : {}),
             }
           : {
               // For Canadian drivers: both are always present
@@ -691,6 +708,7 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       bankingInfoPhotos: appFormDoc.page4.bankingInfoPhotos,
       healthCardPhotos: appFormDoc.page4.healthCardPhotos,
       medicalCertificationPhotos: appFormDoc.page4.medicalCertificationPhotos,
+      medicalCertificateDetails: appFormDoc.page4.medicalCertificateDetails,
 
       // Passport type selection (Canadian companies only)
       passportType: appFormDoc.page4.passportType,
@@ -757,6 +775,7 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
 
       healthCardPhotos: appFormDoc.page4.healthCardPhotos,
       medicalCertificationPhotos: appFormDoc.page4.medicalCertificationPhotos,
+      medicalCertificateDetails: appFormDoc.page4.medicalCertificateDetails,
 
       // Passport type selection (Canadian companies only)
       passportType: appFormDoc.page4.passportType,

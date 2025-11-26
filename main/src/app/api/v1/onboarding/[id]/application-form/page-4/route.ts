@@ -261,7 +261,23 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       // Forbidden for CA
       forbidNonEmpty(body, "medicalCertificationPhotos", "Medical certification photos");
     } else if (isUS) {
+      // Medical cert photos required for US
       expectCountRange(body, "medicalCertificationPhotos", 1, 2, "Medical certification photos");
+
+      // medicalCertificateDetails required for US applicants
+      if (!body.medicalCertificateDetails) {
+        throw new AppError(400, "Medical certificate details are required for US applicants.");
+      }
+
+      const { documentNumber, issuingAuthority } = body.medicalCertificateDetails;
+
+      if (!isNonEmptyString(documentNumber)) {
+        throw new AppError(400, "Medical certificate document number is required for US applicants.");
+      }
+      if (!isNonEmptyString(issuingAuthority)) {
+        throw new AppError(400, "Medical certificate issuing authority is required for US applicants.");
+      }
+      // expiryDate remains optional
 
       // Forbidden for US
       forbidNonEmpty(body, "healthCardPhotos", "Health card photos");
