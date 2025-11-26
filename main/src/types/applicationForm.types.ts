@@ -254,6 +254,43 @@ export interface ITruckDetails {
   employeeNumber?: string;
 }
 
+/**
+ * Immigration status enums for US applicants
+ */
+export enum EImmigrationStatusUS {
+  CITIZEN = "citizen",
+  NON_CITIZEN_NATIONAL = "non_citizen_national",
+  PERMANENT_RESIDENT = "permanent_resident",
+  NON_CITIZEN = "non_citizen",
+}
+
+export interface IMedicalCertificateDetails {
+  documentNumber: string;
+  issuingAuthority: string;
+  expiryDate?: string | Date; // YYYY-MM-DD or Date
+}
+
+export interface IPassportDetails {
+  documentNumber: string;
+  issuingAuthority: string;
+  countryOfIssue: string;
+  expiryDate?: string | Date; // YYYY-MM-DD or Date
+}
+
+export enum EPrPermitDocumentType {
+  PR_CARD = "pr_card",
+  CITIZENSHIP_CERTIFICATE = "citizenship_certificate",
+  WORK_PERMIT = "work_permit",
+}
+
+export interface IPrPermitDetails {
+  documentType: EPrPermitDocumentType;
+  documentNumber: string;
+  issuingAuthority: string;
+  countryOfIssue: string;
+  expiryDate?: string | Date; // YYYY-MM-DD or Date
+}
+
 export interface IApplicationFormPage4 {
   // Criminal Record Table
   hasCriminalRecords?: boolean;
@@ -268,13 +305,19 @@ export interface IApplicationFormPage4 {
 
   // Medical / Identity (country-specific)
   healthCardPhotos?: IFileAsset[]; // Canada
+  medicalCertificateDetails?: IMedicalCertificateDetails; // US
   medicalCertificationPhotos?: IFileAsset[]; // US
+
+  immigrationStatusInUS?: EImmigrationStatusUS; // US applicants only
 
   // Passport type selection (Canadian companies only)
   passportType?: EPassportType; // Canadian companies only
   workAuthorizationType?: EWorkAuthorizationType; // For non-Canadian passports
 
+  passportDetails?: IPassportDetails; // Optional for US
   passportPhotos?: IFileAsset[]; // Optional for US
+
+  prPermitCitizenshipDetails?: IPrPermitDetails; // Optional for US
   prPermitCitizenshipPhotos?: IFileAsset[]; // Optional for US
   usVisaPhotos?: IFileAsset[]; // Not needed for US citizens
   fastCard?: IFastCard; // Optional; typically Canada
