@@ -1,3 +1,4 @@
+// src/mongoose/schemas/policiesConsentsSchema.ts
 import { Schema } from "mongoose";
 import { fileSchema } from "./sharedSchemas";
 import { IPoliciesConsentsDoc } from "@/types/policiesConsents.types";

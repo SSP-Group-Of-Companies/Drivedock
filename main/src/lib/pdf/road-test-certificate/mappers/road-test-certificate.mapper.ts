@@ -16,26 +16,26 @@ function asDate(d?: Date | string): Date | undefined {
   return Number.isNaN(v.getTime()) ? undefined : v;
 }
 
-/** YYYY-MM-DD */
+/** YYYY-MM-DD (UTC) */
 function fmtYMD(d?: Date | string): string {
   const v = asDate(d);
   if (!v) return "";
-  return `${v.getFullYear()}-${pad2(v.getMonth() + 1)}-${pad2(v.getDate())}`;
+  return `${v.getUTCFullYear()}-${pad2(v.getUTCMonth() + 1)}-${pad2(v.getUTCDate())}`;
 }
 
-/** e.g., "March 12" */
+/** e.g., "March 12" (UTC) */
 function fmtMonthDayText(d?: Date | string): string {
   const v = asDate(d);
   if (!v) return "";
   const months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-  return `${months[v.getMonth()]} ${v.getDate()}`;
+  return `${months[v.getUTCMonth()]} ${v.getUTCDate()}`;
 }
 
-/** last two digits of year, e.g., "24" for 2024 */
+/** last two digits of year, e.g., "24" for 2024 (UTC) */
 function fmtTwoDigitYear(d?: Date | string): string {
   const v = asDate(d);
   if (!v) return "";
-  return String(v.getFullYear()).slice(-2);
+  return String(v.getUTCFullYear()).slice(-2);
 }
 
 /* -------------------------------- types -------------------------------- */

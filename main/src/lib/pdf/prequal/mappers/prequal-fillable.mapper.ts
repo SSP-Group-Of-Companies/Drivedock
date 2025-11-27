@@ -7,14 +7,17 @@ import { IOnboardingTracker } from "@/types/onboardingTracker.types";
 
 /* ------------------------------- helpers ------------------------------- */
 
-function pad2(n: number) {
-  return String(n).padStart(2, "0");
-}
-function fmt(date: Date | string | undefined | null) {
+/** Format date to YYYY-MM-DD (UTC, date-only) */
+function fmt(date?: Date | string): string {
   if (!date) return "";
   const d = typeof date === "string" ? new Date(date) : date;
-  if (!(d instanceof Date) || Number.isNaN(d.getTime())) return "";
-  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+  if (Number.isNaN(d.getTime())) return "";
+
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(d.getUTCDate()).padStart(2, "0");
+
+  return `${y}-${m}-${dd}`;
 }
 
 function splitPhone3(p?: string | null) {

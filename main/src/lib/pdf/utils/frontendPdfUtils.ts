@@ -1,4 +1,3 @@
-// main/src/lib/pdf/utils/frontendPdfUtils.ts
 import { ECompanyId, getCompanyById } from "@/constants/companies";
 import { ECountryCode } from "@/types/shared.types";
 
@@ -9,9 +8,14 @@ type IPdfListItem = {
 };
 
 export const getCompanyPdfList = (companyId: ECompanyId, onboardingId: string): IPdfListItem[] => {
-  const isCa = getCompanyById(companyId)?.countryCode === ECountryCode.CA;
+  const company = getCompanyById(companyId);
+  const countryCode = company?.countryCode;
+
+  const isCa = countryCode === ECountryCode.CA;
+  const isUs = countryCode === ECountryCode.US;
 
   const apiBase = `/api/v1/admin/onboarding/${onboardingId}/filled-pdf`;
+
   const base: IPdfListItem[] = [
     {
       label: "Pre-Qualifications",
@@ -55,7 +59,7 @@ export const getCompanyPdfList = (companyId: ECompanyId, onboardingId: string): 
     },
   ];
 
-  // Add ISB Consent at the top for CA companies only
+  // CA companies → ISB Consent at the top
   if (isCa) {
     return [
       {
@@ -67,6 +71,23 @@ export const getCompanyPdfList = (companyId: ECompanyId, onboardingId: string): 
     ];
   }
 
-  // US companies
+  // US companies → add I9 + W4 at the end
+  if (isUs) {
+    return [
+      ...base,
+      {
+        label: "USCIS Form I-9",
+        apiUrl: `${apiBase}/i9`,
+        needsSafetyAdminId: true,
+      },
+      {
+        label: "Form W-4",
+        apiUrl: `${apiBase}/w4`,
+        needsSafetyAdminId: false,
+      },
+    ];
+  }
+
+  // Other countries
   return base;
 };

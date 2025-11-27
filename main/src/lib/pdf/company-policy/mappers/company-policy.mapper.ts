@@ -15,11 +15,11 @@ function asDate(d: MaybeDate): Date | undefined {
   return Number.isNaN(v.getTime()) ? undefined : v;
 }
 
-/** YYYY-MM-DD */
+/** YYYY-MM-DD (UTC, date-only) */
 function fmt(date: MaybeDate): string {
   const d = asDate(date);
   if (!d) return "";
-  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+  return `${d.getUTCFullYear()}-${pad2(d.getUTCMonth() + 1)}-${pad2(d.getUTCDate())}`;
 }
 
 /** resolve which template to load (same fields across all) */

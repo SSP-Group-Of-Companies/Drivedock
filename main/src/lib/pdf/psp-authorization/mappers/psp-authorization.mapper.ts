@@ -5,14 +5,14 @@ import { EPspAuthorizationFillableFormFields as F } from "./psp-authorization.ty
 /** FieldName -> value used by the PDF filler */
 export type PspAuthorizationPayload = Partial<Record<F, string>>;
 
-/** Format date to YYYY-MM-DD */
+/** Format date to YYYY-MM-DD (UTC, date-only) */
 function fmt(date?: Date | string): string {
   if (!date) return "";
   const d = typeof date === "string" ? new Date(date) : date;
   if (Number.isNaN(d.getTime())) return "";
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(d.getUTCDate()).padStart(2, "0");
   return `${y}-${m}-${dd}`;
 }
 

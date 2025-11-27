@@ -1,3 +1,4 @@
+// src/constants/companies.ts
 import { ECountryCode } from "@/types/shared.types";
 
 /** Application types live with companies to avoid scattered sources of truth */

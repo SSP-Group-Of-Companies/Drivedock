@@ -44,28 +44,28 @@ const toDateOrNull = (d: Date | string | number | null | undefined): Date | null
 const fmtDDMMYYYY = (d?: Date | string | number | null): string => {
   const dt = toDateOrNull(d);
   if (!dt) return "";
-  const dd = String(dt.getDate()).padStart(2, "0");
-  const mm = String(dt.getMonth() + 1).padStart(2, "0");
-  const yyyy = String(dt.getFullYear());
+  const dd = String(dt.getUTCDate()).padStart(2, "0");
+  const mm = String(dt.getUTCMonth() + 1).padStart(2, "0");
+  const yyyy = String(dt.getUTCFullYear());
   return `${dd}/${mm}/${yyyy}`;
 };
 
 const fmtMMYYYY = (d?: Date | string | number | null): string => {
   const dt = toDateOrNull(d);
   if (!dt) return "";
-  const mm = String(dt.getMonth() + 1).padStart(2, "0");
-  const yyyy = String(dt.getFullYear());
+  const mm = String(dt.getUTCMonth() + 1).padStart(2, "0");
+  const yyyy = String(dt.getUTCFullYear());
   return `${mm}/${yyyy}`;
 };
 
 const ymd = (d: Date | string | undefined | null) => (d ? new Date(d as any) : new Date());
 
 const splitDMY = (d: Date | string | undefined | null) => {
-  const dt = ymd(d);
+  const dt = ymd(d); // still new Date(...) or "now" fallback
   return {
-    d: String(dt.getDate()).padStart(2, "0"),
-    m: String(dt.getMonth() + 1).padStart(2, "0"),
-    y: String(dt.getFullYear()),
+    d: String(dt.getUTCDate()).padStart(2, "0"),
+    m: String(dt.getUTCMonth() + 1).padStart(2, "0"),
+    y: String(dt.getUTCFullYear()),
   };
 };
 

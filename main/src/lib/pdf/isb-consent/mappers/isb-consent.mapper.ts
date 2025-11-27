@@ -1,3 +1,4 @@
+// src/lib/pdf/isb-consent/mappers/isb-consent.mapper.ts
 import type { PDFForm } from "pdf-lib";
 import { EIsbConsentFillableFormFields as F, type IsbConsentPayload } from "./isb-consent.types";
 import { EGender } from "@/types/applicationForm.types";
@@ -56,22 +57,23 @@ export type BuildIsbConsentArgs = {
 
 /* ------------------------------- helpers ------------------------------- */
 
-function pad2(n: number) {
-  return String(n).padStart(2, "0");
+function toIsoDate(date: MaybeDate): string | null {
+  if (!date) return null;
+  const d = typeof date === "string" ? new Date(date) : date;
+  if (!(d instanceof Date) || Number.isNaN(d.getTime())) return null;
+  return d.toISOString().slice(0, 10); // "YYYY-MM-DD" in UTC
 }
 
 function fmt(date: MaybeDate): string {
-  if (!date) return "";
-  const d = typeof date === "string" ? new Date(date) : date;
-  if (!(d instanceof Date) || Number.isNaN(d.getTime())) return "";
-  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+  const iso = toIsoDate(date);
+  return iso ?? "";
 }
 
 function ymd(date: MaybeDate) {
-  if (!date) return { y: "", m: "", d: "" };
-  const d = typeof date === "string" ? new Date(date) : date;
-  if (!(d instanceof Date) || Number.isNaN(d.getTime())) return { y: "", m: "", d: "" };
-  return { y: String(d.getFullYear()), m: pad2(d.getMonth() + 1), d: pad2(d.getDate()) };
+  const iso = toIsoDate(date);
+  if (!iso) return { y: "", m: "", d: "" };
+  const [y, m, d] = iso.split("-");
+  return { y, m, d };
 }
 
 /** naive split: "123 Main St Apt 4B" -> { number:"123", street:"Main St", apt:"Apt 4B" } */
