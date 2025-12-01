@@ -183,6 +183,15 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     //   (prPermitCitizenshipPhotos + prPermitCitizenshipDetails)
     // is required (not both).
     // For Canadian drivers: existing rules stay the same.
+    
+    // Bundle detection variables (used later in merge logic to explicitly clear opposite bundle)
+    // CRITICAL: When frontend selects a bundle, it DELETES the opposite bundle's fields from payload.
+    // Without explicit clearing, hasKey() returns false and merge logic preserves old data (BUG).
+    // Solution: Detect which bundle is selected during validation, then explicitly clear opposite
+    // bundle in merge logic. This ensures old data doesn't persist when switching bundles.
+    let hasPassportBundle = false;
+    let hasPRBundle = false;
+    
     if (isUS) {
       // 1.1 Immigration status is required for US applicants
       if (!hasKey(body, "immigrationStatusInUS") || !isNonEmptyString(body.immigrationStatusInUS)) {
@@ -195,11 +204,11 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
       const hasPassportPhotos = passportPhotoCount > 0;
       const hasPassportDetails = !!body.passportDetails;
-      const hasPassportBundle = hasPassportPhotos || hasPassportDetails;
+      hasPassportBundle = hasPassportPhotos || hasPassportDetails;
 
       const hasPRPhotos = prPhotoCount > 0;
       const hasPRDetails = !!body.prPermitCitizenshipDetails;
-      const hasPRBundle = hasPRPhotos || hasPRDetails;
+      hasPRBundle = hasPRPhotos || hasPRDetails;
 
       // Must choose exactly one bundle
       if (!hasPassportBundle && !hasPRBundle) {
@@ -345,14 +354,26 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       ...(isUS
         ? {
             immigrationStatusInUS: body.immigrationStatusInUS as any,
-            passportPhotos: body.passportPhotos ?? [],
-            prPermitCitizenshipPhotos: body.prPermitCitizenshipPhotos ?? [],
-            passportDetails: hasKey(body, "passportDetails")
-              ? body.passportDetails ?? undefined
-              : prevP4.passportDetails,
-            prPermitCitizenshipDetails: hasKey(body, "prPermitCitizenshipDetails")
-              ? body.prPermitCitizenshipDetails ?? undefined
-              : prevP4.prPermitCitizenshipDetails,
+            // US Bundle Logic: Explicitly clear opposite bundle to prevent data persistence issues
+            // When frontend selects a bundle, it deletes the opposite bundle's fields from payload.
+            // Without explicit clearing, hasKey() returns false and we preserve old data (BUG).
+            // Solution: Use bundle detection from validation to explicitly clear opposite bundle.
+            passportPhotos: hasPassportBundle
+              ? body.passportPhotos ?? []
+              : [], // Explicitly clear when PR bundle is selected
+            prPermitCitizenshipPhotos: hasPRBundle
+              ? body.prPermitCitizenshipPhotos ?? []
+              : [], // Explicitly clear when passport bundle is selected
+            passportDetails: hasPassportBundle
+              ? hasKey(body, "passportDetails")
+                ? body.passportDetails ?? undefined
+                : prevP4.passportDetails
+              : undefined, // Explicitly clear when PR bundle is selected
+            prPermitCitizenshipDetails: hasPRBundle
+              ? hasKey(body, "prPermitCitizenshipDetails")
+                ? body.prPermitCitizenshipDetails ?? undefined
+                : prevP4.prPermitCitizenshipDetails
+              : undefined, // Explicitly clear when passport bundle is selected
             medicalCertificateDetails: body.medicalCertificateDetails!,
             medicalCertificationPhotos: body.medicalCertificationPhotos ?? [],
             healthCardPhotos: [], // forbidden for US

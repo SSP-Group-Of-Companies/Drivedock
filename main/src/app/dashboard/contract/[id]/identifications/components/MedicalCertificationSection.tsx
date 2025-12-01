@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Stethoscope } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { IMedicalCertificateDetails } from "@/types/applicationForm.types";
 import { useEditMode } from "../../components/EditModeContext";
 
@@ -25,6 +26,7 @@ export default function MedicalCertificationSection({
   details,
   onStage,
 }: MedicalCertificationSectionProps) {
+  const { t } = useTranslation("common");
   const { isEditMode } = useEditMode();
 
   const safeDetails: IMedicalCertificateDetails = {
@@ -86,7 +88,11 @@ export default function MedicalCertificationSection({
             className="block text-sm font-medium mb-1"
             style={{ color: "var(--color-on-surface-variant)" }}
           >
-            Document Number <span className="text-red-500">*</span>
+            {t(
+              "form.step2.page4.fields.medicalCert.documentNumber",
+              "DOT Medical Certificate Document Number"
+            )}{" "}
+            <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -110,7 +116,11 @@ export default function MedicalCertificationSection({
             className="block text-sm font-medium mb-1"
             style={{ color: "var(--color-on-surface-variant)" }}
           >
-            Issuing Authority <span className="text-red-500">*</span>
+            {t(
+              "form.step2.page4.fields.medicalCert.issuingAuthority",
+              "DOT Medical Certificate Issuing Authority"
+            )}{" "}
+            <span className="text-red-500">*</span>
           </label>
           <input
             type="text"
@@ -134,7 +144,10 @@ export default function MedicalCertificationSection({
             className="block text-sm font-medium mb-1"
             style={{ color: "var(--color-on-surface-variant)" }}
           >
-            Expiry Date (optional)
+            {t(
+              "form.step2.page4.fields.medicalCert.expiryDate",
+              "DOT Medical Certificate Expiry Date (optional)"
+            )}
           </label>
           <input
             type="date"

@@ -404,7 +404,7 @@ export default function EligibilityDocsSection({
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   {t(
                     "form.step2.page4.fields.medicalCert.documentNumber",
-                    "Document Number"
+                    "DOT Medical Certificate Document Number"
                   )}{" "}
                   <RequiredBadge />
                 </label>
@@ -427,7 +427,7 @@ export default function EligibilityDocsSection({
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   {t(
                     "form.step2.page4.fields.medicalCert.issuingAuthority",
-                    "Issuing Authority"
+                    "DOT Medical Certificate Issuing Authority"
                   )}{" "}
                   <RequiredBadge />
                 </label>
@@ -450,7 +450,7 @@ export default function EligibilityDocsSection({
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   {t(
                     "form.step2.page4.fields.medicalCert.expiryDate",
-                    "Expiry Date (optional)"
+                    "DOT Medical Certificate Expiry Date (optional)"
                   )}
                 </label>
                 <input

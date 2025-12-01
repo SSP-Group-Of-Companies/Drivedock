@@ -471,6 +471,11 @@
           "medicalCertification": "Certificación médica",
           "medicalCertificationPhotos": "Certificado médico (PDF)",
           "medicalCertificationDescription": "Sube un escaneo PDF claro de tu certificado médico DOT válido (frente y dorso si aplica).",
+          "medicalCert": {
+            "documentNumber": "Número de certificado médico DOT",
+            "issuingAuthority": "Autoridad emisora del certificado médico DOT",
+            "expiryDate": "Fecha de vencimiento del certificado médico DOT (opcional)"
+          },
 
           "oneOfTheseRequired": "Uno de estos requerido",
           "optional": "Opcional",

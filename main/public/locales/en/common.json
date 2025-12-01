@@ -488,6 +488,11 @@
           "medicalCertification": "Medical Certification",
           "medicalCertificationPhotos": "Medical Certificate (PDF)",
           "medicalCertificationDescription": "Upload a clear PDF scan of your valid DOT Medical Certificate (front and back if applicable).",
+          "medicalCert": {
+            "documentNumber": "DOT Medical Certificate Document Number",
+            "issuingAuthority": "DOT Medical Certificate Issuing Authority",
+            "expiryDate": "DOT Medical Certificate Expiry Date (optional)"
+          },
 
           "oneOfTheseRequired": "One of these required",
           "optional": "Optional",

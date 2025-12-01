@@ -471,6 +471,11 @@
           "medicalCertification": "Certification médicale",
           "medicalCertificationPhotos": "Certificat médical (PDF)",
           "medicalCertificationDescription": "Téléversez un scan PDF clair de votre certificat médical DOT valide (recto et verso le cas échéant).",
+          "medicalCert": {
+            "documentNumber": "Numéro de certificat médical DOT",
+            "issuingAuthority": "Autorité émettrice du certificat médical DOT",
+            "expiryDate": "Date d'expiration du certificat médical DOT (optionnel)"
+          },
 
           "oneOfTheseRequired": "Un de ceux-ci requis",
           "optional": "Optionnel",
