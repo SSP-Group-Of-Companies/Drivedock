@@ -183,6 +183,15 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     //   (prPermitCitizenshipPhotos + prPermitCitizenshipDetails)
     // is required (not both).
     // For Canadian drivers: existing rules stay the same.
+    
+    // Bundle detection variables (used later in merge logic to explicitly clear opposite bundle)
+    // CRITICAL: When frontend selects a bundle, it DELETES the opposite bundle's fields from payload.
+    // Without explicit clearing, hasKey() returns false and merge logic preserves old data (BUG).
+    // Solution: Detect which bundle is selected during validation, then explicitly clear opposite
+    // bundle in merge logic. This ensures old data doesn't persist when switching bundles.
+    let hasPassportBundle = false;
+    let hasPRBundle = false;
+    
     if (isUS) {
       // 1.1 Immigration status is required for US applicants
       if (!hasKey(body, "immigrationStatusInUS") || !isNonEmptyString(body.immigrationStatusInUS)) {
@@ -195,11 +204,11 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
       const hasPassportPhotos = passportPhotoCount > 0;
       const hasPassportDetails = !!body.passportDetails;
-      const hasPassportBundle = hasPassportPhotos || hasPassportDetails;
+      hasPassportBundle = hasPassportPhotos || hasPassportDetails;
 
       const hasPRPhotos = prPhotoCount > 0;
       const hasPRDetails = !!body.prPermitCitizenshipDetails;
-      const hasPRBundle = hasPRPhotos || hasPRDetails;
+      hasPRBundle = hasPRPhotos || hasPRDetails;
 
       // Must choose exactly one bundle
       if (!hasPassportBundle && !hasPRBundle) {
@@ -334,9 +343,108 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     }
 
     // =========================
-    // Phase 1: write page4 only (raw body, no S3 finalize yet)
+    // Phase 1: merge page4 with body (preserve existing fields not in body)
     // =========================
-    appFormDoc.set("page4", body as IApplicationFormPage4);
+    // Merge pattern: preserve existing data, only update fields explicitly in body
+    // This prevents overwriting fields like bankingInfoPhotos when they're not touched
+    const prevP4 = prev || ({} as IApplicationFormPage4);
+    const mergedPage4: IApplicationFormPage4 = {
+      ...prevP4,
+      // Always update fields that are required/always present in body
+      ...(isUS
+        ? {
+            immigrationStatusInUS: body.immigrationStatusInUS as any,
+            // US Bundle Logic: Explicitly clear opposite bundle to prevent data persistence issues
+            // When frontend selects a bundle, it deletes the opposite bundle's fields from payload.
+            // Without explicit clearing, hasKey() returns false and we preserve old data (BUG).
+            // Solution: Use bundle detection from validation to explicitly clear opposite bundle.
+            passportPhotos: hasPassportBundle
+              ? body.passportPhotos ?? []
+              : [], // Explicitly clear when PR bundle is selected
+            prPermitCitizenshipPhotos: hasPRBundle
+              ? body.prPermitCitizenshipPhotos ?? []
+              : [], // Explicitly clear when passport bundle is selected
+            passportDetails: hasPassportBundle
+              ? hasKey(body, "passportDetails")
+                ? body.passportDetails ?? undefined
+                : prevP4.passportDetails
+              : undefined, // Explicitly clear when PR bundle is selected
+            prPermitCitizenshipDetails: hasPRBundle
+              ? hasKey(body, "prPermitCitizenshipDetails")
+                ? body.prPermitCitizenshipDetails ?? undefined
+                : prevP4.prPermitCitizenshipDetails
+              : undefined, // Explicitly clear when passport bundle is selected
+            medicalCertificateDetails: body.medicalCertificateDetails!,
+            medicalCertificationPhotos: body.medicalCertificationPhotos ?? [],
+            healthCardPhotos: [], // forbidden for US
+            usVisaPhotos: [], // forbidden for US
+          }
+        : {
+            // Canada: passport photos always required
+            passportPhotos: body.passportPhotos ?? [],
+            prPermitCitizenshipPhotos: body.prPermitCitizenshipPhotos ?? [],
+            healthCardPhotos: body.healthCardPhotos ?? [],
+            usVisaPhotos: body.usVisaPhotos ?? [],
+            medicalCertificationPhotos: [], // forbidden for CA
+          }),
+      // Business section: only update if explicitly provided in body
+      ...(hasKey(body, "businessName")
+        ? { businessName: body.businessName ?? "" }
+        : {}),
+      ...(hasKey(body, "hstNumber")
+        ? { hstNumber: body.hstNumber ?? "" }
+        : {}),
+      ...(hasKey(body, "incorporatePhotos")
+        ? { incorporatePhotos: body.incorporatePhotos ?? [] }
+        : {}),
+      ...(hasKey(body, "hstPhotos")
+        ? { hstPhotos: body.hstPhotos ?? [] }
+        : {}),
+      // Banking: use body value if it has photos, otherwise preserve existing data
+      // This handles the case where form sends empty array [] for untouched fields
+      // but we want to preserve existing banking data that was previously saved
+      bankingInfoPhotos:
+        Array.isArray(body.bankingInfoPhotos) && body.bankingInfoPhotos.length > 0
+          ? body.bankingInfoPhotos
+          : Array.isArray(prevP4.bankingInfoPhotos) && prevP4.bankingInfoPhotos.length > 0
+          ? prevP4.bankingInfoPhotos
+          : body.bankingInfoPhotos ?? [],
+      // Criminal records
+      hasCriminalRecords: body.hasCriminalRecords ?? prevP4.hasCriminalRecords,
+      criminalRecords: body.criminalRecords ?? prevP4.criminalRecords ?? [],
+      // Additional info fields
+      deniedLicenseOrPermit: hasKey(body, "deniedLicenseOrPermit")
+        ? body.deniedLicenseOrPermit
+        : prevP4.deniedLicenseOrPermit,
+      suspendedOrRevoked: hasKey(body, "suspendedOrRevoked")
+        ? body.suspendedOrRevoked
+        : prevP4.suspendedOrRevoked,
+      suspensionNotes: hasKey(body, "suspensionNotes")
+        ? body.suspensionNotes ?? ""
+        : prevP4.suspensionNotes ?? "",
+      testedPositiveOrRefused: hasKey(body, "testedPositiveOrRefused")
+        ? body.testedPositiveOrRefused
+        : prevP4.testedPositiveOrRefused,
+      completedDOTRequirements: hasKey(body, "completedDOTRequirements")
+        ? body.completedDOTRequirements
+        : prevP4.completedDOTRequirements,
+      hasAccidentalInsurance: hasKey(body, "hasAccidentalInsurance")
+        ? body.hasAccidentalInsurance
+        : prevP4.hasAccidentalInsurance,
+      // Passport type selection (Canadian companies only)
+      passportType: hasKey(body, "passportType")
+        ? body.passportType
+        : prevP4.passportType,
+      workAuthorizationType: hasKey(body, "workAuthorizationType")
+        ? body.workAuthorizationType
+        : prevP4.workAuthorizationType,
+      // Fast card: only update if explicitly provided
+      ...(hasKey(body, "fastCard") ? { fastCard: body.fastCard } : {}),
+      // Truck details: only update if explicitly provided
+      ...(hasKey(body, "truckDetails") ? { truckDetails: body.truckDetails } : {}),
+    };
+
+    appFormDoc.set("page4", mergedPage4);
     await appFormDoc.validate(["page4"]);
     await appFormDoc.save({ validateBeforeSave: false });
 
@@ -349,14 +457,15 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
     if (bizDecision.mode === "clear") {
       if (prev) {
-        keysToHardDelete.push(...finalizedOnly(collect(prev.incorporatePhotos)), ...finalizedOnly(collect(prev.bankingInfoPhotos)), ...finalizedOnly(collect(prev.hstPhotos)));
+        // Only delete business-related S3 files, NOT banking (banking is independent)
+        keysToHardDelete.push(...finalizedOnly(collect(prev.incorporatePhotos)), ...finalizedOnly(collect(prev.hstPhotos)));
       }
-      // overwrite to empty in DB (already set above by body), ensure saved
+      // overwrite business fields to empty in DB (bankingInfoPhotos is NOT part of business section)
       appFormDoc.set("page4.businessName", "");
       appFormDoc.set("page4.hstNumber", "");
       appFormDoc.set("page4.incorporatePhotos", []);
-      appFormDoc.set("page4.bankingInfoPhotos", []);
       appFormDoc.set("page4.hstPhotos", []);
+      // NOTE: bankingInfoPhotos is intentionally NOT cleared here - it's independent of business section
       await appFormDoc.save({ validateBeforeSave: false });
     }
 

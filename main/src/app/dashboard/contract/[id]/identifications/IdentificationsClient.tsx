@@ -5,7 +5,10 @@ import { motion } from "framer-motion";
 import UpdateSubmitBar from "../safety-processing/components/UpdateSubmitBar";
 import { useSearchParams } from "next/navigation";
 import { useContract } from "@/hooks/dashboard/contract/useContract";
-import { useIdentifications, useUpdateIdentifications } from "@/hooks/dashboard/contract/useIdentifications";
+import {
+  useIdentifications,
+  useUpdateIdentifications,
+} from "@/hooks/dashboard/contract/useIdentifications";
 import { useDashboardPageLoading } from "@/hooks/useDashboardPageLoading";
 import { useDashboardLoading } from "@/store/useDashboardLoading";
 import DashboardFormWizard from "../components/DashboardFormWizard";
@@ -15,7 +18,6 @@ import type { PrequalificationsResponse } from "@/app/api/v1/admin/onboarding/[i
 import { COMPANIES } from "@/constants/companies";
 import { ECountryCode } from "@/types/shared.types";
 import StepNotCompletedMessage from "../components/StepNotCompletedMessage";
-
 
 export default function IdentificationsClient({
   trackerId,
@@ -32,26 +34,30 @@ export default function IdentificationsClient({
   // unified submit bar handles messaging
 
   // Check if we should highlight the Truck Details card
-  const shouldHighlightTruckDetails = searchParams.get("highlight") === "truck-details";
+  const shouldHighlightTruckDetails =
+    searchParams.get("highlight") === "truck-details";
 
   // React Query hooks
-  const { 
-    data: identificationsData, 
-    isLoading: isIdentificationsLoading, 
+  const {
+    data: identificationsData,
+    isLoading: isIdentificationsLoading,
     error,
-    isError 
+    isError,
   } = useIdentifications(trackerId);
-  
+
   const updateMutation = useUpdateIdentifications(trackerId);
   // Fetch prequalification data for driverType
-  const [prequalData, setPrequalData] = useState<PrequalificationsResponse | null>(null);
+  const [prequalData, setPrequalData] =
+    useState<PrequalificationsResponse | null>(null);
   const [, setIsPrequalLoading] = useState(true);
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         setIsPrequalLoading(true);
-        const resp = await fetch(`/api/v1/admin/onboarding/${trackerId}/prequalifications`);
+        const resp = await fetch(
+          `/api/v1/admin/onboarding/${trackerId}/prequalifications`
+        );
         if (!resp.ok) throw new Error("Failed to load prequalifications");
         const json = (await resp.json()) as PrequalificationsResponse;
         if (!cancelled) setPrequalData(json);
@@ -81,7 +87,6 @@ export default function IdentificationsClient({
       setStaged((prev) => ({ ...prev, ...update }));
     }
   };
-
 
   // Progressive loading: Show layout first, then content
   useEffect(() => {
@@ -177,47 +182,108 @@ export default function IdentificationsClient({
   const handleSave = async () => {
     if (!hasUnsavedChanges) return;
 
-    // Prepare the data in the format the API expects
-    const baseData = { ...identificationsData?.data };
-    // Remove onboardingContext as it's not part of the PATCH
+    const baseData = { ...identificationsData.data };
+    // Remove onboardingContext – never send to PATCH
     delete (baseData as any).onboardingContext;
 
-    // Get country to determine which fields to include
+    // Country context
     const company = COMPANIES.find((c) => c.id === contractData.companyId);
     const isCanadian = company?.countryCode === ECountryCode.CA;
     const isUS = company?.countryCode === ECountryCode.US;
 
-    // Filter data based on country requirements
-    const filteredData: any = {
-      licenses: baseData.licenses,
-      sinPhoto: baseData.sinPhoto, // Add SIN photo
-      hstNumber: baseData.hstNumber,
-      businessName: baseData.businessName,
-      incorporatePhotos: baseData.incorporatePhotos,
-      hstPhotos: baseData.hstPhotos,
-      bankingInfoPhotos: baseData.bankingInfoPhotos,
-      passportPhotos: baseData.passportPhotos,
-      prPermitCitizenshipPhotos: baseData.prPermitCitizenshipPhotos,
-      fastCard: baseData.fastCard,
-      passportType: baseData.passportType,
-      workAuthorizationType: baseData.workAuthorizationType,
-    };
-
-    // Add country-specific fields
-    if (isCanadian) {
-      filteredData.healthCardPhotos = baseData.healthCardPhotos;
-      filteredData.usVisaPhotos = baseData.usVisaPhotos;
-      // Don't include medicalCertificationPhotos for Canadians
-    } else if (isUS) {
-      filteredData.medicalCertificationPhotos =
-        baseData.medicalCertificationPhotos;
-      // Don't include healthCardPhotos or usVisaPhotos for US
+    if (!isCanadian && !isUS) {
+      throw new Error("Unsupported applicant country for identifications");
     }
 
+    /**
+     * We build a PatchBody that matches exactly what
+     * /api/v1/admin/onboarding/[id]/application-form/identifications expects.
+     *
+     * Strategy:
+     * - Start from GET data (baseData)
+     * - Apply staged overrides
+     * - Only include keys allowed for that country
+     */
+
+    // Always required in PATCH, regardless of edits
+    const core: any = {
+      licenses: baseData.licenses,
+      sinPhoto: baseData.sinPhoto,
+      // Truck details + fast card can be edited from this screen for both countries
+      truckDetails: baseData.truckDetails,
+      fastCard: baseData.fastCard,
+    };
+
+    // Business + banking (same structure for both; backend handles country rules)
+    const businessAndBanking: any = {
+      businessName: baseData.businessName,
+      incorporatePhotos: baseData.incorporatePhotos,
+      bankingInfoPhotos: baseData.bankingInfoPhotos,
+    };
+
+    // HST is *Canada only* – must not be present at all for US
+    if (isCanadian) {
+      businessAndBanking.hstNumber = baseData.hstNumber;
+      businessAndBanking.hstPhotos = baseData.hstPhotos;
+    }
+
+    // CA-specific eligibility docs
+    const caDocs: any = {};
+    if (isCanadian) {
+      caDocs.healthCardPhotos = baseData.healthCardPhotos;
+      caDocs.passportType = baseData.passportType;
+      caDocs.workAuthorizationType = baseData.workAuthorizationType;
+      caDocs.passportPhotos = baseData.passportPhotos;
+      caDocs.prPermitCitizenshipPhotos = baseData.prPermitCitizenshipPhotos;
+      caDocs.usVisaPhotos = baseData.usVisaPhotos;
+      // DO NOT send any medicalCertification fields for CA
+      // (backend forbids even the key for medicalCertificationPhotos)
+    }
+
+    // US-specific eligibility docs
+    const usDocs: any = {};
+    if (isUS) {
+      // Medical certificate (photos + details)
+      usDocs.medicalCertificationPhotos = baseData.medicalCertificationPhotos;
+      usDocs.medicalCertificateDetails = baseData.medicalCertificateDetails;
+
+      // Immigration + bundles
+      usDocs.immigrationStatusInUS = baseData.immigrationStatusInUS;
+      usDocs.passportPhotos = baseData.passportPhotos;
+      usDocs.prPermitCitizenshipPhotos = baseData.prPermitCitizenshipPhotos;
+      usDocs.passportDetails = baseData.passportDetails;
+      usDocs.prPermitCitizenshipDetails = baseData.prPermitCitizenshipDetails;
+
+      // DO NOT send HST, healthCardPhotos or usVisaPhotos for US
+    }
+
+    // Base payload before staged overrides
+    const filteredData: any = {
+      ...core,
+      ...businessAndBanking,
+      ...(isCanadian ? caDocs : {}),
+      ...(isUS ? usDocs : {}),
+    };
+
+    // staged can override / add any of the PatchBody keys
     const dataToSend = {
       ...filteredData,
-      ...staged, // Merge staged changes with filtered data
+      ...staged,
     };
+
+    // Final safety: strip forbidden fields if somehow present after staging
+    if (isUS) {
+      delete (dataToSend as any).hstNumber;
+      delete (dataToSend as any).hstPhotos;
+      delete (dataToSend as any).healthCardPhotos;
+      delete (dataToSend as any).usVisaPhotos;
+    } else if (isCanadian) {
+      delete (dataToSend as any).medicalCertificationPhotos;
+      delete (dataToSend as any).medicalCertificateDetails;
+      delete (dataToSend as any).immigrationStatusInUS;
+      delete (dataToSend as any).passportDetails;
+      delete (dataToSend as any).prPermitCitizenshipDetails;
+    }
 
     try {
       await updateMutation.mutateAsync(dataToSend);
@@ -275,7 +341,12 @@ export default function IdentificationsClient({
         </div>
 
         {/* Unified submit bar */}
-        <UpdateSubmitBar dirty={hasUnsavedChanges} busy={updateMutation.isPending} onSubmit={handleSave} onDiscard={handleDiscard} />
+        <UpdateSubmitBar
+          dirty={hasUnsavedChanges}
+          busy={updateMutation.isPending}
+          onSubmit={handleSave}
+          onDiscard={handleDiscard}
+        />
 
         <IdentificationsContent
           data={identificationsData.data}

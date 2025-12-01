@@ -39,7 +39,7 @@ import ImageZoomModal from "./ImageZoomModal";
 
 interface ImageGallerySectionProps {
   licenses: ILicenseEntry[];
-  sinPhoto?: IFileAsset; // Add SIN photo prop
+  sinPhoto?: IFileAsset; // SIN photo from Page 1
   incorporatePhotos: IFileAsset[];
   hstPhotos: IFileAsset[];
   bankingInfoPhotos: IFileAsset[];
@@ -66,8 +66,8 @@ interface GalleryItem {
   hasFrontBack: boolean;
   maxPhotos: number;
   required: boolean;
-  fieldKey: string; // For updating the correct field
-  businessValidation?: boolean; // For business section validation
+  fieldKey: string;
+  businessValidation?: boolean;
 }
 
 // helpers to classify asset types
@@ -100,6 +100,7 @@ export default function ImageGallerySection({
 }: ImageGallerySectionProps) {
   const { isEditMode } = useEditMode();
   const { id: trackerId } = useParams<{ id: string }>();
+
   const [selectedItem, setSelectedItem] = useState<string>("");
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
@@ -110,6 +111,9 @@ export default function ImageGallerySection({
   const [isMounted, setIsMounted] = useState(false);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isZoomModalOpen, setIsZoomModalOpen] = useState(false);
+
+  const isCanadian = countryCode === ECountryCode.CA;
+  const isUS = countryCode === ECountryCode.US;
 
   // Ensure component is mounted before rendering dynamic content
   useEffect(() => {
@@ -180,9 +184,6 @@ export default function ImageGallerySection({
   };
 
   // Build gallery items from all photo collections based on country
-  const isCanadian = countryCode === ECountryCode.CA;
-  const isUS = countryCode === ECountryCode.US;
-
   const galleryItems: GalleryItem[] = [
     // SIN photo - from page1 (always show, it's required)
     {
@@ -211,7 +212,7 @@ export default function ImageGallerySection({
             maxPhotos: PHOTO_LIMITS.license,
             required: true,
             fieldKey: "licenses",
-          },
+          } as GalleryItem,
         ]
       : []),
 
@@ -228,13 +229,13 @@ export default function ImageGallerySection({
             type: "fastCard",
             hasFrontBack: true,
             maxPhotos: PHOTO_LIMITS.fastCard,
-            required: true, // Fast Card requires both photos if provided
+            required: true, // requires both photos if present
             fieldKey: "fastCard",
-          },
+          } as GalleryItem,
         ]
       : []),
 
-    // Business documents - always available
+    // Business documents - incorporation is always available
     {
       id: "incorporate",
       title: "Incorporate Documents",
@@ -244,19 +245,25 @@ export default function ImageGallerySection({
       maxPhotos: PHOTO_LIMITS.incorporate,
       required: false,
       fieldKey: "incorporatePhotos",
-      businessValidation: true, // Mark for business validation
+      businessValidation: true,
     },
-    {
-      id: "hst",
-      title: "HST Documents",
-      photos: hstPhotos || [],
-      type: "hst",
-      hasFrontBack: false,
-      maxPhotos: PHOTO_LIMITS.hst,
-      required: false,
-      fieldKey: "hstPhotos",
-      businessValidation: true, // Mark for business validation
-    },
+    // HST documents – CA only (US must not see / send)
+    ...(isCanadian
+      ? [
+          {
+            id: "hst",
+            title: "HST Documents",
+            photos: hstPhotos || [],
+            type: "hst",
+            hasFrontBack: false,
+            maxPhotos: PHOTO_LIMITS.hst,
+            required: false,
+            fieldKey: "hstPhotos",
+            businessValidation: true,
+          } as GalleryItem,
+        ]
+      : []),
+
     {
       id: "banking",
       title: "Banking Information",
@@ -271,7 +278,6 @@ export default function ImageGallerySection({
     // Medical/Identity documents - country-specific
     ...(isCanadian
       ? [
-          // Canadian requirements
           {
             id: "healthCard",
             title: "Health Card",
@@ -281,8 +287,7 @@ export default function ImageGallerySection({
             maxPhotos: PHOTO_LIMITS.healthCard,
             required: true,
             fieldKey: "healthCardPhotos",
-          },
-          // US Visa - show for Others passport, required only for cross-border work authorization
+          } as GalleryItem,
           ...(passportType === EPassportType.OTHERS
             ? [
                 {
@@ -296,7 +301,7 @@ export default function ImageGallerySection({
                     workAuthorizationType ===
                     EWorkAuthorizationType.CROSS_BORDER,
                   fieldKey: "usVisaPhotos",
-                },
+                } as GalleryItem,
               ]
             : []),
         ]
@@ -304,7 +309,6 @@ export default function ImageGallerySection({
 
     ...(isUS
       ? [
-          // US requirements
           {
             id: "medical",
             title: "Medical Certification",
@@ -312,13 +316,13 @@ export default function ImageGallerySection({
             type: "medical",
             hasFrontBack: false,
             maxPhotos: PHOTO_LIMITS.medical,
-            required: true, // Can be 1-2 photos, but required
+            required: true,
             fieldKey: "medicalCertificationPhotos",
-          },
+          } as GalleryItem,
         ]
       : []),
 
-    // Universal requirements - everyone needs these
+    // Universal work authorization docs
     {
       id: "passport",
       title: "Passport",
@@ -329,7 +333,6 @@ export default function ImageGallerySection({
       required: true,
       fieldKey: "passportPhotos",
     },
-    // PR/Permit/Citizenship - only required for non-Canadian passports or US companies
     ...(isUS || (isCanadian && passportType === EPassportType.OTHERS)
       ? [
           {
@@ -341,7 +344,7 @@ export default function ImageGallerySection({
             maxPhotos: PHOTO_LIMITS.prPermit,
             required: true,
             fieldKey: "prPermitCitizenshipPhotos",
-          },
+          } as GalleryItem,
         ]
       : []),
   ];
@@ -377,22 +380,16 @@ export default function ImageGallerySection({
   const getPhotoLabel = (item: GalleryItem, index: number) => {
     if (!item.hasFrontBack) return `Photo ${index + 1}`;
 
-    if (item.type === "license") {
-      return index === 0 ? "Front" : "Back";
-    } else if (item.type === "fastCard") {
-      return index === 0 ? "Front" : "Back";
-    } else if (item.type === "healthCard") {
-      return index === 0 ? "Front" : "Back";
-    } else if (item.type === "passport") {
-      return index === 0 ? "Front" : "Back";
-    }
+    if (item.type === "license") return index === 0 ? "Front" : "Back";
+    if (item.type === "fastCard") return index === 0 ? "Front" : "Back";
+    if (item.type === "healthCard") return index === 0 ? "Front" : "Back";
+    if (item.type === "passport") return index === 0 ? "Front" : "Back";
 
     return `Photo ${index + 1}`;
   };
 
-  const canAddPhoto = (item: GalleryItem) => {
-    return item.photos.length < item.maxPhotos;
-  };
+  const canAddPhoto = (item: GalleryItem) =>
+    item.photos.length < item.maxPhotos;
 
   const handleAddPhoto = async (item: GalleryItem) => {
     if (!canAddPhoto(item)) {
@@ -402,7 +399,6 @@ export default function ImageGallerySection({
       return;
     }
 
-    // Create a file input for upload (now supports images + PDFs)
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "image/*,application/pdf";
@@ -414,7 +410,6 @@ export default function ImageGallerySection({
       setUploadError("");
 
       try {
-        // Use the same S3 upload system as onboarding
         const folder = getS3FolderForType(item.type);
         const result = await uploadToS3Presigned({
           file,
@@ -422,17 +417,13 @@ export default function ImageGallerySection({
           trackerId: trackerId || "unknown",
         });
 
-        // Create new photo object with actual S3 data
         const newPhoto: IFileAsset = result;
 
-        // Handle SIN photo - single photo field
         if (item.type === "sin") {
           onStage({ sinPhoto: newPhoto });
         } else if (item.type === "fastCard") {
-          // Find which photo is missing (front or back)
           const currentPhotos = item.photos;
           if (currentPhotos.length === 0) {
-            // No photos yet, add as front photo
             onStage({
               fastCard: {
                 ...fastCard,
@@ -440,7 +431,6 @@ export default function ImageGallerySection({
               },
             });
           } else if (currentPhotos.length === 1) {
-            // One photo exists, add as back photo
             const existingPhoto = currentPhotos[0];
             const isFrontPhoto = existingPhoto === fastCard?.fastCardFrontPhoto;
 
@@ -461,10 +451,8 @@ export default function ImageGallerySection({
             }
           }
         } else if (item.type === "license") {
-          // Handle license photos - they're stored as properties on the license object
           const currentPhotos = item.photos;
           if (currentPhotos.length === 0) {
-            // No photos yet, add as front photo
             const updatedLicenses = [...licenses];
             updatedLicenses[0] = {
               ...updatedLicenses[0],
@@ -472,7 +460,6 @@ export default function ImageGallerySection({
             };
             onStage({ licenses: updatedLicenses });
           } else if (currentPhotos.length === 1) {
-            // One photo exists, add as back photo
             const updatedLicenses = [...licenses];
             const existingPhoto = currentPhotos[0];
             const isFrontPhoto =
@@ -492,7 +479,6 @@ export default function ImageGallerySection({
             onStage({ licenses: updatedLicenses });
           }
         } else {
-          // Regular array-based photos — derive from latest staged state to avoid stale closures
           onStage((prev: any) => {
             const prevArr: IFileAsset[] = Array.isArray(prev?.[item.fieldKey])
               ? prev[item.fieldKey]
@@ -516,7 +502,6 @@ export default function ImageGallerySection({
   // Removes a photo from staged state for any gallery item shape
   const _removePhotoFromState = (item: GalleryItem, photoIndex: number) => {
     if (item.type === "sin") {
-      // SIN photo is a single photo field, not an array
       onStage({ sinPhoto: undefined });
       setCurrentPhotoIndex(0);
       return;
@@ -542,7 +527,6 @@ export default function ImageGallerySection({
         });
       }
 
-      // index adjustments
       if (
         currentPhotoIndex >= currentPhotos.length - 1 &&
         currentPhotos.length > 1
@@ -604,13 +588,11 @@ export default function ImageGallerySection({
     setDeleteError("");
     setDeleteMessage("");
 
-    // Nothing to delete? Just clear from state.
     if (!key && !photo?.url) {
       _removePhotoFromState(item, photoIndex);
       return;
     }
 
-    // If temp (s3Key starts with temp-files/): call API to delete BEFORE clearing UI
     if (key && isTempKey(key)) {
       try {
         setIsDeleting(true);
@@ -627,13 +609,11 @@ export default function ImageGallerySection({
       return;
     }
 
-    // Final / non-temp: remove from state immediately (no server call)
     _removePhotoFromState(item, photoIndex);
     setDeleteMessage("");
   };
 
   const handleEditPhoto = async (item: GalleryItem, photoIndex: number) => {
-    // Create a file input for photo replacement (supports images + PDFs)
     const input = document.createElement("input");
     input.type = "file";
     input.accept = "image/*,application/pdf";
@@ -645,7 +625,6 @@ export default function ImageGallerySection({
       setUploadError("");
 
       try {
-        // Use the same S3 upload system as onboarding
         const folder = getS3FolderForType(item.type);
         const result = await uploadToS3Presigned({
           file,
@@ -653,17 +632,14 @@ export default function ImageGallerySection({
           trackerId: trackerId || "unknown",
         });
 
-        // Create new photo object with actual S3 data
         const newPhoto: IFileAsset = result;
 
-        // Handle SIN photo - single photo field
         if (item.type === "sin") {
           onStage({ sinPhoto: newPhoto });
         } else if (item.type === "fastCard") {
           const currentPhotos = item.photos;
           const photoToReplace = currentPhotos[photoIndex];
 
-          // Determine which photo to replace and update accordingly
           if (photoToReplace === fastCard?.fastCardFrontPhoto) {
             onStage({
               fastCard: {
@@ -680,7 +656,6 @@ export default function ImageGallerySection({
             });
           }
         } else if (item.type === "license") {
-          // Handle license photos - they're stored as properties on the license object
           const currentPhotos = item.photos;
           const photoToReplace = currentPhotos[photoIndex];
 
@@ -698,7 +673,6 @@ export default function ImageGallerySection({
           }
           onStage({ licenses: updatedLicenses });
         } else {
-          // Regular array-based photos — derive from latest staged state to avoid stale closures
           onStage((prev: any) => {
             const prevArr: IFileAsset[] = Array.isArray(prev?.[item.fieldKey])
               ? prev[item.fieldKey]
@@ -725,7 +699,6 @@ export default function ImageGallerySection({
     if (!url) return undefined;
     try {
       const u = new URL(url);
-      // For URLs like https://<bucket>.s3.<region>.amazonaws.com/<KEY...>
       return u.pathname.replace(/^\/+/, "");
     } catch {
       return undefined;
@@ -738,20 +711,16 @@ export default function ImageGallerySection({
     photoLabel: string
   ) => {
     try {
-      // Build a safe base name; server will append the correct extension if missing
       const base = `${itemTitle.replace(/\s+/g, "_")}_${photoLabel.replace(
         /\s+/g,
         "_"
       )}`;
 
-      // Prefer s3Key; otherwise derive from legacy public URL
       const key = photo.s3Key || extractS3KeyFromUrl(photo.url);
       if (!key) throw new Error("File is missing S3 key/url.");
 
-      // Ask backend for a presigned GET that forces download with Content-Disposition
       const url = await getDownloadUrlFromS3Key({ s3Key: key, filename: base });
 
-      // Trigger a navigation download (no CORS, no blobs)
       const a = document.createElement("a");
       a.href = url;
       document.body.appendChild(a);
@@ -763,7 +732,6 @@ export default function ImageGallerySection({
     }
   };
 
-  // Handle crop commit - upload and stage the cropped image
   const handleCropCommit = async (blob: Blob) => {
     if (!selectedItemData) return;
 
@@ -774,7 +742,6 @@ export default function ImageGallerySection({
       });
       const asset = await uploadToS3Presigned({ file, folder, trackerId });
 
-      // Replace correct slot & stage (this flips dirty)
       replaceAssetAndStage(selectedItemData, currentPhotoIndex, asset);
     } catch (error: any) {
       console.error("Failed to save cropped image:", error);
@@ -782,7 +749,6 @@ export default function ImageGallerySection({
     }
   };
 
-  // Helper function to replace asset and stage (reuse existing logic)
   const replaceAssetAndStage = (
     item: GalleryItem,
     photoIndex: number,
@@ -821,7 +787,6 @@ export default function ImageGallerySection({
       return;
     }
 
-    // Array-based collections stay index-based
     onStage((prev: any) => {
       const prevArr: IFileAsset[] = Array.isArray(prev?.[item.fieldKey])
         ? prev[item.fieldKey]
@@ -841,45 +806,142 @@ export default function ImageGallerySection({
     setIsZoomModalOpen(false);
   };
 
-  // Business section validation helper (reflect driver-type requirements)
+  // Business section validation: CA vs US rules
   const getBusinessValidationStatus = () => {
-    const hasBusinessData =
-      (businessName && businessName.trim()) ||
-      (hstNumber && hstNumber.trim()) ||
-      (incorporatePhotos && incorporatePhotos.length > 0) ||
-      (hstPhotos && hstPhotos.length > 0);
+    // Canada: businessName + HST number + HST docs + incorporate docs
+    if (isCanadian) {
+      const hasAny =
+        (businessName && businessName.trim()) ||
+        (hstNumber && hstNumber.trim()) ||
+        (incorporatePhotos && incorporatePhotos.length > 0) ||
+        (hstPhotos && hstPhotos.length > 0);
 
-    if (!hasBusinessData) return null; // No business data, no validation needed
+      if (!hasAny) return null;
 
-    // Check if all business fields are filled
-    const allFieldsFilled =
-      businessName &&
-      businessName.trim() &&
-      hstNumber &&
-      hstNumber.trim() &&
-      incorporatePhotos &&
-      incorporatePhotos.length > 0 &&
-      hstPhotos &&
-      hstPhotos.length > 0;
+      const allFilled =
+        businessName &&
+        businessName.trim() &&
+        hstNumber &&
+        hstNumber.trim() &&
+        incorporatePhotos &&
+        incorporatePhotos.length > 0 &&
+        hstPhotos &&
+        hstPhotos.length > 0;
 
-    if (!allFieldsFilled) {
+      if (!allFilled) {
+        return {
+          type: "error" as const,
+          message:
+            "If you provide any business information, all fields must be completed",
+        };
+      }
+
       return {
-        type: "error" as const,
-        message:
-          "If you provide any business information, all fields must be completed",
+        type: "success" as const,
+        message: "Business information complete",
       };
     }
 
-    return {
-      type: "success" as const,
-      message: "Business information complete",
-    };
+    // US: no HST; businessName + incorporate docs only
+    if (isUS) {
+      const hasAny =
+        (businessName && businessName.trim()) ||
+        (incorporatePhotos && incorporatePhotos.length > 0);
+
+      if (!hasAny) return null;
+
+      const allFilled =
+        businessName &&
+        businessName.trim() &&
+        incorporatePhotos &&
+        incorporatePhotos.length > 0;
+
+      if (!allFilled) {
+        return {
+          type: "error" as const,
+          message:
+            "If you provide business information, business name and incorporation documents are required",
+        };
+      }
+
+      return {
+        type: "success" as const,
+        message: "Business information complete",
+      };
+    }
+
+    return null;
   };
 
   const getValidationStatus = (item: GalleryItem) => {
-    // Business validation - check if all business fields are filled
+    // Business validation block
     if (item.businessValidation) {
       return getBusinessValidationStatus();
+    }
+
+    // US bundle rules: Passport vs PR/Permit/Citizenship
+    if (isUS && (item.type === "passport" || item.type === "prPermit")) {
+      const passportCount = passportPhotos?.length ?? 0;
+      const prCount = prPermitCitizenshipPhotos?.length ?? 0;
+
+      const hasPassport = passportCount > 0;
+      const hasPR = prCount > 0;
+
+      // Neither bundle chosen
+      if (!hasPassport && !hasPR) {
+        return {
+          type: "error" as const,
+          message:
+            "US applicants must provide either Passport or PR / Permit / Citizenship documents",
+        };
+      }
+
+      // Both bundles chosen
+      if (hasPassport && hasPR) {
+        return {
+          type: "error" as const,
+          message:
+            "Provide either Passport OR PR / Permit / Citizenship documents, not both",
+        };
+      }
+
+      // One bundle chosen -> validate that bundle; the other tile acknowledges that the other is used
+      if (item.type === "passport") {
+        if (!hasPassport) {
+          return {
+            type: "success" as const,
+            message: "Using PR / Permit / Citizenship bundle",
+          };
+        }
+        if (passportCount !== 2) {
+          return {
+            type: "error" as const,
+            message: "Passport requires exactly 2 photos (front and back)",
+          };
+        }
+        return {
+          type: "success" as const,
+          message: "Passport document requirements met",
+        };
+      } else {
+        // prPermit tile
+        if (!hasPR) {
+          return {
+            type: "success" as const,
+            message: "Using Passport bundle",
+          };
+        }
+        if (prCount < 1 || prCount > 2) {
+          return {
+            type: "error" as const,
+            message: "PR / Permit / Citizenship requires 1–2 document uploads",
+          };
+        }
+        return {
+          type: "success" as const,
+          message: "PR / Permit / Citizenship document requirements met",
+        };
+      }
     }
 
     // Fast Card is special: optional but requires both photos if provided
@@ -896,11 +958,10 @@ export default function ImageGallerySection({
           message: `${item.title} requirements met`,
         };
       }
-      // No photos = optional, no validation message
       return null;
     }
 
-    // For other required items
+    // Generic required logic
     if (!item.required) return null;
 
     if (item.hasFrontBack && item.photos.length !== 2) {
@@ -923,7 +984,6 @@ export default function ImageGallerySection({
     };
   };
 
-  // Don't render dynamic content until mounted to prevent hydration mismatch
   if (!isMounted) {
     return (
       <div
@@ -1052,7 +1112,7 @@ export default function ImageGallerySection({
         </div>
       </div>
 
-      {/* Mobile Navigation Drawer - Sidebar Style */}
+      {/* Mobile Navigation Drawer */}
       <div
         className={[
           "fixed inset-0 z-[2000] lg:hidden",
@@ -1062,7 +1122,6 @@ export default function ImageGallerySection({
         aria-modal="true"
         aria-hidden={!isMobileNavOpen}
       >
-        {/* Scrim (fades in/out) */}
         <button
           aria-label="Close navigation"
           onClick={() => setIsMobileNavOpen(false)}
@@ -1075,7 +1134,6 @@ export default function ImageGallerySection({
           style={{ backgroundColor: "var(--color-shadow-high)" }}
         />
 
-        {/* Slide-over panel */}
         <div
           className={[
             "absolute inset-y-0 left-0 z-10 w-72 sm:w-80",
@@ -1092,7 +1150,6 @@ export default function ImageGallerySection({
               "var(--color-shadow-elevated) 0 10px 15px -3px, var(--color-shadow-elevated) 0 4px 6px -2px",
           }}
         >
-          {/* Header */}
           <div
             className="h-14 flex items-center justify-between px-4 border-b"
             style={{ borderColor: "var(--color-outline)" }}
@@ -1113,7 +1170,6 @@ export default function ImageGallerySection({
             </button>
           </div>
 
-          {/* Navigation Items */}
           <div className="flex-1 overflow-y-auto p-4">
             <div className="space-y-2">
               {galleryItems.map((item) => {
@@ -1189,7 +1245,6 @@ export default function ImageGallerySection({
                 {selectedItemData.title}
               </h3>
 
-              {/* Validation Status */}
               {(() => {
                 const validation = getValidationStatus(selectedItemData);
                 if (validation) {
@@ -1244,7 +1299,6 @@ export default function ImageGallerySection({
       <div className="p-6">
         {selectedItemData ? (
           <div className="space-y-6">
-            {/* Upload Error */}
             {uploadError && (
               <div className="p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm flex items-center gap-2">
                 <AlertCircle className="h-4 w-4" />
@@ -1252,7 +1306,6 @@ export default function ImageGallerySection({
               </div>
             )}
 
-            {/* Delete Status / Errors */}
             {deleteMessage && (
               <div
                 className="p-3 rounded-lg border text-sm"
@@ -1271,10 +1324,8 @@ export default function ImageGallerySection({
               </div>
             )}
 
-            {/* Photo Display */}
             {selectedItemData.photos.length > 0 ? (
               <div className="space-y-4">
-                {/* Main Image / PDF */}
                 <div className="relative">
                   <div
                     className="relative w-full h-96 rounded-xl border overflow-hidden shadow-sm"
@@ -1343,10 +1394,8 @@ export default function ImageGallerySection({
                     )}
                   </div>
 
-                  {/* Action Buttons */}
                   {currentPhoto?.url && (
                     <div className="absolute top-4 right-4 flex gap-2">
-                      {/* Zoom Button (images only) */}
                       {isCurrentPhotoImage && (
                         <button
                           onClick={handleZoomImage}
@@ -1362,7 +1411,6 @@ export default function ImageGallerySection({
                         </button>
                       )}
 
-                      {/* Download Button (images + PDFs) */}
                       <button
                         onClick={() =>
                           handleDownloadImage(
@@ -1383,7 +1431,6 @@ export default function ImageGallerySection({
                     </div>
                   )}
 
-                  {/* Navigation Controls */}
                   {selectedItemData.photos.length > 1 && (
                     <>
                       <button
@@ -1412,7 +1459,6 @@ export default function ImageGallerySection({
                   )}
                 </div>
 
-                {/* Photo Info and Controls */}
                 <div
                   className="flex items-center justify-between p-4 rounded-lg"
                   style={{
@@ -1463,7 +1509,6 @@ export default function ImageGallerySection({
                   )}
                 </div>
 
-                {/* Thumbnail Navigation */}
                 {selectedItemData.photos.length > 1 && (
                   <div className="flex gap-3 overflow-x-auto pb-2">
                     {selectedItemData.photos.map((photo, index) => (
@@ -1574,7 +1619,6 @@ export default function ImageGallerySection({
         )}
       </div>
 
-      {/* Image Zoom Modal (images only) */}
       <ImageZoomModal
         isOpen={isZoomModalOpen && !!zoomImageUrl}
         onClose={handleCloseZoomModal}
@@ -1595,7 +1639,7 @@ export default function ImageGallerySection({
           }
         }}
         enableCrop={isEditMode && isCurrentPhotoImage}
-        cropAspect={null} // Free crop
+        cropAspect={null}
         onCropCommit={handleCropCommit}
       />
     </div>

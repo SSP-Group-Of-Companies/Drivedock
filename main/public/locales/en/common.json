@@ -397,7 +397,9 @@
           "business": {
             "title": "Incorporate Details",
             "disclaimer": {
-              "text": "If you provide any incorporation detail, you must complete every field and upload all related documents in this section. This includes HST Number, Business Name, and the required PDF documents (Incorporation, HST)."
+              "text": "If you provide any incorporation detail, you must complete every field and upload all related documents in this section. This includes your business name and all required PDF documents related to your incorporation.",
+              "required": "This section is required for Owner Operators and Owner Drivers. All fields must be completed and all related documents must be uploaded, including your business name, HST number (if applicable), and all required PDF documents related to your incorporation.",
+              "optionalAllOrNothing": "This section is optional for Company Drivers. However, if you choose to provide any incorporation detail, you must complete every field and upload all related documents in this section. This includes your business name, HST number (if applicable), and all required PDF documents related to your incorporation."
             }
           },
           "banking": {
@@ -428,6 +430,8 @@
           "businessName": "Business Name",
           "incorporatePhotos": "Incorporation Documents (PDF)",
           "hstPhotos": "HST Document (PDF)",
+          "required": "(Required)",
+          "optionalButAllRequired": "Optional, but if filled, all must be supplied",
           "bankingInfoPhotos": "Banking Information (PDF)",
           "denied": "Have you ever been denied a license, permit or privilege to operate a motor vehicle?",
           "suspended": "Has any license, permit or privilege ever been suspended or revoked?",
@@ -484,6 +488,11 @@
           "medicalCertification": "Medical Certification",
           "medicalCertificationPhotos": "Medical Certificate (PDF)",
           "medicalCertificationDescription": "Upload a clear PDF scan of your valid DOT Medical Certificate (front and back if applicable).",
+          "medicalCert": {
+            "documentNumber": "DOT Medical Certificate Document Number",
+            "issuingAuthority": "DOT Medical Certificate Issuing Authority",
+            "expiryDate": "DOT Medical Certificate Expiry Date (optional)"
+          },
 
           "oneOfTheseRequired": "One of these required",
           "optional": "Optional",

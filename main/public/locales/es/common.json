@@ -380,7 +380,9 @@
           "business": {
             "title": "Detalles de incorporación",
             "disclaimer": {
-              "text": "Si proporcionas algún detalle de incorporación, debes completar todos los campos y subir todos los documentos relacionados en esta sección. Esto incluye el número de HST, el nombre de la empresa y los documentos PDF requeridos (incorporación, HST)."
+              "text": "Si proporcionas algún detalle de incorporación, debes completar todos los campos y subir todos los documentos relacionados en esta sección. Esto incluye el nombre de la empresa y todos los documentos PDF requeridos relacionados con la incorporación.",
+              "required": "Esta sección es obligatoria para los propietarios-operadores y los propietarios-conductores. Todos los campos deben completarse y todos los documentos relacionados deben subirse, incluido el nombre de la empresa, el número HST (si corresponde) y todos los documentos PDF requeridos relacionados con la incorporación.",
+              "optionalAllOrNothing": "Esta sección es opcional para los conductores de empresa. Sin embargo, si decides proporcionar algún detalle de incorporación, debes completar todos los campos y subir todos los documentos relacionados en esta sección. Esto incluye el nombre de la empresa, el número HST (si corresponde) y todos los documentos PDF requeridos relacionados con la incorporación."
             }
           },
           "banking": {
@@ -411,6 +413,8 @@
           "businessName": "Nombre de la empresa",
           "incorporatePhotos": "Documentos de incorporación (PDF)",
           "hstPhotos": "Documento HST (PDF)",
+          "required": "(Requerido)",
+          "optionalButAllRequired": "Opcional, pero si se completa, todo debe proporcionarse",
           "bankingInfoPhotos": "Información bancaria (PDF)",
           "denied": "¿Alguna vez te han negado una licencia, permiso o privilegio para operar un vehículo motorizado?",
           "suspended": "¿Se te ha suspendido o revocado alguna vez una licencia, permiso o privilegio?",
@@ -467,6 +471,11 @@
           "medicalCertification": "Certificación médica",
           "medicalCertificationPhotos": "Certificado médico (PDF)",
           "medicalCertificationDescription": "Sube un escaneo PDF claro de tu certificado médico DOT válido (frente y dorso si aplica).",
+          "medicalCert": {
+            "documentNumber": "Número de certificado médico DOT",
+            "issuingAuthority": "Autoridad emisora del certificado médico DOT",
+            "expiryDate": "Fecha de vencimiento del certificado médico DOT (opcional)"
+          },
 
           "oneOfTheseRequired": "Uno de estos requerido",
           "optional": "Opcional",

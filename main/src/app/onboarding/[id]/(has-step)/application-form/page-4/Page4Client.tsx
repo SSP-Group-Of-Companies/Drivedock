@@ -18,7 +18,7 @@ import { IOnboardingTrackerContext } from "@/types/onboardingTracker.types";
 import ContinueButton from "@/app/onboarding/[id]/(has-step)/ContinueButton";
 import { makePage4Config } from "@/lib/frontendConfigs/applicationFormConfigs/page4Config";
 
-// Sections (assume you already have or will create these)
+// Sections
 import CriminalRecordsSection from "./components/CriminalRecordsSection";
 import BusinessSection from "./components/BusinessSection";
 import BankingInfoSection from "@/app/onboarding/[id]/(has-step)/application-form/page-4/components/BankingInfoSection";
@@ -38,6 +38,26 @@ function formatDate(d?: string | Date | null) {
 function mapDefaults(
   page4: IApplicationFormPage4 | null
 ): ApplicationFormPage4Input {
+  // Derive sensible defaults for nested details
+  const medicalDetails = page4?.medicalCertificateDetails ?? undefined;
+  const passportDetails = page4?.passportDetails ?? undefined;
+  const prDetails = page4?.prPermitCitizenshipDetails ?? undefined;
+
+  // Infer US work auth bundle from existing data (for edit flows)
+  let usWorkAuthBundle: "passport" | "pr_permit" | "" = "";
+  if (
+    (page4?.passportPhotos && page4.passportPhotos.length > 0) ||
+    (passportDetails && passportDetails.documentNumber)
+  ) {
+    usWorkAuthBundle = "passport";
+  } else if (
+    (page4?.prPermitCitizenshipPhotos &&
+      page4.prPermitCitizenshipPhotos.length > 0) ||
+    (prDetails && prDetails.documentNumber)
+  ) {
+    usWorkAuthBundle = "pr_permit";
+  }
+
   return {
     hasCriminalRecords:
       page4 && Object.prototype.hasOwnProperty.call(page4, "hasCriminalRecords")
@@ -54,33 +74,85 @@ function mapDefaults(
           }))
         : [{ offense: "", dateOfSentence: "", courtLocation: "" }],
 
+    // Business / banking
     hstNumber: page4?.hstNumber ?? "",
     businessName: page4?.businessName ?? "",
     hstPhotos: page4?.hstPhotos ?? [],
     incorporatePhotos: page4?.incorporatePhotos ?? [],
     bankingInfoPhotos: page4?.bankingInfoPhotos ?? [],
 
+    // Health / medical
     healthCardPhotos: page4?.healthCardPhotos ?? [],
     medicalCertificationPhotos: page4?.medicalCertificationPhotos ?? [],
+    medicalCertificateDetails: medicalDetails
+      ? {
+          documentNumber: medicalDetails.documentNumber ?? "",
+          issuingAuthority: medicalDetails.issuingAuthority ?? "",
+          expiryDate: formatDate(medicalDetails.expiryDate ?? null),
+        }
+      : {
+          documentNumber: "",
+          issuingAuthority: "",
+          expiryDate: "",
+        },
+
+    // US immigration
+    immigrationStatusInUS: page4?.immigrationStatusInUS ?? "",
 
     // Passport type selection (Canadian companies only)
     passportType: page4?.passportType ?? undefined,
     workAuthorizationType: page4?.workAuthorizationType ?? undefined,
 
+    // Work authorization docs (CA + US)
     passportPhotos: page4?.passportPhotos ?? [],
     usVisaPhotos: page4?.usVisaPhotos ?? [],
     prPermitCitizenshipPhotos: page4?.prPermitCitizenshipPhotos ?? [],
 
+    passportDetails: passportDetails
+      ? {
+          documentNumber: passportDetails.documentNumber ?? "",
+          issuingAuthority: passportDetails.issuingAuthority ?? "",
+          countryOfIssue: passportDetails.countryOfIssue ?? "",
+          expiryDate: formatDate(passportDetails.expiryDate ?? null),
+        }
+      : {
+          documentNumber: "",
+          issuingAuthority: "",
+          countryOfIssue: "",
+          expiryDate: "",
+        },
+
+    prPermitCitizenshipDetails: prDetails
+      ? {
+          documentType: prDetails.documentType,
+          documentNumber: prDetails.documentNumber ?? "",
+          issuingAuthority: prDetails.issuingAuthority ?? "",
+          countryOfIssue: prDetails.countryOfIssue ?? "",
+          expiryDate: formatDate(prDetails.expiryDate ?? null),
+        }
+      : {
+          // documentType left undefined by default; user must choose
+          documentType: undefined as any,
+          documentNumber: "",
+          issuingAuthority: "",
+          countryOfIssue: "",
+          expiryDate: "",
+        },
+
+    // UI-only toggle for US bundle selection
+    usWorkAuthBundle,
+
+    // FAST card
     fastCard: page4?.fastCard
       ? {
           fastCardNumber: page4.fastCard.fastCardNumber || "",
           fastCardExpiry: formatDate(page4.fastCard.fastCardExpiry),
-          // leave undefined unless real photos exist
           fastCardFrontPhoto: page4.fastCard.fastCardFrontPhoto ?? undefined,
           fastCardBackPhoto: page4.fastCard.fastCardBackPhoto ?? undefined,
         }
       : undefined,
 
+    // Additional info
     deniedLicenseOrPermit: page4?.deniedLicenseOrPermit ?? undefined,
     suspendedOrRevoked: page4?.suspendedOrRevoked ?? undefined,
     suspensionNotes: page4?.suspensionNotes ?? "",
@@ -106,9 +178,11 @@ export default function Page4Client({
   const defaultValues = useMemo(() => mapDefaults(page4), [page4]);
 
   // derive country from companyId; default to US if unknown
-  const countryCode: ECountryCode = onboardingContext.companyId && isCanadianCompany(onboardingContext.companyId)
-    ? ECountryCode.CA
-    : ECountryCode.US;
+  const countryCode: ECountryCode =
+    onboardingContext.companyId &&
+    isCanadianCompany(onboardingContext.companyId)
+      ? ECountryCode.CA
+      : ECountryCode.US;
 
   // Use DB prequalification driverType from GET; do not rely on local storage
   const driverType: EDriverType | null =
@@ -130,13 +204,16 @@ export default function Page4Client({
     defaultValues,
   });
 
-  const config = useMemo(() => makePage4Config(trackerId), [trackerId]);
+  const config = useMemo(
+    () => makePage4Config(trackerId, countryCode),
+    [trackerId, countryCode]
+  );
 
   return (
     <FormProvider {...methods}>
       <form className="space-y-8" noValidate>
         <CriminalRecordsSection />
-        <BusinessSection />
+        <BusinessSection countryCode={countryCode} driverType={driverType} />
         <BankingInfoSection />
         <EligibilityDocsSection countryCode={countryCode} />
         {countryCode === ECountryCode.CA && <FastCardSection isCanadian />}
