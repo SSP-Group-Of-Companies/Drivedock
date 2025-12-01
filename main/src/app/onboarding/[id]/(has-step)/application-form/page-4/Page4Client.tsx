@@ -213,7 +213,7 @@ export default function Page4Client({
     <FormProvider {...methods}>
       <form className="space-y-8" noValidate>
         <CriminalRecordsSection />
-        <BusinessSection countryCode={countryCode} />
+        <BusinessSection countryCode={countryCode} driverType={driverType} />
         <BankingInfoSection />
         <EligibilityDocsSection countryCode={countryCode} />
         {countryCode === ECountryCode.CA && <FastCardSection isCanadian />}

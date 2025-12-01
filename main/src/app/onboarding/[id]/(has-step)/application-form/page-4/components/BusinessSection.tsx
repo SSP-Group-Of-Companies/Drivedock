@@ -8,12 +8,14 @@ import type { ApplicationFormPage4Input } from "@/lib/zodSchemas/applicationForm
 import OnboardingPhotoGroup from "@/app/onboarding/components/OnboardingPhotoGroup";
 import { ES3Folder } from "@/types/aws.types";
 import { ECountryCode } from "@/types/shared.types";
+import { EDriverType } from "@/types/preQualifications.types";
 
 type Props = {
   countryCode: ECountryCode;
+  driverType?: EDriverType | null;
 };
 
-export default function BusinessSection({ countryCode }: Props) {
+export default function BusinessSection({ countryCode, driverType }: Props) {
   const { t } = useTranslation("common");
   const {
     register,
@@ -23,6 +25,8 @@ export default function BusinessSection({ countryCode }: Props) {
   } = useFormContext<ApplicationFormPage4Input>();
 
   const isUS = countryCode === ECountryCode.US;
+  const isCompany = driverType === EDriverType.Company;
+  const isOwnerOperator = driverType === EDriverType.OwnerOperator || driverType === EDriverType.OwnerDriver;
 
   // Watch all fields that participate in the all-or-nothing logic
   const hstNumber = useWatch({ control, name: "hstNumber" });
@@ -73,7 +77,13 @@ export default function BusinessSection({ countryCode }: Props) {
       {/* Disclaimer (same design as CriminalRecords guidance) */}
       <div className="rounded-xl bg-gray-50/60 ring-1 ring-gray-100 p-4">
         <div className="text-sm text-gray-700 text-center">
-          <p>{t("form.step2.page4.sections.business.disclaimer.text")}</p>
+          <p>
+            {isOwnerOperator
+              ? t("form.step2.page4.sections.business.disclaimer.required")
+              : isCompany
+              ? t("form.step2.page4.sections.business.disclaimer.optionalAllOrNothing")
+              : t("form.step2.page4.sections.business.disclaimer.text")}
+          </p>
         </div>
       </div>
 
@@ -89,6 +99,16 @@ export default function BusinessSection({ countryCode }: Props) {
           <div>
             <label className="block text-sm font-medium text-gray-700">
               {t("form.step2.page4.fields.businessName")}
+              {isOwnerOperator && (
+                <span className="text-red-500 ml-1" title={t("form.step2.page4.fields.required")}>
+                  *
+                </span>
+              )}
+              {isCompany && (
+                <span className="text-gray-500 text-xs ml-1 font-normal">
+                  ({t("form.step2.page4.fields.optionalButAllRequired")})
+                </span>
+              )}
             </label>
             <input
               {...register("businessName")}
@@ -108,6 +128,16 @@ export default function BusinessSection({ countryCode }: Props) {
             <div>
               <label className="block text-sm font-medium text-gray-700">
                 {t("form.step2.page4.fields.hstNumber")}
+                {isOwnerOperator && (
+                  <span className="text-red-500 ml-1" title={t("form.step2.page4.fields.required")}>
+                    *
+                  </span>
+                )}
+                {isCompany && (
+                  <span className="text-gray-500 text-xs ml-1 font-normal">
+                    ({t("form.step2.page4.fields.optionalButAllRequired")})
+                  </span>
+                )}
               </label>
               <input
                 {...register("hstNumber")}
@@ -133,7 +163,14 @@ export default function BusinessSection({ countryCode }: Props) {
         >
           <OnboardingPhotoGroup
             name="incorporatePhotos"
-            label={t("form.step2.page4.fields.incorporatePhotos")}
+            label={
+              t("form.step2.page4.fields.incorporatePhotos") +
+              (isOwnerOperator
+                ? ` ${t("form.step2.page4.fields.required")}`
+                : isCompany
+                ? ` (${t("form.step2.page4.fields.optionalButAllRequired")})`
+                : "")
+            }
             description={t(
               "form.step2.page4.fields.incorporatePhotosDescription"
             )}
@@ -148,7 +185,14 @@ export default function BusinessSection({ countryCode }: Props) {
           <div className="col-span-12 lg:col-span-6" data-field="hstPhotos">
             <OnboardingPhotoGroup
               name="hstPhotos"
-              label={t("form.step2.page4.fields.hstPhotos")}
+              label={
+                t("form.step2.page4.fields.hstPhotos") +
+                (isOwnerOperator
+                  ? ` ${t("form.step2.page4.fields.required")}`
+                  : isCompany
+                  ? ` (${t("form.step2.page4.fields.optionalButAllRequired")})`
+                  : "")
+              }
               description={t("form.step2.page4.fields.hstPhotosDescription")}
               folder={ES3Folder.HST_PHOTOS}
               maxPhotos={2}

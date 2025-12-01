@@ -378,9 +378,11 @@
             }
           },
           "business": {
-            "title": "Détails d’incorporation",
+            "title": "Détails d'incorporation",
             "disclaimer": {
-              "text": "Si vous fournissez des détails d’incorporation, vous devez remplir tous les champs et téléverser tous les documents liés dans cette section. Cela inclut le nom de l’entreprise et tous les documents PDF requis liés à l’incorporation."
+              "text": "Si vous fournissez des détails d'incorporation, vous devez remplir tous les champs et téléverser tous les documents liés dans cette section. Cela inclut le nom de l'entreprise et tous les documents PDF requis liés à l'incorporation.",
+              "required": "Cette section est requise pour les propriétaires-exploitants et les propriétaires-conducteurs. Tous les champs doivent être remplis et tous les documents liés doivent être téléversés, y compris le nom de l'entreprise, le numéro TVH (le cas échéant) et tous les documents PDF requis liés à l'incorporation.",
+              "optionalAllOrNothing": "Cette section est optionnelle pour les conducteurs d'entreprise. Cependant, si vous choisissez de fournir des détails d'incorporation, vous devez remplir tous les champs et téléverser tous les documents liés dans cette section. Cela inclut le nom de l'entreprise, le numéro TVH (le cas échéant) et tous les documents PDF requis liés à l'incorporation."
             }
           },
           "banking": {
@@ -411,6 +413,8 @@
           "businessName": "Nom de l'entreprise",
           "incorporatePhotos": "Documents d'incorporation (PDF)",
           "hstPhotos": "Document TVH (PDF)",
+          "required": "(Requis)",
+          "optionalButAllRequired": "Optionnel, mais si rempli, tout doit être fourni",
           "bankingInfoPhotos": "Informations bancaires (PDF)",
           "denied": "Vous est-il déjà arrivé qu’un permis, une autorisation ou un droit de conduire un véhicule motorisé vous soit refusé ?",
           "suspended": "Un permis, une autorisation ou un droit vous a-t-il déjà été suspendu ou révoqué ?",
