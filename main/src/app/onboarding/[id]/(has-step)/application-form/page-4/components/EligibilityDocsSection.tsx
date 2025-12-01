@@ -4,6 +4,8 @@ import { ECountryCode } from "@/types/shared.types";
 import {
   EPassportType,
   EWorkAuthorizationType,
+  EImmigrationStatusUS,
+  EPrPermitDocumentType,
 } from "@/types/applicationForm.types";
 import OnboardingPhotoGroup from "@/app/onboarding/components/OnboardingPhotoGroup";
 import { ES3Folder } from "@/types/aws.types";
@@ -34,13 +36,20 @@ export default function EligibilityDocsSection({
     formState: { errors },
     setValue,
   } = useFormContext();
+
   const passportType = useWatch({ name: "passportType" });
   const workAuthorizationType = useWatch({ name: "workAuthorizationType" });
+
+  // US bundle selector
+  const usWorkAuthBundle = useWatch({ name: "usWorkAuthBundle" });
+
+  // For easier error access (avoid deep generic types)
+  const fieldErrors = errors as any;
 
   // Track previous passport type to avoid clearing on mount
   const prevPassportTypeRef = useRef<EPassportType | "" | undefined>(undefined);
 
-  // Clear fields when passport type changes to maintain form state consistency
+  // Clear fields when passport type changes to maintain form state consistency (Canada only)
   useEffect(() => {
     if (!isCA) return;
 
@@ -74,7 +83,7 @@ export default function EligibilityDocsSection({
     prevPassportTypeRef.current = curr;
   }, [isCA, passportType, setValue]);
 
-  // Determine which fields to show based on passport type
+  // CA: determine which fields to show based on passport type
   const showFields = useMemo(() => {
     if (!isCA)
       return { showPassport: true, showUSVisa: false, showPRPermit: true };
@@ -100,6 +109,40 @@ export default function EligibilityDocsSection({
     return { showPassport: false, showUSVisa: false, showPRPermit: false };
   }, [isCA, passportType, workAuthorizationType]);
 
+  // US: when bundle changes, clear opposite side’s fields so we don't send both
+  useEffect(() => {
+    if (!isUS) return;
+
+    if (usWorkAuthBundle === "passport") {
+      // Clear PR / Permit side
+      setValue("prPermitCitizenshipPhotos", [], { shouldDirty: true });
+      setValue(
+        "prPermitCitizenshipDetails",
+        {
+          documentType: undefined,
+          documentNumber: "",
+          issuingAuthority: "",
+          countryOfIssue: "",
+          expiryDate: "",
+        },
+        { shouldDirty: true }
+      );
+    } else if (usWorkAuthBundle === "pr_permit") {
+      // Clear passport side
+      setValue("passportPhotos", [], { shouldDirty: true });
+      setValue(
+        "passportDetails",
+        {
+          documentNumber: "",
+          issuingAuthority: "",
+          countryOfIssue: "",
+          expiryDate: "",
+        },
+        { shouldDirty: true }
+      );
+    }
+  }, [isUS, usWorkAuthBundle, setValue]);
+
   return (
     <section className="space-y-6 border border-gray-200 p-6 rounded-2xl bg-white shadow-sm">
       {/* section anchor so scrollToError('fastCard') lands here */}
@@ -122,6 +165,7 @@ export default function EligibilityDocsSection({
         </div>
       </div>
 
+      {/* CANADA FLOW */}
       {isCA && (
         <div className="space-y-6">
           {/* Health Card - Always required for Canadians
@@ -327,8 +371,10 @@ export default function EligibilityDocsSection({
         </div>
       )}
 
+      {/* US FLOW */}
       {isUS && (
         <div className="space-y-6">
+          {/* Medical Certificate */}
           <div data-field="medicalCertificationPhotos">
             <div className="mb-2 text-sm font-medium text-gray-700">
               {t(
@@ -351,9 +397,128 @@ export default function EligibilityDocsSection({
               maxPhotos={2}
               aspect={DOC_ASPECTS.FREE}
             />
+
+            {/* Medical certificate details */}
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t(
+                    "form.step2.page4.fields.medicalCert.documentNumber",
+                    "Document Number"
+                  )}{" "}
+                  <RequiredBadge />
+                </label>
+                <input
+                  type="text"
+                  {...register("medicalCertificateDetails.documentNumber")}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+                {fieldErrors?.medicalCertificateDetails?.documentNumber && (
+                  <p className="mt-1 text-sm text-red-600">
+                    {
+                      fieldErrors.medicalCertificateDetails.documentNumber
+                        .message
+                    }
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t(
+                    "form.step2.page4.fields.medicalCert.issuingAuthority",
+                    "Issuing Authority"
+                  )}{" "}
+                  <RequiredBadge />
+                </label>
+                <input
+                  type="text"
+                  {...register("medicalCertificateDetails.issuingAuthority")}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+                {fieldErrors?.medicalCertificateDetails?.issuingAuthority && (
+                  <p className="mt-1 text-sm text-red-600">
+                    {
+                      fieldErrors.medicalCertificateDetails.issuingAuthority
+                        .message
+                    }
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {t(
+                    "form.step2.page4.fields.medicalCert.expiryDate",
+                    "Expiry Date (optional)"
+                  )}
+                </label>
+                <input
+                  type="date"
+                  {...register("medicalCertificateDetails.expiryDate")}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+                {fieldErrors?.medicalCertificateDetails?.expiryDate && (
+                  <p className="mt-1 text-sm text-red-600">
+                    {fieldErrors.medicalCertificateDetails.expiryDate.message}
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
 
+          {/* Immigration + work auth bundles */}
           <div>
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t(
+                  "form.step2.page4.fields.immigrationStatusUS",
+                  "Immigration status in the United States"
+                )}{" "}
+                <RequiredBadge />
+              </label>
+              <select
+                {...register("immigrationStatusInUS")}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">
+                  {t(
+                    "form.step2.page4.fields.selectImmigrationStatusUS",
+                    "Select immigration status"
+                  )}
+                </option>
+                <option value={EImmigrationStatusUS.CITIZEN}>
+                  {t(
+                    "form.step2.page4.fields.immigrationStatus.citizen",
+                    "US Citizen"
+                  )}
+                </option>
+                <option value={EImmigrationStatusUS.NON_CITIZEN_NATIONAL}>
+                  {t(
+                    "form.step2.page4.fields.immigrationStatus.nonCitizenNational",
+                    "US Non-Citizen National"
+                  )}
+                </option>
+                <option value={EImmigrationStatusUS.PERMANENT_RESIDENT}>
+                  {t(
+                    "form.step2.page4.fields.immigrationStatus.permanentResident",
+                    "US Permanent Resident"
+                  )}
+                </option>
+                <option value={EImmigrationStatusUS.NON_CITIZEN}>
+                  {t(
+                    "form.step2.page4.fields.immigrationStatus.nonCitizen",
+                    "Non-Citizen"
+                  )}
+                </option>
+              </select>
+              {errors.immigrationStatusInUS && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.immigrationStatusInUS.message as string}
+                </p>
+              )}
+            </div>
+
             <div className="mb-2 text-sm font-medium text-gray-700">
               {t(
                 "form.step2.page4.sections.workAuthorization.title",
@@ -367,43 +532,348 @@ export default function EligibilityDocsSection({
               </RequiredBadge>
             </div>
 
-            <div className="grid grid-cols-12 gap-6">
-              <div
-                className="col-span-12 lg:col-span-6"
-                data-field="passportPhotos"
-              >
-                <OnboardingPhotoGroup
-                  name="passportPhotos"
-                  label={t("form.step2.page4.fields.passport", "Passport")}
-                  description={t(
-                    "form.step2.page4.fields.passportDescriptionUS",
-                    "Upload PDF scans of the passport bio/data page and back cover page (e.g., US passport)."
-                  )}
-                  folder={ES3Folder.PASSPORT_PHOTOS}
-                  maxPhotos={2}
-                  aspect={DOC_ASPECTS.PASSPORT}
-                />
-              </div>
+            {/* Bundle selector  */}
+            <div className="mb-4" data-field="usWorkAuthBundle">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t(
+                  "form.step2.page4.fields.usWorkAuthBundle.question",
+                  "Which document will you provide as proof of work authorization?"
+                )}{" "}
+                <RequiredBadge />
+              </label>
 
-              <div
-                className="col-span-12 lg:col-span-6"
-                data-field="prPermitCitizenshipPhotos"
+              <select
+                {...register("usWorkAuthBundle")}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <OnboardingPhotoGroup
-                  name="prPermitCitizenshipPhotos"
-                  label={t(
-                    "form.step2.page4.fields.greenCardCitizenship",
-                    "Green Card / Citizenship"
+                <option value="">
+                  {t(
+                    "form.step2.page4.fields.usWorkAuthBundle.selectOption",
+                    "Select one option"
                   )}
-                  description={t(
-                    "form.step2.page4.fields.greenCardCitizenshipDescription",
-                    "Upload PDF scans of your Permanent Resident card (front & back) or US Citizenship document."
+                </option>
+                <option value="passport">
+                  {t(
+                    "form.step2.page4.workAuthBundles.passport.title",
+                    "Use Passport"
                   )}
-                  folder={ES3Folder.PR_CITIZENSHIP_PHOTOS}
-                  maxPhotos={2}
-                  aspect={DOC_ASPECTS.ID}
-                />
-              </div>
+                </option>
+                <option value="pr_permit">
+                  {t(
+                    "form.step2.page4.workAuthBundles.prPermit.title",
+                    "Use PR / Permit / Citizenship"
+                  )}
+                </option>
+              </select>
+
+              {errors.usWorkAuthBundle && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.usWorkAuthBundle.message as string}
+                </p>
+              )}
+
+              <p className="mt-1 text-xs text-gray-500">
+                {t(
+                  "form.step2.page4.fields.usWorkAuthBundle.helper",
+                  "You must choose one option. Only the documents for the selected option will be required."
+                )}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-12 gap-6 mt-4">
+              {/* Passport bundle */}
+              {usWorkAuthBundle === "passport" && (
+                <>
+                  <div
+                    className="col-span-12 lg:col-span-6"
+                    data-field="passportPhotos"
+                  >
+                    <div className="mb-2 text-sm font-medium text-gray-700">
+                      {t("form.step2.page4.fields.passport", "Passport")}{" "}
+                      <RequiredBadge />
+                    </div>
+                    <OnboardingPhotoGroup
+                      name="passportPhotos"
+                      label={t(
+                        "form.step2.page4.fields.passportPhotos",
+                        "Passport (Bio & Back)"
+                      )}
+                      description={t(
+                        "form.step2.page4.fields.passportDescriptionUS",
+                        "Upload PDF scans of the passport bio/data page and back cover page."
+                      )}
+                      folder={ES3Folder.PASSPORT_PHOTOS}
+                      maxPhotos={2}
+                      aspect={DOC_ASPECTS.PASSPORT}
+                    />
+                  </div>
+
+                  <div className="col-span-12 lg:col-span-6 space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        {t(
+                          "form.step2.page4.fields.passportDetails.documentNumber",
+                          "Passport Document Number"
+                        )}{" "}
+                        <RequiredBadge />
+                      </label>
+                      <input
+                        type="text"
+                        {...register("passportDetails.documentNumber")}
+                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                      {fieldErrors?.passportDetails?.documentNumber && (
+                        <p className="mt-1 text-sm text-red-600">
+                          {fieldErrors.passportDetails.documentNumber.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        {t(
+                          "form.step2.page4.fields.passportDetails.issuingAuthority",
+                          "Issuing Authority"
+                        )}{" "}
+                        <RequiredBadge />
+                      </label>
+                      <input
+                        type="text"
+                        {...register("passportDetails.issuingAuthority")}
+                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                      {fieldErrors?.passportDetails?.issuingAuthority && (
+                        <p className="mt-1 text-sm text-red-600">
+                          {fieldErrors.passportDetails.issuingAuthority.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        {t(
+                          "form.step2.page4.fields.passportDetails.countryOfIssue",
+                          "Country of Issue"
+                        )}{" "}
+                        <RequiredBadge />
+                      </label>
+                      <input
+                        type="text"
+                        {...register("passportDetails.countryOfIssue")}
+                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                      {fieldErrors?.passportDetails?.countryOfIssue && (
+                        <p className="mt-1 text-sm text-red-600">
+                          {fieldErrors.passportDetails.countryOfIssue.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        {t(
+                          "form.step2.page4.fields.passportDetails.expiryDate",
+                          "Expiry Date (optional)"
+                        )}
+                      </label>
+                      <input
+                        type="date"
+                        {...register("passportDetails.expiryDate")}
+                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                      {fieldErrors?.passportDetails?.expiryDate && (
+                        <p className="mt-1 text-sm text-red-600">
+                          {fieldErrors.passportDetails.expiryDate.message}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* PR / Permit / Citizenship bundle */}
+              {usWorkAuthBundle === "pr_permit" && (
+                <>
+                  <div
+                    className="col-span-12 lg:col-span-6"
+                    data-field="prPermitCitizenshipPhotos"
+                  >
+                    <div className="mb-2 text-sm font-medium text-gray-700">
+                      {t(
+                        "form.step2.page4.fields.greenCardCitizenship",
+                        "Green Card / Citizenship / Permit"
+                      )}{" "}
+                      <RequiredBadge />
+                    </div>
+                    <OnboardingPhotoGroup
+                      name="prPermitCitizenshipPhotos"
+                      label={t(
+                        "form.step2.page4.fields.greenCardCitizenship",
+                        "Green Card / Citizenship / Permit"
+                      )}
+                      description={t(
+                        "form.step2.page4.fields.greenCardCitizenshipDescription",
+                        "Upload PDF scans of your PR card (front & back), Work/Study Permit, or Citizenship document."
+                      )}
+                      folder={ES3Folder.PR_CITIZENSHIP_PHOTOS}
+                      maxPhotos={2}
+                      aspect={DOC_ASPECTS.ID}
+                    />
+                  </div>
+
+                  <div className="col-span-12 lg:col-span-6 space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        {t(
+                          "form.step2.page4.fields.prPermitDetails.documentType",
+                          "Document Type"
+                        )}{" "}
+                        <RequiredBadge />
+                      </label>
+                      <select
+                        {...register("prPermitCitizenshipDetails.documentType")}
+                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="">
+                          {t(
+                            "form.step2.page4.fields.prPermitDetails.selectDocumentType",
+                            "Select document type"
+                          )}
+                        </option>
+                        <option value={EPrPermitDocumentType.PR_CARD}>
+                          {t(
+                            "form.step2.page4.fields.prPermitDetails.prCard",
+                            "PR Card"
+                          )}
+                        </option>
+                        <option
+                          value={EPrPermitDocumentType.CITIZENSHIP_CERTIFICATE}
+                        >
+                          {t(
+                            "form.step2.page4.fields.prPermitDetails.citizenshipCertificate",
+                            "Citizenship Certificate"
+                          )}
+                        </option>
+                        <option value={EPrPermitDocumentType.WORK_PERMIT}>
+                          {t(
+                            "form.step2.page4.fields.prPermitDetails.workPermit",
+                            "Work Permit"
+                          )}
+                        </option>
+                      </select>
+                      {fieldErrors?.prPermitCitizenshipDetails
+                        ?.documentType && (
+                        <p className="mt-1 text-sm text-red-600">
+                          {
+                            fieldErrors.prPermitCitizenshipDetails.documentType
+                              .message
+                          }
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        {t(
+                          "form.step2.page4.fields.prPermitDetails.documentNumber",
+                          "Document Number"
+                        )}{" "}
+                        <RequiredBadge />
+                      </label>
+                      <input
+                        type="text"
+                        {...register(
+                          "prPermitCitizenshipDetails.documentNumber"
+                        )}
+                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                      {fieldErrors?.prPermitCitizenshipDetails
+                        ?.documentNumber && (
+                        <p className="mt-1 text-sm text-red-600">
+                          {
+                            fieldErrors.prPermitCitizenshipDetails
+                              .documentNumber.message
+                          }
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        {t(
+                          "form.step2.page4.fields.prPermitDetails.issuingAuthority",
+                          "Issuing Authority"
+                        )}{" "}
+                        <RequiredBadge />
+                      </label>
+                      <input
+                        type="text"
+                        {...register(
+                          "prPermitCitizenshipDetails.issuingAuthority"
+                        )}
+                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                      {fieldErrors?.prPermitCitizenshipDetails
+                        ?.issuingAuthority && (
+                        <p className="mt-1 text-sm text-red-600">
+                          {
+                            fieldErrors.prPermitCitizenshipDetails
+                              .issuingAuthority.message
+                          }
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        {t(
+                          "form.step2.page4.fields.prPermitDetails.countryOfIssue",
+                          "Country of Issue"
+                        )}{" "}
+                        <RequiredBadge />
+                      </label>
+                      <input
+                        type="text"
+                        {...register(
+                          "prPermitCitizenshipDetails.countryOfIssue"
+                        )}
+                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                      {fieldErrors?.prPermitCitizenshipDetails
+                        ?.countryOfIssue && (
+                        <p className="mt-1 text-sm text-red-600">
+                          {
+                            fieldErrors.prPermitCitizenshipDetails
+                              .countryOfIssue.message
+                          }
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        {t(
+                          "form.step2.page4.fields.prPermitDetails.expiryDate",
+                          "Expiry Date (optional)"
+                        )}
+                      </label>
+                      <input
+                        type="date"
+                        {...register("prPermitCitizenshipDetails.expiryDate")}
+                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                      {fieldErrors?.prPermitCitizenshipDetails?.expiryDate && (
+                        <p className="mt-1 text-sm text-red-600">
+                          {
+                            fieldErrors.prPermitCitizenshipDetails.expiryDate
+                              .message
+                          }
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

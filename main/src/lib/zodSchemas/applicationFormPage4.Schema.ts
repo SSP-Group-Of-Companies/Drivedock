@@ -2,7 +2,13 @@
 import { z } from "zod";
 import { ECountryCode } from "@/types/shared.types";
 import { EDriverType } from "@/types/preQualifications.types";
-import { IApplicationFormPage4, EPassportType, EWorkAuthorizationType } from "@/types/applicationForm.types";
+import {
+  IApplicationFormPage4,
+  EPassportType,
+  EWorkAuthorizationType,
+  EImmigrationStatusUS,
+  EPrPermitDocumentType,
+} from "@/types/applicationForm.types";
 
 // Reuse your common helpers
 const dateYMD = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD");
@@ -74,6 +80,64 @@ export const truckDetailsSchema = z.object({
     .transform((v) => v?.trim() ?? ""),
 });
 
+// US-only details objects
+const medicalCertificateDetailsSchema = z.object({
+  documentNumber: z
+    .string()
+    .optional()
+    .transform((v) => v?.trim() ?? ""),
+  issuingAuthority: z
+    .string()
+    .optional()
+    .transform((v) => v?.trim() ?? ""),
+  expiryDate: z
+    .string()
+    .optional()
+    .transform((v) => v?.trim() ?? ""),
+});
+
+const passportDetailsSchema = z.object({
+  documentNumber: z
+    .string()
+    .optional()
+    .transform((v) => v?.trim() ?? ""),
+  issuingAuthority: z
+    .string()
+    .optional()
+    .transform((v) => v?.trim() ?? ""),
+  countryOfIssue: z
+    .string()
+    .optional()
+    .transform((v) => v?.trim() ?? ""),
+  expiryDate: z
+    .string()
+    .optional()
+    .transform((v) => v?.trim() ?? ""),
+});
+
+const prPermitDetailsSchema = z.object({
+  documentType: z
+    .nativeEnum(EPrPermitDocumentType)
+    .optional()
+    .or(z.literal("")),
+  documentNumber: z
+    .string()
+    .optional()
+    .transform((v) => v?.trim() ?? ""),
+  issuingAuthority: z
+    .string()
+    .optional()
+    .transform((v) => v?.trim() ?? ""),
+  countryOfIssue: z
+    .string()
+    .optional()
+    .transform((v) => v?.trim() ?? ""),
+  expiryDate: z
+    .string()
+    .optional()
+    .transform((v) => v?.trim() ?? ""),
+});
+
 // ---- Factory so we can consider existing values and country rules ----
 type FactoryOpts = {
   countryCode: ECountryCode; // 'CA' | 'US'
@@ -106,15 +170,35 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
     bankingInfoPhotos: z.array(photoSchema).default([]),
 
     healthCardPhotos: z.array(photoSchema).default([]),
+
+    // US medical certificate
     medicalCertificationPhotos: z.array(photoSchema).default([]),
-    
+    medicalCertificateDetails: medicalCertificateDetailsSchema.optional(),
+
     // Passport type selection (Canadian companies only)
     passportType: z.nativeEnum(EPassportType).optional().or(z.literal("")),
-    workAuthorizationType: z.nativeEnum(EWorkAuthorizationType).optional().or(z.literal("")),
-    
+    workAuthorizationType: z
+      .nativeEnum(EWorkAuthorizationType)
+      .optional()
+      .or(z.literal("")),
+
     passportPhotos: z.array(photoSchema).default([]),
     usVisaPhotos: z.array(photoSchema).default([]),
     prPermitCitizenshipPhotos: z.array(photoSchema).default([]),
+
+    passportDetails: passportDetailsSchema.optional(),
+    prPermitCitizenshipDetails: prPermitDetailsSchema.optional(),
+
+    immigrationStatusInUS: z
+      .nativeEnum(EImmigrationStatusUS)
+      .optional()
+      .or(z.literal("")),
+
+    // Which US bundle is active on the driver form: "passport" | "pr_permit"
+    usWorkAuthBundle: z
+      .enum(["passport", "pr_permit"])
+      .optional()
+      .or(z.literal("")),
 
     // Optional FAST card (Canada only) — keep it optional + empty-string transforms
     fastCard: z
@@ -151,98 +235,197 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
   const schema = base
     // Business requiredness and AOI (banking removed)
     .superRefine((data: Out, ctx) => {
-      // 1) If any business detail provided -> require all business leaves
-      const anyBusinessProvided =
-        !!data.businessName?.trim() ||
-        !!data.hstNumber?.trim() ||
-        (data.incorporatePhotos?.length ?? 0) > 0 ||
-        (data.hstPhotos?.length ?? 0) > 0;
-
-      if (anyBusinessProvided) {
-        if (!data.businessName?.trim()) {
-          ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["businessName"], message: "Business name is required when any business detail is provided." });
-        }
-        if (!data.hstNumber?.trim()) {
-          ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["hstNumber"], message: "HST number is required when any business detail is provided." });
-        }
-        if ((data.incorporatePhotos?.length ?? 0) < 1) {
-          ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["incorporatePhotos"], message: "At least one Incorporate photo is required." });
-        }
-        if ((data.hstPhotos?.length ?? 0) < 1) {
-          ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["hstPhotos"], message: "At least one HST photo is required." });
-        }
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["business.root"], message: "All business section fields must be provided if any are." });
-      }
-
-      // 2) Driver-type based requiredness
-      //    - Owner Operator: Business section is required (all-or-nothing if any provided still applies above)
-      //    - Company OR Owner Operator: Banking photos required
       const isCompany = driverType === EDriverType.Company;
       const isOwnerOperator = driverType === EDriverType.OwnerOperator;
 
+      // 1) If any business detail provided -> require fields
+      const anyBusinessProvided =
+        !!data.businessName?.trim() ||
+        (!!data.hstNumber?.trim() && !isUS) || // HST only relevant for CA
+        (data.incorporatePhotos?.length ?? 0) > 0 ||
+        ((data.hstPhotos?.length ?? 0) > 0 && !isUS); // HST only relevant for CA
+
+      if (anyBusinessProvided) {
+        if (!data.businessName?.trim()) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["businessName"],
+            message:
+              "Business name is required when any business detail is provided.",
+          });
+        }
+
+        // Only enforce HST fields for non-US
+        if (!isUS) {
+          if (!data.hstNumber?.trim()) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["hstNumber"],
+              message:
+                "HST number is required when any business detail is provided.",
+            });
+          }
+          if ((data.incorporatePhotos?.length ?? 0) < 1) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["incorporatePhotos"],
+              message: "At least one Incorporation photo is required.",
+            });
+          }
+          if ((data.hstPhotos?.length ?? 0) < 1) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["hstPhotos"],
+              message: "At least one HST photo is required.",
+            });
+          }
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["business.root"],
+            message: "All business section fields must be provided if any are.",
+          });
+        } else {
+          // US: only enforce businessName + incorporatePhotos when any business detail provided
+          if ((data.incorporatePhotos?.length ?? 0) < 1) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["incorporatePhotos"],
+              message:
+                "At least one Incorporation document is required when business details are provided.",
+            });
+          }
+        }
+      }
+
+      // 2) Driver-type based requiredness
       if (isOwnerOperator) {
         if (!data.businessName?.trim()) {
-          ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["businessName"], message: "Business name is required." });
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["businessName"],
+            message: "Business name is required.",
+          });
         }
-        if (!data.hstNumber?.trim()) {
-          ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["hstNumber"], message: "HST number is required." });
-        }
-        if ((data.incorporatePhotos?.length ?? 0) < 1) {
-          ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["incorporatePhotos"], message: "At least one Incorporation photo is required." });
-        }
-        if ((data.hstPhotos?.length ?? 0) < 1) {
-          ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["hstPhotos"], message: "At least one HST photo is required." });
+        if (!isUS) {
+          if (!data.hstNumber?.trim()) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["hstNumber"],
+              message: "HST number is required.",
+            });
+          }
+          if ((data.incorporatePhotos?.length ?? 0) < 1) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["incorporatePhotos"],
+              message: "At least one Incorporation photo is required.",
+            });
+          }
+          if ((data.hstPhotos?.length ?? 0) < 1) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["hstPhotos"],
+              message: "At least one HST photo is required.",
+            });
+          }
+        } else {
+          // US Owner-Operator: require businessName + incorporatePhotos, but not HST
+          if ((data.incorporatePhotos?.length ?? 0) < 1) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["incorporatePhotos"],
+              message:
+                "At least one Incorporation document is required for this applicant.",
+            });
+          }
         }
       }
 
       if (isCompany || isOwnerOperator) {
         if ((data.bankingInfoPhotos?.length ?? 0) < 1) {
-          ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["bankingInfoPhotos"], message: "Banking info is required for this applicant." });
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["bankingInfoPhotos"],
+            message: "Banking info is required for this applicant.",
+          });
         }
       }
     })
+
     // Country-specific docs with passport type logic
     .superRefine((data: Out, ctx) => {
-      const textProvided = !!data.businessName?.trim() || !!data.hstNumber?.trim();
-      const photosProvided = data.hstPhotos.length > 0 || data.incorporatePhotos.length > 0;
+      if (isUS) return; // US: HST not applicable at all
+
+      const textProvided =
+        !!data.businessName?.trim() || !!data.hstNumber?.trim();
+      const photosProvided =
+        data.hstPhotos.length > 0 || data.incorporatePhotos.length > 0;
       if (!textProvided && !photosProvided) return;
 
       let hadError = false;
+
       if (!data.businessName?.trim()) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["businessName"], message: "Business name is required when any business detail is provided." });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["businessName"],
+          message:
+            "Business name is required when any business detail is provided.",
+        });
         hadError = true;
       }
       if (!data.hstNumber?.trim()) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["hstNumber"], message: "HST number is required when any business detail is provided." });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["hstNumber"],
+          message:
+            "HST number is required when any business detail is provided.",
+        });
         hadError = true;
       }
       if (data.incorporatePhotos.length === 0) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["incorporatePhotos"], message: "At least one Incorporate photo is required." });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["incorporatePhotos"],
+          message: "At least one Incorporate photo is required.",
+        });
         hadError = true;
       }
       if (data.hstPhotos.length === 0) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["hstPhotos"], message: "At least one HST photo is required." });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["hstPhotos"],
+          message: "At least one HST photo is required.",
+        });
         hadError = true;
       }
       if (hadError) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["business.root"], message: "All business section fields and files must be provided if any are." });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["business.root"],
+          message:
+            "All business section fields and files must be provided if any are.",
+        });
       }
     })
 
-    // Country-specific docs with passport type logic
+    // Country-specific docs with passport type logic (CA + US)
     .superRefine((data: Out, ctx) => {
       if (isCanadian) {
         // Health card required for Canadians - check this first for natural flow
         if (data.healthCardPhotos.length !== 2) {
-          ctx.addIssue({ 
-            code: z.ZodIssueCode.custom, 
-            path: ["healthCardPhotos"], 
-            message: "Health card front and back photos required for Canadian applicants." 
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["healthCardPhotos"],
+            message:
+              "Health card front and back photos required for Canadian applicants.",
           });
         }
 
         // Passport type selection required for Canadians - only check if health card is provided
-        if (data.healthCardPhotos.length === 2 && (!data.passportType || (data.passportType as string) === "")) {
+        if (
+          data.healthCardPhotos.length === 2 &&
+          (!data.passportType || (data.passportType as string) === "")
+        ) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ["passportType"],
@@ -254,10 +437,11 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
 
         // Passport always required for Canadians (only check if passport type is selected)
         if (data.passportType && data.passportPhotos.length !== 2) {
-          ctx.addIssue({ 
-            code: z.ZodIssueCode.custom, 
-            path: ["passportPhotos"], 
-            message: "Passport bio and back photos required for Canadian applicants." 
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["passportPhotos"],
+            message:
+              "Passport bio and back photos required for Canadian applicants.",
           });
         }
 
@@ -268,7 +452,10 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
         // For other passports: work authorization type and additional docs required
         else if (data.passportType === EPassportType.OTHERS) {
           // Work authorization type required for non-Canadian passports
-          if (!data.workAuthorizationType || (data.workAuthorizationType as string) === "") {
+          if (
+            !data.workAuthorizationType ||
+            (data.workAuthorizationType as string) === ""
+          ) {
             ctx.addIssue({
               code: z.ZodIssueCode.custom,
               path: ["workAuthorizationType"],
@@ -283,18 +470,22 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
             ctx.addIssue({
               code: z.ZodIssueCode.custom,
               path: ["prPermitCitizenshipPhotos"],
-              message: "PR/Citizenship photo required for non-Canadian passport holders.",
+              message:
+                "PR/Citizenship photo required for non-Canadian passport holders.",
             });
           }
 
           // US Visa requirements based on work authorization type
-          if (data.workAuthorizationType === EWorkAuthorizationType.CROSS_BORDER) {
+          if (
+            data.workAuthorizationType === EWorkAuthorizationType.CROSS_BORDER
+          ) {
             // US Visa required for cross-border work
             if (data.usVisaPhotos.length === 0) {
               ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 path: ["usVisaPhotos"],
-                message: "US visa photo required for cross-border work authorization.",
+                message:
+                  "US visa photo required for cross-border work authorization.",
               });
             }
           }
@@ -303,40 +494,194 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
       }
 
       if (isUS) {
-        if (data.medicalCertificationPhotos.length === 0) {
+        // Medical certificate photos: 1–2 required
+        if (data.medicalCertificationPhotos.length < 1) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ["medicalCertificationPhotos"],
-            message: "Medical certificate required for US drivers",
+            message: "Medical certificate required for US drivers.",
+          });
+        } else if (data.medicalCertificationPhotos.length > 2) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["medicalCertificationPhotos"],
+            message: "Maximum 2 medical certificate files allowed.",
           });
         }
 
-        // Passport & PR/Citizenship rules
-        const hasPassport = data.passportPhotos.length > 0;
-        const hasPR = data.prPermitCitizenshipPhotos.length > 0;
+        // Medical certificate details required
+        const med = data.medicalCertificateDetails;
+        if (
+          !med ||
+          !med.documentNumber?.trim() ||
+          !med.issuingAuthority?.trim()
+        ) {
+          if (!med?.documentNumber?.trim()) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["medicalCertificateDetails", "documentNumber"],
+              message: "Document number is required.",
+            });
+          }
+          if (!med?.issuingAuthority?.trim()) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["medicalCertificateDetails", "issuingAuthority"],
+              message: "Issuing authority is required.",
+            });
+          }
+        }
 
-        if (!hasPassport && !hasPR) {
+        // Immigration status required
+        if (
+          !data.immigrationStatusInUS ||
+          (data.immigrationStatusInUS as string) === ""
+        ) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            path: ["eligibilityDocs.root"], // section banner anchor
-            message: "US drivers must provide passport or PR/citizenship photo",
+            path: ["immigrationStatusInUS"],
+            message: "Please select your immigration status in the US.",
           });
         }
 
-        if (hasPassport && data.passportPhotos.length !== 2) {
+        // Bundle selector required
+        if (!data.usWorkAuthBundle) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            path: ["passportPhotos"],
-            message: "Passport requires two photos (bio and back) for US applicants.",
+            path: ["usWorkAuthBundle"],
+            message: "Please choose Passport or PR / Permit / Citizenship.",
           });
+          // Can't validate the bundles further without a choice
+          return;
         }
 
-        if (hasPR && data.prPermitCitizenshipPhotos.length < 1) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            path: ["prPermitCitizenshipPhotos"],
-            message: "At least one PR/Citizenship photo is required for US applicants.",
-          });
+        // Work authorization bundle logic
+        if (data.usWorkAuthBundle === "passport") {
+          const hasPassport = data.passportPhotos.length === 2;
+          const pd = data.passportDetails;
+
+          if (!hasPassport) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["passportPhotos"],
+              message:
+                "Passport requires two photos (bio and back) for US applicants.",
+            });
+          }
+
+          if (
+            !pd ||
+            !pd.documentNumber?.trim() ||
+            !pd.issuingAuthority?.trim() ||
+            !pd.countryOfIssue?.trim()
+          ) {
+            if (!pd?.documentNumber?.trim()) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["passportDetails", "documentNumber"],
+                message: "Passport document number is required.",
+              });
+            }
+            if (!pd?.issuingAuthority?.trim()) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["passportDetails", "issuingAuthority"],
+                message: "Passport issuing authority is required.",
+              });
+            }
+            if (!pd?.countryOfIssue?.trim()) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["passportDetails", "countryOfIssue"],
+                message: "Passport country of issue is required.",
+              });
+            }
+          }
+
+          // Ensure PR/Permit side is not sent at the same time
+          if (
+            data.prPermitCitizenshipPhotos.length > 0 ||
+            (data.prPermitCitizenshipDetails &&
+              (data.prPermitCitizenshipDetails.documentNumber ||
+                data.prPermitCitizenshipDetails.documentType ||
+                data.prPermitCitizenshipDetails.issuingAuthority ||
+                data.prPermitCitizenshipDetails.countryOfIssue))
+          ) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["eligibilityDocs.root"],
+              message:
+                "For US drivers, you must use either Passport OR PR / Permit / Citizenship, not both.",
+            });
+          }
+        } else if (data.usWorkAuthBundle === "pr_permit") {
+          const hasPR =
+            data.prPermitCitizenshipPhotos.length >= 1 &&
+            data.prPermitCitizenshipPhotos.length <= 2;
+          const pr = data.prPermitCitizenshipDetails;
+
+          if (!hasPR) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["prPermitCitizenshipPhotos"],
+              message:
+                "PR / Permit / Citizenship requires 1–2 document photos for US applicants.",
+            });
+          }
+
+          if (
+            !pr ||
+            !pr.documentType ||
+            !pr.documentNumber?.trim() ||
+            !pr.issuingAuthority?.trim() ||
+            !pr.countryOfIssue?.trim()
+          ) {
+            if (!pr?.documentType) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["prPermitCitizenshipDetails", "documentType"],
+                message: "Document type is required.",
+              });
+            }
+
+            if (!pr?.documentNumber?.trim()) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["prPermitCitizenshipDetails", "documentNumber"],
+                message: "Document number is required.",
+              });
+            }
+            if (!pr?.issuingAuthority?.trim()) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["prPermitCitizenshipDetails", "issuingAuthority"],
+                message: "Issuing authority is required.",
+              });
+            }
+            if (!pr?.countryOfIssue?.trim()) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["prPermitCitizenshipDetails", "countryOfIssue"],
+                message: "Country of issue is required.",
+              });
+            }
+          }
+
+          // Ensure passport side is not sent at the same time
+          if (
+            data.passportPhotos.length > 0 ||
+            (data.passportDetails &&
+              (data.passportDetails.documentNumber ||
+                data.passportDetails.issuingAuthority ||
+                data.passportDetails.countryOfIssue))
+          ) {
+            ctx.addIssue({
+              code: z.ZodIssueCode.custom,
+              path: ["eligibilityDocs.root"],
+              message:
+                "For US drivers, you must use either Passport OR PR / Permit / Citizenship, not both.",
+            });
+          }
         }
       }
     })
@@ -349,7 +694,11 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
       if (!fc) return;
 
       // Only validate if ANY leaf is provided
-      const anyProvided = !!fc.fastCardNumber?.trim() || !!fc.fastCardExpiry || !!fc.fastCardFrontPhoto || !!fc.fastCardBackPhoto;
+      const anyProvided =
+        !!fc.fastCardNumber?.trim() ||
+        !!fc.fastCardExpiry ||
+        !!fc.fastCardFrontPhoto ||
+        !!fc.fastCardBackPhoto;
 
       // If all are empty → treat as optional and skip
       if (!anyProvided) return;
@@ -389,32 +738,67 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
     .superRefine((data: Out, ctx) => {
       const hasCriminals = data.hasCriminalRecords === true;
 
-      if (data.hasCriminalRecords !== true && data.hasCriminalRecords !== false) {
+      if (
+        data.hasCriminalRecords !== true &&
+        data.hasCriminalRecords !== false
+      ) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["hasCriminalRecords"],
-          message: "Please answer if you have ever been convicted of a criminal offense",
+          message:
+            "Please answer if you have ever been convicted of a criminal offense",
         });
       }
 
       if (hasCriminals) {
-        const isRowComplete = (r?: (typeof data.criminalRecords)[number]) => !!r?.offense?.trim() && !!r?.dateOfSentence?.trim() && !!r?.courtLocation?.trim();
-        const anyComplete = Array.isArray(data.criminalRecords) && data.criminalRecords.some(isRowComplete);
+        const isRowComplete = (r?: (typeof data.criminalRecords)[number]) =>
+          !!r?.offense?.trim() &&
+          !!r?.dateOfSentence?.trim() &&
+          !!r?.courtLocation?.trim();
+        const anyComplete =
+          Array.isArray(data.criminalRecords) &&
+          data.criminalRecords.some(isRowComplete);
         if (!anyComplete) {
-          ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["criminalRecords"], message: "At least one record is needed when declared to have criminal offenses" });
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["criminalRecords"],
+            message:
+              "At least one record is needed when declared to have criminal offenses",
+          });
           // Surface first row field errors to drive borders/scroll
-          const idx = 0; const first = Array.isArray(data.criminalRecords) ? data.criminalRecords[idx] : undefined;
+          const idx = 0;
+          const first = Array.isArray(data.criminalRecords)
+            ? data.criminalRecords[idx]
+            : undefined;
           if (first) {
-            if (!first.offense?.trim()) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["criminalRecords", idx, "offense"], message: "required" });
-            if (!first.dateOfSentence?.trim()) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["criminalRecords", idx, "dateOfSentence"], message: "required" });
-            if (!first.courtLocation?.trim()) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["criminalRecords", idx, "courtLocation"], message: "required" });
+            if (!first.offense?.trim())
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["criminalRecords", idx, "offense"],
+                message: "required",
+              });
+            if (!first.dateOfSentence?.trim())
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["criminalRecords", idx, "dateOfSentence"],
+                message: "required",
+              });
+            if (!first.courtLocation?.trim())
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["criminalRecords", idx, "courtLocation"],
+                message: "required",
+              });
           }
         }
       }
 
       data.criminalRecords.forEach((record, index) => {
         // Check if any field in this row has data
-        const hasAnyData = !!record.offense?.trim() || !!record.dateOfSentence?.trim() || !!record.courtLocation?.trim();
+        const hasAnyData =
+          !!record.offense?.trim() ||
+          !!record.dateOfSentence?.trim() ||
+          !!record.courtLocation?.trim();
 
         if (hasAnyData) {
           // If any field has data, all fields become required
@@ -422,21 +806,24 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
             ctx.addIssue({
               code: z.ZodIssueCode.custom,
               path: ["criminalRecords", index, "offense"],
-              message: "Offense is required when any field in this row has data.",
+              message:
+                "Offense is required when any field in this row has data.",
             });
           }
           if (!record.dateOfSentence?.trim()) {
             ctx.addIssue({
               code: z.ZodIssueCode.custom,
               path: ["criminalRecords", index, "dateOfSentence"],
-              message: "Date of sentence is required when any field in this row has data.",
+              message:
+                "Date of sentence is required when any field in this row has data.",
             });
           }
           if (!record.courtLocation?.trim()) {
             ctx.addIssue({
               code: z.ZodIssueCode.custom,
               path: ["criminalRecords", index, "courtLocation"],
-              message: "Court location is required when any field in this row has data.",
+              message:
+                "Court location is required when any field in this row has data.",
             });
           }
         }
@@ -445,7 +832,15 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
 
     .superRefine((data: Out, ctx) => {
       // Force a selection for all Yes/No questions
-      (["deniedLicenseOrPermit", "suspendedOrRevoked", "testedPositiveOrRefused", "completedDOTRequirements", "hasAccidentalInsurance"] as const).forEach((key) => {
+      (
+        [
+          "deniedLicenseOrPermit",
+          "suspendedOrRevoked",
+          "testedPositiveOrRefused",
+          "completedDOTRequirements",
+          "hasAccidentalInsurance",
+        ] as const
+      ).forEach((key) => {
         if (typeof data[key] !== "boolean") {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
@@ -469,16 +864,25 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
       // Fast card cleanup (existing logic)
       const fc = val.fastCard;
       if (fc) {
-        const anyProvided = !!fc.fastCardNumber?.trim() || !!fc.fastCardExpiry || !!fc.fastCardFrontPhoto || !!fc.fastCardBackPhoto;
+        const anyProvided =
+          !!fc.fastCardNumber?.trim() ||
+          !!fc.fastCardExpiry ||
+          !!fc.fastCardFrontPhoto ||
+          !!fc.fastCardBackPhoto;
         if (!anyProvided) (val as any).fastCard = undefined;
       }
 
       // Clean up workAuthorizationType for Canadian passport holders
       if (isCanadian && val.passportType === EPassportType.CANADIAN) {
         (val as any).workAuthorizationType = undefined;
-        // Also clear related photos that aren't needed for Canadian passports
         (val as any).usVisaPhotos = [];
         (val as any).prPermitCitizenshipPhotos = [];
+      }
+
+      //  US: never send HST fields
+      if (isUS) {
+        delete (val as any).hstNumber;
+        delete (val as any).hstPhotos;
       }
 
       return val;
@@ -487,8 +891,12 @@ export function makeApplicationFormPage4Schema(opts: FactoryOpts) {
   return schema;
 }
 
-export type ApplicationFormPage4Input = z.input<ReturnType<typeof makeApplicationFormPage4Schema>>;
-export type ApplicationFormPage4Output = z.output<ReturnType<typeof makeApplicationFormPage4Schema>>;
+export type ApplicationFormPage4Input = z.input<
+  ReturnType<typeof makeApplicationFormPage4Schema>
+>;
+export type ApplicationFormPage4Output = z.output<
+  ReturnType<typeof makeApplicationFormPage4Schema>
+>;
 
 // If you were using this name elsewhere, re-alias it to INPUT (what RHF wants):
 export type ApplicationFormPage4Schema = ApplicationFormPage4Input;

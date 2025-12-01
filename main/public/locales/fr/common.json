@@ -380,7 +380,7 @@
           "business": {
             "title": "Détails d’incorporation",
             "disclaimer": {
-              "text": "Si vous fournissez des détails d'incorporation, vous devez remplir tous les champs et téléverser tous les documents liés dans cette section. Cela inclut le numéro de TVH, le nom de l'entreprise et les documents PDF requis (Incorporation, TVH)."
+              "text": "Si vous fournissez des détails d’incorporation, vous devez remplir tous les champs et téléverser tous les documents liés dans cette section. Cela inclut le nom de l’entreprise et tous les documents PDF requis liés à l’incorporation."
             }
           },
           "banking": {

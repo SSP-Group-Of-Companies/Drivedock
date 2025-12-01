@@ -7,6 +7,8 @@ import FastCardSection from "./FastCardSection";
 import BusinessInformationSection from "./BusinessInformationSection";
 import ImageGallerySection from "./ImageGallerySection";
 import TruckDetailsSection from "./TruckDetailsSection";
+import MedicalCertificationSection from "./MedicalCertificationSection";
+import ImmigrationAndWorkDocsSection from "./ImmigrationAndWorkDocsSection";
 import { ECountryCode } from "@/types/shared.types";
 
 interface IdentificationsContentProps {
@@ -32,52 +34,49 @@ export default function IdentificationsContent({
   highlightTruckDetails = false,
   driverType,
 }: IdentificationsContentProps) {
-  // Extract data for components
-
-  // Get current values (staged or original)
   const getCurrentValue = (field: string) => {
-    // Use hasOwnProperty to detect if field was explicitly set in staged (even if undefined)
     return Object.prototype.hasOwnProperty.call(staged, field)
       ? staged[field]
       : data[field as keyof IdentificationsData];
   };
 
-  // Handle anchor scrolling on page load (from Personal Details SIN photo click)
   useEffect(() => {
-    if (window.location.hash === '#image-gallery') {
-      // Small delay to ensure DOM is fully rendered
+    if (window.location.hash === "#image-gallery") {
       const timer = setTimeout(() => {
-        const galleryElement = document.getElementById('image-gallery');
+        const galleryElement = document.getElementById("image-gallery");
         if (galleryElement) {
-          galleryElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          galleryElement.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
         }
       }, 100);
       return () => clearTimeout(timer);
     }
   }, []);
 
+  const isCanadian = countryCode === ECountryCode.CA;
+  const isUS = countryCode === ECountryCode.US;
+
   return (
     <div className="space-y-6">
       {/* Row 1: Truck Details + Driver License */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {/* Truck Details Section */}
         <TruckDetailsSection
           truckDetails={getCurrentValue("truckDetails")}
           onStage={onStage}
           highlight={highlightTruckDetails}
         />
 
-        {/* Driver License Section */}
         <DriverLicenseSection
           licenses={getCurrentValue("licenses") || []}
           onStage={onStage}
         />
       </div>
 
-      {/* Row 2: Fast Card + Business Information */}
+      {/* Row 2: Fast Card (CA) + Business Information */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {/* Fast Card Section - Only for Canadian drivers */}
-        {countryCode === ECountryCode.CA && (
+        {isCanadian && (
           <FastCardSection
             fastCard={getCurrentValue("fastCard")}
             onStage={onStage}
@@ -85,15 +84,40 @@ export default function IdentificationsContent({
           />
         )}
 
-        {/* Business Information Section */}
         <BusinessInformationSection
           hstNumber={getCurrentValue("hstNumber") || ""}
           businessName={getCurrentValue("businessName") || ""}
           onStage={onStage}
+          countryCode={countryCode}
         />
       </div>
 
-      {/* Image Gallery Section */}
+      {/* Row 3: US-only Medical Certificate + Immigration / Work Auth */}
+      {isUS && (
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <MedicalCertificationSection
+            details={getCurrentValue("medicalCertificateDetails")}
+            onStage={onStage}
+          />
+
+          <ImmigrationAndWorkDocsSection
+            immigrationStatusInUS={getCurrentValue("immigrationStatusInUS")}
+            passportDetails={getCurrentValue("passportDetails")}
+            prPermitCitizenshipDetails={getCurrentValue(
+              "prPermitCitizenshipDetails"
+            )}
+            passportPhotosCount={
+              (getCurrentValue("passportPhotos") || []).length
+            }
+            prPermitCitizenshipPhotosCount={
+              (getCurrentValue("prPermitCitizenshipPhotos") || []).length
+            }
+            onStage={onStage}
+          />
+        </div>
+      )}
+
+      {/* Document Gallery Section */}
       <div id="image-gallery" className="space-y-4">
         <div
           className="flex items-center gap-3 pb-2 border-b"
@@ -135,7 +159,6 @@ export default function IdentificationsContent({
           driverType={driverType}
         />
       </div>
-
     </div>
   );
 }

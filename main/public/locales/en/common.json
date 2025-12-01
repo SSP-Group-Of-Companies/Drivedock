@@ -397,7 +397,7 @@
           "business": {
             "title": "Incorporate Details",
             "disclaimer": {
-              "text": "If you provide any incorporation detail, you must complete every field and upload all related documents in this section. This includes HST Number, Business Name, and the required PDF documents (Incorporation, HST)."
+              "text": "If you provide any incorporation detail, you must complete every field and upload all related documents in this section. This includes your business name and all required PDF documents related to your incorporation."
             }
           },
           "banking": {

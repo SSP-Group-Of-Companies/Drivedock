@@ -4,19 +4,24 @@ import React from "react";
 import { useEditMode } from "../../components/EditModeContext";
 import { Building2 } from "lucide-react";
 import { WithCopy } from "@/components/form/WithCopy";
+import { ECountryCode } from "@/types/shared.types";
 
 interface BusinessInformationSectionProps {
   hstNumber: string;
   businessName: string;
   onStage: (changes: any) => void;
+  countryCode: ECountryCode;
 }
 
 export default function BusinessInformationSection({
   hstNumber,
   businessName,
   onStage,
+  countryCode,
 }: BusinessInformationSectionProps) {
   const { isEditMode } = useEditMode();
+
+  const isCanadian = countryCode === ECountryCode.CA;
 
   return (
     <div
@@ -45,6 +50,7 @@ export default function BusinessInformationSection({
 
       <div className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Business name – always shown */}
           <div>
             <label
               className="block text-sm font-medium mb-1"
@@ -70,33 +76,34 @@ export default function BusinessInformationSection({
             </WithCopy>
           </div>
 
-          <div>
-            <label
-              className="block text-sm font-medium mb-1"
-              style={{ color: "var(--color-on-surface-variant)" }}
-            >
-              HST Number
-            </label>
-            <WithCopy value={hstNumber || ""} label="HST number">
-              <input
-                type="text"
-                value={hstNumber || ""}
-                onChange={(e) => onStage({ hstNumber: e.target.value })}
-                disabled={!isEditMode}
-                className="w-full px-3 py-2 border rounded-lg text-sm transition-colors pr-10"
-                style={{
-                  background: isEditMode
-                    ? "var(--color-surface)"
-                    : "var(--color-surface-variant)",
-                  borderColor: "var(--color-outline)",
-                  color: "var(--color-on-surface)",
-                }}
-              />
-            </WithCopy>
-          </div>
+          {/* HST number – Canada only */}
+          {isCanadian && (
+            <div>
+              <label
+                className="block text-sm font-medium mb-1"
+                style={{ color: "var(--color-on-surface-variant)" }}
+              >
+                HST Number
+              </label>
+              <WithCopy value={hstNumber || ""} label="HST number">
+                <input
+                  type="text"
+                  value={hstNumber || ""}
+                  onChange={(e) => onStage({ hstNumber: e.target.value })}
+                  disabled={!isEditMode}
+                  className="w-full px-3 py-2 border rounded-lg text-sm transition-colors pr-10"
+                  style={{
+                    background: isEditMode
+                      ? "var(--color-surface)"
+                      : "var(--color-surface-variant)",
+                    borderColor: "var(--color-outline)",
+                    color: "var(--color-on-surface)",
+                  }}
+                />
+              </WithCopy>
+            </div>
+          )}
         </div>
-
-
 
         <div
           className="text-xs"

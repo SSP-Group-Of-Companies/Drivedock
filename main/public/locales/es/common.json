@@ -380,7 +380,7 @@
           "business": {
             "title": "Detalles de incorporación",
             "disclaimer": {
-              "text": "Si proporcionas algún detalle de incorporación, debes completar todos los campos y subir todos los documentos relacionados en esta sección. Esto incluye el número de HST, el nombre de la empresa y los documentos PDF requeridos (incorporación, HST)."
+              "text": "Si proporcionas algún detalle de incorporación, debes completar todos los campos y subir todos los documentos relacionados en esta sección. Esto incluye el nombre de la empresa y todos los documentos PDF requeridos relacionados con la incorporación."
             }
           },
           "banking": {
