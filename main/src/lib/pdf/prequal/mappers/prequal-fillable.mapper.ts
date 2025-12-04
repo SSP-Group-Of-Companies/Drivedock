@@ -4,8 +4,35 @@ import { EPrequalFillableFields as F, type PrequalPayload } from "./prequal-fill
 import { EDriverType, EHaulPreference, ETeamStatus, IPreQualifications } from "@/types/preQualifications.types";
 import { IApplicationFormPage1 } from "@/types/applicationForm.types";
 import { IOnboardingTracker } from "@/types/onboardingTracker.types";
+import { ECompanyId } from "@/constants/companies";
+import path from "node:path";
 
 /* ------------------------------- helpers ------------------------------- */
+
+// resolve which Pre-Qualification template to load (same fields across all)
+export function resolvePrequalTemplate(companyId: string) {
+  const base = path.join(process.cwd(), "src/lib/pdf/prequal/templates");
+
+  switch (companyId as ECompanyId) {
+    case ECompanyId.SSP_CA:
+    case ECompanyId.SSP_US:
+      // SSP Canada + SSP US share the same prequal template
+      return path.join(base, "ssp-prequal-fillable.pdf");
+
+    case ECompanyId.FELLOW_TRANS:
+      return path.join(base, "fellows-prequal-fillable.pdf");
+
+    case ECompanyId.WEB_FREIGHT:
+      return path.join(base, "webfreight-prequal-fillable.pdf");
+
+    case ECompanyId.NESH:
+      return path.join(base, "new-england-prequal-fillable.pdf");
+
+    default:
+      // Safe fallback – SSP prequal
+      return path.join(base, "ssp-prequal-fillable.pdf");
+  }
+}
 
 /** Format date to YYYY-MM-DD (UTC, date-only) */
 function fmt(date?: Date | string): string {

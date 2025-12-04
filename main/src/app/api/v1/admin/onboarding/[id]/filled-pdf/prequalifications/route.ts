@@ -1,6 +1,5 @@
 // api/v1/admin/onboarding/[id]/filled-pdf/prequalifications/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import path from "node:path";
 import fs from "node:fs/promises";
 import { isValidObjectId } from "mongoose";
 import { PDFDocument } from "pdf-lib";
@@ -17,7 +16,7 @@ import { ESafetyAdminId } from "@/constants/safetyAdmins";
 import { getSafetyAdminServerById } from "@/lib/assets/safetyAdmins/safetyAdmins.server";
 
 import { EPrequalFillableFields as F } from "@/lib/pdf/prequal/mappers/prequal-fillable.types";
-import { buildPrequalPayload, applyPrequalPayloadToForm } from "@/lib/pdf/prequal/mappers/prequal-fillable.mapper";
+import { buildPrequalPayload, applyPrequalPayloadToForm, resolvePrequalTemplate } from "@/lib/pdf/prequal/mappers/prequal-fillable.mapper";
 
 import { drawPdfImage } from "@/lib/pdf/utils/drawPdfImage";
 import { hasCompletedStep, isInvitationApproved } from "@/lib/utils/onboardingUtils";
@@ -49,6 +48,7 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     if (!tracker) return errorResponse(404, "Onboarding document not found");
     if (!isInvitationApproved(tracker)) return errorResponse(400, "driver not yet approved for onboarding process");
     if (!hasCompletedStep(tracker, EStepPath.APPLICATION_PAGE_1)) return errorResponse(400, `Step ${EStepPath.APPLICATION_PAGE_1} not yet completed`);
+    if (!tracker.companyId) return errorResponse(400, "Company ID missing in tracker");
 
     // page1 (name + phone)
     const appId = tracker.forms?.driverApplication;
@@ -85,7 +85,7 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     });
 
     // load template (1-page PDF)
-    const pdfPath = path.join(process.cwd(), "src/lib/pdf/prequal/templates/prequal-fillable.pdf");
+    const pdfPath = resolvePrequalTemplate(tracker.companyId);
     const pdfBytes = await fs.readFile(pdfPath);
     const pdfDoc = await PDFDocument.load(pdfBytes);
     const form = pdfDoc.getForm();
