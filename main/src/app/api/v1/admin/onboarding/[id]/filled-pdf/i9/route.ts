@@ -99,7 +99,7 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     const safetyAdmin = getSafetyAdminServerById(safetyAdminId);
     if (!safetyAdmin) return errorResponse(400, "Safety admin not found");
 
-    const onboarding = await OnboardingTracker.findById(onboardingId).lean();
+    const onboarding = await OnboardingTracker.findById(onboardingId);
     if (!onboarding) return errorResponse(404, "Onboarding document not found");
 
     if (!isInvitationApproved(onboarding)) {

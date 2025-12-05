@@ -44,7 +44,7 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     if (!safetyAdmin) return errorResponse(400, "Safety admin not found");
 
     // tracker
-    const tracker = await OnboardingTracker.findById(onboardingId).lean();
+    const tracker = await OnboardingTracker.findById(onboardingId);
     if (!tracker) return errorResponse(404, "Onboarding document not found");
     if (!isInvitationApproved(tracker)) return errorResponse(400, "driver not yet approved for onboarding process");
     if (!hasCompletedStep(tracker, EStepPath.APPLICATION_PAGE_1)) return errorResponse(400, `Step ${EStepPath.APPLICATION_PAGE_1} not yet completed`);
