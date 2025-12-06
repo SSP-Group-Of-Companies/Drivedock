@@ -228,7 +228,7 @@ export default function LicenseSection() {
 
   const handleLicensePhotoRemove = async (
     side: "front" | "back",
-    s3Key: string
+    s3Key?: string
   ) => {
     const fieldKey =
       side === "front"
