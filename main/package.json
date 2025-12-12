@@ -28,7 +28,7 @@
     "lucide-react": "^0.525.0",
     "mammoth": "^1.10.0",
     "mongoose": "^8.16.4",
-    "next": "15.3.6",
+    "next": "^15.3.8",
     "next-auth": "^4.24.11",
     "next-i18next": "^15.4.2",
     "pdf-lib": "^1.17.1",
@@ -53,7 +53,7 @@
     "@types/react-dom": "^19",
     "@types/uuid": "^10.0.0",
     "eslint": "^9",
-    "eslint-config-next": "15.3.5",
+    "eslint-config-next": "^15.3.8",
     "tailwindcss": "^4.1.11",
     "typescript": "^5"
   }
