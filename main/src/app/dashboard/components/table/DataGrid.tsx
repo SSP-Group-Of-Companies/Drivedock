@@ -139,26 +139,42 @@ export default function DataGrid({
   mode = "active",
 }: Props) {
   /* ---------- Terminate / Restore ---------- */
-  const { terminate, restore } = useOnboardingMutations();
+  const { terminate, restore, permanentDelete } = useOnboardingMutations();
   const [pending, setPending] = useState<null | {
     id: string;
     name?: string;
-    mode: "terminate" | "restore";
+    mode: "terminate" | "restore" | "permanentDelete";
   }>(null);
+  const [confirmDialogError, setConfirmDialogError] = useState<string | null>(
+    null,
+  );
 
-  const open = (action: "terminate" | "restore", id: string, name?: string) =>
+  const open = (
+    action: "terminate" | "restore" | "permanentDelete",
+    id: string,
+    name?: string,
+  ) => {
+    setConfirmDialogError(null);
     setPending({ id, name, mode: action });
-  const close = () => setPending(null);
+  };
+  const close = () => {
+    setConfirmDialogError(null);
+    setPending(null);
+  };
 
   const busyRowId = useMemo(() => pending?.id ?? null, [pending]);
   const isRowBusy = (rowId: string) =>
     (pending?.mode === "terminate" &&
       terminate.isPending &&
       busyRowId === rowId) ||
-    (pending?.mode === "restore" && restore.isPending && busyRowId === rowId);
+    (pending?.mode === "restore" && restore.isPending && busyRowId === rowId) ||
+    (pending?.mode === "permanentDelete" &&
+      permanentDelete.isPending &&
+      busyRowId === rowId);
 
   const confirm = async (action?: "resigned" | "terminated") => {
     if (!pending) return;
+    setConfirmDialogError(null);
     try {
       if (pending.mode === "terminate") {
         if (!action) {
@@ -169,14 +185,16 @@ export default function DataGrid({
           terminationType: action,
           signal: undefined,
         });
-      } else {
-        // For restore, we don't need an action parameter
+      } else if (pending.mode === "restore") {
         await restore.mutateAsync({ id: pending.id });
+      } else if (pending.mode === "permanentDelete") {
+        await permanentDelete.mutateAsync({ id: pending.id });
       }
       close();
     } catch (err) {
-      alert((err as Error)?.message ?? "Action failed");
-      close();
+      setConfirmDialogError(
+        (err as Error)?.message ?? "Something went wrong. Please try again.",
+      );
     }
   };
 
@@ -194,14 +212,14 @@ export default function DataGrid({
 
   const navigateToCarriersEdge = (trackerId: string) => {
     router.push(
-      `/dashboard/contract/${trackerId}/safety-processing?highlight=carriers-edge`
+      `/dashboard/contract/${trackerId}/safety-processing?highlight=carriers-edge`,
     );
   };
 
   /* ---------- Drug test navigation ---------- */
   const navigateToDrugTest = (trackerId: string) => {
     router.push(
-      `/dashboard/contract/${trackerId}/safety-processing?highlight=drug-test`
+      `/dashboard/contract/${trackerId}/safety-processing?highlight=drug-test`,
     );
   };
 
@@ -309,8 +327,8 @@ export default function DataGrid({
           {isLoading
             ? "Loading…"
             : isFetching
-            ? "Refreshing…"
-            : `${items.length} result(s)`}
+              ? "Refreshing…"
+              : `${items.length} result(s)`}
         </div>
         <div className="flex items-center justify-center gap-1.5 sm:justify-end">
           {/* Prev */}
@@ -359,7 +377,7 @@ export default function DataGrid({
               >
                 {item}
               </button>
-            )
+            ),
           )}
 
           {/* Next */}
@@ -607,7 +625,7 @@ export default function DataGrid({
                                         it.needsFlatbedTraining,
                                     });
                                     const currentIndex = stepFlow.indexOf(
-                                      it.status?.currentStep
+                                      it.status?.currentStep,
                                     );
                                     const totalSteps = stepFlow.length;
                                     const angleStep =
@@ -792,7 +810,7 @@ export default function DataGrid({
                                       open(
                                         "terminate",
                                         it._id,
-                                        it.itemSummary?.driverName ?? undefined
+                                        it.itemSummary?.driverName ?? undefined,
                                       )
                                     }
                                   >
@@ -823,7 +841,7 @@ export default function DataGrid({
                                         openCeUpload(
                                           it._id,
                                           it.itemSummary?.driverName ??
-                                            undefined
+                                            undefined,
                                         )
                                       }
                                     >
@@ -930,11 +948,24 @@ export default function DataGrid({
                                   open(
                                     "restore",
                                     it._id,
-                                    it.itemSummary?.driverName ?? undefined
+                                    it.itemSummary?.driverName ?? undefined,
                                   )
                                 }
                               >
                                 Restore
+                              </ActionBtn>
+                              <ActionBtn
+                                icon={Trash2}
+                                disabled={isRowBusy(it._id)}
+                                onClick={() =>
+                                  open(
+                                    "permanentDelete",
+                                    it._id,
+                                    it.itemSummary?.driverName ?? undefined,
+                                  )
+                                }
+                              >
+                                Delete
                               </ActionBtn>
                             </div>
                           )}
@@ -956,10 +987,15 @@ export default function DataGrid({
         driverName={pending?.name}
         onCancel={close}
         onConfirm={confirm}
+        errorText={confirmDialogError}
         isBusy={
           pending?.mode === "terminate"
             ? terminate.isPending
-            : restore.isPending
+            : pending?.mode === "restore"
+              ? restore.isPending
+              : pending?.mode === "permanentDelete"
+                ? permanentDelete.isPending
+                : false
         }
       />
 
