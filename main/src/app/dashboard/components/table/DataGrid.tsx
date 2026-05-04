@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -28,6 +28,7 @@ import {
   CheckCircle2,
   RotateCcw,
   Upload,
+  MoreHorizontal,
 } from "lucide-react";
 
 /* ---------------- helpers ---------------- */
@@ -148,6 +149,60 @@ export default function DataGrid({
   const [confirmDialogError, setConfirmDialogError] = useState<string | null>(
     null,
   );
+  /** Terminated table: mobile overflow menu (⋯) which row has it open */
+  const [mobileTerminatedMenuId, setMobileTerminatedMenuId] = useState<
+    string | null
+  >(null);
+  /** Viewport-fixed position for the floating icon strip (left of ⋯) */
+  const [terminatedMenuPlacement, setTerminatedMenuPlacement] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
+
+  useLayoutEffect(() => {
+    if (!mobileTerminatedMenuId) {
+      setTerminatedMenuPlacement(null);
+      return;
+    }
+    const update = () => {
+      const el = document.querySelector(
+        `[data-terminated-trigger="${mobileTerminatedMenuId}"]`,
+      );
+      if (!el || !(el instanceof HTMLElement)) return;
+      const rect = el.getBoundingClientRect();
+      setTerminatedMenuPlacement({
+        top: rect.top + rect.height / 2,
+        left: rect.left - 6,
+      });
+    };
+    update();
+    window.addEventListener("scroll", update, true);
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("scroll", update, true);
+      window.removeEventListener("resize", update);
+    };
+  }, [mobileTerminatedMenuId]);
+
+  useEffect(() => {
+    if (!mobileTerminatedMenuId) return;
+    const onDown = (e: MouseEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (el?.closest?.("[data-terminated-actions-root]")) return;
+      setMobileTerminatedMenuId(null);
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [mobileTerminatedMenuId]);
+
+  useEffect(() => {
+    if (!mobileTerminatedMenuId) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileTerminatedMenuId(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [mobileTerminatedMenuId]);
 
   const open = (
     action: "terminate" | "restore" | "permanentDelete",
@@ -155,6 +210,7 @@ export default function DataGrid({
     name?: string,
   ) => {
     setConfirmDialogError(null);
+    setMobileTerminatedMenuId(null);
     setPending({ id, name, mode: action });
   };
   const close = () => {
@@ -934,40 +990,177 @@ export default function DataGrid({
                               )}
                             </>
                           ) : (
-                            <div className="inline-flex justify-end gap-1 sm:gap-1.5 lg:gap-2">
-                              <ActionBtn
-                                icon={Eye}
-                                href={`/dashboard/contract/${it._id}`}
+                            <>
+                              <div className="hidden justify-end gap-1 sm:inline-flex sm:gap-1.5 lg:gap-2">
+                                <ActionBtn
+                                  icon={Eye}
+                                  href={`/dashboard/contract/${it._id}`}
+                                >
+                                  View application
+                                </ActionBtn>
+                                <ActionBtn
+                                  icon={RotateCcw}
+                                  disabled={isRowBusy(it._id)}
+                                  onClick={() =>
+                                    open(
+                                      "restore",
+                                      it._id,
+                                      it.itemSummary?.driverName ?? undefined,
+                                    )
+                                  }
+                                >
+                                  Restore
+                                </ActionBtn>
+                                <ActionBtn
+                                  icon={Trash2}
+                                  disabled={isRowBusy(it._id)}
+                                  onClick={() =>
+                                    open(
+                                      "permanentDelete",
+                                      it._id,
+                                      it.itemSummary?.driverName ?? undefined,
+                                    )
+                                  }
+                                >
+                                  Delete
+                                </ActionBtn>
+                              </div>
+
+                              <div
+                                className="inline-flex shrink-0 items-center sm:hidden"
+                                data-terminated-actions-root
                               >
-                                View application
-                              </ActionBtn>
-                              <ActionBtn
-                                icon={RotateCcw}
-                                disabled={isRowBusy(it._id)}
-                                onClick={() =>
-                                  open(
-                                    "restore",
-                                    it._id,
-                                    it.itemSummary?.driverName ?? undefined,
-                                  )
-                                }
-                              >
-                                Restore
-                              </ActionBtn>
-                              <ActionBtn
-                                icon={Trash2}
-                                disabled={isRowBusy(it._id)}
-                                onClick={() =>
-                                  open(
-                                    "permanentDelete",
-                                    it._id,
-                                    it.itemSummary?.driverName ?? undefined,
-                                  )
-                                }
-                              >
-                                Delete
-                              </ActionBtn>
-                            </div>
+                                {mobileTerminatedMenuId === it._id &&
+                                  terminatedMenuPlacement && (
+                                    <div
+                                      className="flex max-w-[calc(100vw-3rem)] items-center overflow-x-auto whitespace-nowrap rounded-full border py-1 pl-1 pr-1"
+                                      style={{
+                                        position: "fixed",
+                                        top: terminatedMenuPlacement.top,
+                                        left: terminatedMenuPlacement.left,
+                                        transform: "translate(-100%, -50%)",
+                                        zIndex: 50,
+                                        borderColor: "var(--color-outline)",
+                                        backgroundColor: "var(--color-card)",
+                                        boxShadow: "var(--elevation-1)",
+                                      }}
+                                    >
+                                      <Link
+                                        href={`/dashboard/contract/${it._id}`}
+                                        onClick={() =>
+                                          setMobileTerminatedMenuId(null)
+                                        }
+                                        className="inline-flex shrink-0 rounded-full p-2 transition-colors hover:bg-black/5 dark:hover:bg-white/10"
+                                        style={{
+                                          color: "var(--color-on-surface)",
+                                        }}
+                                        aria-label="View application"
+                                      >
+                                        <Eye className="h-4 w-4" aria-hidden />
+                                      </Link>
+                                      <span
+                                        className="shrink-0 select-none px-0.5 text-xs font-light leading-none"
+                                        style={{
+                                          color: "var(--color-outline-variant)",
+                                        }}
+                                        aria-hidden
+                                      >
+                                        |
+                                      </span>
+                                      <button
+                                        type="button"
+                                        disabled={isRowBusy(it._id)}
+                                        className="inline-flex shrink-0 rounded-full p-2 transition-colors hover:bg-black/5 disabled:opacity-50 dark:hover:bg-white/10"
+                                        style={{
+                                          color: "var(--color-on-surface)",
+                                        }}
+                                        aria-label="Restore application"
+                                        onClick={() =>
+                                          open(
+                                            "restore",
+                                            it._id,
+                                            it.itemSummary?.driverName ??
+                                              undefined,
+                                          )
+                                        }
+                                      >
+                                        <RotateCcw
+                                          className="h-4 w-4"
+                                          aria-hidden
+                                        />
+                                      </button>
+                                      <span
+                                        className="shrink-0 select-none px-0.5 text-xs font-light leading-none"
+                                        style={{
+                                          color: "var(--color-outline-variant)",
+                                        }}
+                                        aria-hidden
+                                      >
+                                        |
+                                      </span>
+                                      <button
+                                        type="button"
+                                        disabled={isRowBusy(it._id)}
+                                        className="inline-flex shrink-0 rounded-full p-2 transition-colors hover:bg-black/5 disabled:opacity-50 dark:hover:bg-white/10"
+                                        style={{
+                                          color: "var(--color-error)",
+                                        }}
+                                        aria-label="Delete permanently"
+                                        onClick={() =>
+                                          open(
+                                            "permanentDelete",
+                                            it._id,
+                                            it.itemSummary?.driverName ??
+                                              undefined,
+                                          )
+                                        }
+                                      >
+                                        <Trash2
+                                          className="h-4 w-4"
+                                          aria-hidden
+                                        />
+                                      </button>
+                                    </div>
+                                  )}
+                                <button
+                                  type="button"
+                                  data-terminated-trigger={it._id}
+                                  aria-label={
+                                    mobileTerminatedMenuId === it._id
+                                      ? "Close row actions"
+                                      : "Open row actions"
+                                  }
+                                  aria-expanded={
+                                    mobileTerminatedMenuId === it._id
+                                  }
+                                  className="relative z-[51] inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-colors active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] disabled:opacity-50"
+                                  style={{
+                                    borderColor: "var(--color-outline)",
+                                    backgroundColor: "var(--color-card)",
+                                    color: "var(--color-on-surface)",
+                                  }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const btn = e.currentTarget;
+                                    if (mobileTerminatedMenuId === it._id) {
+                                      setMobileTerminatedMenuId(null);
+                                      return;
+                                    }
+                                    const rect = btn.getBoundingClientRect();
+                                    setTerminatedMenuPlacement({
+                                      top: rect.top + rect.height / 2,
+                                      left: rect.left - 6,
+                                    });
+                                    setMobileTerminatedMenuId(it._id);
+                                  }}
+                                >
+                                  <MoreHorizontal
+                                    className="h-5 w-5"
+                                    aria-hidden
+                                  />
+                                </button>
+                              </div>
+                            </>
                           )}
                         </td>
                       </motion.tr>
