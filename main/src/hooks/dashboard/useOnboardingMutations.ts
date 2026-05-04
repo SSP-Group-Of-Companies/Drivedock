@@ -14,6 +14,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   terminateTracker,
   restoreTracker,
+  permanentDeleteTracker,
 } from "@/lib/dashboard/api/onboardingMutations";
 import type { OnboardingListResult } from "@/lib/dashboard/api/adminOnboarding";
 
@@ -28,7 +29,7 @@ export function useOnboardingMutations() {
    */
   function patchLists(
     predicate: (params: any) => boolean,
-    updater: (data: OnboardingListResult) => OnboardingListResult
+    updater: (data: OnboardingListResult) => OnboardingListResult,
   ) {
     const queries = qc.getQueriesData<OnboardingListResult>({
       queryKey: ["admin-onboarding-list"],
@@ -47,8 +48,11 @@ export function useOnboardingMutations() {
   }
 
   const terminate = useMutation({
-    mutationFn: async (payload: { id: string; terminationType: "resigned" | "terminated"; signal?: AbortSignal }) =>
-      terminateTracker(payload.id, payload.terminationType, payload.signal),
+    mutationFn: async (payload: {
+      id: string;
+      terminationType: "resigned" | "terminated";
+      signal?: AbortSignal;
+    }) => terminateTracker(payload.id, payload.terminationType, payload.signal),
 
     onMutate: async ({ id }) => {
       // Avoid clobbering optimistic state with any in-flight refetches
@@ -63,7 +67,7 @@ export function useOnboardingMutations() {
           items: data.items.filter((it) => it._id !== id),
           // Optionally nudge counts for instant feedback; server will correct on invalidate
           counts: { ...data.counts, all: Math.max(0, data.counts.all - 1) },
-        })
+        }),
       );
 
       return { id };
@@ -95,7 +99,7 @@ export function useOnboardingMutations() {
           ...data,
           items: data.items.filter((it) => it._id !== id),
           // We generally leave counts alone here; invalidate will sync them.
-        })
+        }),
       );
 
       return { id };
@@ -110,5 +114,33 @@ export function useOnboardingMutations() {
     },
   });
 
-  return { terminate, restore };
+  const permanentDelete = useMutation({
+    mutationFn: async (payload: { id: string; signal?: AbortSignal }) =>
+      permanentDeleteTracker(payload.id, payload.signal),
+
+    onMutate: async ({ id }) => {
+      await qc.cancelQueries({ queryKey: ["admin-onboarding-list"] });
+
+      patchLists(
+        (params) =>
+          params?.terminated === true || params?.terminated === "true",
+        (data) => ({
+          ...data,
+          items: data.items.filter((it) => it._id !== id),
+        }),
+      );
+
+      return { id };
+    },
+
+    onError: () => {
+      qc.invalidateQueries({ queryKey: ["admin-onboarding-list"] });
+    },
+
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: ["admin-onboarding-list"] });
+    },
+  });
+
+  return { terminate, restore, permanentDelete };
 }

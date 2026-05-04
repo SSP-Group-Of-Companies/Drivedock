@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -28,6 +28,7 @@ import {
   CheckCircle2,
   RotateCcw,
   Upload,
+  MoreHorizontal,
 } from "lucide-react";
 
 /* ---------------- helpers ---------------- */
@@ -139,26 +140,97 @@ export default function DataGrid({
   mode = "active",
 }: Props) {
   /* ---------- Terminate / Restore ---------- */
-  const { terminate, restore } = useOnboardingMutations();
+  const { terminate, restore, permanentDelete } = useOnboardingMutations();
   const [pending, setPending] = useState<null | {
     id: string;
     name?: string;
-    mode: "terminate" | "restore";
+    mode: "terminate" | "restore" | "permanentDelete";
   }>(null);
+  const [confirmDialogError, setConfirmDialogError] = useState<string | null>(
+    null,
+  );
+  /** Terminated table: mobile overflow menu (⋯) which row has it open */
+  const [mobileTerminatedMenuId, setMobileTerminatedMenuId] = useState<
+    string | null
+  >(null);
+  /** Viewport-fixed position for the floating icon strip (left of ⋯) */
+  const [terminatedMenuPlacement, setTerminatedMenuPlacement] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
 
-  const open = (action: "terminate" | "restore", id: string, name?: string) =>
+  useLayoutEffect(() => {
+    if (!mobileTerminatedMenuId) {
+      setTerminatedMenuPlacement(null);
+      return;
+    }
+    const update = () => {
+      const el = document.querySelector(
+        `[data-terminated-trigger="${mobileTerminatedMenuId}"]`,
+      );
+      if (!el || !(el instanceof HTMLElement)) return;
+      const rect = el.getBoundingClientRect();
+      setTerminatedMenuPlacement({
+        top: rect.top + rect.height / 2,
+        left: rect.left - 6,
+      });
+    };
+    update();
+    window.addEventListener("scroll", update, true);
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("scroll", update, true);
+      window.removeEventListener("resize", update);
+    };
+  }, [mobileTerminatedMenuId]);
+
+  useEffect(() => {
+    if (!mobileTerminatedMenuId) return;
+    const onDown = (e: MouseEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (el?.closest?.("[data-terminated-actions-root]")) return;
+      setMobileTerminatedMenuId(null);
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [mobileTerminatedMenuId]);
+
+  useEffect(() => {
+    if (!mobileTerminatedMenuId) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileTerminatedMenuId(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [mobileTerminatedMenuId]);
+
+  const open = (
+    action: "terminate" | "restore" | "permanentDelete",
+    id: string,
+    name?: string,
+  ) => {
+    setConfirmDialogError(null);
+    setMobileTerminatedMenuId(null);
     setPending({ id, name, mode: action });
-  const close = () => setPending(null);
+  };
+  const close = () => {
+    setConfirmDialogError(null);
+    setPending(null);
+  };
 
   const busyRowId = useMemo(() => pending?.id ?? null, [pending]);
   const isRowBusy = (rowId: string) =>
     (pending?.mode === "terminate" &&
       terminate.isPending &&
       busyRowId === rowId) ||
-    (pending?.mode === "restore" && restore.isPending && busyRowId === rowId);
+    (pending?.mode === "restore" && restore.isPending && busyRowId === rowId) ||
+    (pending?.mode === "permanentDelete" &&
+      permanentDelete.isPending &&
+      busyRowId === rowId);
 
   const confirm = async (action?: "resigned" | "terminated") => {
     if (!pending) return;
+    setConfirmDialogError(null);
     try {
       if (pending.mode === "terminate") {
         if (!action) {
@@ -169,14 +241,16 @@ export default function DataGrid({
           terminationType: action,
           signal: undefined,
         });
-      } else {
-        // For restore, we don't need an action parameter
+      } else if (pending.mode === "restore") {
         await restore.mutateAsync({ id: pending.id });
+      } else if (pending.mode === "permanentDelete") {
+        await permanentDelete.mutateAsync({ id: pending.id });
       }
       close();
     } catch (err) {
-      alert((err as Error)?.message ?? "Action failed");
-      close();
+      setConfirmDialogError(
+        (err as Error)?.message ?? "Something went wrong. Please try again.",
+      );
     }
   };
 
@@ -194,14 +268,14 @@ export default function DataGrid({
 
   const navigateToCarriersEdge = (trackerId: string) => {
     router.push(
-      `/dashboard/contract/${trackerId}/safety-processing?highlight=carriers-edge`
+      `/dashboard/contract/${trackerId}/safety-processing?highlight=carriers-edge`,
     );
   };
 
   /* ---------- Drug test navigation ---------- */
   const navigateToDrugTest = (trackerId: string) => {
     router.push(
-      `/dashboard/contract/${trackerId}/safety-processing?highlight=drug-test`
+      `/dashboard/contract/${trackerId}/safety-processing?highlight=drug-test`,
     );
   };
 
@@ -309,8 +383,8 @@ export default function DataGrid({
           {isLoading
             ? "Loading…"
             : isFetching
-            ? "Refreshing…"
-            : `${items.length} result(s)`}
+              ? "Refreshing…"
+              : `${items.length} result(s)`}
         </div>
         <div className="flex items-center justify-center gap-1.5 sm:justify-end">
           {/* Prev */}
@@ -359,7 +433,7 @@ export default function DataGrid({
               >
                 {item}
               </button>
-            )
+            ),
           )}
 
           {/* Next */}
@@ -607,7 +681,7 @@ export default function DataGrid({
                                         it.needsFlatbedTraining,
                                     });
                                     const currentIndex = stepFlow.indexOf(
-                                      it.status?.currentStep
+                                      it.status?.currentStep,
                                     );
                                     const totalSteps = stepFlow.length;
                                     const angleStep =
@@ -792,7 +866,7 @@ export default function DataGrid({
                                       open(
                                         "terminate",
                                         it._id,
-                                        it.itemSummary?.driverName ?? undefined
+                                        it.itemSummary?.driverName ?? undefined,
                                       )
                                     }
                                   >
@@ -823,7 +897,7 @@ export default function DataGrid({
                                         openCeUpload(
                                           it._id,
                                           it.itemSummary?.driverName ??
-                                            undefined
+                                            undefined,
                                         )
                                       }
                                     >
@@ -916,27 +990,177 @@ export default function DataGrid({
                               )}
                             </>
                           ) : (
-                            <div className="inline-flex justify-end gap-1 sm:gap-1.5 lg:gap-2">
-                              <ActionBtn
-                                icon={Eye}
-                                href={`/dashboard/contract/${it._id}`}
+                            <>
+                              <div className="hidden justify-end gap-1 sm:inline-flex sm:gap-1.5 lg:gap-2">
+                                <ActionBtn
+                                  icon={Eye}
+                                  href={`/dashboard/contract/${it._id}`}
+                                >
+                                  View application
+                                </ActionBtn>
+                                <ActionBtn
+                                  icon={RotateCcw}
+                                  disabled={isRowBusy(it._id)}
+                                  onClick={() =>
+                                    open(
+                                      "restore",
+                                      it._id,
+                                      it.itemSummary?.driverName ?? undefined,
+                                    )
+                                  }
+                                >
+                                  Restore
+                                </ActionBtn>
+                                <ActionBtn
+                                  icon={Trash2}
+                                  disabled={isRowBusy(it._id)}
+                                  onClick={() =>
+                                    open(
+                                      "permanentDelete",
+                                      it._id,
+                                      it.itemSummary?.driverName ?? undefined,
+                                    )
+                                  }
+                                >
+                                  Delete
+                                </ActionBtn>
+                              </div>
+
+                              <div
+                                className="inline-flex shrink-0 items-center sm:hidden"
+                                data-terminated-actions-root
                               >
-                                View application
-                              </ActionBtn>
-                              <ActionBtn
-                                icon={RotateCcw}
-                                disabled={isRowBusy(it._id)}
-                                onClick={() =>
-                                  open(
-                                    "restore",
-                                    it._id,
-                                    it.itemSummary?.driverName ?? undefined
-                                  )
-                                }
-                              >
-                                Restore
-                              </ActionBtn>
-                            </div>
+                                {mobileTerminatedMenuId === it._id &&
+                                  terminatedMenuPlacement && (
+                                    <div
+                                      className="flex max-w-[calc(100vw-3rem)] items-center overflow-x-auto whitespace-nowrap rounded-full border py-1 pl-1 pr-1"
+                                      style={{
+                                        position: "fixed",
+                                        top: terminatedMenuPlacement.top,
+                                        left: terminatedMenuPlacement.left,
+                                        transform: "translate(-100%, -50%)",
+                                        zIndex: 50,
+                                        borderColor: "var(--color-outline)",
+                                        backgroundColor: "var(--color-card)",
+                                        boxShadow: "var(--elevation-1)",
+                                      }}
+                                    >
+                                      <Link
+                                        href={`/dashboard/contract/${it._id}`}
+                                        onClick={() =>
+                                          setMobileTerminatedMenuId(null)
+                                        }
+                                        className="inline-flex shrink-0 rounded-full p-2 transition-colors hover:bg-black/5 dark:hover:bg-white/10"
+                                        style={{
+                                          color: "var(--color-on-surface)",
+                                        }}
+                                        aria-label="View application"
+                                      >
+                                        <Eye className="h-4 w-4" aria-hidden />
+                                      </Link>
+                                      <span
+                                        className="shrink-0 select-none px-0.5 text-xs font-light leading-none"
+                                        style={{
+                                          color: "var(--color-outline-variant)",
+                                        }}
+                                        aria-hidden
+                                      >
+                                        |
+                                      </span>
+                                      <button
+                                        type="button"
+                                        disabled={isRowBusy(it._id)}
+                                        className="inline-flex shrink-0 rounded-full p-2 transition-colors hover:bg-black/5 disabled:opacity-50 dark:hover:bg-white/10"
+                                        style={{
+                                          color: "var(--color-on-surface)",
+                                        }}
+                                        aria-label="Restore application"
+                                        onClick={() =>
+                                          open(
+                                            "restore",
+                                            it._id,
+                                            it.itemSummary?.driverName ??
+                                              undefined,
+                                          )
+                                        }
+                                      >
+                                        <RotateCcw
+                                          className="h-4 w-4"
+                                          aria-hidden
+                                        />
+                                      </button>
+                                      <span
+                                        className="shrink-0 select-none px-0.5 text-xs font-light leading-none"
+                                        style={{
+                                          color: "var(--color-outline-variant)",
+                                        }}
+                                        aria-hidden
+                                      >
+                                        |
+                                      </span>
+                                      <button
+                                        type="button"
+                                        disabled={isRowBusy(it._id)}
+                                        className="inline-flex shrink-0 rounded-full p-2 transition-colors hover:bg-black/5 disabled:opacity-50 dark:hover:bg-white/10"
+                                        style={{
+                                          color: "var(--color-error)",
+                                        }}
+                                        aria-label="Delete permanently"
+                                        onClick={() =>
+                                          open(
+                                            "permanentDelete",
+                                            it._id,
+                                            it.itemSummary?.driverName ??
+                                              undefined,
+                                          )
+                                        }
+                                      >
+                                        <Trash2
+                                          className="h-4 w-4"
+                                          aria-hidden
+                                        />
+                                      </button>
+                                    </div>
+                                  )}
+                                <button
+                                  type="button"
+                                  data-terminated-trigger={it._id}
+                                  aria-label={
+                                    mobileTerminatedMenuId === it._id
+                                      ? "Close row actions"
+                                      : "Open row actions"
+                                  }
+                                  aria-expanded={
+                                    mobileTerminatedMenuId === it._id
+                                  }
+                                  className="relative z-[51] inline-flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border transition-colors active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] disabled:opacity-50"
+                                  style={{
+                                    borderColor: "var(--color-outline)",
+                                    backgroundColor: "var(--color-card)",
+                                    color: "var(--color-on-surface)",
+                                  }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const btn = e.currentTarget;
+                                    if (mobileTerminatedMenuId === it._id) {
+                                      setMobileTerminatedMenuId(null);
+                                      return;
+                                    }
+                                    const rect = btn.getBoundingClientRect();
+                                    setTerminatedMenuPlacement({
+                                      top: rect.top + rect.height / 2,
+                                      left: rect.left - 6,
+                                    });
+                                    setMobileTerminatedMenuId(it._id);
+                                  }}
+                                >
+                                  <MoreHorizontal
+                                    className="h-5 w-5"
+                                    aria-hidden
+                                  />
+                                </button>
+                              </div>
+                            </>
                           )}
                         </td>
                       </motion.tr>
@@ -956,10 +1180,15 @@ export default function DataGrid({
         driverName={pending?.name}
         onCancel={close}
         onConfirm={confirm}
+        errorText={confirmDialogError}
         isBusy={
           pending?.mode === "terminate"
             ? terminate.isPending
-            : restore.isPending
+            : pending?.mode === "restore"
+              ? restore.isPending
+              : pending?.mode === "permanentDelete"
+                ? permanentDelete.isPending
+                : false
         }
       />
 

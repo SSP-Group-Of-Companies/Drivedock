@@ -1,20 +1,49 @@
 // src/lib/utils/s3Upload.ts
-import { AWS_ACCESS_KEY_ID, AWS_BUCKET_NAME, AWS_REGION, AWS_SECRET_ACCESS_KEY } from "@/config/env";
-import { S3Client, PutObjectCommand, DeleteObjectCommand, CopyObjectCommand, HeadObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import {
+  AWS_ACCESS_KEY_ID,
+  AWS_BUCKET_NAME,
+  AWS_REGION,
+  AWS_SECRET_ACCESS_KEY,
+} from "@/config/env";
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+  CopyObjectCommand,
+  HeadObjectCommand,
+  GetObjectCommand,
+  ListObjectsV2Command,
+  DeleteObjectsCommand,
+} from "@aws-sdk/client-s3";
 import { v4 as uuidv4 } from "uuid";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { DEFAULT_PRESIGN_EXPIRY_SECONDS, S3_SUBMISSIONS_FOLDER, S3_TEMP_FOLDER } from "@/constants/aws";
+import {
+  DEFAULT_PRESIGN_EXPIRY_SECONDS,
+  S3_SUBMISSIONS_FOLDER,
+  S3_TEMP_FOLDER,
+} from "@/constants/aws";
 import { ES3Folder, IPresignResponse } from "@/types/aws.types";
 import { EFileMimeType, type IFileAsset } from "@/types/shared.types";
 
 const s3 = new S3Client({
   region: AWS_REGION,
-  credentials: { accessKeyId: AWS_ACCESS_KEY_ID, secretAccessKey: AWS_SECRET_ACCESS_KEY },
+  credentials: {
+    accessKeyId: AWS_ACCESS_KEY_ID,
+    secretAccessKey: AWS_SECRET_ACCESS_KEY,
+  },
 });
 
 /** ---------- Core upload/delete/move/presign ---------- */
 
-export async function uploadBinaryToS3({ fileBuffer, fileType, folder }: { fileBuffer: Buffer; fileType: string; folder: string }): Promise<{ url: string; key: string }> {
+export async function uploadBinaryToS3({
+  fileBuffer,
+  fileType,
+  folder,
+}: {
+  fileBuffer: Buffer;
+  fileType: string;
+  folder: string;
+}): Promise<{ url: string; key: string }> {
   const extension = (fileType.split("/")[1] || "bin").toLowerCase();
   const key = `${folder}/${uuidv4()}.${extension}`;
 
@@ -37,18 +66,77 @@ export async function deleteS3Objects(keys: string[]): Promise<void> {
   await Promise.all(
     keys.map(async (key) => {
       try {
-        await s3.send(new DeleteObjectCommand({ Bucket: AWS_BUCKET_NAME, Key: key }));
+        await s3.send(
+          new DeleteObjectCommand({ Bucket: AWS_BUCKET_NAME, Key: key }),
+        );
       } catch (err) {
         console.error(`Failed to delete S3 object: ${key}`, err);
       }
-    })
+    }),
   );
 }
 
-export async function moveS3Object({ fromKey, toKey }: { fromKey: string; toKey: string }): Promise<{ url: string; key: string }> {
+const DELETE_OBJECTS_BATCH = 1000;
+
+/**
+ * List and delete every object under a prefix (paginated). Best-effort per batch.
+ */
+export async function deleteAllObjectsUnderPrefix(
+  prefix: string,
+): Promise<void> {
+  if (!prefix || !prefix.endsWith("/")) {
+    console.warn(
+      "deleteAllObjectsUnderPrefix: expected prefix to end with /",
+      prefix,
+    );
+  }
+  let continuationToken: string | undefined;
+  do {
+    const list = await s3.send(
+      new ListObjectsV2Command({
+        Bucket: AWS_BUCKET_NAME,
+        Prefix: prefix,
+        ContinuationToken: continuationToken,
+      }),
+    );
+    const keys = (list.Contents ?? [])
+      .map((c) => c.Key)
+      .filter((k): k is string => !!k);
+    for (let i = 0; i < keys.length; i += DELETE_OBJECTS_BATCH) {
+      const batch = keys.slice(i, i + DELETE_OBJECTS_BATCH);
+      try {
+        await s3.send(
+          new DeleteObjectsCommand({
+            Bucket: AWS_BUCKET_NAME,
+            Delete: { Objects: batch.map((Key) => ({ Key })) },
+          }),
+        );
+      } catch (err) {
+        console.error(`Failed to batch-delete S3 objects under ${prefix}`, err);
+      }
+    }
+    continuationToken = list.IsTruncated
+      ? list.NextContinuationToken
+      : undefined;
+  } while (continuationToken);
+}
+
+export async function moveS3Object({
+  fromKey,
+  toKey,
+}: {
+  fromKey: string;
+  toKey: string;
+}): Promise<{ url: string; key: string }> {
   const Bucket = AWS_BUCKET_NAME;
 
-  await s3.send(new CopyObjectCommand({ Bucket, CopySource: `${Bucket}/${fromKey}`, Key: toKey }));
+  await s3.send(
+    new CopyObjectCommand({
+      Bucket,
+      CopySource: `${Bucket}/${fromKey}`,
+      Key: toKey,
+    }),
+  );
   await s3.send(new DeleteObjectCommand({ Bucket, Key: fromKey }));
 
   return {
@@ -68,22 +156,40 @@ export async function s3ObjectExists(key: string): Promise<boolean> {
   }
 }
 
-export async function getPresignedPutUrl({ key, fileType, expiresIn = DEFAULT_PRESIGN_EXPIRY_SECONDS }: { key: string; fileType: string; expiresIn?: number }): Promise<{ url: string }> {
-  const command = new PutObjectCommand({ Bucket: AWS_BUCKET_NAME, Key: key, ContentType: fileType });
+export async function getPresignedPutUrl({
+  key,
+  fileType,
+  expiresIn = DEFAULT_PRESIGN_EXPIRY_SECONDS,
+}: {
+  key: string;
+  fileType: string;
+  expiresIn?: number;
+}): Promise<{ url: string }> {
+  const command = new PutObjectCommand({
+    Bucket: AWS_BUCKET_NAME,
+    Key: key,
+    ContentType: fileType,
+  });
   const url = await getSignedUrl(s3, command, { expiresIn });
   return { url };
 }
 
 /** ---------- Key helpers ---------- */
 
-export const isTempKey = (key?: string) => Boolean(key && key.startsWith(`${S3_TEMP_FOLDER}/`));
-export const buildFinalDest = (trackerId: string, folder: ES3Folder) => `${S3_SUBMISSIONS_FOLDER}/${folder}/${trackerId}`;
+export const isTempKey = (key?: string) =>
+  Boolean(key && key.startsWith(`${S3_TEMP_FOLDER}/`));
+export const buildFinalDest = (trackerId: string, folder: ES3Folder) =>
+  `${S3_SUBMISSIONS_FOLDER}/${folder}/${trackerId}`;
 
 /** ---------- File-asset finalization (generic) ---------- */
 
-export const isFinalOrEmptyAsset = (asset?: IFileAsset) => !asset?.s3Key || !isTempKey(asset.s3Key);
+export const isFinalOrEmptyAsset = (asset?: IFileAsset) =>
+  !asset?.s3Key || !isTempKey(asset.s3Key);
 
-export async function finalizeAsset(asset: IFileAsset, finalFolder: string): Promise<IFileAsset> {
+export async function finalizeAsset(
+  asset: IFileAsset,
+  finalFolder: string,
+): Promise<IFileAsset> {
   if (!asset?.s3Key) throw new Error("Missing s3Key in file asset");
   if (!asset.mimeType) throw new Error("Missing mimeType in file asset");
 
@@ -96,15 +202,22 @@ export async function finalizeAsset(asset: IFileAsset, finalFolder: string): Pro
   return { ...asset, s3Key: moved.key, url: moved.url };
 }
 
-export async function finalizeAssetSafe(asset: IFileAsset | undefined, finalFolder: string): Promise<IFileAsset | undefined> {
+export async function finalizeAssetSafe(
+  asset: IFileAsset | undefined,
+  finalFolder: string,
+): Promise<IFileAsset | undefined> {
   if (!asset) return asset;
   return finalizeAsset(asset, finalFolder);
 }
 
-export async function finalizeAssetVector(vec: IFileAsset[] | undefined, dest: string): Promise<IFileAsset[] | undefined> {
+export async function finalizeAssetVector(
+  vec: IFileAsset[] | undefined,
+  dest: string,
+): Promise<IFileAsset[] | undefined> {
   if (!Array.isArray(vec)) return vec;
   const out: IFileAsset[] = [];
-  for (const a of vec) out.push(isTempKey(a?.s3Key) ? await finalizeAsset(a, dest) : a);
+  for (const a of vec)
+    out.push(isTempKey(a?.s3Key) ? await finalizeAsset(a, dest) : a);
   return out;
 }
 
@@ -131,12 +244,21 @@ export async function uploadToS3Presigned({
   file,
   folder,
   trackerId = "unknown",
-  allowedMimeTypes = [EFileMimeType.JPEG, EFileMimeType.JPG, EFileMimeType.PNG, EFileMimeType.PDF, EFileMimeType.DOC, EFileMimeType.DOCX],
+  allowedMimeTypes = [
+    EFileMimeType.JPEG,
+    EFileMimeType.JPG,
+    EFileMimeType.PNG,
+    EFileMimeType.PDF,
+    EFileMimeType.DOC,
+    EFileMimeType.DOCX,
+  ],
   maxSizeMB = 10,
 }: UploadToS3Options): Promise<UploadResult> {
   const clientMime = file.type.toLowerCase();
   if (!allowedMimeTypes.includes(clientMime)) {
-    throw new Error(`Invalid file type. Allowed: ${allowedMimeTypes.join(", ")}`);
+    throw new Error(
+      `Invalid file type. Allowed: ${allowedMimeTypes.join(", ")}`,
+    );
   }
   if (file.size > maxSizeMB * 1024 * 1024) {
     throw new Error(`File size exceeds ${maxSizeMB}MB.`);
@@ -182,13 +304,16 @@ export async function uploadToS3Presigned({
 
 async function fetchBytesFromUrl(url: string): Promise<Uint8Array> {
   const res = await fetch(url);
-  if (!res.ok) throw new Error(`Failed to fetch object: ${res.status} ${res.statusText}`);
+  if (!res.ok)
+    throw new Error(`Failed to fetch object: ${res.status} ${res.statusText}`);
   const buf = await res.arrayBuffer();
   return new Uint8Array(buf);
 }
 
 async function getS3ObjectBytes(key: string): Promise<Uint8Array> {
-  const out = await s3.send(new GetObjectCommand({ Bucket: AWS_BUCKET_NAME, Key: key }));
+  const out = await s3.send(
+    new GetObjectCommand({ Bucket: AWS_BUCKET_NAME, Key: key }),
+  );
   const body: any = out.Body;
 
   if (body?.transformToByteArray) return await body.transformToByteArray();
@@ -206,7 +331,9 @@ async function getS3ObjectBytes(key: string): Promise<Uint8Array> {
  * Load image bytes from an asset (for PDF embedding, etc.).
  * Keep this for image workflows only. If you need generic bytes, add another helper.
  */
-export async function loadImageBytesFromAsset(asset?: IFileAsset): Promise<Uint8Array> {
+export async function loadImageBytesFromAsset(
+  asset?: IFileAsset,
+): Promise<Uint8Array> {
   if (!asset) throw new Error("Asset is undefined");
   if (asset.s3Key) return getS3ObjectBytes(asset.s3Key);
   if (asset.url) return fetchBytesFromUrl(asset.url);
@@ -219,7 +346,9 @@ export async function loadImageBytesFromAsset(asset?: IFileAsset): Promise<Uint8
  * - No-ops if the list is empty after filtering.
  * - Throws with a friendly message on failure.
  */
-export async function deleteTempFiles(keys: string[]): Promise<{ deleted?: string[]; failed?: string[] }> {
+export async function deleteTempFiles(
+  keys: string[],
+): Promise<{ deleted?: string[]; failed?: string[] }> {
   if (!Array.isArray(keys) || keys.length === 0) return { deleted: [] };
   const tempKeys = keys.filter((k) => isTempKey(k));
   if (tempKeys.length === 0) return { deleted: [] };
@@ -285,14 +414,18 @@ export async function getPresignedGetUrl({
   // 1) Look up stored metadata to preserve real content-type
   let storedContentType: string | undefined;
   try {
-    const head = await s3.send(new HeadObjectCommand({ Bucket: AWS_BUCKET_NAME, Key: key }));
+    const head = await s3.send(
+      new HeadObjectCommand({ Bucket: AWS_BUCKET_NAME, Key: key }),
+    );
     storedContentType = head.ContentType || undefined;
   } catch {
     // If Head fails, we’ll still issue a URL, but use a safe default content-type below
   }
 
   // 2) Build a safe, extension-inclusive filename
-  const baseName = sanitizeDownloadName(filename || key.split("/").pop() || "download");
+  const baseName = sanitizeDownloadName(
+    filename || key.split("/").pop() || "download",
+  );
   const finalName = ensureExtension(baseName, key);
   const encoded = encodeURIComponent(finalName);
 

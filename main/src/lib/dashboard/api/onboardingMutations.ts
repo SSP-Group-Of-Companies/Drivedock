@@ -17,7 +17,7 @@ const BASE = "/api/v1/admin/onboarding";
 async function patchJson<T>(
   url: string,
   body: unknown,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<ApiEnvelope<T>> {
   const res = await fetch(url, {
     method: "PATCH",
@@ -39,14 +39,14 @@ async function patchJson<T>(
 }
 
 export async function terminateTracker(
-  id: string, 
-  terminationType: "resigned" | "terminated", 
-  signal?: AbortSignal
+  id: string,
+  terminationType: "resigned" | "terminated",
+  signal?: AbortSignal,
 ) {
   return patchJson<void>(
     `${BASE}/${id}/terminate`,
     { terminationType },
-    signal
+    signal,
   );
 }
 
@@ -54,6 +54,21 @@ export async function restoreTracker(id: string, signal?: AbortSignal) {
   return patchJson<void>(
     `${BASE}/${id}/restore`,
     { terminated: false },
-    signal
+    signal,
   );
+}
+
+export async function permanentDeleteTracker(id: string, signal?: AbortSignal) {
+  const res = await fetch(`${BASE}/${id}/permanent-delete`, {
+    method: "DELETE",
+    headers: { Accept: "application/json" },
+    signal,
+  });
+
+  const json = (await res.json().catch(() => ({}))) as ApiEnvelope<unknown>;
+  if (!res.ok || json?.success === false) {
+    const msg = json?.message || `Request failed: ${res.status}`;
+    throw new Error(msg);
+  }
+  return json;
 }
