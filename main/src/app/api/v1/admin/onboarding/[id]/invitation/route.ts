@@ -10,19 +10,37 @@ import PreQualifications from "@/mongoose/models/Prequalifications";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
 import OnboardingSession from "@/mongoose/models/OnboardingSession";
 
-import { buildTrackerContext, isInvitationApproved } from "@/lib/utils/onboardingUtils";
-import { getCompanyById, needsFlatbedTraining, ECompanyApplicationType } from "@/constants/companies";
+import {
+  buildTrackerContext,
+  isInvitationApproved,
+} from "@/lib/utils/onboardingUtils";
+import {
+  getCompanyById,
+  needsFlatbedTraining,
+  ECompanyApplicationType,
+} from "@/constants/companies";
 import { readMongooseRefField } from "@/lib/utils/mongooseRef";
 import type { IPreQualificationsDoc } from "@/types/preQualifications.types";
 import { deleteS3Objects } from "@/lib/utils/s3Upload";
 
-import type { IApplicationFormDoc, IApplicationFormPage1, ILicenseEntry } from "@/types/applicationForm.types";
+import type {
+  IApplicationFormDoc,
+  IApplicationFormPage1,
+  ILicenseEntry,
+} from "@/types/applicationForm.types";
 import { sendDriverRejectedEmail } from "@/lib/mail/driver/sendDriverRejectedEmail";
 import { sendDriverApprovedEmail } from "@/lib/mail/driver/sendDriverApprovedEmail";
 import { ECompanyId } from "@/constants/companies";
+import {
+  recordOnboardingAuditLogSafe,
+  actorFromAdminUser,
+} from "@/lib/services/onboardingAuditLog.service";
+import { EOnboardingAuditAction } from "@/types/onboardingAuditLog.types";
 
 /** Collect S3 keys from page1 images to clean up on hard delete */
-function collectS3KeysFromApplicationForm(appFormDoc: IApplicationFormDoc | null | undefined): string[] {
+function collectS3KeysFromApplicationForm(
+  appFormDoc: IApplicationFormDoc | null | undefined,
+): string[] {
   const keys = new Set<string>();
   if (!appFormDoc?.page1) return [];
 
@@ -33,7 +51,9 @@ function collectS3KeysFromApplicationForm(appFormDoc: IApplicationFormDoc | null
   if (sinKey) keys.add(sinKey);
 
   // Licenses (front/back)
-  const licenses: ILicenseEntry[] = Array.isArray(page1.licenses) ? page1.licenses : [];
+  const licenses: ILicenseEntry[] = Array.isArray(page1.licenses)
+    ? page1.licenses
+    : [];
   for (const lic of licenses) {
     const front = lic.licenseFrontPhoto?.s3Key;
     const back = lic.licenseBackPhoto?.s3Key;
@@ -53,8 +73,12 @@ async function getDriverEmailPayload(onboardingId: string) {
   const appFormId = tracker.forms?.driverApplication;
   if (!appFormId) return null;
 
-  const appFormDoc = await ApplicationForm.findById(appFormId).lean<IApplicationFormDoc | null>();
-  const page1 = appFormDoc?.page1 as unknown as IApplicationFormPage1 | undefined;
+  const appFormDoc = await ApplicationForm.findById(
+    appFormId,
+  ).lean<IApplicationFormDoc | null>();
+  const page1 = appFormDoc?.page1 as unknown as
+    | IApplicationFormPage1
+    | undefined;
   if (!page1) return null;
 
   const firstName = page1.firstName?.trim() || "";
@@ -83,7 +107,10 @@ async function getDriverEmailPayload(onboardingId: string) {
 
 // ============ GET ============
 // Returns both preQualifications and personalDetails for a pending-approval application
-export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+export const GET = async (
+  _: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) => {
   try {
     await connectDB();
     await guard();
@@ -92,27 +119,45 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
     if (!isValidObjectId(id)) return errorResponse(400, "not a valid id");
 
     const onboardingDoc = await OnboardingTracker.findById(id);
-    if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
+    if (!onboardingDoc)
+      return errorResponse(404, "Onboarding document not found");
 
     // Must be pending approval
-    if (isInvitationApproved(onboardingDoc)) return errorResponse(400, "this application is not pending approval");
+    if (isInvitationApproved(onboardingDoc))
+      return errorResponse(400, "this application is not pending approval");
 
     // Linked docs
     const preQualId = onboardingDoc.forms?.preQualification;
     const appFormId = onboardingDoc.forms?.driverApplication;
 
-    if (!preQualId) return errorResponse(404, "prequalifications document not found");
-    if (!appFormId) return errorResponse(404, "personalDetails of the application form not found");
+    if (!preQualId)
+      return errorResponse(404, "prequalifications document not found");
+    if (!appFormId)
+      return errorResponse(
+        404,
+        "personalDetails of the application form not found",
+      );
 
-    const [preQualDoc, appFormDoc] = await Promise.all([PreQualifications.findById(preQualId), ApplicationForm.findById(appFormId)]);
+    const [preQualDoc, appFormDoc] = await Promise.all([
+      PreQualifications.findById(preQualId),
+      ApplicationForm.findById(appFormId),
+    ]);
 
-    if (!preQualDoc) return errorResponse(404, "prequalifications document not found");
-    if (!appFormDoc?.page1) return errorResponse(404, "personalDetails of the application form not found");
+    if (!preQualDoc)
+      return errorResponse(404, "prequalifications document not found");
+    if (!appFormDoc?.page1)
+      return errorResponse(
+        404,
+        "personalDetails of the application form not found",
+      );
 
     // Include preApprovalCountryCode explicitly so admin UI can country-filter prequal view
     const ctx = buildTrackerContext(onboardingDoc, null, true);
     return successResponse(200, "Invitation review data retrieved", {
-      onboardingContext: { ...ctx, preApprovalCountryCode: (onboardingDoc as any).preApprovalCountryCode },
+      onboardingContext: {
+        ...ctx,
+        preApprovalCountryCode: (onboardingDoc as any).preApprovalCountryCode,
+      },
       preQualifications: preQualDoc.toObject(),
       personalDetails: appFormDoc.page1,
     });
@@ -123,19 +168,26 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
 
 // ============ POST ============
 // Approve invitation: sets invitationApproved = true + send approval email to driver
-export const POST = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+export const POST = async (
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) => {
   try {
     await connectDB();
-    await guard();
+    const adminUser = await guard();
 
     const { id } = await params;
     if (!isValidObjectId(id)) return errorResponse(400, "not a valid id");
 
-    const onboardingDoc = await OnboardingTracker.findById(id).populate("forms.preQualification");
-    if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
+    const onboardingDoc = await OnboardingTracker.findById(id).populate(
+      "forms.preQualification",
+    );
+    if (!onboardingDoc)
+      return errorResponse(404, "Onboarding document not found");
 
     // Must be pending approval
-    if (isInvitationApproved(onboardingDoc)) return errorResponse(400, "this application is not pending approval");
+    if (isInvitationApproved(onboardingDoc))
+      return errorResponse(400, "this application is not pending approval");
 
     // Parse selection from body
     let payload: any = {};
@@ -143,16 +195,24 @@ export const POST = async (req: NextRequest, { params }: { params: Promise<{ id:
       payload = await req.json().catch(() => ({}));
     } catch {}
     const companyId = String(payload.companyId || "").trim();
-    const applicationType = payload.applicationType as ECompanyApplicationType | undefined;
+    const applicationType = payload.applicationType as
+      | ECompanyApplicationType
+      | undefined;
 
-    if (!companyId) return errorResponse(400, "companyId is required to approve");
+    if (!companyId)
+      return errorResponse(400, "companyId is required to approve");
     const sel = getCompanyById(companyId);
     if (!sel) return errorResponse(400, "invalid company id");
 
     // Validate country consistency with pre-approval selection (if present)
-    const preCountry = onboardingDoc.get("preApprovalCountryCode") as string | undefined;
+    const preCountry = onboardingDoc.get("preApprovalCountryCode") as
+      | string
+      | undefined;
     if (preCountry && sel.countryCode !== preCountry) {
-      return errorResponse(400, "Selected company country does not match applicant's chosen country");
+      return errorResponse(
+        400,
+        "Selected company country does not match applicant's chosen country",
+      );
     }
     // Backfill preApprovalCountryCode if missing (old data)
     if (!preCountry) {
@@ -162,10 +222,17 @@ export const POST = async (req: NextRequest, { params }: { params: Promise<{ id:
     // Companies with dry-van operations require applicationType (FLATBED vs DRY_VAN)
     const requiresApplicationType = sel.hasDryVan === true;
 
-    let resolvedApplicationType: ECompanyApplicationType | undefined = undefined;
+    let resolvedApplicationType: ECompanyApplicationType | undefined =
+      undefined;
     if (requiresApplicationType) {
-      if (!applicationType || !Object.values(ECompanyApplicationType).includes(applicationType)) {
-        return errorResponse(400, "applicationType is required for companies with dry-van operations");
+      if (
+        !applicationType ||
+        !Object.values(ECompanyApplicationType).includes(applicationType)
+      ) {
+        return errorResponse(
+          400,
+          "applicationType is required for companies with dry-van operations",
+        );
       }
       resolvedApplicationType = applicationType;
     }
@@ -180,12 +247,34 @@ export const POST = async (req: NextRequest, { params }: { params: Promise<{ id:
     }
 
     // Recompute flatbed training requirement
-    const preQualification = readMongooseRefField<IPreQualificationsDoc>(onboardingDoc.forms?.preQualification as any);
+    const preQualification = readMongooseRefField<IPreQualificationsDoc>(
+      onboardingDoc.forms?.preQualification as any,
+    );
     const flatbedExperience = preQualification?.flatbedExperience ?? false;
-    onboardingDoc.needsFlatbedTraining = needsFlatbedTraining(companyId, (onboardingDoc as any).applicationType, flatbedExperience);
+    onboardingDoc.needsFlatbedTraining = needsFlatbedTraining(
+      companyId,
+      (onboardingDoc as any).applicationType,
+      flatbedExperience,
+    );
 
     onboardingDoc.invitationApproved = true;
     await onboardingDoc.save();
+
+    const approvedCompany = getCompanyById(companyId);
+    const companyDisplayName = approvedCompany?.name ?? companyId;
+
+    await recordOnboardingAuditLogSafe({
+      onboardingId: id,
+      action: EOnboardingAuditAction.INVITATION_APPROVED,
+      actor: actorFromAdminUser(adminUser),
+      message: `Invitation was approved for ${companyDisplayName} (${companyId}). The driver may continue onboarding.`,
+      metadata: {
+        companyId,
+        companyName: companyDisplayName,
+        applicationType: resolvedApplicationType ?? null,
+        emailSentPlanned: true,
+      },
+    });
 
     // Build response context
     const responsePayload = {
@@ -222,10 +311,13 @@ export const POST = async (req: NextRequest, { params }: { params: Promise<{ id:
 // Hard delete: OnboardingTracker + linked PreQualifications + ApplicationForm
 // Also delete any S3 assets referenced (SIN photo + license front/back) and any onboarding sessions.
 // Additionally: send rejection email to driver (optionally including a reason).
-export const DELETE = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+export const DELETE = async (
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) => {
   try {
     await connectDB();
-    await guard();
+    const adminUser = await guard();
 
     // ---- Optional rejection reason (safe-parse body) ----
     let rejectionReason: string | undefined = undefined;
@@ -244,20 +336,51 @@ export const DELETE = async (req: NextRequest, { params }: { params: Promise<{ i
     if (!isValidObjectId(id)) return errorResponse(400, "not a valid id");
 
     const onboardingDoc = await OnboardingTracker.findById(id);
-    if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
+    if (!onboardingDoc)
+      return errorResponse(404, "Onboarding document not found");
 
     // Must be pending approval
-    if (isInvitationApproved(onboardingDoc)) return errorResponse(400, "this application is not pending approval");
+    if (isInvitationApproved(onboardingDoc))
+      return errorResponse(400, "this application is not pending approval");
 
     // Gather linked docs & S3 keys BEFORE deletion
     const preQualId = onboardingDoc.forms?.preQualification ?? null;
     const appFormId = onboardingDoc.forms?.driverApplication ?? null;
 
-    const appFormDoc = appFormId ? await ApplicationForm.findById(appFormId) : null;
+    const appFormDoc = appFormId
+      ? await ApplicationForm.findById(appFormId)
+      : null;
     const s3KeysToDelete = collectS3KeysFromApplicationForm(appFormDoc);
 
     // Also gather driver email payload BEFORE we delete anything
     const driverInfo = await getDriverEmailPayload(id);
+
+    const reasonSnippet =
+      rejectionReason && rejectionReason.length > 240
+        ? `${rejectionReason.slice(0, 240)}…`
+        : rejectionReason;
+
+    await recordOnboardingAuditLogSafe({
+      onboardingId: id,
+      action: EOnboardingAuditAction.INVITATION_REJECTED,
+      actor: actorFromAdminUser(adminUser),
+      message: rejectionReason
+        ? `Invitation was rejected and the pending application was deleted. Recorded reason: ${reasonSnippet}`
+        : `Invitation was rejected and the pending application was deleted (no reason text was provided).`,
+      metadata: {
+        rejectionReason: rejectionReason ?? null,
+        driverEmail: driverInfo?.toEmail ?? null,
+        reasonLength: rejectionReason?.length ?? 0,
+      },
+      snapshotOverride: {
+        driverName: (() => {
+          if (!driverInfo) return undefined;
+          const n = `${driverInfo.firstName} ${driverInfo.lastName}`.trim();
+          return n.length ? n : undefined;
+        })(),
+        driverEmail: driverInfo?.toEmail ?? undefined,
+      },
+    });
 
     // Delete Mongo docs (child docs first, then tracker)
     if (preQualId) {
@@ -316,7 +439,10 @@ export const DELETE = async (req: NextRequest, { params }: { params: Promise<{ i
     }
 
     return successResponse(200, "Invitation rejected and Application deleted", {
-      email: { rejectionSent: emailSent, includedReason: Boolean(rejectionReason) },
+      email: {
+        rejectionSent: emailSent,
+        includedReason: Boolean(rejectionReason),
+      },
       deleted: {
         preQualifications: Boolean(preQualId),
         applicationForm: Boolean(appFormId),

@@ -2,19 +2,33 @@ import { NextRequest } from "next/server";
 import { isValidObjectId } from "mongoose";
 
 import connectDB from "@/lib/utils/connectDB";
-import { errorResponse, successResponse, AppError } from "@/lib/utils/apiResponse";
+import {
+  errorResponse,
+  successResponse,
+  AppError,
+} from "@/lib/utils/apiResponse";
 import { parseJsonBody } from "@/lib/utils/reqParser";
 
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import FlatbedTraining from "@/mongoose/models/FlatbedTraining";
 
-import { buildTrackerContext, hasReachedStep, advanceProgress, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
+import {
+  buildTrackerContext,
+  hasReachedStep,
+  advanceProgress,
+  nextResumeExpiry,
+} from "@/lib/utils/onboardingUtils";
 import { canHaveFlatbedTraining } from "@/constants/companies";
 
 import { EStepPath, IOnboardingTracker } from "@/types/onboardingTracker.types";
 import type { IFileAsset } from "@/types/shared.types";
 import { guard } from "@/lib/utils/auth/authUtils";
 import sendCompletionEmailIfEligible from "@/lib/services/sendCompletionEmailIfEligible";
+import {
+  recordOnboardingAuditLogSafe,
+  actorFromAdminUser,
+} from "@/lib/services/onboardingAuditLog.service";
+import { EOnboardingAuditAction } from "@/types/onboardingAuditLog.types";
 
 import { deleteS3Objects, finalizeAsset } from "@/lib/utils/s3Upload";
 import { S3_SUBMISSIONS_FOLDER, S3_TEMP_FOLDER } from "@/constants/aws";
@@ -24,16 +38,21 @@ import { EFileMimeType } from "@/types/shared.types";
 /* ========================================================================
  * GET (unchanged)
  * ===================================================================== */
-export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+export const GET = async (
+  _: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) => {
   try {
     await connectDB();
     await guard();
 
     const { id: onboardingId } = await params;
-    if (!isValidObjectId(onboardingId)) return errorResponse(400, "Not a valid onboarding tracker ID");
+    if (!isValidObjectId(onboardingId))
+      return errorResponse(400, "Not a valid onboarding tracker ID");
 
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
-    if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
+    if (!onboardingDoc)
+      return errorResponse(404, "Onboarding document not found");
 
     // Check if flatbed training is not applicable for this driver
     if (onboardingDoc.needsFlatbedTraining === false) {
@@ -48,7 +67,10 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
     }
 
     const flatbedId = onboardingDoc.forms?.flatbedTraining;
-    const flatbedTraining = flatbedId && isValidObjectId(flatbedId) ? await FlatbedTraining.findById(flatbedId).lean() : null;
+    const flatbedTraining =
+      flatbedId && isValidObjectId(flatbedId)
+        ? await FlatbedTraining.findById(flatbedId).lean()
+        : null;
 
     return successResponse(200, "flatbed training retrieved", {
       onboardingContext: buildTrackerContext(onboardingDoc, null, true),
@@ -73,21 +95,36 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
 
 const TEMP_PREFIX = `${S3_TEMP_FOLDER}/`;
 
-const ALLOWED_MIME: ReadonlySet<string> = new Set<string>([EFileMimeType.JPEG, EFileMimeType.JPG, EFileMimeType.PNG, EFileMimeType.PDF, EFileMimeType.DOC, EFileMimeType.DOCX]);
+const ALLOWED_MIME: ReadonlySet<string> = new Set<string>([
+  EFileMimeType.JPEG,
+  EFileMimeType.JPG,
+  EFileMimeType.PNG,
+  EFileMimeType.PDF,
+  EFileMimeType.DOC,
+  EFileMimeType.DOCX,
+]);
 
 function assertAllowedMimeOrThrow(mime?: string) {
   const mt = (mime ?? "").toLowerCase().trim();
   if (!ALLOWED_MIME.has(mt)) {
-    throw new AppError(400, `Unsupported file type "${mime}". Allowed: jpeg, jpg, png, pdf, doc, docx.`);
+    throw new AppError(
+      400,
+      `Unsupported file type "${mime}". Allowed: jpeg, jpg, png, pdf, doc, docx.`,
+    );
   }
 }
 
-async function finalizeSingleAssetIfNeeded(incoming: IFileAsset, finalFolder: string): Promise<IFileAsset> {
-  if (!incoming?.mimeType) throw new AppError(400, "File asset must include a mimeType.");
+async function finalizeSingleAssetIfNeeded(
+  incoming: IFileAsset,
+  finalFolder: string,
+): Promise<IFileAsset> {
+  if (!incoming?.mimeType)
+    throw new AppError(400, "File asset must include a mimeType.");
   incoming.mimeType = String(incoming.mimeType).toLowerCase();
   assertAllowedMimeOrThrow(incoming.mimeType);
 
-  if (!incoming?.s3Key) throw new AppError(400, "File asset must include an s3Key.");
+  if (!incoming?.s3Key)
+    throw new AppError(400, "File asset must include an s3Key.");
   if (incoming.s3Key.startsWith(TEMP_PREFIX)) {
     return finalizeAsset(incoming, finalFolder);
   }
@@ -113,25 +150,40 @@ type PatchBody = {
   };
 };
 
-export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+export const PATCH = async (
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) => {
   try {
     await connectDB();
-    await guard();
+    const adminUser = await guard();
 
     const { id: onboardingId } = await params;
-    if (!isValidObjectId(onboardingId)) return errorResponse(400, "Invalid onboarding ID");
+    if (!isValidObjectId(onboardingId))
+      return errorResponse(400, "Invalid onboarding ID");
 
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
-    if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
-    if (onboardingDoc.terminated) return errorResponse(400, "Onboarding document terminated");
+    if (!onboardingDoc)
+      return errorResponse(404, "Onboarding document not found");
+    if (onboardingDoc.terminated)
+      return errorResponse(400, "Onboarding document terminated");
 
     if (!hasReachedStep(onboardingDoc, EStepPath.FLATBED_TRAINING)) {
-      return errorResponse(403, "Driver hasn't reached the Flatbed Training step yet");
+      return errorResponse(
+        403,
+        "Driver hasn't reached the Flatbed Training step yet",
+      );
     }
 
-    const applicable = canHaveFlatbedTraining(onboardingDoc.companyId as string, onboardingDoc.applicationType as any);
+    const applicable = canHaveFlatbedTraining(
+      onboardingDoc.companyId as string,
+      onboardingDoc.applicationType as any,
+    );
     if (!applicable || onboardingDoc.needsFlatbedTraining !== true) {
-      return errorResponse(400, "Flatbed training is not applicable for this applicant/company");
+      return errorResponse(
+        400,
+        "Flatbed training is not applicable for this applicant/company",
+      );
     }
 
     const body = await parseJsonBody<PatchBody>(req);
@@ -146,7 +198,10 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     }
     const incomingFile = payload.flatbedCertificate;
     if (!incomingFile) {
-      return errorResponse(400, "flatbedTraining.flatbedCertificate is required");
+      return errorResponse(
+        400,
+        "flatbedTraining.flatbedCertificate is required",
+      );
     }
 
     // Load or create the FlatbedTraining doc
@@ -156,16 +211,26 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       flatbedDoc = await FlatbedTraining.findById(flatbedId);
     }
     if (!flatbedDoc) {
-      flatbedDoc = new FlatbedTraining({ completed: false, flatbedCertificates: [] });
+      flatbedDoc = new FlatbedTraining({
+        completed: false,
+        flatbedCertificates: [],
+      });
     }
 
     const finalFolder = `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.FLATBED_TRAINING_CERTIFICATES}/${onboardingDoc.id}`;
 
     // prev (single) certificate, if any
-    const prevCert: IFileAsset | undefined = Array.isArray(flatbedDoc.flatbedCertificates) && flatbedDoc.flatbedCertificates.length > 0 ? flatbedDoc.flatbedCertificates[0] : undefined;
+    const prevCert: IFileAsset | undefined =
+      Array.isArray(flatbedDoc.flatbedCertificates) &&
+      flatbedDoc.flatbedCertificates.length > 0
+        ? flatbedDoc.flatbedCertificates[0]
+        : undefined;
 
     // finalize/process the single incoming asset
-    const nextCert = await finalizeSingleAssetIfNeeded(incomingFile, finalFolder);
+    const nextCert = await finalizeSingleAssetIfNeeded(
+      incomingFile,
+      finalFolder,
+    );
 
     // replace array with exactly one certificate
     flatbedDoc.flatbedCertificates = [nextCert];
@@ -186,7 +251,10 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     // If just transitioned to completed, advance progress
     const justCompleted = !wasCompleted && !!flatbedDoc.completed;
     if (justCompleted) {
-      onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.FLATBED_TRAINING);
+      onboardingDoc.status = advanceProgress(
+        onboardingDoc,
+        EStepPath.FLATBED_TRAINING,
+      );
     }
 
     // Extend resume window (even for updates)
@@ -202,8 +270,36 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
     const responseTracker = updatedTracker ?? onboardingDoc;
 
+    const onboardingFullyCompleted = responseTracker.status?.completed === true;
+
+    let flatbedMessage = justCompleted
+      ? "Administrator marked flatbed training complete, saved the certificate on file, and advanced the driver past the flatbed training step."
+      : "Administrator replaced the flatbed training certificate on file (training was already marked complete).";
+    if (onboardingFullyCompleted) {
+      flatbedMessage +=
+        " Onboarding is now fully completed (all required workflow steps are finished).";
+    }
+
+    await recordOnboardingAuditLogSafe({
+      onboardingId: onboardingId,
+      action: EOnboardingAuditAction.FLATBED_TRAINING_UPDATED,
+      actor: actorFromAdminUser(adminUser),
+      message: flatbedMessage,
+      metadata: {
+        justCompleted,
+        flatbedTrainingCompleted: true,
+        certificateOnFile: true,
+        certificateReplaced: !justCompleted,
+        onboardingCompleted: onboardingFullyCompleted,
+      },
+    });
+
     return successResponse(200, "Flatbed training updated", {
-      onboardingContext: buildTrackerContext(responseTracker, EStepPath.FLATBED_TRAINING, true),
+      onboardingContext: buildTrackerContext(
+        responseTracker,
+        EStepPath.FLATBED_TRAINING,
+        true,
+      ),
       flatbedTraining: flatbedDoc.toObject(),
     });
   } catch (error) {

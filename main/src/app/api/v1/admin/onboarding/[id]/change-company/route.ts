@@ -5,21 +5,41 @@ import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import { parseJsonBody } from "@/lib/utils/reqParser";
 import { getCompanyById, needsFlatbedTraining } from "@/constants/companies";
-import { buildTrackerContext, isInvitationApproved, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
+import {
+  buildTrackerContext,
+  isInvitationApproved,
+  nextResumeExpiry,
+} from "@/lib/utils/onboardingUtils";
 import { readMongooseRefField } from "@/lib/utils/mongooseRef";
 import { IPreQualificationsDoc } from "@/types/preQualifications.types";
 import { guard } from "@/lib/utils/auth/authUtils";
+import {
+  recordOnboardingAuditLogSafe,
+  actorFromAdminUser,
+} from "@/lib/services/onboardingAuditLog.service";
+import { EOnboardingAuditAction } from "@/types/onboardingAuditLog.types";
 
-export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  req: NextRequest,
+  ctx: { params: Promise<{ id: string }> },
+) {
   try {
     const { id } = await ctx.params;
     await connectDB();
-    await guard();
+    const adminUser = await guard();
 
-    const onboardingDoc = await OnboardingTracker.findById(id).populate("forms.preQualification");
-    if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
-    if (!isInvitationApproved(onboardingDoc)) return errorResponse(400, "driver not yet approved for onboarding process");
-    if (onboardingDoc.terminated) return errorResponse(400, "Onboarding document terminated");
+    const onboardingDoc = await OnboardingTracker.findById(id).populate(
+      "forms.preQualification",
+    );
+    if (!onboardingDoc)
+      return errorResponse(404, "Onboarding document not found");
+    if (!isInvitationApproved(onboardingDoc))
+      return errorResponse(
+        400,
+        "driver not yet approved for onboarding process",
+      );
+    if (onboardingDoc.terminated)
+      return errorResponse(400, "Onboarding document terminated");
 
     const { companyId } = await parseJsonBody(req);
     if (!companyId) return errorResponse(400, "companyId is required");
@@ -27,21 +47,58 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     const newCompany = getCompanyById(companyId);
     if (!newCompany) return errorResponse(400, "invalid company id");
 
-    const currentCompany = onboardingDoc.companyId ? getCompanyById(onboardingDoc.companyId) : null;
+    const currentCompany = onboardingDoc.companyId
+      ? getCompanyById(onboardingDoc.companyId)
+      : null;
 
-    if (!currentCompany) return errorResponse(400, "invalid company id in existing onboarding document");
+    if (!currentCompany)
+      return errorResponse(
+        400,
+        "invalid company id in existing onboarding document",
+      );
 
-    const changedCountry = currentCompany.countryCode !== newCompany.countryCode;
+    const changedCountry =
+      currentCompany.countryCode !== newCompany.countryCode;
 
-    if (changedCountry) return errorResponse(400, "cannot change between companies in different countries");
+    if (changedCountry)
+      return errorResponse(
+        400,
+        "cannot change between companies in different countries",
+      );
 
-    const preQualification = readMongooseRefField<IPreQualificationsDoc>(onboardingDoc.forms?.preQualification);
+    const preQualification = readMongooseRefField<IPreQualificationsDoc>(
+      onboardingDoc.forms?.preQualification,
+    );
     const flatbedExperience = preQualification?.flatbedExperience ?? false;
+    const previousCompanyId = onboardingDoc.companyId;
     onboardingDoc.companyId = companyId;
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();
-    onboardingDoc.needsFlatbedTraining = needsFlatbedTraining(companyId, onboardingDoc.applicationType, flatbedExperience);
+    onboardingDoc.needsFlatbedTraining = needsFlatbedTraining(
+      companyId,
+      onboardingDoc.applicationType,
+      flatbedExperience,
+    );
 
     await onboardingDoc.save();
+
+    const prevCo = previousCompanyId
+      ? getCompanyById(String(previousCompanyId))
+      : null;
+    const nextCo = getCompanyById(companyId);
+
+    await recordOnboardingAuditLogSafe({
+      onboardingId: id,
+      action: EOnboardingAuditAction.COMPANY_CHANGED,
+      actor: actorFromAdminUser(adminUser),
+      message: `Assigned operating company was changed from ${prevCo?.name ?? String(previousCompanyId ?? "")} (${String(previousCompanyId ?? "")}) to ${nextCo?.name ?? companyId} (${companyId}).`,
+      metadata: {
+        previousCompanyId: previousCompanyId ?? null,
+        previousCompanyName: prevCo?.name ?? null,
+        newCompanyId: companyId,
+        newCompanyName: nextCo?.name ?? null,
+        needsFlatbedTrainingAfter: onboardingDoc.needsFlatbedTraining,
+      },
+    });
 
     return successResponse(200, "company updated", {
       onboardingContext: buildTrackerContext(onboardingDoc, null, true),

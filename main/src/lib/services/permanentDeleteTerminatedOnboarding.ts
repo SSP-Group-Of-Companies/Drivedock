@@ -60,6 +60,9 @@ async function deleteTrackerS3PrefixCopies(trackerId: string): Promise<void> {
 /**
  * Permanently removes a terminated onboarding: linked Mongo documents (via tracker cascade),
  * onboarding sessions / verification codes, and S3 assets referenced in DB plus known per-tracker prefixes.
+ *
+ * IMPORTANT: OnboardingAuditLog documents are NOT deleted — admins retain a full audit trail
+ * searchable by onboarding id, actor, driver snapshot, etc., even after permanent removal.
  */
 export async function permanentDeleteTerminatedOnboarding(
   trackerId: string,

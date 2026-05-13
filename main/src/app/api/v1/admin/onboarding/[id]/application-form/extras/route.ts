@@ -3,17 +3,36 @@ import { NextRequest } from "next/server";
 import { isValidObjectId } from "mongoose";
 
 import connectDB from "@/lib/utils/connectDB";
-import { AppError, errorResponse, successResponse } from "@/lib/utils/apiResponse";
+import {
+  AppError,
+  errorResponse,
+  successResponse,
+} from "@/lib/utils/apiResponse";
 import { guard } from "@/lib/utils/auth/authUtils";
+import {
+  recordOnboardingAuditLogSafe,
+  actorFromAdminUser,
+} from "@/lib/services/onboardingAuditLog.service";
+import { EOnboardingAuditAction } from "@/types/onboardingAuditLog.types";
 
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
 
-import { buildTrackerContext, advanceProgress, nextResumeExpiry, hasCompletedStep, isInvitationApproved } from "@/lib/utils/onboardingUtils";
+import {
+  buildTrackerContext,
+  advanceProgress,
+  nextResumeExpiry,
+  hasCompletedStep,
+  isInvitationApproved,
+} from "@/lib/utils/onboardingUtils";
 import { parseJsonBody } from "@/lib/utils/reqParser";
 import { EStepPath } from "@/types/onboardingTracker.types";
 
-import type { IApplicationFormDoc, IEducation, ICanadianHoursOfService } from "@/types/applicationForm.types";
+import type {
+  IApplicationFormDoc,
+  IEducation,
+  ICanadianHoursOfService,
+} from "@/types/applicationForm.types";
 
 /**
  * ===============================================================
@@ -49,7 +68,9 @@ type PatchBody = {
 };
 
 /* -------------- helpers: CHOS compute & small validations -------------- */
-function recomputeCHOSTotalHours(chos?: ICanadianHoursOfService): ICanadianHoursOfService | undefined {
+function recomputeCHOSTotalHours(
+  chos?: ICanadianHoursOfService,
+): ICanadianHoursOfService | undefined {
   if (!chos) return undefined;
   const safeDaily = Array.isArray(chos.dailyHours) ? chos.dailyHours : [];
   const total = safeDaily.reduce((sum, d) => {
@@ -60,17 +81,26 @@ function recomputeCHOSTotalHours(chos?: ICanadianHoursOfService): ICanadianHours
 }
 
 /* -------------------------------- PATCH -------------------------------- */
-export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+export const PATCH = async (
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) => {
   try {
     await connectDB();
-    await guard();
+    const adminUser = await guard();
 
     const { id: onboardingId } = await params;
-    if (!isValidObjectId(onboardingId)) return errorResponse(400, "Invalid onboarding ID");
+    if (!isValidObjectId(onboardingId))
+      return errorResponse(400, "Invalid onboarding ID");
 
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
-    if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
-    if (!isInvitationApproved(onboardingDoc)) return errorResponse(400, "driver not yet approved for onboarding process");
+    if (!onboardingDoc || onboardingDoc.terminated)
+      return errorResponse(404, "Onboarding document not found");
+    if (!isInvitationApproved(onboardingDoc))
+      return errorResponse(
+        400,
+        "driver not yet approved for onboarding process",
+      );
 
     // Require PAGE_4 completed (same admin consolidation gate as identifications)
     if (!hasCompletedStep(onboardingDoc, EStepPath.APPLICATION_PAGE_4)) {
@@ -80,11 +110,15 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) return errorResponse(404, "ApplicationForm not linked");
 
-    const appFormDoc = (await ApplicationForm.findById(appFormId)) as IApplicationFormDoc | null;
+    const appFormDoc = (await ApplicationForm.findById(
+      appFormId,
+    )) as IApplicationFormDoc | null;
     if (!appFormDoc) return errorResponse(404, "ApplicationForm not found");
 
-    if (!appFormDoc.page3) return errorResponse(400, "ApplicationForm Page 3 is missing");
-    if (!appFormDoc.page4) return errorResponse(400, "ApplicationForm Page 4 is missing");
+    if (!appFormDoc.page3)
+      return errorResponse(400, "ApplicationForm Page 3 is missing");
+    if (!appFormDoc.page4)
+      return errorResponse(400, "ApplicationForm Page 4 is missing");
 
     const body = await parseJsonBody<PatchBody>(req);
 
@@ -115,7 +149,9 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       }
 
       if ("canadianHoursOfService" in body) {
-        nextP3.canadianHoursOfService = recomputeCHOSTotalHours(body.canadianHoursOfService) ?? nextP3.canadianHoursOfService;
+        nextP3.canadianHoursOfService =
+          recomputeCHOSTotalHours(body.canadianHoursOfService) ??
+          nextP3.canadianHoursOfService;
       }
 
       appFormDoc.set("page3", nextP3);
@@ -126,24 +162,43 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       const prevP4 = appFormDoc.page4;
       const nextP4 = { ...prevP4 };
 
-      if ("deniedLicenseOrPermit" in body) nextP4.deniedLicenseOrPermit = !!body.deniedLicenseOrPermit;
-      if ("suspendedOrRevoked" in body) nextP4.suspendedOrRevoked = !!body.suspendedOrRevoked;
-      if ("testedPositiveOrRefused" in body) nextP4.testedPositiveOrRefused = !!body.testedPositiveOrRefused;
-      if ("completedDOTRequirements" in body) nextP4.completedDOTRequirements = !!body.completedDOTRequirements;
-      if ("hasAccidentalInsurance" in body) nextP4.hasAccidentalInsurance = !!body.hasAccidentalInsurance;
+      if ("deniedLicenseOrPermit" in body)
+        nextP4.deniedLicenseOrPermit = !!body.deniedLicenseOrPermit;
+      if ("suspendedOrRevoked" in body)
+        nextP4.suspendedOrRevoked = !!body.suspendedOrRevoked;
+      if ("testedPositiveOrRefused" in body)
+        nextP4.testedPositiveOrRefused = !!body.testedPositiveOrRefused;
+      if ("completedDOTRequirements" in body)
+        nextP4.completedDOTRequirements = !!body.completedDOTRequirements;
+      if ("hasAccidentalInsurance" in body)
+        nextP4.hasAccidentalInsurance = !!body.hasAccidentalInsurance;
 
       // Rule: if suspendedOrRevoked === true, require suspensionNotes
       if ("suspendedOrRevoked" in body && body.suspendedOrRevoked === true) {
-        const note = "suspensionNotes" in body ? body.suspensionNotes ?? "" : nextP4.suspensionNotes ?? "";
+        const note =
+          "suspensionNotes" in body
+            ? (body.suspensionNotes ?? "")
+            : (nextP4.suspensionNotes ?? "");
         if (!note || note.trim() === "") {
-          throw new AppError(400, "Suspension notes are required when 'suspendedOrRevoked' is true");
+          throw new AppError(
+            400,
+            "Suspension notes are required when 'suspendedOrRevoked' is true",
+          );
         }
       }
 
       // If explicitly sent false or switched to false, clear notes (QoL)
-      if (("suspendedOrRevoked" in body && body.suspendedOrRevoked === false) || ("suspensionNotes" in body && (body.suspensionNotes ?? "").trim() === "" && nextP4.suspendedOrRevoked === false)) {
+      if (
+        ("suspendedOrRevoked" in body && body.suspendedOrRevoked === false) ||
+        ("suspensionNotes" in body &&
+          (body.suspensionNotes ?? "").trim() === "" &&
+          nextP4.suspendedOrRevoked === false)
+      ) {
         nextP4.suspensionNotes = "";
-      } else if ("suspensionNotes" in body && typeof body.suspensionNotes === "string") {
+      } else if (
+        "suspensionNotes" in body &&
+        typeof body.suspensionNotes === "string"
+      ) {
         nextP4.suspensionNotes = body.suspensionNotes;
       }
 
@@ -162,12 +217,28 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     // ---------------------------
     // Tracker & resume expiry
     // ---------------------------
-    onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.APPLICATION_PAGE_4);
+    onboardingDoc.status = advanceProgress(
+      onboardingDoc,
+      EStepPath.APPLICATION_PAGE_4,
+    );
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();
     await onboardingDoc.save();
 
+    await recordOnboardingAuditLogSafe({
+      onboardingId,
+      action: EOnboardingAuditAction.EXTRAS_UPDATED,
+      actor: actorFromAdminUser(adminUser),
+      message:
+        "Administrator updated application extras (education, hours of service, and related fields).",
+      metadata: { page: "extras" },
+    });
+
     return successResponse(200, "Application extras updated", {
-      onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_4, true),
+      onboardingContext: buildTrackerContext(
+        onboardingDoc,
+        EStepPath.APPLICATION_PAGE_4,
+        true,
+      ),
       // Page 3 subset
       education: appFormDoc.page3.education,
       canadianHoursOfService: appFormDoc.page3.canadianHoursOfService,
@@ -185,22 +256,33 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 };
 
 /* -------------------------------- GET -------------------------------- */
-export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+export const GET = async (
+  _: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) => {
   try {
     await connectDB();
     await guard();
 
     const { id: onboardingId } = await params;
-    if (!isValidObjectId(onboardingId)) return errorResponse(400, "Not a valid onboarding tracker ID");
+    if (!isValidObjectId(onboardingId))
+      return errorResponse(400, "Not a valid onboarding tracker ID");
 
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
-    if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
-    if (!isInvitationApproved(onboardingDoc)) return errorResponse(400, "driver not yet approved for onboarding process");
+    if (!onboardingDoc)
+      return errorResponse(404, "Onboarding document not found");
+    if (!isInvitationApproved(onboardingDoc))
+      return errorResponse(
+        400,
+        "driver not yet approved for onboarding process",
+      );
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) return errorResponse(404, "ApplicationForm not linked");
 
-    const appFormDoc = (await ApplicationForm.findById(appFormId)) as IApplicationFormDoc | null;
+    const appFormDoc = (await ApplicationForm.findById(
+      appFormId,
+    )) as IApplicationFormDoc | null;
     if (!appFormDoc) return errorResponse(404, "ApplicationForm not found");
 
     // Admin consolidation gate: PAGE_4 must be completed
@@ -208,8 +290,10 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
       return errorResponse(401, "Driver hasn't completed this step yet");
     }
 
-    if (!appFormDoc.page3) return errorResponse(400, "ApplicationForm Page 3 is missing");
-    if (!appFormDoc.page4) return errorResponse(400, "ApplicationForm Page 4 is missing");
+    if (!appFormDoc.page3)
+      return errorResponse(400, "ApplicationForm Page 3 is missing");
+    if (!appFormDoc.page4)
+      return errorResponse(400, "ApplicationForm Page 4 is missing");
 
     return successResponse(200, "Application extras retrieved", {
       onboardingContext: buildTrackerContext(onboardingDoc, null, true),

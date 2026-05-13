@@ -2,15 +2,29 @@ import { errorResponse, successResponse } from "@/lib/utils/apiResponse";
 import connectDB from "@/lib/utils/connectDB";
 import { IApplicationFormPage5 } from "@/types/applicationForm.types";
 import { competencyQuestions } from "@/constants/competencyTestQuestions";
-import { advanceProgress, buildTrackerContext, hasReachedStep, isInvitationApproved, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
+import {
+  advanceProgress,
+  buildTrackerContext,
+  hasReachedStep,
+  isInvitationApproved,
+  nextResumeExpiry,
+} from "@/lib/utils/onboardingUtils";
 import { EStepPath } from "@/types/onboardingTracker.types";
 import { isValidObjectId } from "mongoose";
 import { NextRequest } from "next/server";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
 import { requireOnboardingSession } from "@/lib/utils/auth/onboardingSession";
 import { attachCookies } from "@/lib/utils/auth/attachCookie";
+import {
+  buildDriverActorForTracker,
+  recordOnboardingAuditLogSafe,
+} from "@/lib/services/onboardingAuditLog.service";
+import { EOnboardingAuditAction } from "@/types/onboardingAuditLog.types";
 
-export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+export const PATCH = async (
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) => {
   try {
     await connectDB();
     const { id } = await params;
@@ -21,17 +35,25 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
     // ---- Page5 business rules only ----
     if (!Array.isArray(body.answers) || body.answers.length === 0) {
-      return errorResponse(400, "Answers array is required and must not be empty.");
+      return errorResponse(
+        400,
+        "Answers array is required and must not be empty.",
+      );
     }
     for (const a of body.answers) {
       if (!a.questionId || !a.answerId) {
-        return errorResponse(400, "Each answer must have a questionId and answerId.");
+        return errorResponse(
+          400,
+          "Each answer must have a questionId and answerId.",
+        );
       }
     }
 
-    const { tracker: onboardingDoc, refreshCookie } = await requireOnboardingSession(id);
+    const { tracker: onboardingDoc, refreshCookie } =
+      await requireOnboardingSession(id);
 
-    if (!isInvitationApproved(onboardingDoc)) return errorResponse(401, "pending approval");
+    if (!isInvitationApproved(onboardingDoc))
+      return errorResponse(401, "pending approval");
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) return errorResponse(404, "ApplicationForm not linked");
@@ -49,11 +71,16 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
     // validate answers against question set
     const totalQuestions = competencyQuestions.length;
-    const validQuestionIds = new Set(competencyQuestions.map((q) => q.questionId));
+    const validQuestionIds = new Set(
+      competencyQuestions.map((q) => q.questionId),
+    );
     const answeredIds = new Set(body.answers.map((a) => a.questionId));
 
     if (answeredIds.size !== totalQuestions) {
-      return errorResponse(400, `All ${totalQuestions} questions must be answered. Received ${answeredIds.size}.`);
+      return errorResponse(
+        400,
+        `All ${totalQuestions} questions must be answered. Received ${answeredIds.size}.`,
+      );
     }
     for (const a of body.answers) {
       if (!validQuestionIds.has(a.questionId)) {
@@ -80,12 +107,32 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     // ---------------------------
     // Phase 2: tracker updates
     // ---------------------------
-    onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.APPLICATION_PAGE_5);
+    onboardingDoc.status = advanceProgress(
+      onboardingDoc,
+      EStepPath.APPLICATION_PAGE_5,
+    );
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();
     await onboardingDoc.save();
 
+    const driverActor = await buildDriverActorForTracker(id);
+    await recordOnboardingAuditLogSafe({
+      onboardingId: id,
+      action: EOnboardingAuditAction.APPLICATION_FORM_PAGE_UPDATED,
+      actor: driverActor,
+      message: `Driver completed the competency quiz with score ${score} out of ${totalQuestions} (application form page 5).`,
+      metadata: {
+        page: "page-5",
+        score,
+        totalQuestions,
+        allQuestionsAnswered: true,
+      },
+    });
+
     const res = successResponse(200, "ApplicationForm Page 5 updated", {
-      onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_5),
+      onboardingContext: buildTrackerContext(
+        onboardingDoc,
+        EStepPath.APPLICATION_PAGE_5,
+      ),
       page5: appFormDoc.page5,
     });
 
@@ -96,7 +143,10 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
   }
 };
 
-export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+export const GET = async (
+  _: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) => {
   try {
     await connectDB();
 
@@ -106,7 +156,8 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
       return errorResponse(400, "Not a valid onboarding tracker ID");
     }
 
-    const { tracker: onboardingDoc, refreshCookie } = await requireOnboardingSession(onboardingId);
+    const { tracker: onboardingDoc, refreshCookie } =
+      await requireOnboardingSession(onboardingId);
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) {
@@ -123,7 +174,10 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
     }
 
     const res = successResponse(200, "Page 5 data retrieved", {
-      onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_5),
+      onboardingContext: buildTrackerContext(
+        onboardingDoc,
+        EStepPath.APPLICATION_PAGE_5,
+      ),
       page5: appFormDoc.page5 ?? {},
     });
 

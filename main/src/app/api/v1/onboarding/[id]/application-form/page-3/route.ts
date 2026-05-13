@@ -1,14 +1,28 @@
 import { errorResponse, successResponse } from "@/lib/utils/apiResponse";
 import connectDB from "@/lib/utils/connectDB";
-import { advanceProgress, buildTrackerContext, hasReachedStep, isInvitationApproved, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
+import {
+  advanceProgress,
+  buildTrackerContext,
+  hasReachedStep,
+  isInvitationApproved,
+  nextResumeExpiry,
+} from "@/lib/utils/onboardingUtils";
 import { EStepPath } from "@/types/onboardingTracker.types";
 import { isValidObjectId } from "mongoose";
 import { NextRequest } from "next/server";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
 import { requireOnboardingSession } from "@/lib/utils/auth/onboardingSession";
 import { attachCookies } from "@/lib/utils/auth/attachCookie";
+import {
+  buildDriverActorForTracker,
+  recordOnboardingAuditLogSafe,
+} from "@/lib/services/onboardingAuditLog.service";
+import { EOnboardingAuditAction } from "@/types/onboardingAuditLog.types";
 
-export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+export const PATCH = async (
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) => {
   try {
     await connectDB();
 
@@ -17,9 +31,11 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
     const body = await req.json(); // type: IApplicationFormPage3 if you have it
 
-    const { tracker: onboardingDoc, refreshCookie } = await requireOnboardingSession(id);
+    const { tracker: onboardingDoc, refreshCookie } =
+      await requireOnboardingSession(id);
 
-    if (!isInvitationApproved(onboardingDoc)) return errorResponse(401, "pending approval");
+    if (!isInvitationApproved(onboardingDoc))
+      return errorResponse(401, "pending approval");
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) return errorResponse(404, "ApplicationForm not linked");
@@ -44,12 +60,28 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     // ---------------------------
     // Phase 2: tracker updates
     // ---------------------------
-    onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.APPLICATION_PAGE_3);
+    onboardingDoc.status = advanceProgress(
+      onboardingDoc,
+      EStepPath.APPLICATION_PAGE_3,
+    );
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();
     await onboardingDoc.save();
 
+    const driverActor = await buildDriverActorForTracker(id);
+    await recordOnboardingAuditLogSafe({
+      onboardingId: id,
+      action: EOnboardingAuditAction.APPLICATION_FORM_PAGE_UPDATED,
+      actor: driverActor,
+      message:
+        "Driver updated application form page 3 (driver history and related disclosures).",
+      metadata: { page: "page-3", section: "driver-history" },
+    });
+
     const res = successResponse(200, "ApplicationForm Page 3 updated", {
-      onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_3),
+      onboardingContext: buildTrackerContext(
+        onboardingDoc,
+        EStepPath.APPLICATION_PAGE_3,
+      ),
       page3: appFormDoc.page3,
     });
 
@@ -59,7 +91,10 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
   }
 };
 
-export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+export const GET = async (
+  _: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) => {
   try {
     await connectDB();
 
@@ -69,7 +104,8 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
       return errorResponse(400, "Not a valid onboarding tracker ID");
     }
 
-    const { tracker: onboardingDoc, refreshCookie } = await requireOnboardingSession(onboardingId);
+    const { tracker: onboardingDoc, refreshCookie } =
+      await requireOnboardingSession(onboardingId);
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) {
@@ -86,7 +122,10 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
     }
 
     const res = successResponse(200, "Page 3 data retrieved", {
-      onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_3),
+      onboardingContext: buildTrackerContext(
+        onboardingDoc,
+        EStepPath.APPLICATION_PAGE_3,
+      ),
       page3: appFormDoc.page3,
     });
 

@@ -6,6 +6,11 @@ import {
   isInvitationApproved,
   nextResumeExpiry,
 } from "@/lib/utils/onboardingUtils";
+import {
+  recordOnboardingAuditLogSafe,
+  actorFromAdminUser,
+} from "@/lib/services/onboardingAuditLog.service";
+import { EOnboardingAuditAction } from "@/types/onboardingAuditLog.types";
 
 export async function PATCH(
   _req: Request,
@@ -14,7 +19,7 @@ export async function PATCH(
   try {
     const { id } = await ctx.params;
     await connectDB();
-    await guard();
+    const adminUser = await guard();
 
     // On restore: set terminated=false AND unset terminationType & terminationDate
     const doc = await OnboardingTracker.findByIdAndUpdate(
@@ -32,6 +37,16 @@ export async function PATCH(
         400,
         "driver not yet approved for onboarding process",
       );
+
+    await recordOnboardingAuditLogSafe({
+      onboardingId: id,
+      action: EOnboardingAuditAction.ONBOARDING_RESTORED,
+      actor: actorFromAdminUser(adminUser),
+      message:
+        "Administrator restored a previously terminated onboarding; termination flags were cleared.",
+      metadata: { restored: true },
+    });
+
     return successResponse(200, "Onboarding document restored", {
       _id: String(doc._id),
       terminated: !!doc.terminated,

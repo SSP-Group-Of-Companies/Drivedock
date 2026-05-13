@@ -8,43 +8,74 @@ import { NextRequest } from "next/server";
 import { IFileAsset } from "@/types/shared.types";
 import { IPoliciesConsents } from "@/types/policiesConsents.types";
 import { parseJsonBody } from "@/lib/utils/reqParser";
-import { advanceProgress, buildTrackerContext, hasReachedStep, isInvitationApproved, nextResumeExpiry } from "@/lib/utils/onboardingUtils";
+import {
+  advanceProgress,
+  buildTrackerContext,
+  hasReachedStep,
+  isInvitationApproved,
+  nextResumeExpiry,
+} from "@/lib/utils/onboardingUtils";
 import { getLocationFromCoordinates } from "@/lib/utils/geolocationUtils";
 import { S3_SUBMISSIONS_FOLDER, S3_TEMP_FOLDER } from "@/constants/aws";
 import { ES3Folder } from "@/types/aws.types";
 import { requireOnboardingSession } from "@/lib/utils/auth/onboardingSession";
 import { attachCookies } from "@/lib/utils/auth/attachCookie";
+import {
+  buildDriverActorForTracker,
+  recordOnboardingAuditLogSafe,
+} from "@/lib/services/onboardingAuditLog.service";
+import { EOnboardingAuditAction } from "@/types/onboardingAuditLog.types";
 
 type PatchBody = IPoliciesConsents & {
   location?: { latitude: number; longitude: number } | null;
   locationPermissionGranted?: boolean;
 };
 
-export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
   try {
     await connectDB();
     const { id } = await params;
-    if (!isValidObjectId(id)) return errorResponse(400, "Invalid onboarding ID");
+    if (!isValidObjectId(id))
+      return errorResponse(400, "Invalid onboarding ID");
 
-    const { tracker: onboardingDoc, refreshCookie } = await requireOnboardingSession(id);
+    const { tracker: onboardingDoc, refreshCookie } =
+      await requireOnboardingSession(id);
 
-    if (!isInvitationApproved(onboardingDoc)) return errorResponse(401, "pending approval");
+    if (!isInvitationApproved(onboardingDoc))
+      return errorResponse(401, "pending approval");
 
-    if (!hasReachedStep(onboardingDoc, EStepPath.POLICIES_CONSENTS)) return errorResponse(400, "Please complete previous steps first");
+    if (!hasReachedStep(onboardingDoc, EStepPath.POLICIES_CONSENTS))
+      return errorResponse(400, "Please complete previous steps first");
 
     const body = await parseJsonBody<PatchBody>(req);
-    const { signature: incomingSignature, sendPoliciesByEmail, location, locationPermissionGranted } = body ?? {};
+    const {
+      signature: incomingSignature,
+      sendPoliciesByEmail,
+      location,
+      locationPermissionGranted,
+    } = body ?? {};
 
     // (1) Always expect signature
-    if (!incomingSignature || !incomingSignature.s3Key || !incomingSignature.url || !incomingSignature.mimeType) {
+    if (
+      !incomingSignature ||
+      !incomingSignature.s3Key ||
+      !incomingSignature.url ||
+      !incomingSignature.mimeType
+    ) {
       return errorResponse(400, "Signature is required");
     }
 
     const existingId = onboardingDoc.forms?.policiesConsents;
-    const existingDoc = existingId ? await PoliciesConsents.findById(existingId) : null;
+    const existingDoc = existingId
+      ? await PoliciesConsents.findById(existingId)
+      : null;
 
     const previousSigKey = existingDoc?.signature?.s3Key;
-    const sameSignatureAsBefore = previousSigKey && previousSigKey === incomingSignature.s3Key;
+    const sameSignatureAsBefore =
+      previousSigKey && previousSigKey === incomingSignature.s3Key;
 
     let updatedDoc = existingDoc;
 
@@ -52,25 +83,42 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       if (sameSignatureAsBefore) {
         // Same signature: do NOT replace or re-finalize; optionally update sendPoliciesByEmail only
         if (typeof sendPoliciesByEmail === "boolean") {
-          updatedDoc = await PoliciesConsents.findByIdAndUpdate(existingDoc._id, { sendPoliciesByEmail }, { new: true });
+          updatedDoc = await PoliciesConsents.findByIdAndUpdate(
+            existingDoc._id,
+            { sendPoliciesByEmail },
+            { new: true },
+          );
         }
       } else {
         // Different signature: cleanup previous finalized (if needed), finalize new, update doc
-        const isReplacingFinalized = !!previousSigKey && !previousSigKey.startsWith(S3_TEMP_FOLDER) && previousSigKey !== incomingSignature.s3Key;
+        const isReplacingFinalized =
+          !!previousSigKey &&
+          !previousSigKey.startsWith(S3_TEMP_FOLDER) &&
+          previousSigKey !== incomingSignature.s3Key;
 
         if (isReplacingFinalized) {
           await deleteS3Objects([previousSigKey]);
         }
 
-        const finalizedSignature: IFileAsset = await finalizeAsset(incomingSignature, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.SIGNATURES}/${onboardingDoc.id}`);
+        const finalizedSignature: IFileAsset = await finalizeAsset(
+          incomingSignature,
+          `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.SIGNATURES}/${onboardingDoc.id}`,
+        );
 
         const signedAt = new Date();
 
-        updatedDoc = await PoliciesConsents.findByIdAndUpdate(existingDoc._id, { signature: finalizedSignature, signedAt, sendPoliciesByEmail }, { new: true });
+        updatedDoc = await PoliciesConsents.findByIdAndUpdate(
+          existingDoc._id,
+          { signature: finalizedSignature, signedAt, sendPoliciesByEmail },
+          { new: true },
+        );
       }
     } else {
       // No existing doc: finalize and create new
-      const finalizedSignature: IFileAsset = await finalizeAsset(incomingSignature, `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.SIGNATURES}/${onboardingDoc.id}`);
+      const finalizedSignature: IFileAsset = await finalizeAsset(
+        incomingSignature,
+        `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.SIGNATURES}/${onboardingDoc.id}`,
+      );
 
       const signedAt = new Date();
 
@@ -106,7 +154,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
       // Best-effort reverse geocoding enrichment
       try {
-        const locData = await getLocationFromCoordinates(location.latitude, location.longitude);
+        const locData = await getLocationFromCoordinates(
+          location.latitude,
+          location.longitude,
+        );
         if (!("error" in locData)) {
           completionLocation = {
             ...completionLocation,
@@ -153,7 +204,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
           if (!meta.status) meta.status = EEmailStatus.NOT_SENT;
 
           // If previously errored or never sent, requeue cleanly
-          if (meta.status === EEmailStatus.ERROR || (!prevConsent && meta.status !== EEmailStatus.SENT)) {
+          if (
+            meta.status === EEmailStatus.ERROR ||
+            (!prevConsent && meta.status !== EEmailStatus.SENT)
+          ) {
             meta.status = EEmailStatus.NOT_SENT;
             meta.attempts = 0;
             meta.lastError = undefined;
@@ -164,13 +218,55 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     // (Do not pass location to advanceProgress — match incoming behavior)
-    onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.POLICIES_CONSENTS);
+    onboardingDoc.status = advanceProgress(
+      onboardingDoc,
+      EStepPath.POLICIES_CONSENTS,
+    );
 
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();
     await onboardingDoc.save();
 
+    const signatureWasNewOrReplaced = !sameSignatureAsBefore;
+    let policiesMessage: string;
+    if (signatureWasNewOrReplaced) {
+      policiesMessage =
+        "Driver signed policies and consents with a newly captured signature and advanced past this step.";
+    } else if (typeof sendPoliciesByEmail === "boolean") {
+      policiesMessage =
+        sendPoliciesByEmail === false
+          ? "Driver opted out of receiving completion PDFs by email (policies signature unchanged)."
+          : "Driver opted in to receiving completion PDFs by email (policies signature unchanged).";
+    } else {
+      policiesMessage =
+        "Driver advanced past policies and consents without replacing the stored signature.";
+    }
+
+    const driverActor = await buildDriverActorForTracker(id);
+    await recordOnboardingAuditLogSafe({
+      onboardingId: id,
+      action: EOnboardingAuditAction.POLICIES_CONSENTS_UPDATED,
+      actor: driverActor,
+      message: policiesMessage,
+      metadata: {
+        sendPoliciesByEmail:
+          typeof sendPoliciesByEmail === "boolean"
+            ? sendPoliciesByEmail
+            : undefined,
+        signatureReplaced: signatureWasNewOrReplaced,
+        hadPriorSignature: Boolean(previousSigKey),
+        locationProvided: Boolean(location?.latitude && location?.longitude),
+        locationPermissionGranted:
+          typeof locationPermissionGranted === "boolean"
+            ? locationPermissionGranted
+            : undefined,
+      },
+    });
+
     const res = successResponse(200, "Policies & Consents updated", {
-      onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.POLICIES_CONSENTS),
+      onboardingContext: buildTrackerContext(
+        onboardingDoc,
+        EStepPath.POLICIES_CONSENTS,
+      ),
       policiesConsents: updatedDoc.toObject(),
     });
 
@@ -181,7 +277,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 }
 
-export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+export const GET = async (
+  _: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) => {
   try {
     await connectDB();
     const { id } = await params;
@@ -190,7 +289,8 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
       return errorResponse(400, "not a valid id");
     }
 
-    const { tracker: onboardingDoc, refreshCookie } = await requireOnboardingSession(id);
+    const { tracker: onboardingDoc, refreshCookie } =
+      await requireOnboardingSession(id);
 
     const policiesId = onboardingDoc.forms?.policiesConsents;
     let policiesDoc = null;
@@ -203,7 +303,10 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
     }
 
     const res = successResponse(200, "Policies & Consents data retrieved", {
-      onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.POLICIES_CONSENTS),
+      onboardingContext: buildTrackerContext(
+        onboardingDoc,
+        EStepPath.POLICIES_CONSENTS,
+      ),
       policiesConsents: policiesDoc ?? {},
     });
 

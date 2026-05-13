@@ -3,15 +3,31 @@ import { successResponse, errorResponse } from "@/lib/utils/apiResponse";
 import PreQualifications from "@/mongoose/models/Prequalifications";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import connectDB from "@/lib/utils/connectDB";
-import { buildTrackerContext, isInvitationApproved } from "@/lib/utils/onboardingUtils";
+import {
+  buildTrackerContext,
+  isInvitationApproved,
+} from "@/lib/utils/onboardingUtils";
 import { isValidObjectId } from "mongoose";
 import { NextRequest } from "next/server";
 import { guard } from "@/lib/utils/auth/authUtils";
 import { parseJsonBody } from "@/lib/utils/reqParser";
-import { EDriverType, EHaulPreference, ETeamStatus, IPreQualifications } from "@/types/preQualifications.types";
+import {
+  recordOnboardingAuditLogSafe,
+  actorFromAdminUser,
+} from "@/lib/services/onboardingAuditLog.service";
+import { EOnboardingAuditAction } from "@/types/onboardingAuditLog.types";
+import {
+  EDriverType,
+  EHaulPreference,
+  ETeamStatus,
+  IPreQualifications,
+} from "@/types/preQualifications.types";
 import { needsFlatbedTraining } from "@/constants/companies";
 
-export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+export const GET = async (
+  _: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) => {
   try {
     await connectDB();
     await guard();
@@ -21,8 +37,13 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
 
     // Step 1: Find onboarding tracker
     const onboardingDoc = await OnboardingTracker.findById(id);
-    if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
-    if (!isInvitationApproved(onboardingDoc)) return errorResponse(400, "driver not yet approved for onboarding process");
+    if (!onboardingDoc)
+      return errorResponse(404, "Onboarding document not found");
+    if (!isInvitationApproved(onboardingDoc))
+      return errorResponse(
+        400,
+        "driver not yet approved for onboarding process",
+      );
 
     // Step 2: Fetch pre-qualifications form using linked ID
     const preQualId = onboardingDoc.forms?.preQualification;
@@ -31,7 +52,8 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
       preQualDoc = await PreQualifications.findById(preQualId);
     }
 
-    if (!preQualDoc) return errorResponse(404, "prequalifications document not found");
+    if (!preQualDoc)
+      return errorResponse(404, "prequalifications document not found");
 
     return successResponse(200, "PreQualifications data retrieved", {
       onboardingContext: buildTrackerContext(onboardingDoc, null, true),
@@ -47,7 +69,14 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
  */
 type PatchPayload = Pick<
   IPreQualifications,
-  "canDriveManual" | "faultAccidentIn3Years" | "zeroPointsOnAbstract" | "noUnpardonedCriminalRecord" | "driverType" | "haulPreference" | "teamStatus" | "flatbedExperience"
+  | "canDriveManual"
+  | "faultAccidentIn3Years"
+  | "zeroPointsOnAbstract"
+  | "noUnpardonedCriminalRecord"
+  | "driverType"
+  | "haulPreference"
+  | "teamStatus"
+  | "flatbedExperience"
 >;
 
 // list of allowed fields
@@ -65,20 +94,38 @@ const ALLOWED_KEYS = [
 type AllowedKey = (typeof ALLOWED_KEYS)[number];
 const allowedSet = new Set<AllowedKey>(ALLOWED_KEYS);
 
-export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
+const PREQUAL_FIELD_LABELS: Record<AllowedKey, string> = {
+  canDriveManual: "manual transmission ability",
+  faultAccidentIn3Years: "at-fault accident in the last 3 years",
+  zeroPointsOnAbstract: "zero points on abstract",
+  noUnpardonedCriminalRecord: "no unpardoned criminal record",
+  driverType: "driver type",
+  haulPreference: "haul preference",
+  teamStatus: "team status",
+  flatbedExperience: "flatbed experience",
+};
+
+export async function PATCH(
+  req: NextRequest,
+  ctx: { params: Promise<{ id: string }> },
+) {
   try {
     const { id } = await ctx.params;
 
     await connectDB();
-    await guard();
+    const adminUser = await guard();
 
     if (!isValidObjectId(id)) return errorResponse(400, "not a valid id");
 
     // Find onboarding tracker (must exist, approved, and not terminated)
     const onboardingDoc = await OnboardingTracker.findById(id);
-    if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
+    if (!onboardingDoc)
+      return errorResponse(404, "Onboarding document not found");
     if (!isInvitationApproved(onboardingDoc)) {
-      return errorResponse(400, "driver not yet approved for onboarding process");
+      return errorResponse(
+        400,
+        "driver not yet approved for onboarding process",
+      );
     }
     if (onboardingDoc.terminated) {
       return errorResponse(400, "Onboarding document terminated");
@@ -89,31 +136,48 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
 
     // Find linked pre-qualifications document
     const preQualId = onboardingDoc.forms?.preQualification;
-    if (!preQualId) return errorResponse(404, "prequalifications document not found");
+    if (!preQualId)
+      return errorResponse(404, "prequalifications document not found");
 
     const preQualDoc = await PreQualifications.findById(preQualId);
-    if (!preQualDoc) return errorResponse(404, "prequalifications document not found");
+    if (!preQualDoc)
+      return errorResponse(404, "prequalifications document not found");
 
     const body = await parseJsonBody(req);
-    if (!body || typeof body !== "object") return errorResponse(400, "invalid payload");
+    if (!body || typeof body !== "object")
+      return errorResponse(400, "invalid payload");
 
     // Runtime reject any keys not in allow-list
-    const invalidKeys = (Object.keys(body) as string[]).filter((k) => !allowedSet.has(k as AllowedKey));
+    const invalidKeys = (Object.keys(body) as string[]).filter(
+      (k) => !allowedSet.has(k as AllowedKey),
+    );
     if (invalidKeys.length) {
-      return errorResponse(400, `invalid fields in payload: ${invalidKeys.join(", ")}`);
+      return errorResponse(
+        400,
+        `invalid fields in payload: ${invalidKeys.join(", ")}`,
+      );
     }
 
     // Properly typed payload for the allowed fields
     const payload = body as Partial<PatchPayload>;
 
     // Validate enum fields, if present (payload.* typed to specific enum or boolean now)
-    if (payload.driverType !== undefined && !Object.values(EDriverType).includes(payload.driverType)) {
+    if (
+      payload.driverType !== undefined &&
+      !Object.values(EDriverType).includes(payload.driverType)
+    ) {
       return errorResponse(400, "invalid value for driverType");
     }
-    if (payload.haulPreference !== undefined && !Object.values(EHaulPreference).includes(payload.haulPreference)) {
+    if (
+      payload.haulPreference !== undefined &&
+      !Object.values(EHaulPreference).includes(payload.haulPreference)
+    ) {
       return errorResponse(400, "invalid value for haulPreference");
     }
-    if (payload.teamStatus !== undefined && !Object.values(ETeamStatus).includes(payload.teamStatus)) {
+    if (
+      payload.teamStatus !== undefined &&
+      !Object.values(ETeamStatus).includes(payload.teamStatus)
+    ) {
       return errorResponse(400, "invalid value for teamStatus");
     }
 
@@ -128,9 +192,34 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
 
     // Recalculate flatbed training need (only consequence)
     const flatbedExperience = !!preQualDoc.flatbedExperience;
-    onboardingDoc.needsFlatbedTraining = needsFlatbedTraining(onboardingDoc.companyId, onboardingDoc.applicationType, flatbedExperience);
+    onboardingDoc.needsFlatbedTraining = needsFlatbedTraining(
+      onboardingDoc.companyId,
+      onboardingDoc.applicationType,
+      flatbedExperience,
+    );
 
     await onboardingDoc.save();
+
+    const updatedKeys = (Object.keys(body) as string[]).filter((k) =>
+      allowedSet.has(k as AllowedKey),
+    ) as AllowedKey[];
+    const humanFields = updatedKeys
+      .map((k) => PREQUAL_FIELD_LABELS[k] ?? k)
+      .join(", ");
+
+    await recordOnboardingAuditLogSafe({
+      onboardingId: id,
+      action: EOnboardingAuditAction.PREQUALIFICATIONS_UPDATED,
+      actor: actorFromAdminUser(adminUser),
+      message: `Administrator updated prequalification responses (${humanFields}).`,
+      metadata: {
+        updatedKeys,
+        updatedFieldLabels: updatedKeys.map(
+          (k) => PREQUAL_FIELD_LABELS[k] ?? k,
+        ),
+        needsFlatbedTrainingAfter: onboardingDoc.needsFlatbedTraining,
+      },
+    });
 
     return successResponse(200, "PreQualifications updated", {
       onboardingContext: buildTrackerContext(onboardingDoc, null, true),

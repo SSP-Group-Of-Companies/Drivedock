@@ -4,24 +4,42 @@ import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import { guard } from "@/lib/utils/auth/authUtils";
 import { ETerminationType } from "@/types/onboardingTracker.types";
 import { isInvitationApproved } from "@/lib/utils/onboardingUtils";
+import {
+  recordOnboardingAuditLogSafe,
+  actorFromAdminUser,
+} from "@/lib/services/onboardingAuditLog.service";
+import { EOnboardingAuditAction } from "@/types/onboardingAuditLog.types";
 
-export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  req: Request,
+  ctx: { params: Promise<{ id: string }> },
+) {
   try {
     const { id } = await ctx.params;
     await connectDB();
-    await guard();
+    const adminUser = await guard();
 
     const body = await req.json().catch(() => ({}));
     const { terminationType } = body as { terminationType?: ETerminationType };
 
     // Enforce termination type on terminate
-    if (!terminationType || !Object.values(ETerminationType).includes(terminationType)) {
-      return errorResponse(400, "A valid terminationType is required to terminate.");
+    if (
+      !terminationType ||
+      !Object.values(ETerminationType).includes(terminationType)
+    ) {
+      return errorResponse(
+        400,
+        "A valid terminationType is required to terminate.",
+      );
     }
 
     const doc = await OnboardingTracker.findById(id);
     if (!doc) return errorResponse(400, "onboarding tracker not found");
-    if (!isInvitationApproved(doc)) return errorResponse(400, "driver not yet approved for onboarding process");
+    if (!isInvitationApproved(doc))
+      return errorResponse(
+        400,
+        "driver not yet approved for onboarding process",
+      );
 
     const updatedDoc = await OnboardingTracker.findByIdAndUpdate(
       id,
@@ -32,16 +50,33 @@ export async function PATCH(req: Request, ctx: { params: Promise<{ id: string }>
           terminationDate: new Date(),
         },
       },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     );
 
     if (!updatedDoc) return errorResponse(404, "Onboarding tracker not found");
+
+    const terminationLabel = String(terminationType)
+      .toLowerCase()
+      .replace(/_/g, " ");
+
+    await recordOnboardingAuditLogSafe({
+      onboardingId: id,
+      action: EOnboardingAuditAction.ONBOARDING_TERMINATED,
+      actor: actorFromAdminUser(adminUser),
+      message: `Administrator terminated this onboarding (${terminationLabel}).`,
+      metadata: {
+        terminationType,
+        terminationTypeLabel: terminationLabel,
+      },
+    });
 
     return successResponse(200, "Onboarding tracker terminated", {
       _id: String(updatedDoc._id),
       terminated: !!updatedDoc.terminated,
       terminationType: updatedDoc.terminationType ?? null,
-      terminationDate: updatedDoc.terminationDate ? new Date(updatedDoc.terminationDate).toISOString() : null,
+      terminationDate: updatedDoc.terminationDate
+        ? new Date(updatedDoc.terminationDate).toISOString()
+        : null,
     });
   } catch (e: any) {
     return errorResponse(500, "Failed to terminate onboarding tracker", {

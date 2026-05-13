@@ -6,8 +6,20 @@ import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import DrugTest from "@/mongoose/models/DrugTest";
 import CarriersEdgeTraining from "@/mongoose/models/CarriersEdgeTraining";
 
-import { successResponse, errorResponse, AppError } from "@/lib/utils/apiResponse";
-import { advanceProgress, buildTrackerContext, hasReachedStep, isInvitationApproved, nextResumeExpiry, getFlowOpts, getOnboardingStepFlow } from "@/lib/utils/onboardingUtils";
+import {
+  successResponse,
+  errorResponse,
+  AppError,
+} from "@/lib/utils/apiResponse";
+import {
+  advanceProgress,
+  buildTrackerContext,
+  hasReachedStep,
+  isInvitationApproved,
+  nextResumeExpiry,
+  getFlowOpts,
+  getOnboardingStepFlow,
+} from "@/lib/utils/onboardingUtils";
 import { readMongooseRefField } from "@/lib/utils/mongooseRef";
 import { parseJsonBody } from "@/lib/utils/reqParser";
 
@@ -20,6 +32,11 @@ import { EDrugTestStatus } from "@/types/drugTest.types";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
 import { guard } from "@/lib/utils/auth/authUtils";
 import sendCompletionEmailIfEligible from "@/lib/services/sendCompletionEmailIfEligible";
+import {
+  recordOnboardingAuditLogSafe,
+  actorFromAdminUser,
+} from "@/lib/services/onboardingAuditLog.service";
+import { EOnboardingAuditAction } from "@/types/onboardingAuditLog.types";
 
 /**
  * GET /api/v1/admin/onboarding/[id]/safety-processing
@@ -28,7 +45,10 @@ import sendCompletionEmailIfEligible from "@/lib/services/sendCompletionEmailIfE
  *  - driveTest / carriersEdge / drugTest (populated snapshots)
  *  - identifications: { driverLicenseExpiration }   <-- optional (for notifications)
  */
-export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+export const GET = async (
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) => {
   try {
     await connectDB();
     await guard();
@@ -42,7 +62,8 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
     const onboardingDoc = await OnboardingTracker.findById(onboardingId)
       .populate({
         path: "forms.carriersEdgeTraining",
-        select: "emailSent emailSentBy emailSentAt certificates completed createdAt updatedAt",
+        select:
+          "emailSent emailSentBy emailSentAt certificates completed createdAt updatedAt",
       })
       .populate({
         path: "forms.drugTest",
@@ -51,16 +72,24 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
       .populate({
         path: "forms.driveTest",
         // adjust the fields to your DriveTest schema as needed
-        select: "preTrip.overallAssessment preTrip.assessedAt onRoad.overallAssessment onRoad.assessedAt completed createdAt updatedAt",
+        select:
+          "preTrip.overallAssessment preTrip.assessedAt onRoad.overallAssessment onRoad.assessedAt completed createdAt updatedAt",
       });
 
-    if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
-    if (!isInvitationApproved(onboardingDoc)) return errorResponse(400, "driver not yet approved for onboarding process");
+    if (!onboardingDoc)
+      return errorResponse(404, "Onboarding document not found");
+    if (!isInvitationApproved(onboardingDoc))
+      return errorResponse(
+        400,
+        "driver not yet approved for onboarding process",
+      );
 
     // Populated form snapshots
     const drugTest = readMongooseRefField(onboardingDoc.forms?.drugTest) ?? {};
-    const carriersEdge = readMongooseRefField(onboardingDoc.forms?.carriersEdgeTraining) ?? {};
-    const driveTest = readMongooseRefField(onboardingDoc.forms?.driveTest) ?? {};
+    const carriersEdge =
+      readMongooseRefField(onboardingDoc.forms?.carriersEdgeTraining) ?? {};
+    const driveTest =
+      readMongooseRefField(onboardingDoc.forms?.driveTest) ?? {};
 
     // --- Resolve driver name/email + license expiry (index 0) + truck details from ApplicationForm ---
     let driverName: string | undefined;
@@ -79,7 +108,11 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
       driverEmail = doc?.page1?.email ?? undefined;
 
       // licenses can be either at page1.licenses[] or (rarely) root.licenses[]
-      const licensesArr = (Array.isArray(doc?.page1?.licenses) ? doc.page1.licenses : undefined) ?? (Array.isArray(doc?.licenses) ? doc.licenses : undefined);
+      const licensesArr =
+        (Array.isArray(doc?.page1?.licenses)
+          ? doc.page1.licenses
+          : undefined) ??
+        (Array.isArray(doc?.licenses) ? doc.licenses : undefined);
 
       const first = Array.isArray(licensesArr) ? licensesArr[0] : undefined;
       const lic = first?.licenseExpiry;
@@ -95,7 +128,11 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
       }
     };
 
-    if (driverAppRef?._id && typeof driverAppRef === "object" && !driverAppRef.page1) {
+    if (
+      driverAppRef?._id &&
+      typeof driverAppRef === "object" &&
+      !driverAppRef.page1
+    ) {
       // This is an ObjectId reference, not a populated document
       const driverAppId = driverAppRef.toString();
 
@@ -124,7 +161,7 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
           "page1.email": 1,
           "page1.licenses": 1,
           licenses: 1,
-        }
+        },
       ).lean();
 
       if (fallbackAppDoc) tryExtractFromDoc(fallbackAppDoc);
@@ -140,7 +177,9 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
       terminationType: onboardingDoc.terminationType,
       itemSummary: {
         ...(onboardingContext as any).itemSummary,
-        ...(driverName || driverEmail || truckUnitNumber ? { driverName, driverEmail, truckUnitNumber } : undefined),
+        ...(driverName || driverEmail || truckUnitNumber
+          ? { driverName, driverEmail, truckUnitNumber }
+          : undefined),
       },
     };
 
@@ -148,7 +187,9 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
     const identifications =
       driverLicenseExpiration != null || truckDetails != null
         ? {
-            ...(driverLicenseExpiration != null ? { driverLicenseExpiration } : {}),
+            ...(driverLicenseExpiration != null
+              ? { driverLicenseExpiration }
+              : {}),
             ...(truckDetails != null ? { truckDetails } : {}),
           }
         : undefined;
@@ -196,18 +237,31 @@ export const GET = async (_req: NextRequest, { params }: { params: Promise<{ id:
 const TEMP_PREFIX = `${S3_TEMP_FOLDER}/`;
 
 // Allowed MIME types for images, PDF, and Word docs
-const ALLOWED_MIME: ReadonlySet<string> = new Set<string>([EFileMimeType.JPEG, EFileMimeType.JPG, EFileMimeType.PNG, EFileMimeType.PDF, EFileMimeType.DOC, EFileMimeType.DOCX]);
+const ALLOWED_MIME: ReadonlySet<string> = new Set<string>([
+  EFileMimeType.JPEG,
+  EFileMimeType.JPG,
+  EFileMimeType.PNG,
+  EFileMimeType.PDF,
+  EFileMimeType.DOC,
+  EFileMimeType.DOCX,
+]);
 
 const MAX_DOCS = 20;
 
 function assertAllowedMimeOrThrow(mime?: string) {
   const mt = (mime ?? "").toLowerCase().trim();
   if (!ALLOWED_MIME.has(mt)) {
-    throw new AppError(400, `Unsupported file type "${mime}". Allowed types: images (jpeg, jpg, png), PDF, DOC, DOCX.`);
+    throw new AppError(
+      400,
+      `Unsupported file type "${mime}". Allowed types: images (jpeg, jpg, png), PDF, DOC, DOCX.`,
+    );
   }
 }
 
-async function finalizeAssetsIfNeeded(incoming: IFileAsset[] | undefined, finalFolder: string): Promise<IFileAsset[] | undefined> {
+async function finalizeAssetsIfNeeded(
+  incoming: IFileAsset[] | undefined,
+  finalFolder: string,
+): Promise<IFileAsset[] | undefined> {
   if (!Array.isArray(incoming)) return undefined;
 
   // Defensive cap
@@ -217,7 +271,8 @@ async function finalizeAssetsIfNeeded(incoming: IFileAsset[] | undefined, finalF
 
   const out: IFileAsset[] = [];
   for (const a of incoming) {
-    if (!a?.mimeType) throw new AppError(400, "Each file asset must include a mimeType.");
+    if (!a?.mimeType)
+      throw new AppError(400, "Each file asset must include a mimeType.");
     a.mimeType = String(a.mimeType).toLowerCase();
 
     // Type gate
@@ -233,11 +288,19 @@ async function finalizeAssetsIfNeeded(incoming: IFileAsset[] | undefined, finalF
   return out;
 }
 
-async function deleteRemovedFinalized(prev: IFileAsset[] | undefined, next: IFileAsset[] | undefined) {
-  const collectKeys = (arr?: IFileAsset[]) => (Array.isArray(arr) ? arr.map((p) => p?.s3Key).filter((k): k is string => !!k) : []);
+async function deleteRemovedFinalized(
+  prev: IFileAsset[] | undefined,
+  next: IFileAsset[] | undefined,
+) {
+  const collectKeys = (arr?: IFileAsset[]) =>
+    Array.isArray(arr)
+      ? arr.map((p) => p?.s3Key).filter((k): k is string => !!k)
+      : [];
   const prevKeys = new Set(collectKeys(prev));
   const newKeys = new Set(collectKeys(next));
-  const removedFinalized = [...prevKeys].filter((k) => !newKeys.has(k) && !k.startsWith(TEMP_PREFIX));
+  const removedFinalized = [...prevKeys].filter(
+    (k) => !newKeys.has(k) && !k.startsWith(TEMP_PREFIX),
+  );
   if (removedFinalized.length) {
     try {
       await deleteS3Objects(removedFinalized);
@@ -247,17 +310,23 @@ async function deleteRemovedFinalized(prev: IFileAsset[] | undefined, next: IFil
   }
 }
 
-export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+export const PATCH = async (
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) => {
   try {
     await connectDB();
-    await guard();
+    const adminUser = await guard();
 
     const { id: onboardingId } = await params;
-    if (!isValidObjectId(onboardingId)) return errorResponse(400, "Invalid onboarding ID");
+    if (!isValidObjectId(onboardingId))
+      return errorResponse(400, "Invalid onboarding ID");
 
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
-    if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
-    if (onboardingDoc.terminated) return errorResponse(400, "Onboarding document terminated");
+    if (!onboardingDoc)
+      return errorResponse(404, "Onboarding document not found");
+    if (onboardingDoc.terminated)
+      return errorResponse(400, "Onboarding document terminated");
 
     const body = await parseJsonBody<{
       notes?: string;
@@ -275,7 +344,35 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
         completed?: boolean;
       };
     }>(req);
-    if (!body || typeof body !== "object") return errorResponse(400, "Invalid payload");
+    if (!body || typeof body !== "object")
+      return errorResponse(400, "Invalid payload");
+
+    const auditNotesBefore = String(onboardingDoc.notes ?? "");
+    const auditNeedsFlatbedBefore = onboardingDoc.needsFlatbedTraining;
+
+    let auditDrugTest:
+      | {
+          statusBefore?: EDrugTestStatus;
+          statusAfter?: EDrugTestStatus;
+          adminCountBefore: number;
+          adminCountAfter: number;
+          driverCountBefore: number;
+          driverCountAfter: number;
+          explicitStatusInRequest: boolean;
+          progressAdvancedOnApproval: boolean;
+        }
+      | undefined;
+
+    let auditCarriersEdge:
+      | {
+          completedBefore: boolean;
+          completedAfter: boolean;
+          emailSentBefore: boolean;
+          emailSentAfter: boolean;
+          certCountBefore: number;
+          certCountAfter: number;
+        }
+      | undefined;
 
     // Track updated docs to return fresh snapshots
     let updatedDrugTest: any | null = null;
@@ -290,16 +387,19 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     if (typeof body.needsFlatbedTraining === "boolean") {
       const previousNeedsFlatbed = onboardingDoc.needsFlatbedTraining;
       onboardingDoc.needsFlatbedTraining = body.needsFlatbedTraining;
-      
+
       // If flatbed training was removed (true → false), check if we should complete the application
-      if (previousNeedsFlatbed === true && body.needsFlatbedTraining === false) {
+      if (
+        previousNeedsFlatbed === true &&
+        body.needsFlatbedTraining === false
+      ) {
         // Check if the current step is FLATBED_TRAINING and if DRUG_TEST is completed
         if (onboardingDoc.status.currentStep === EStepPath.FLATBED_TRAINING) {
           // Check if drug test is completed by seeing if we've reached a step after it
           const opts = getFlowOpts(onboardingDoc);
           const flow = getOnboardingStepFlow(opts);
           const drugTestIdx = flow.indexOf(EStepPath.DRUG_TEST);
-          
+
           // If drug test is the last step in the new flow (no flatbed), complete the application
           if (drugTestIdx === flow.length - 1) {
             onboardingDoc.status = {
@@ -309,7 +409,10 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
             };
           } else {
             // Move to the next step after drug test
-            onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.DRUG_TEST);
+            onboardingDoc.status = advanceProgress(
+              onboardingDoc,
+              EStepPath.DRUG_TEST,
+            );
           }
         }
       }
@@ -318,7 +421,10 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     /* ----------------------------- DRUG TEST ----------------------------- */
     if (body.drugTest) {
       if (!hasReachedStep(onboardingDoc, EStepPath.DRUG_TEST)) {
-        return errorResponse(401, "Driver has not reached the Drug Test step yet");
+        return errorResponse(
+          401,
+          "Driver has not reached the Drug Test step yet",
+        );
       }
 
       // Pull incoming arrays (can be undefined)
@@ -326,18 +432,38 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       const incomingDriverDocs = body.drugTest.driverDocuments;
 
       // Enforce per-array limits if provided
-      if (Array.isArray(incomingAdminDocs) && incomingAdminDocs.length > MAX_DOCS) {
-        return errorResponse(400, `You can upload at most ${MAX_DOCS} admin documents for the drug test.`);
+      if (
+        Array.isArray(incomingAdminDocs) &&
+        incomingAdminDocs.length > MAX_DOCS
+      ) {
+        return errorResponse(
+          400,
+          `You can upload at most ${MAX_DOCS} admin documents for the drug test.`,
+        );
       }
-      if (Array.isArray(incomingDriverDocs) && incomingDriverDocs.length > MAX_DOCS) {
-        return errorResponse(400, `You can upload at most ${MAX_DOCS} driver documents for the drug test.`);
+      if (
+        Array.isArray(incomingDriverDocs) &&
+        incomingDriverDocs.length > MAX_DOCS
+      ) {
+        return errorResponse(
+          400,
+          `You can upload at most ${MAX_DOCS} driver documents for the drug test.`,
+        );
       }
 
       // Only create the subdoc when at least one array is provided
-      let drugTestDoc = onboardingDoc.forms?.drugTest ? await DrugTest.findById(onboardingDoc.forms.drugTest) : null;
+      let drugTestDoc = onboardingDoc.forms?.drugTest
+        ? await DrugTest.findById(onboardingDoc.forms.drugTest)
+        : null;
       if (!drugTestDoc) {
-        if (!Array.isArray(incomingAdminDocs) && !Array.isArray(incomingDriverDocs)) {
-          return errorResponse(400, "At least one of adminDocuments or driverDocuments must be provided to initialize the drug test.");
+        if (
+          !Array.isArray(incomingAdminDocs) &&
+          !Array.isArray(incomingDriverDocs)
+        ) {
+          return errorResponse(
+            400,
+            "At least one of adminDocuments or driverDocuments must be provided to initialize the drug test.",
+          );
         }
         drugTestDoc = await DrugTest.create({
           adminDocuments: [],
@@ -347,11 +473,25 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
         onboardingDoc.set("forms.drugTest", drugTestDoc._id);
       }
 
-      const prevAdmin = Array.isArray(drugTestDoc.adminDocuments) ? [...drugTestDoc.adminDocuments] : [];
-      const prevDriver = Array.isArray(drugTestDoc.driverDocuments) ? [...drugTestDoc.driverDocuments] : [];
+      const prevAdmin = Array.isArray(drugTestDoc.adminDocuments)
+        ? [...drugTestDoc.adminDocuments]
+        : [];
+      const prevDriver = Array.isArray(drugTestDoc.driverDocuments)
+        ? [...drugTestDoc.driverDocuments]
+        : [];
+
+      const dtStatusBefore = drugTestDoc.status as EDrugTestStatus | undefined;
+      const dtAdminCountBefore = Array.isArray(drugTestDoc.adminDocuments)
+        ? drugTestDoc.adminDocuments.length
+        : 0;
+      const dtDriverCountBefore = Array.isArray(drugTestDoc.driverDocuments)
+        ? drugTestDoc.driverDocuments.length
+        : 0;
 
       const incomingStatusProvided = typeof body.drugTest.status === "string";
-      const incomingStatus = incomingStatusProvided ? (body.drugTest.status as EDrugTestStatus) : undefined;
+      const incomingStatus = incomingStatusProvided
+        ? (body.drugTest.status as EDrugTestStatus)
+        : undefined;
 
       // Track approval transition
       const wasApproved = drugTestDoc.status === EDrugTestStatus.APPROVED;
@@ -359,32 +499,53 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       // Finalize+validate admin docs (if provided)
       if (Array.isArray(incomingAdminDocs)) {
         const finalFolder = `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.DRUG_TEST_DOCS}/${onboardingDoc.id}`;
-        const nextAdmin = await finalizeAssetsIfNeeded(incomingAdminDocs, finalFolder);
+        const nextAdmin = await finalizeAssetsIfNeeded(
+          incomingAdminDocs,
+          finalFolder,
+        );
         await deleteRemovedFinalized(prevAdmin, nextAdmin ?? []);
         drugTestDoc.adminDocuments = nextAdmin ?? [];
         if (drugTestDoc.adminDocuments.length > MAX_DOCS) {
-          return errorResponse(400, `You can upload at most ${MAX_DOCS} admin documents for the drug test.`);
+          return errorResponse(
+            400,
+            `You can upload at most ${MAX_DOCS} admin documents for the drug test.`,
+          );
         }
       }
 
       // Finalize+validate driver docs (if provided)
       if (Array.isArray(incomingDriverDocs)) {
         const finalFolder = `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.DRUG_TEST_DOCS}/${onboardingDoc.id}`;
-        const nextDriver = await finalizeAssetsIfNeeded(incomingDriverDocs, finalFolder);
+        const nextDriver = await finalizeAssetsIfNeeded(
+          incomingDriverDocs,
+          finalFolder,
+        );
         await deleteRemovedFinalized(prevDriver, nextDriver ?? []);
         drugTestDoc.driverDocuments = nextDriver ?? [];
         if (drugTestDoc.driverDocuments.length > MAX_DOCS) {
-          return errorResponse(400, `You can upload at most ${MAX_DOCS} driver documents for the drug test.`);
+          return errorResponse(
+            400,
+            `You can upload at most ${MAX_DOCS} driver documents for the drug test.`,
+          );
         }
       }
 
       // Counts after updates
-      const adminCount = Array.isArray(drugTestDoc.adminDocuments) ? drugTestDoc.adminDocuments.length : 0;
-      const driverCount = Array.isArray(drugTestDoc.driverDocuments) ? drugTestDoc.driverDocuments.length : 0;
+      const adminCount = Array.isArray(drugTestDoc.adminDocuments)
+        ? drugTestDoc.adminDocuments.length
+        : 0;
+      const driverCount = Array.isArray(drugTestDoc.driverDocuments)
+        ? drugTestDoc.driverDocuments.length
+        : 0;
       const totalDocsCount = adminCount + driverCount;
 
       // Auto status bump: NOT_UPLOADED -> AWAITING_REVIEW
-      if (!incomingStatusProvided && totalDocsCount > 0 && (drugTestDoc.status === undefined || drugTestDoc.status === EDrugTestStatus.NOT_UPLOADED)) {
+      if (
+        !incomingStatusProvided &&
+        totalDocsCount > 0 &&
+        (drugTestDoc.status === undefined ||
+          drugTestDoc.status === EDrugTestStatus.NOT_UPLOADED)
+      ) {
         drugTestDoc.status = EDrugTestStatus.AWAITING_REVIEW;
       }
 
@@ -392,32 +553,55 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       if (incomingStatusProvided) {
         const allowed = Object.values(EDrugTestStatus);
         if (!allowed.includes(incomingStatus!)) {
-          return errorResponse(400, `Invalid status. Allowed values are: ${allowed.join(", ")}`);
+          return errorResponse(
+            400,
+            `Invalid status. Allowed values are: ${allowed.join(", ")}`,
+          );
         }
 
         // No-go-back from APPROVED
-        if (drugTestDoc.status === EDrugTestStatus.APPROVED && incomingStatus !== EDrugTestStatus.APPROVED) {
-          return errorResponse(400, "Drug test status is already APPROVED and cannot be changed");
+        if (
+          drugTestDoc.status === EDrugTestStatus.APPROVED &&
+          incomingStatus !== EDrugTestStatus.APPROVED
+        ) {
+          return errorResponse(
+            400,
+            "Drug test status is already APPROVED and cannot be changed",
+          );
         }
 
         // Approve requires ≥1 ADMIN document
         if (incomingStatus === EDrugTestStatus.APPROVED && adminCount < 1) {
-          return errorResponse(400, "Cannot approve Drug Test until at least one admin document is uploaded.");
+          return errorResponse(
+            400,
+            "Cannot approve Drug Test until at least one admin document is uploaded.",
+          );
         }
 
         // Reject requires ≥1 DRIVER document
         if (incomingStatus === EDrugTestStatus.REJECTED && driverCount < 1) {
-          return errorResponse(400, "Cannot reject Drug Test until at least one driver document is uploaded.");
+          return errorResponse(
+            400,
+            "Cannot reject Drug Test until at least one driver document is uploaded.",
+          );
         }
 
         // On REJECT: clear driver documents (keep admin documents)
         if (incomingStatus === EDrugTestStatus.REJECTED) {
-          const driverKeysToDelete = (drugTestDoc.driverDocuments ?? []).map((p: any) => p?.s3Key).filter((k: string | undefined): k is string => !!k && !k.startsWith(TEMP_PREFIX));
+          const driverKeysToDelete = (drugTestDoc.driverDocuments ?? [])
+            .map((p: any) => p?.s3Key)
+            .filter(
+              (k: string | undefined): k is string =>
+                !!k && !k.startsWith(TEMP_PREFIX),
+            );
           if (driverKeysToDelete.length) {
             try {
               await deleteS3Objects(driverKeysToDelete);
             } catch (e) {
-              console.warn("Failed to delete rejected driver drug test S3 keys:", e);
+              console.warn(
+                "Failed to delete rejected driver drug test S3 keys:",
+                e,
+              );
             }
           }
           drugTestDoc.driverDocuments = [];
@@ -427,23 +611,52 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       }
 
       // Only advance when status just transitioned to APPROVED
-      const approvedJustNow = !wasApproved && drugTestDoc.status === EDrugTestStatus.APPROVED;
+      const approvedJustNow =
+        !wasApproved && drugTestDoc.status === EDrugTestStatus.APPROVED;
 
       await drugTestDoc.save();
       updatedDrugTest = drugTestDoc.toObject();
 
+      const dtAdminCountAfter = Array.isArray(drugTestDoc.adminDocuments)
+        ? drugTestDoc.adminDocuments.length
+        : 0;
+      const dtDriverCountAfter = Array.isArray(drugTestDoc.driverDocuments)
+        ? drugTestDoc.driverDocuments.length
+        : 0;
+
+      auditDrugTest = {
+        statusBefore: dtStatusBefore,
+        statusAfter: drugTestDoc.status as EDrugTestStatus,
+        adminCountBefore: dtAdminCountBefore,
+        adminCountAfter: dtAdminCountAfter,
+        driverCountBefore: dtDriverCountBefore,
+        driverCountAfter: dtDriverCountAfter,
+        explicitStatusInRequest: incomingStatusProvided,
+        progressAdvancedOnApproval: approvedJustNow,
+      };
+
       if (approvedJustNow) {
-        onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.DRUG_TEST);
+        onboardingDoc.status = advanceProgress(
+          onboardingDoc,
+          EStepPath.DRUG_TEST,
+        );
       }
     }
 
     /* ----------------------- CARRIERS EDGE TRAINING ---------------------- */
     if (body.carriersEdgeTraining) {
       if (!hasReachedStep(onboardingDoc, EStepPath.CARRIERS_EDGE_TRAINING)) {
-        return errorResponse(401, "Driver has not reached the CarriersEdge Training step yet");
+        return errorResponse(
+          401,
+          "Driver has not reached the CarriersEdge Training step yet",
+        );
       }
 
-      let ceDoc = onboardingDoc.forms?.carriersEdgeTraining ? await CarriersEdgeTraining.findById(onboardingDoc.forms.carriersEdgeTraining) : null;
+      let ceDoc = onboardingDoc.forms?.carriersEdgeTraining
+        ? await CarriersEdgeTraining.findById(
+            onboardingDoc.forms.carriersEdgeTraining,
+          )
+        : null;
 
       if (!ceDoc) {
         ceDoc = await CarriersEdgeTraining.create({
@@ -456,16 +669,31 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
       // Track completion transition
       const wasCompleted = !!ceDoc.completed;
+      const ceSnapBefore = {
+        completed: !!ceDoc.completed,
+        emailSent: !!ceDoc.emailSent,
+        certCount: Array.isArray(ceDoc.certificates)
+          ? ceDoc.certificates.length
+          : 0,
+      };
 
       // Certificates always updatable
       if (Array.isArray(body.carriersEdgeTraining.certificates)) {
         if (body.carriersEdgeTraining.certificates.length > MAX_DOCS) {
-          return errorResponse(400, `You can upload at most ${MAX_DOCS} certificates for CarriersEdge.`);
+          return errorResponse(
+            400,
+            `You can upload at most ${MAX_DOCS} certificates for CarriersEdge.`,
+          );
         }
 
-        const prev = Array.isArray(ceDoc.certificates) ? [...ceDoc.certificates] : [];
+        const prev = Array.isArray(ceDoc.certificates)
+          ? [...ceDoc.certificates]
+          : [];
         const finalFolder = `${S3_SUBMISSIONS_FOLDER}/${ES3Folder.CARRIERS_EDGE_CERTIFICATES}/${onboardingDoc.id}`;
-        const next = await finalizeAssetsIfNeeded(body.carriersEdgeTraining.certificates, finalFolder);
+        const next = await finalizeAssetsIfNeeded(
+          body.carriersEdgeTraining.certificates,
+          finalFolder,
+        );
         await deleteRemovedFinalized(prev, next);
         ceDoc.certificates = next ?? [];
       }
@@ -474,24 +702,42 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       if (typeof body.carriersEdgeTraining.emailSent === "boolean") {
         const incoming = body.carriersEdgeTraining.emailSent;
         if (ceDoc.emailSent && !incoming) {
-          return errorResponse(400, "emailSent is already true and cannot be changed back to false");
+          return errorResponse(
+            400,
+            "emailSent is already true and cannot be changed back to false",
+          );
         }
         if (!ceDoc.emailSent && incoming === true) {
           const by = body.carriersEdgeTraining.emailSentBy;
-          const at = body.carriersEdgeTraining.emailSentAt ? new Date(body.carriersEdgeTraining.emailSentAt) : undefined;
+          const at = body.carriersEdgeTraining.emailSentAt
+            ? new Date(body.carriersEdgeTraining.emailSentAt)
+            : undefined;
           if (!by || !String(by).trim()) {
-            return errorResponse(400, "emailSentBy is required when setting emailSent=true");
+            return errorResponse(
+              400,
+              "emailSentBy is required when setting emailSent=true",
+            );
           }
           if (!(at instanceof Date) || isNaN(at.getTime())) {
-            return errorResponse(400, "emailSentAt must be a valid date when setting emailSent=true");
+            return errorResponse(
+              400,
+              "emailSentAt must be a valid date when setting emailSent=true",
+            );
           }
           ceDoc.emailSent = true;
           ceDoc.emailSentBy = String(by).trim();
           ceDoc.emailSentAt = at;
         }
       } else {
-        if (ceDoc.emailSent && (body.carriersEdgeTraining.emailSentBy !== undefined || body.carriersEdgeTraining.emailSentAt !== undefined)) {
-          return errorResponse(400, "emailSentBy/emailSentAt are immutable once emailSent is true");
+        if (
+          ceDoc.emailSent &&
+          (body.carriersEdgeTraining.emailSentBy !== undefined ||
+            body.carriersEdgeTraining.emailSentAt !== undefined)
+        ) {
+          return errorResponse(
+            400,
+            "emailSentBy/emailSentAt are immutable once emailSent is true",
+          );
         }
       }
 
@@ -500,13 +746,21 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
         const incoming = body.carriersEdgeTraining.completed;
 
         if (ceDoc.completed && !incoming) {
-          return errorResponse(400, "completed is already true and cannot be changed back to false");
+          return errorResponse(
+            400,
+            "completed is already true and cannot be changed back to false",
+          );
         }
 
         if (!ceDoc.completed && incoming === true) {
-          const certCount = Array.isArray(ceDoc.certificates) ? ceDoc.certificates.length : 0;
+          const certCount = Array.isArray(ceDoc.certificates)
+            ? ceDoc.certificates.length
+            : 0;
           if (certCount < 1) {
-            return errorResponse(400, "Cannot mark CarriersEdge training as completed until at least one certificate is uploaded");
+            return errorResponse(
+              400,
+              "Cannot mark CarriersEdge training as completed until at least one certificate is uploaded",
+            );
           }
           ceDoc.completed = true;
         }
@@ -515,10 +769,24 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       await ceDoc.save();
       updatedCarriersEdge = ceDoc.toObject();
 
+      auditCarriersEdge = {
+        completedBefore: ceSnapBefore.completed,
+        completedAfter: !!ceDoc.completed,
+        emailSentBefore: ceSnapBefore.emailSent,
+        emailSentAfter: !!ceDoc.emailSent,
+        certCountBefore: ceSnapBefore.certCount,
+        certCountAfter: Array.isArray(ceDoc.certificates)
+          ? ceDoc.certificates.length
+          : 0,
+      };
+
       // Only advance when CE transitions to completed
       const completedJustNow = !wasCompleted && !!ceDoc.completed;
       if (completedJustNow) {
-        onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.CARRIERS_EDGE_TRAINING);
+        onboardingDoc.status = advanceProgress(
+          onboardingDoc,
+          EStepPath.CARRIERS_EDGE_TRAINING,
+        );
       }
     }
 
@@ -538,7 +806,8 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     await onboardingDoc.populate([
       {
         path: "forms.carriersEdgeTraining",
-        select: "emailSent emailSentBy emailSentAt certificates completed createdAt updatedAt",
+        select:
+          "emailSent emailSentBy emailSentAt certificates completed createdAt updatedAt",
       },
       {
         path: "forms.drugTest",
@@ -551,9 +820,16 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       },
     ]);
 
-    const drugTestOut = updatedDrugTest ?? readMongooseRefField(onboardingDoc.forms?.drugTest) ?? {};
-    const carriersEdgeOut = updatedCarriersEdge ?? readMongooseRefField(onboardingDoc.forms?.carriersEdgeTraining) ?? {};
-    const driveTestOut = readMongooseRefField(onboardingDoc.forms?.driveTest) ?? {};
+    const drugTestOut =
+      updatedDrugTest ??
+      readMongooseRefField(onboardingDoc.forms?.drugTest) ??
+      {};
+    const carriersEdgeOut =
+      updatedCarriersEdge ??
+      readMongooseRefField(onboardingDoc.forms?.carriersEdgeTraining) ??
+      {};
+    const driveTestOut =
+      readMongooseRefField(onboardingDoc.forms?.driveTest) ?? {};
 
     // Enrich onboardingContext with driverName/email like GET
     let driverName: string | undefined;
@@ -571,7 +847,11 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       driverName = nm || undefined;
       driverEmail = doc?.page1?.email ?? undefined;
 
-      const licensesArr = (Array.isArray(doc?.page1?.licenses) ? doc.page1.licenses : undefined) ?? (Array.isArray(doc?.licenses) ? doc.licenses : undefined);
+      const licensesArr =
+        (Array.isArray(doc?.page1?.licenses)
+          ? doc.page1.licenses
+          : undefined) ??
+        (Array.isArray(doc?.licenses) ? doc.licenses : undefined);
 
       const first = Array.isArray(licensesArr) ? licensesArr[0] : undefined;
       const lic = first?.licenseExpiry;
@@ -587,7 +867,11 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       }
     };
 
-    if (driverAppRef?._id && typeof driverAppRef === "object" && !driverAppRef.page1) {
+    if (
+      driverAppRef?._id &&
+      typeof driverAppRef === "object" &&
+      !driverAppRef.page1
+    ) {
       const driverAppId = driverAppRef.toString();
       if (driverAppId && isValidObjectId(driverAppId)) {
         const appDoc = await ApplicationForm.findById(driverAppId, {
@@ -611,27 +895,170 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
           "page1.email": 1,
           "page1.licenses": 1,
           licenses: 1,
-        }
+        },
       ).lean();
       if (fallbackAppDoc) tryExtractFromDoc(fallbackAppDoc);
     }
 
-    const baseContext = buildTrackerContext(updatedTracker ?? onboardingDoc, null, true);
+    const baseContext = buildTrackerContext(
+      updatedTracker ?? onboardingDoc,
+      null,
+      true,
+    );
     const enrichedContext = {
       ...baseContext,
       itemSummary: {
         ...(baseContext as any).itemSummary,
-        ...(driverName || driverEmail || truckUnitNumber ? { driverName, driverEmail, truckUnitNumber } : undefined),
+        ...(driverName || driverEmail || truckUnitNumber
+          ? { driverName, driverEmail, truckUnitNumber }
+          : undefined),
       },
     };
 
     const identifications =
       driverLicenseExpiration != null || truckDetails != null
         ? {
-            ...(driverLicenseExpiration != null ? { driverLicenseExpiration } : {}),
+            ...(driverLicenseExpiration != null
+              ? { driverLicenseExpiration }
+              : {}),
             ...(truckDetails != null ? { truckDetails } : {}),
           }
         : undefined;
+
+    const requestTouched = {
+      notes: typeof body.notes === "string",
+      needsFlatbedTraining: typeof body.needsFlatbedTraining === "boolean",
+      drugTest: Boolean(body.drugTest),
+      carriersEdgeTraining: Boolean(body.carriersEdgeTraining),
+    };
+
+    const summaryParts: string[] = [];
+
+    if (typeof body.notes === "string") {
+      const textChanged = auditNotesBefore !== body.notes;
+      summaryParts.push(
+        textChanged
+          ? "Updated the internal onboarding notes."
+          : "Saved the internal onboarding notes (text unchanged).",
+      );
+    }
+
+    if (typeof body.needsFlatbedTraining === "boolean") {
+      const to = body.needsFlatbedTraining;
+      if (auditNeedsFlatbedBefore !== to) {
+        summaryParts.push(
+          to
+            ? "Marked this driver as requiring flatbed training."
+            : "Removed the flatbed training requirement for this driver.",
+        );
+      }
+    }
+
+    if (body.drugTest && auditDrugTest) {
+      const d = auditDrugTest;
+      const adminDelta = d.adminCountAfter - d.adminCountBefore;
+      const driverDelta = d.driverCountAfter - d.driverCountBefore;
+      const dtParts: string[] = [];
+
+      if (d.statusBefore !== d.statusAfter && d.statusAfter !== undefined) {
+        if (d.statusAfter === EDrugTestStatus.APPROVED) {
+          dtParts.push(
+            d.progressAdvancedOnApproval
+              ? "Approved the drug test and advanced the driver past the drug test step."
+              : "Approved the drug test.",
+          );
+        } else if (d.statusAfter === EDrugTestStatus.REJECTED) {
+          dtParts.push(
+            "Rejected the drug test; driver-submitted documents were cleared (admin-uploaded files were kept).",
+          );
+        } else if (
+          d.statusAfter === EDrugTestStatus.AWAITING_REVIEW &&
+          !d.explicitStatusInRequest
+        ) {
+          dtParts.push(
+            "Drug test was set to awaiting review because documents are on file.",
+          );
+        } else {
+          dtParts.push(
+            `Set drug test status from ${String(d.statusBefore ?? "n/a")} to ${d.statusAfter}.`,
+          );
+        }
+        if (adminDelta !== 0 || driverDelta !== 0) {
+          dtParts.push(
+            `Documents on file after this action — admin: ${d.adminCountAfter}, driver: ${d.driverCountAfter}.`,
+          );
+        }
+      } else if (adminDelta !== 0 || driverDelta !== 0) {
+        dtParts.push(
+          `Updated drug test documents on file (admin: ${d.adminCountAfter}, driver: ${d.driverCountAfter}).`,
+        );
+      }
+
+      if (dtParts.length) summaryParts.push(dtParts.join(" "));
+    }
+
+    if (body.carriersEdgeTraining && auditCarriersEdge) {
+      const c = auditCarriersEdge;
+      const ceParts: string[] = [];
+
+      if (!c.completedBefore && c.completedAfter) {
+        ceParts.push(
+          `Marked Carrier's Edge training as complete (${c.certCountAfter} certificate file(s) on file).`,
+        );
+      } else if (!c.emailSentBefore && c.emailSentAfter) {
+        ceParts.push(
+          "Recorded that the Carrier's Edge invitation email was sent to the driver.",
+        );
+      }
+
+      const completionAnnounced = !c.completedBefore && c.completedAfter;
+      if (c.certCountAfter !== c.certCountBefore && !completionAnnounced) {
+        ceParts.push(
+          `Updated Carrier's Edge certificate file(s); ${c.certCountAfter} on file.`,
+        );
+      }
+
+      if (ceParts.length) summaryParts.push(ceParts.join(" "));
+    }
+
+    const auditMessage =
+      summaryParts.length > 0
+        ? summaryParts.join(" ")
+        : "Safety processing was saved; no material changes were detected from this request.";
+
+    const trackerAfterPatch = updatedTracker ?? onboardingDoc;
+    const onboardingFullyCompleted =
+      trackerAfterPatch.status?.completed === true;
+    const auditMessageWithCompletion = onboardingFullyCompleted
+      ? `${auditMessage} Onboarding is now fully completed (all required workflow steps are finished).`
+      : auditMessage;
+
+    await recordOnboardingAuditLogSafe({
+      onboardingId: onboardingId,
+      action: EOnboardingAuditAction.SAFETY_PROCESSING_UPDATED,
+      actor: actorFromAdminUser(adminUser),
+      message: auditMessageWithCompletion,
+      metadata: {
+        onboardingCompleted: onboardingFullyCompleted,
+        requestTouched,
+        notes:
+          typeof body.notes === "string"
+            ? { textChanged: auditNotesBefore !== body.notes }
+            : undefined,
+        flatbedRequirement:
+          typeof body.needsFlatbedTraining === "boolean"
+            ? {
+                previous: auditNeedsFlatbedBefore,
+                requested: body.needsFlatbedTraining,
+                valueChanged:
+                  auditNeedsFlatbedBefore !== body.needsFlatbedTraining,
+              }
+            : undefined,
+        drugTest: auditDrugTest,
+        carriersEdge: auditCarriersEdge,
+        touched: requestTouched,
+      },
+    });
 
     return successResponse(200, "Onboarding safety data updated", {
       onboardingContext: enrichedContext,

@@ -36,23 +36,23 @@ export default function MobileSidebarDrawer({
   const pathnameData = useMemo(() => {
     const derivedIsContract = pathname.startsWith("/dashboard/contract/");
     const derivedTrackerId = derivedIsContract
-      ? pathname.split("/")[3] ?? ""
+      ? (pathname.split("/")[3] ?? "")
       : undefined;
-    
+
     return {
       derivedIsContract,
       derivedTrackerId,
     };
   }, [pathname]);
 
-  const resolvedVariant: "home" | "contract" = useMemo(() => 
-    variant ?? (pathnameData.derivedIsContract ? "contract" : "home"),
-    [variant, pathnameData.derivedIsContract]
+  const resolvedVariant: "home" | "contract" = useMemo(
+    () => variant ?? (pathnameData.derivedIsContract ? "contract" : "home"),
+    [variant, pathnameData.derivedIsContract],
   );
 
-  const resolvedTrackerId: string | undefined = useMemo(() => 
-    variant ? trackerId : pathnameData.derivedTrackerId,
-    [variant, trackerId, pathnameData.derivedTrackerId]
+  const resolvedTrackerId: string | undefined = useMemo(
+    () => (variant ? trackerId : pathnameData.derivedTrackerId),
+    [variant, trackerId, pathnameData.derivedTrackerId],
   );
 
   // ESC to close

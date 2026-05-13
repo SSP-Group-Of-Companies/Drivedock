@@ -4,8 +4,16 @@ import connectDB from "@/lib/utils/connectDB";
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
 import { ECompanyId } from "@/constants/companies";
-import { EEmailStatus, IOnboardingTracker } from "@/types/onboardingTracker.types";
+import {
+  EEmailStatus,
+  IOnboardingTracker,
+} from "@/types/onboardingTracker.types";
 import { sendDriverCompletionPdfsEmail } from "../mail/driver/sendDriverCompletionPdfsEmail";
+import {
+  actorSystem,
+  recordOnboardingAuditLogSafe,
+} from "@/lib/services/onboardingAuditLog.service";
+import { EOnboardingAuditAction } from "@/types/onboardingAuditLog.types";
 
 const MAX_ATTEMPTS = 5;
 
@@ -24,7 +32,9 @@ export type SendCompletionEmailResult = {
  *  - Fetch email from ApplicationForm (1 op)
  *  - Final status update + return updated tracker via findOneAndUpdate (1 op)
  */
-export default async function sendCompletionEmailIfEligible(trackerId: string): Promise<SendCompletionEmailResult> {
+export default async function sendCompletionEmailIfEligible(
+  trackerId: string,
+): Promise<SendCompletionEmailResult> {
   await connectDB();
 
   const id = trackerId;
@@ -35,7 +45,9 @@ export default async function sendCompletionEmailIfEligible(trackerId: string): 
       _id: id,
       "status.completed": true,
       "emails.completionPdfs.consentGiven": true,
-      "emails.completionPdfs.status": { $in: [EEmailStatus.NOT_SENT, EEmailStatus.PENDING, EEmailStatus.ERROR] },
+      "emails.completionPdfs.status": {
+        $in: [EEmailStatus.NOT_SENT, EEmailStatus.PENDING, EEmailStatus.ERROR],
+      },
       "emails.completionPdfs.attempts": { $lt: MAX_ATTEMPTS },
     },
     { $set: { "emails.completionPdfs.status": EEmailStatus.SENDING } },
@@ -47,12 +59,16 @@ export default async function sendCompletionEmailIfEligible(trackerId: string): 
         emails: 1,
       },
       lean: true,
-    }
+    },
   );
 
   if (!claimed) {
     // Not eligible or already in-flight/sent; caller can fall back to the original doc they have
-    return { ok: false, reason: "NOT_ELIGIBLE_OR_ALREADY_CLAIMED", tracker: null };
+    return {
+      ok: false,
+      reason: "NOT_ELIGIBLE_OR_ALREADY_CLAIMED",
+      tracker: null,
+    };
   }
 
   // 2) Resolve driver's email (single lightweight read)
@@ -67,12 +83,19 @@ export default async function sendCompletionEmailIfEligible(trackerId: string): 
         },
         $inc: { "emails.completionPdfs.attempts": 1 },
       },
-      { new: true, lean: true }
+      { new: true, lean: true },
     );
-    return { ok: false, status: EEmailStatus.PENDING, reason: "NO_APPLICATION_FORM_REF", tracker };
+    return {
+      ok: false,
+      status: EEmailStatus.PENDING,
+      reason: "NO_APPLICATION_FORM_REF",
+      tracker,
+    };
   }
 
-  const app = await ApplicationForm.findById(appId).select("page1.email").lean<{ page1?: { email?: string } }>();
+  const app = await ApplicationForm.findById(appId)
+    .select("page1.email")
+    .lean<{ page1?: { email?: string } }>();
   const email = app?.page1?.email?.trim();
 
   if (!email) {
@@ -85,9 +108,14 @@ export default async function sendCompletionEmailIfEligible(trackerId: string): 
         },
         $inc: { "emails.completionPdfs.attempts": 1 },
       },
-      { new: true, lean: true }
+      { new: true, lean: true },
     );
-    return { ok: false, status: EEmailStatus.PENDING, reason: "NO_EMAIL", tracker };
+    return {
+      ok: false,
+      status: EEmailStatus.PENDING,
+      reason: "NO_EMAIL",
+      tracker,
+    };
   }
 
   // 3) Send + finalize in one update, returning the updated tracker
@@ -108,25 +136,43 @@ export default async function sendCompletionEmailIfEligible(trackerId: string): 
           // "emails.completionPdfs.sentTo": email,
         },
       },
-      { new: true, lean: true }
+      { new: true, lean: true },
     );
+
+    const at = email.indexOf("@");
+    const recipientMasked =
+      at > 0 ? `***@${email.slice(at + 1)}` : "(address on file)";
+
+    await recordOnboardingAuditLogSafe({
+      onboardingId: String(id),
+      action: EOnboardingAuditAction.COMPLETION_PDFS_EMAIL_SENT,
+      actor: actorSystem("DriveDock mailer", "mailer@drivedock"),
+      message: `Completion PDFs email was sent to the driver at ${recipientMasked}.`,
+      metadata: {
+        toEmailDomain: email.includes("@") ? email.split("@")[1] : undefined,
+        recipientMasked,
+      },
+    });
 
     return { ok: true, status: EEmailStatus.SENT, tracker: finalTracker };
   } catch (e: any) {
     console.log("sending email failed: ", e);
-    const prevAttempts = (claimed as any)?.emails?.completionPdfs?.attempts ?? 0;
+    const prevAttempts =
+      (claimed as any)?.emails?.completionPdfs?.attempts ?? 0;
     const hitMax = prevAttempts + 1 >= MAX_ATTEMPTS;
 
     const finalTracker = await OnboardingTracker.findOneAndUpdate(
       { _id: id },
       {
         $set: {
-          "emails.completionPdfs.status": hitMax ? EEmailStatus.ERROR : EEmailStatus.PENDING,
+          "emails.completionPdfs.status": hitMax
+            ? EEmailStatus.ERROR
+            : EEmailStatus.PENDING,
           "emails.completionPdfs.lastError": e?.message || String(e),
         },
         $inc: { "emails.completionPdfs.attempts": 1 },
       },
-      { new: true, lean: true }
+      { new: true, lean: true },
     );
 
     return {

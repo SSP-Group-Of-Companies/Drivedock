@@ -9,6 +9,11 @@ import {
   AppError,
 } from "@/lib/utils/apiResponse";
 import { guard } from "@/lib/utils/auth/authUtils";
+import {
+  recordOnboardingAuditLogSafe,
+  actorFromAdminUser,
+} from "@/lib/services/onboardingAuditLog.service";
+import { EOnboardingAuditAction } from "@/types/onboardingAuditLog.types";
 
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
@@ -111,7 +116,7 @@ const alen = (arr?: IFileAsset[]) =>
 function requirePresence(
   b: PatchBody,
   key: keyof IApplicationFormPage4,
-  label: string
+  label: string,
 ) {
   if (!hasKey(b, key))
     throw new AppError(400, `${label} is required for this applicant.`);
@@ -120,7 +125,7 @@ function expectCountExact(
   b: PatchBody,
   key: keyof IApplicationFormPage4,
   exact: number,
-  label: string
+  label: string,
 ) {
   requirePresence(b, key, label);
   const n = alen((b as any)[key]);
@@ -129,7 +134,7 @@ function expectCountExact(
       400,
       `${label} must have exactly ${exact} photo${
         exact === 1 ? "" : "s"
-      }. You sent ${n}.`
+      }. You sent ${n}.`,
     );
 }
 function expectCountRange(
@@ -137,26 +142,26 @@ function expectCountRange(
   key: keyof IApplicationFormPage4,
   min: number,
   max: number,
-  label: string
+  label: string,
 ) {
   requirePresence(b, key, label);
   const n = alen((b as any)[key]);
   if (n < min || n > max)
     throw new AppError(
       400,
-      `${label} must have between ${min} and ${max} photos. You sent ${n}.`
+      `${label} must have between ${min} and ${max} photos. You sent ${n}.`,
     );
 }
 /** Forbid the field from being included at all (even empty) */
 function forbidPresence(
   b: PatchBody,
   key: keyof IApplicationFormPage4,
-  label: string
+  label: string,
 ) {
   if (hasKey(b, key))
     throw new AppError(
       400,
-      `${label} must not be included for this applicant.`
+      `${label} must not be included for this applicant.`,
     );
 }
 
@@ -210,8 +215,8 @@ function validateBusinessAllOrNothingOnBody(b: PatchBody) {
     throw new AppError(
       400,
       `Business section is partial. Missing: ${missing.join(
-        ", "
-      )}. Provide all fields or clear all.`
+        ", ",
+      )}. Provide all fields or clear all.`,
     );
 
   if (!isNonEmptyString(b.businessName))
@@ -227,7 +232,7 @@ function validateBusinessAllOrNothingOnBody(b: PatchBody) {
   if (inc < 1 || inc > 10)
     throw new AppError(
       400,
-      `incorporatePhotos must have 1–10 photos. You sent ${inc}.`
+      `incorporatePhotos must have 1–10 photos. You sent ${inc}.`,
     );
   if (hst < 1 || hst > 2)
     throw new AppError(400, `hstPhotos must have 1–2 photos. You sent ${hst}.`);
@@ -238,11 +243,11 @@ function validateBusinessAllOrNothingOnBody(b: PatchBody) {
 /* -------------------------------- PATCH -------------------------------- */
 export const PATCH = async (
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) => {
   try {
     await connectDB();
-    await guard();
+    const adminUser = await guard();
 
     const { id: onboardingId } = await params;
     if (!isValidObjectId(onboardingId))
@@ -254,7 +259,7 @@ export const PATCH = async (
     if (!isInvitationApproved(onboardingDoc))
       return errorResponse(
         400,
-        "driver not yet approved for onboarding process"
+        "driver not yet approved for onboarding process",
       );
 
     // Admin path: require Page 4 completed first
@@ -266,7 +271,7 @@ export const PATCH = async (
     if (!appFormId) return errorResponse(404, "ApplicationForm not linked");
 
     const appFormDoc = (await ApplicationForm.findById(
-      appFormId
+      appFormId,
     )) as IApplicationFormDoc | null;
     if (!appFormDoc) return errorResponse(404, "ApplicationForm not found");
 
@@ -302,7 +307,7 @@ export const PATCH = async (
     if (!isCanadian && !isUS)
       throw new AppError(
         400,
-        "Unsupported applicant country for Page 4 rules."
+        "Unsupported applicant country for Page 4 rules.",
       );
 
     // HST is Canadian-only
@@ -311,13 +316,13 @@ export const PATCH = async (
       if (hasKey(body, "hstNumber")) {
         throw new AppError(
           400,
-          "HST number must not be provided for US applicants."
+          "HST number must not be provided for US applicants.",
         );
       }
       if (hasKey(body, "hstPhotos")) {
         throw new AppError(
           400,
-          "HST photos must not be provided for US applicants."
+          "HST photos must not be provided for US applicants.",
         );
       }
     }
@@ -346,7 +351,7 @@ export const PATCH = async (
       if (!hasPassport && !hasPRCitizenship) {
         throw new AppError(
           400,
-          "US drivers must provide either passport photos (2 photos) or PR/Permit/Citizenship photos (1-2 photos)"
+          "US drivers must provide either passport photos (2 photos) or PR/Permit/Citizenship photos (1-2 photos)",
         );
       }
 
@@ -362,7 +367,7 @@ export const PATCH = async (
           "prPermitCitizenshipPhotos",
           1,
           2,
-          "PR/Permit/Citizenship photos"
+          "PR/Permit/Citizenship photos",
         );
       }
     } else {
@@ -375,14 +380,14 @@ export const PATCH = async (
         requirePresence(
           body,
           "prPermitCitizenshipPhotos",
-          "PR/Permit/Citizenship photos"
+          "PR/Permit/Citizenship photos",
         );
         expectCountRange(
           body,
           "prPermitCitizenshipPhotos",
           1,
           2,
-          "PR/Permit/Citizenship photos"
+          "PR/Permit/Citizenship photos",
         );
       }
       // For Canadian passports, PR/Permit/Citizenship is not required
@@ -405,41 +410,41 @@ export const PATCH = async (
       forbidPresence(
         body,
         "medicalCertificationPhotos",
-        "Medical certification photos"
+        "Medical certification photos",
       );
     } else if (isUS) {
       // Photos required
       requirePresence(
         body,
         "medicalCertificationPhotos",
-        "Medical certification photos"
+        "Medical certification photos",
       );
       expectCountRange(
         body,
         "medicalCertificationPhotos",
         1,
         2,
-        "Medical certification photos"
+        "Medical certification photos",
       );
 
       // NEW: details required
       requirePresence(
         body,
         "medicalCertificateDetails",
-        "Medical certificate details"
+        "Medical certificate details",
       );
       const mcd = body.medicalCertificateDetails;
 
       if (!mcd || !isNonEmptyString(mcd.documentNumber)) {
         throw new AppError(
           400,
-          "Medical certificate document number is required for US applicants."
+          "Medical certificate document number is required for US applicants.",
         );
       }
       if (!isNonEmptyString(mcd.issuingAuthority)) {
         throw new AppError(
           400,
-          "Medical certificate issuing authority is required for US applicants."
+          "Medical certificate issuing authority is required for US applicants.",
         );
       }
       // mcd.expiryDate stays optional
@@ -465,7 +470,7 @@ export const PATCH = async (
       ) {
         return errorResponse(
           400,
-          "First license must include both front and back photos"
+          "First license must include both front and back photos",
         );
       }
       tempLicenses = body.licenses.map((l) => ({ ...l }));
@@ -497,7 +502,7 @@ export const PATCH = async (
             if (!isNonEmptyString(body.businessName)) {
               throw new AppError(
                 400,
-                "Business name is required for this applicant."
+                "Business name is required for this applicant.",
               );
             }
 
@@ -507,7 +512,7 @@ export const PATCH = async (
               "incorporatePhotos",
               1,
               10,
-              "Incorporation photos"
+              "Incorporation photos",
             );
 
             if (isCanadian) {
@@ -516,7 +521,7 @@ export const PATCH = async (
               if (!isNonEmptyString(body.hstNumber)) {
                 throw new AppError(
                   400,
-                  "HST number is required for this applicant."
+                  "HST number is required for this applicant.",
                 );
               }
               expectCountRange(body, "hstPhotos", 1, 2, "HST photos");
@@ -537,7 +542,7 @@ export const PATCH = async (
               "bankingInfoPhotos",
               1,
               2,
-              "Banking info photos"
+              "Banking info photos",
             );
           }
         }
@@ -558,13 +563,13 @@ export const PATCH = async (
           if (!isNonEmptyString(fc?.fastCardNumber) || !fc?.fastCardExpiry) {
             throw new AppError(
               400,
-              "Fast card must include number and expiry."
+              "Fast card must include number and expiry.",
             );
           }
           if (!fc?.fastCardFrontPhoto || !fc?.fastCardBackPhoto) {
             throw new AppError(
               400,
-              "Fast card must include both front and back photos."
+              "Fast card must include both front and back photos.",
             );
           }
         }
@@ -607,14 +612,14 @@ export const PATCH = async (
               prPermitCitizenshipPhotos: body.prPermitCitizenshipPhotos ?? [],
 
               passportDetails: hasKey(body, "passportDetails")
-                ? body.passportDetails ?? undefined
+                ? (body.passportDetails ?? undefined)
                 : prevP4.passportDetails,
 
               prPermitCitizenshipDetails: hasKey(
                 body,
-                "prPermitCitizenshipDetails"
+                "prPermitCitizenshipDetails",
               )
-                ? body.prPermitCitizenshipDetails ?? undefined
+                ? (body.prPermitCitizenshipDetails ?? undefined)
                 : prevP4.prPermitCitizenshipDetails,
 
               medicalCertificateDetails: body.medicalCertificateDetails!,
@@ -671,14 +676,14 @@ export const PATCH = async (
         if (!hasPassportBundle && !hasPRBundle) {
           throw new AppError(
             400,
-            "US drivers must provide either passport (photos and details) or PR/Permit/Citizenship (photos and details)."
+            "US drivers must provide either passport (photos and details) or PR/Permit/Citizenship (photos and details).",
           );
         }
 
         if (hasPassportBundle && hasPRBundle) {
           throw new AppError(
             400,
-            "Provide either passport (photos and details) OR PR/Permit/Citizenship (photos and details), not both."
+            "Provide either passport (photos and details) OR PR/Permit/Citizenship (photos and details), not both.",
           );
         }
 
@@ -686,13 +691,13 @@ export const PATCH = async (
           if (!hasPassportPhotos) {
             throw new AppError(
               400,
-              "Passport photos are required when providing passport details."
+              "Passport photos are required when providing passport details.",
             );
           }
           if (!hasPassportDetails) {
             throw new AppError(
               400,
-              "Passport details are required when providing passport photos."
+              "Passport details are required when providing passport photos.",
             );
           }
         }
@@ -701,13 +706,13 @@ export const PATCH = async (
           if (!hasPRPhotos) {
             throw new AppError(
               400,
-              "PR/Permit/Citizenship photos are required when providing PR/Permit/Citizenship details."
+              "PR/Permit/Citizenship photos are required when providing PR/Permit/Citizenship details.",
             );
           }
           if (!hasPRDetails) {
             throw new AppError(
               400,
-              "PR/Permit/Citizenship details are required when providing PR/Permit/Citizenship photos."
+              "PR/Permit/Citizenship details are required when providing PR/Permit/Citizenship photos.",
             );
           }
         }
@@ -731,7 +736,7 @@ export const PATCH = async (
             if (!bankingOk) {
               throw new AppError(
                 400,
-                "Banking info is required for this applicant."
+                "Banking info is required for this applicant.",
               );
             }
           }
@@ -746,7 +751,7 @@ export const PATCH = async (
               if (!nameOk || !hstOk || !incOk || !hstPhotosOk) {
                 throw new AppError(
                   400,
-                  "Business info is required for Owner Operator."
+                  "Business info is required for Owner Operator.",
                 );
               }
             } else if (isUS) {
@@ -754,7 +759,7 @@ export const PATCH = async (
               if (!nameOk || !incOk) {
                 throw new AppError(
                   400,
-                  "Business info is required for Owner Operator."
+                  "Business info is required for Owner Operator.",
                 );
               }
             }
@@ -811,7 +816,7 @@ export const PATCH = async (
       keysToHardDelete.push(
         ...finalizedOnly(collect(prevP4.incorporatePhotos)),
         ...finalizedOnly(collect(prevP4.bankingInfoPhotos)),
-        ...finalizedOnly(collect(prevP4.hstPhotos))
+        ...finalizedOnly(collect(prevP4.hstPhotos)),
       );
     }
 
@@ -829,7 +834,7 @@ export const PATCH = async (
         ...finalizedOnly([
           hadFast.fastCardFrontPhoto?.s3Key,
           hadFast.fastCardBackPhoto?.s3Key,
-        ])
+        ]),
       );
     }
 
@@ -846,19 +851,19 @@ export const PATCH = async (
     let p1FinalLicenses: ILicenseEntry[] | undefined;
     if (touchingLicenses) {
       p1FinalLicenses = JSON.parse(
-        JSON.stringify(appFormDoc.page1.licenses)
+        JSON.stringify(appFormDoc.page1.licenses),
       ) as ILicenseEntry[];
       const dest = buildFinalDest(onboardingDoc.id, ES3Folder.LICENSES);
       for (const lic of p1FinalLicenses) {
         if (lic.licenseFrontPhoto)
           lic.licenseFrontPhoto = await finalizeAsset(
             lic.licenseFrontPhoto,
-            dest
+            dest,
           );
         if (lic.licenseBackPhoto)
           lic.licenseBackPhoto = await finalizeAsset(
             lic.licenseBackPhoto,
-            dest
+            dest,
           );
       }
     }
@@ -870,59 +875,59 @@ export const PATCH = async (
       if (tempSinPhoto) {
         p1FinalSinPhoto = await finalizeAsset(
           tempSinPhoto,
-          buildFinalDest(onboardingDoc.id, ES3Folder.SIN_PHOTOS)
+          buildFinalDest(onboardingDoc.id, ES3Folder.SIN_PHOTOS),
         );
       }
     }
 
     // Page 4 (finalize; finalizeAssetVector no-ops existing submissions)
     const p4Final: IApplicationFormPage4 = JSON.parse(
-      JSON.stringify(appFormDoc.page4)
+      JSON.stringify(appFormDoc.page4),
     ) as IApplicationFormPage4;
 
     p4Final.hstPhotos = (await finalizeAssetVector(
       p4Final.hstPhotos,
-      buildFinalDest(onboardingDoc.id, ES3Folder.HST_PHOTOS)
+      buildFinalDest(onboardingDoc.id, ES3Folder.HST_PHOTOS),
     )) as IFileAsset[];
     p4Final.incorporatePhotos = (await finalizeAssetVector(
       p4Final.incorporatePhotos,
-      buildFinalDest(onboardingDoc.id, ES3Folder.INCORPORATION_PHOTOS)
+      buildFinalDest(onboardingDoc.id, ES3Folder.INCORPORATION_PHOTOS),
     )) as IFileAsset[];
     p4Final.bankingInfoPhotos = (await finalizeAssetVector(
       p4Final.bankingInfoPhotos,
-      buildFinalDest(onboardingDoc.id, ES3Folder.BANKING_INFO_PHOTOS)
+      buildFinalDest(onboardingDoc.id, ES3Folder.BANKING_INFO_PHOTOS),
     )) as IFileAsset[];
     p4Final.healthCardPhotos = (await finalizeAssetVector(
       p4Final.healthCardPhotos,
-      buildFinalDest(onboardingDoc.id, ES3Folder.HEALTH_CARD_PHOTOS)
+      buildFinalDest(onboardingDoc.id, ES3Folder.HEALTH_CARD_PHOTOS),
     )) as IFileAsset[];
     p4Final.medicalCertificationPhotos = (await finalizeAssetVector(
       p4Final.medicalCertificationPhotos,
-      buildFinalDest(onboardingDoc.id, ES3Folder.MEDICAL_CERT_PHOTOS)
+      buildFinalDest(onboardingDoc.id, ES3Folder.MEDICAL_CERT_PHOTOS),
     )) as IFileAsset[];
     p4Final.passportPhotos = (await finalizeAssetVector(
       p4Final.passportPhotos,
-      buildFinalDest(onboardingDoc.id, ES3Folder.PASSPORT_PHOTOS)
+      buildFinalDest(onboardingDoc.id, ES3Folder.PASSPORT_PHOTOS),
     )) as IFileAsset[];
     p4Final.usVisaPhotos = (await finalizeAssetVector(
       p4Final.usVisaPhotos,
-      buildFinalDest(onboardingDoc.id, ES3Folder.US_VISA_PHOTOS)
+      buildFinalDest(onboardingDoc.id, ES3Folder.US_VISA_PHOTOS),
     )) as IFileAsset[];
     p4Final.prPermitCitizenshipPhotos = (await finalizeAssetVector(
       p4Final.prPermitCitizenshipPhotos,
-      buildFinalDest(onboardingDoc.id, ES3Folder.PR_CITIZENSHIP_PHOTOS)
+      buildFinalDest(onboardingDoc.id, ES3Folder.PR_CITIZENSHIP_PHOTOS),
     )) as IFileAsset[];
 
     if (p4Final.fastCard?.fastCardFrontPhoto) {
       p4Final.fastCard.fastCardFrontPhoto = await finalizeAsset(
         p4Final.fastCard.fastCardFrontPhoto,
-        buildFinalDest(onboardingDoc.id, ES3Folder.FAST_CARD_PHOTOS)
+        buildFinalDest(onboardingDoc.id, ES3Folder.FAST_CARD_PHOTOS),
       );
     }
     if (p4Final.fastCard?.fastCardBackPhoto) {
       p4Final.fastCard.fastCardBackPhoto = await finalizeAsset(
         p4Final.fastCard.fastCardBackPhoto,
-        buildFinalDest(onboardingDoc.id, ES3Folder.FAST_CARD_PHOTOS)
+        buildFinalDest(onboardingDoc.id, ES3Folder.FAST_CARD_PHOTOS),
       );
     }
 
@@ -961,10 +966,10 @@ export const PATCH = async (
 
     const prevKeysP1 = new Set(collectLicenseKeys(prevP1Licenses));
     const newKeysP1 = new Set(
-      collectLicenseKeys(p1FinalLicenses ?? appFormDoc.page1.licenses)
+      collectLicenseKeys(p1FinalLicenses ?? appFormDoc.page1.licenses),
     );
     const removedP1 = [...prevKeysP1].filter(
-      (k) => !newKeysP1.has(k) && !k.startsWith(`${S3_TEMP_FOLDER}/`)
+      (k) => !newKeysP1.has(k) && !k.startsWith(`${S3_TEMP_FOLDER}/`),
     );
     if (removedP1.length) {
       try {
@@ -995,7 +1000,7 @@ export const PATCH = async (
     const prevKeysP4 = new Set(collectP4Keys(prevP4));
     const newKeysP4 = new Set(collectP4Keys(p4Final));
     const removedP4 = [...prevKeysP4].filter(
-      (k) => !newKeysP4.has(k) && !k.startsWith(`${S3_TEMP_FOLDER}/`)
+      (k) => !newKeysP4.has(k) && !k.startsWith(`${S3_TEMP_FOLDER}/`),
     );
     if (removedP4.length) {
       try {
@@ -1013,7 +1018,7 @@ export const PATCH = async (
       ) {
         return errorResponse(
           400,
-          "First license must include both front and back photos"
+          "First license must include both front and back photos",
         );
       }
       appFormDoc.set("page1.licenses", p1FinalLicenses as any);
@@ -1034,16 +1039,39 @@ export const PATCH = async (
     // Tracker & resume expiry
     onboardingDoc.status = advanceProgress(
       onboardingDoc,
-      EStepPath.APPLICATION_PAGE_4
+      EStepPath.APPLICATION_PAGE_4,
     );
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();
     await onboardingDoc.save();
+
+    await recordOnboardingAuditLogSafe({
+      onboardingId,
+      action: EOnboardingAuditAction.IDENTIFICATIONS_UPDATED,
+      actor: actorFromAdminUser(adminUser),
+      message: (() => {
+        const parts: string[] = [];
+        if (touchingLicenses) parts.push("license photos");
+        if (touchingSinPhoto) parts.push("SIN photo");
+        if (touchingAnyPage4Key)
+          parts.push(
+            "page 4 identification, work authorization, medical, FAST, or business documents",
+          );
+        return `Administrator updated ${parts.join(", ")}.`;
+      })(),
+      metadata: {
+        touched: {
+          licenses: touchingLicenses,
+          sinPhoto: touchingSinPhoto,
+          page4: touchingAnyPage4Key,
+        },
+      },
+    });
 
     return successResponse(200, "Identifications updated", {
       onboardingContext: buildTrackerContext(
         onboardingDoc,
         EStepPath.APPLICATION_PAGE_4,
-        true
+        true,
       ),
       licenses: appFormDoc.page1.licenses,
       sinPhoto: appFormDoc.page1.sinPhoto,
@@ -1079,7 +1107,7 @@ export const PATCH = async (
 /* -------------------------------- GET -------------------------------- */
 export const GET = async (
   _: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) => {
   try {
     await connectDB();
@@ -1095,14 +1123,14 @@ export const GET = async (
     if (!isInvitationApproved(onboardingDoc))
       return errorResponse(
         400,
-        "driver not yet approved for onboarding process"
+        "driver not yet approved for onboarding process",
       );
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) return errorResponse(404, "ApplicationForm not linked");
 
     const appFormDoc = (await ApplicationForm.findById(
-      appFormId
+      appFormId,
     )) as IApplicationFormDoc | null;
     if (!appFormDoc) return errorResponse(404, "ApplicationForm not found");
 

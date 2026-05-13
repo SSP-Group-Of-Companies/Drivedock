@@ -4,12 +4,23 @@ import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
 import { IApplicationFormPage2 } from "@/types/applicationForm.types";
 import { EStepPath } from "@/types/onboardingTracker.types";
-import { buildTrackerContext, advanceProgress, nextResumeExpiry, hasCompletedStep, isInvitationApproved } from "@/lib/utils/onboardingUtils";
+import {
+  buildTrackerContext,
+  advanceProgress,
+  nextResumeExpiry,
+  hasCompletedStep,
+  isInvitationApproved,
+} from "@/lib/utils/onboardingUtils";
 import { isValidObjectId } from "mongoose";
 import { NextRequest } from "next/server";
 import { validateEmploymentHistory } from "@/lib/utils/validationUtils";
 import { guard } from "@/lib/utils/auth/authUtils";
 import { sortEmploymentsDesc } from "@/lib/utils/sortUtils";
+import {
+  recordOnboardingAuditLogSafe,
+  actorFromAdminUser,
+} from "@/lib/services/onboardingAuditLog.service";
+import { EOnboardingAuditAction } from "@/types/onboardingAuditLog.types";
 
 /**
  * PATCH /admin/onboarding/[id]/application-form/employment-history
@@ -17,10 +28,13 @@ import { sortEmploymentsDesc } from "@/lib/utils/sortUtils";
  * - Requires that the driver has completed PAGE_2
  * - Advances progress to PAGE_2 (monotonic) and refreshes resume expiry
  */
-export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+export const PATCH = async (
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) => {
   try {
     await connectDB();
-    await guard();
+    const adminUser = await guard();
 
     const { id } = await params;
     if (!isValidObjectId(id)) return errorResponse(400, "not a valid id");
@@ -38,8 +52,13 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     };
 
     const onboardingDoc = await OnboardingTracker.findById(id);
-    if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
-    if (!isInvitationApproved(onboardingDoc)) return errorResponse(400, "driver not yet approved for onboarding process");
+    if (!onboardingDoc || onboardingDoc.terminated)
+      return errorResponse(404, "Onboarding document not found");
+    if (!isInvitationApproved(onboardingDoc))
+      return errorResponse(
+        400,
+        "driver not yet approved for onboarding process",
+      );
     if (!hasCompletedStep(onboardingDoc, EStepPath.APPLICATION_PAGE_2)) {
       return errorResponse(401, "driver hasn't completed this step yet");
     }
@@ -60,16 +79,32 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     // ---------------------------
     // Phase 2: tracker updates
     // ---------------------------
-    onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.APPLICATION_PAGE_2);
+    onboardingDoc.status = advanceProgress(
+      onboardingDoc,
+      EStepPath.APPLICATION_PAGE_2,
+    );
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();
     await onboardingDoc.save();
+
+    await recordOnboardingAuditLogSafe({
+      onboardingId: id,
+      action: EOnboardingAuditAction.EMPLOYMENT_HISTORY_UPDATED,
+      actor: actorFromAdminUser(adminUser),
+      message:
+        "Administrator updated employment history (application form page 2) on behalf of the driver.",
+      metadata: { page: "page-2" },
+    });
 
     // IMPORTANT: return a plain object (no Mongoose internals)
     const freshLean = await ApplicationForm.findById(appFormId).lean();
     const page2Plain = (freshLean?.page2 ?? {}) as IApplicationFormPage2;
 
     return successResponse(200, "employment history updated", {
-      onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_2, true),
+      onboardingContext: buildTrackerContext(
+        onboardingDoc,
+        EStepPath.APPLICATION_PAGE_2,
+        true,
+      ),
       employmentHistory: page2Plain, // plain JSON (no $__parent)
     });
   } catch (error) {
@@ -82,17 +117,26 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
  * - Returns employment history (sorted) + admin context
  * - Uses .lean() so response is plain JSON (no Mongoose internals)
  */
-export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+export const GET = async (
+  _: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) => {
   try {
     await connectDB();
     await guard();
 
     const { id: onboardingId } = await params;
-    if (!isValidObjectId(onboardingId)) return errorResponse(400, "Not a valid onboarding tracker ID");
+    if (!isValidObjectId(onboardingId))
+      return errorResponse(400, "Not a valid onboarding tracker ID");
 
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
-    if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
-    if (!isInvitationApproved(onboardingDoc)) return errorResponse(400, "driver not yet approved for onboarding process");
+    if (!onboardingDoc)
+      return errorResponse(404, "Onboarding document not found");
+    if (!isInvitationApproved(onboardingDoc))
+      return errorResponse(
+        400,
+        "driver not yet approved for onboarding process",
+      );
     if (!hasCompletedStep(onboardingDoc, EStepPath.APPLICATION_PAGE_2)) {
       return errorResponse(401, "driver hasn't completed this step yet");
     }
@@ -106,7 +150,9 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
 
     // Normalize to sorted order on read (covers legacy unsorted data)
     const page2 = (appFormLean.page2 ?? {}) as IApplicationFormPage2;
-    const employments = Array.isArray(page2.employments) ? sortEmploymentsDesc(page2.employments) : [];
+    const employments = Array.isArray(page2.employments)
+      ? sortEmploymentsDesc(page2.employments)
+      : [];
     const normalizedPage2: IApplicationFormPage2 = { ...page2, employments };
 
     return successResponse(200, "employment history data retrieved", {

@@ -11,6 +11,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
+import CosmeticScrollArea from "@/components/shared/CosmeticScrollArea";
 import {
   HOME_SIDEBAR_ITEMS,
   contractSidebarSections,
@@ -35,23 +36,26 @@ const INACTIVE_STYLES = {
 
 function NavItem({ item, active }: { item: SidebarItem; active: boolean }) {
   const Icon = item.icon;
-  const styles = useMemo(() => active ? ACTIVE_STYLES : INACTIVE_STYLES, [active]);
+  const styles = useMemo(
+    () => (active ? ACTIVE_STYLES : INACTIVE_STYLES),
+    [active],
+  );
   const hasCount = typeof item.count === "number" && item.count > 0;
-  
+
   return (
     <Link
       href={item.href}
       aria-current={active ? "page" : undefined}
       className={cx(
         "group flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-0 min-w-0",
-        active ? "font-semibold" : "hover:scale-[1.02]"
+        active ? "font-semibold" : "hover:scale-[1.02]",
       )}
       style={styles}
     >
       <Icon
         className={cx(
           "h-4 w-4 transition-opacity",
-          active ? "opacity-95" : "opacity-80 group-hover:opacity-95"
+          active ? "opacity-95" : "opacity-80 group-hover:opacity-95",
         )}
         aria-hidden="true"
       />
@@ -60,7 +64,9 @@ function NavItem({ item, active }: { item: SidebarItem; active: boolean }) {
         <span
           className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-xs font-semibold tabular-nums"
           style={{
-            backgroundColor: active ? "rgba(255, 255, 255, 0.25)" : "var(--color-primary)",
+            backgroundColor: active
+              ? "rgba(255, 255, 255, 0.25)"
+              : "var(--color-primary)",
             color: active ? "white" : "white",
           }}
           aria-label={`${item.count} pending`}
@@ -190,11 +196,12 @@ export default function AdminSidebar({
         "hidden xl:block",
         // fixed positioning under header; offset matches header h-12 (48px) / h-14 (56px)
         "fixed top-12 sm:top-14 left-0",
-        // width + no right padding (flush with content)
-        "w-56 lg:w-64 pl-3 pr-0 py-4",
+        // width + no right padding (flush with content); vertical padding lives on
+        // the scroll area so the scroll indicator track spans the full panel height.
+        "w-56 lg:w-64 pl-3 pr-0",
         // make it visually span the viewport under the header
         "h-[calc(100dvh-48px)] sm:h-[calc(100dvh-56px)]",
-        "transition-colors duration-200"
+        "transition-colors duration-200",
       )}
       style={{
         backgroundColor: "var(--color-card)",
@@ -203,14 +210,17 @@ export default function AdminSidebar({
           "var(--color-shadow) 0 1px 3px 0, var(--color-shadow) 0 1px 2px -1px",
       }}
     >
-      <div className="h-full overflow-y-auto overflow-x-hidden w-full">
+      <CosmeticScrollArea
+        className="h-full min-h-0 w-full"
+        viewportClassName="h-full min-h-0 w-full overflow-x-hidden overflow-y-auto pt-4 pb-4 pr-1"
+      >
         <SidebarNav
           variant={variant}
           activePath={activePath}
           trackerId={trackerId}
           navLabel="DriveDock Sidebar"
         />
-      </div>
+      </CosmeticScrollArea>
     </aside>
   );
 }

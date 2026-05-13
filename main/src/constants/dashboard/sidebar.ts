@@ -1,10 +1,31 @@
 /**
  * Sidebar configuration (no JSX, just data).
  */
-import { Home, FileX, FileClock, ClipboardList, IdCard, Briefcase, ShieldAlert, FileBadge, FileText, Slash, BadgeCheck, Printer, Car, Settings } from "lucide-react";
+import {
+  Home,
+  FileX,
+  FileClock,
+  ClipboardList,
+  IdCard,
+  Briefcase,
+  ShieldAlert,
+  FileBadge,
+  FileText,
+  Slash,
+  BadgeCheck,
+  Printer,
+  Car,
+  Settings,
+  ScrollText,
+} from "lucide-react";
 import type { ElementType } from "react";
 
-export type SidebarItem = { href: string; label: string; icon: ElementType; count?: number };
+export type SidebarItem = {
+  href: string;
+  label: string;
+  icon: ElementType;
+  count?: number;
+};
 export type SidebarSection = { title: string; items: SidebarItem[] };
 
 /** Home-only Settings item */
@@ -14,11 +35,19 @@ export const HOME_SETTINGS_ITEM: SidebarItem = {
   icon: Settings,
 };
 
+/** Home — global audit log search */
+export const HOME_AUDIT_LOGS_ITEM: SidebarItem = {
+  href: "/dashboard/audit-logs",
+  label: "Audit logs",
+  icon: ScrollText,
+};
+
 /** Home/Terminated (non-contract) */
 export const HOME_SIDEBAR_ITEMS: SidebarItem[] = [
   { href: "/dashboard/home", label: "Home", icon: Home },
   { href: "/dashboard/invitations", label: "Invitations", icon: FileClock },
   { href: "/dashboard/terminated", label: "Terminated", icon: FileX },
+  HOME_AUDIT_LOGS_ITEM,
   HOME_SETTINGS_ITEM,
 ];
 
@@ -91,7 +120,10 @@ export function contractSidebarSections(trackerId: string): SidebarSection[] {
     {
       title: "System",
       // 🔑 Contract-scoped alias to keep the contract sidebar active
-      items: [{ href: `${base}/settings`, label: "Settings", icon: Settings }],
+      items: [
+        { href: `${base}/audit-logs`, label: "Audit logs", icon: ScrollText },
+        { href: `${base}/settings`, label: "Settings", icon: Settings },
+      ],
     },
   ];
 }

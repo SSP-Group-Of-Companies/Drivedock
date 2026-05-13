@@ -5,14 +5,30 @@ import { isValidObjectId } from "mongoose";
 import connectDB from "@/lib/utils/connectDB";
 import { errorResponse, successResponse } from "@/lib/utils/apiResponse";
 import { guard } from "@/lib/utils/auth/authUtils";
+import {
+  recordOnboardingAuditLogSafe,
+  actorFromAdminUser,
+} from "@/lib/services/onboardingAuditLog.service";
+import { EOnboardingAuditAction } from "@/types/onboardingAuditLog.types";
 
 import OnboardingTracker from "@/mongoose/models/OnboardingTracker";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
 
-import { buildTrackerContext, advanceProgress, nextResumeExpiry, hasCompletedStep, isInvitationApproved } from "@/lib/utils/onboardingUtils";
+import {
+  buildTrackerContext,
+  advanceProgress,
+  nextResumeExpiry,
+  hasCompletedStep,
+  isInvitationApproved,
+} from "@/lib/utils/onboardingUtils";
 
 import { EStepPath } from "@/types/onboardingTracker.types";
-import type { IAccidentEntry, ITrafficConvictionEntry, ICriminalRecordEntry, IApplicationFormDoc } from "@/types/applicationForm.types";
+import type {
+  IAccidentEntry,
+  ITrafficConvictionEntry,
+  ICriminalRecordEntry,
+  IApplicationFormDoc,
+} from "@/types/applicationForm.types";
 
 /**
  * ===============================================================
@@ -54,20 +70,29 @@ type PatchBody = {
  * - Requires PAGE_4 completed
  * - Advances authoritative progress to PAGE_4 and refreshes resume expiry
  */
-export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+export const PATCH = async (
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) => {
   try {
     await connectDB();
-    await guard();
+    const adminUser = await guard();
 
     const { id: onboardingId } = await params;
-    if (!isValidObjectId(onboardingId)) return errorResponse(400, "Not a valid onboarding tracker ID");
+    if (!isValidObjectId(onboardingId))
+      return errorResponse(400, "Not a valid onboarding tracker ID");
 
     const body = (await req.json()) as PatchBody;
 
     // Load tracker
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
-    if (!onboardingDoc || onboardingDoc.terminated) return errorResponse(404, "Onboarding document not found");
-    if (!isInvitationApproved(onboardingDoc)) return errorResponse(400, "driver not yet approved for onboarding process");
+    if (!onboardingDoc || onboardingDoc.terminated)
+      return errorResponse(404, "Onboarding document not found");
+    if (!isInvitationApproved(onboardingDoc))
+      return errorResponse(
+        400,
+        "driver not yet approved for onboarding process",
+      );
 
     // Gate: must have completed up to PAGE_4
     if (!hasCompletedStep(onboardingDoc, EStepPath.APPLICATION_PAGE_4)) {
@@ -78,12 +103,16 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) return errorResponse(404, "ApplicationForm not linked");
 
-    const appFormDoc = (await ApplicationForm.findById(appFormId)) as IApplicationFormDoc | null;
+    const appFormDoc = (await ApplicationForm.findById(
+      appFormId,
+    )) as IApplicationFormDoc | null;
     if (!appFormDoc) return errorResponse(404, "ApplicationForm not found");
 
     // Ensure page3 + page4 exist (they should if PAGE_4 is completed)
-    if (!appFormDoc.page3) return errorResponse(400, "ApplicationForm Page 3 is missing");
-    if (!appFormDoc.page4) return errorResponse(400, "ApplicationForm Page 4 is missing");
+    if (!appFormDoc.page3)
+      return errorResponse(400, "ApplicationForm Page 3 is missing");
+    if (!appFormDoc.page4)
+      return errorResponse(400, "ApplicationForm Page 4 is missing");
 
     // ---------------------------
     // Phase 1: write subtrees ONLY
@@ -92,28 +121,30 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
       appFormDoc.set("page3.accidentHistory", body.accidentHistory);
       appFormDoc.set(
         "page3.hasAccidentHistory",
-        Array.isArray(body.accidentHistory) && body.accidentHistory.length > 0
+        Array.isArray(body.accidentHistory) && body.accidentHistory.length > 0,
       );
     }
     if (body.trafficConvictions) {
       appFormDoc.set("page3.trafficConvictions", body.trafficConvictions);
       appFormDoc.set(
         "page3.hasTrafficConvictions",
-        Array.isArray(body.trafficConvictions) && body.trafficConvictions.length > 0
+        Array.isArray(body.trafficConvictions) &&
+          body.trafficConvictions.length > 0,
       );
     }
     if (body.criminalRecords) {
       appFormDoc.set("page4.criminalRecords", body.criminalRecords);
       appFormDoc.set(
         "page4.hasCriminalRecords",
-        Array.isArray(body.criminalRecords) && body.criminalRecords.length > 0
+        Array.isArray(body.criminalRecords) && body.criminalRecords.length > 0,
       );
     }
 
     // Validate ONLY affected pages (lets Mongoose run your per-page rules)
     // NOTE: We validate `page3` and/or `page4` if we touched anything within them.
     const validatePaths: string[] = [];
-    if (body.accidentHistory || body.trafficConvictions) validatePaths.push("page3");
+    if (body.accidentHistory || body.trafficConvictions)
+      validatePaths.push("page3");
     if (body.criminalRecords) validatePaths.push("page4");
 
     if (validatePaths.length > 0) {
@@ -126,19 +157,39 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     // ---------------------------
     // Phase 2: tracker updates
     // ---------------------------
-    onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.APPLICATION_PAGE_4);
+    onboardingDoc.status = advanceProgress(
+      onboardingDoc,
+      EStepPath.APPLICATION_PAGE_4,
+    );
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();
     await onboardingDoc.save();
 
-    return successResponse(200, "Accident/Convictions/Criminal records updated", {
-      onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_4, true),
-      hasAccidentHistory: appFormDoc.page3?.hasAccidentHistory,
-      accidentHistory: appFormDoc.page3.accidentHistory,
-      hasTrafficConvictions: appFormDoc.page3?.hasTrafficConvictions,
-      trafficConvictions: appFormDoc.page3.trafficConvictions,
-      hasCriminalRecords: appFormDoc.page4?.hasCriminalRecords,
-      criminalRecords: appFormDoc.page4.criminalRecords,
+    await recordOnboardingAuditLogSafe({
+      onboardingId,
+      action: EOnboardingAuditAction.ACCIDENT_CRIMINAL_UPDATED,
+      actor: actorFromAdminUser(adminUser),
+      message:
+        "Administrator updated accidents, traffic convictions, or criminal history disclosures (application form).",
+      metadata: { section: "accidents-criminal-traffic" },
     });
+
+    return successResponse(
+      200,
+      "Accident/Convictions/Criminal records updated",
+      {
+        onboardingContext: buildTrackerContext(
+          onboardingDoc,
+          EStepPath.APPLICATION_PAGE_4,
+          true,
+        ),
+        hasAccidentHistory: appFormDoc.page3?.hasAccidentHistory,
+        accidentHistory: appFormDoc.page3.accidentHistory,
+        hasTrafficConvictions: appFormDoc.page3?.hasTrafficConvictions,
+        trafficConvictions: appFormDoc.page3.trafficConvictions,
+        hasCriminalRecords: appFormDoc.page4?.hasCriminalRecords,
+        criminalRecords: appFormDoc.page4.criminalRecords,
+      },
+    );
   } catch (error) {
     return errorResponse(error);
   }
@@ -150,22 +201,33 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
  * - Gated by PAGE_4 completion
  * - Returns the three arrays + onboardingContext (from lastVisited for UX)
  */
-export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+export const GET = async (
+  _: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) => {
   try {
     await connectDB();
     await guard();
 
     const { id: onboardingId } = await params;
-    if (!isValidObjectId(onboardingId)) return errorResponse(400, "Not a valid onboarding tracker ID");
+    if (!isValidObjectId(onboardingId))
+      return errorResponse(400, "Not a valid onboarding tracker ID");
 
     const onboardingDoc = await OnboardingTracker.findById(onboardingId);
-    if (!onboardingDoc) return errorResponse(404, "Onboarding document not found");
-    if (!isInvitationApproved(onboardingDoc)) return errorResponse(400, "driver not yet approved for onboarding process");
+    if (!onboardingDoc)
+      return errorResponse(404, "Onboarding document not found");
+    if (!isInvitationApproved(onboardingDoc))
+      return errorResponse(
+        400,
+        "driver not yet approved for onboarding process",
+      );
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) return errorResponse(404, "ApplicationForm not linked");
 
-    const appFormDoc = (await ApplicationForm.findById(appFormId)) as IApplicationFormDoc | null;
+    const appFormDoc = (await ApplicationForm.findById(
+      appFormId,
+    )) as IApplicationFormDoc | null;
     if (!appFormDoc) return errorResponse(404, "ApplicationForm not found");
 
     // Gate: must be allowed to view PATCH/GET for this combined data => PAGE_4 completed
@@ -174,18 +236,24 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
     }
 
     // Defensive: ensure subdocs (should exist if PAGE_4 completed)
-    if (!appFormDoc.page3) return errorResponse(400, "ApplicationForm Page 3 is missing");
-    if (!appFormDoc.page4) return errorResponse(400, "ApplicationForm Page 4 is missing");
+    if (!appFormDoc.page3)
+      return errorResponse(400, "ApplicationForm Page 3 is missing");
+    if (!appFormDoc.page4)
+      return errorResponse(400, "ApplicationForm Page 4 is missing");
 
-    return successResponse(200, "Accident/Convictions/Criminal records retrieved", {
-      onboardingContext: buildTrackerContext(onboardingDoc, null, true),
-      hasAccidentHistory: appFormDoc.page3?.hasAccidentHistory,
-      accidentHistory: appFormDoc.page3.accidentHistory,
-      hasTrafficConvictions: appFormDoc.page3?.hasTrafficConvictions,
-      trafficConvictions: appFormDoc.page3.trafficConvictions,
-      hasCriminalRecords: appFormDoc.page4?.hasCriminalRecords,
-      criminalRecords: appFormDoc.page4.criminalRecords,
-    });
+    return successResponse(
+      200,
+      "Accident/Convictions/Criminal records retrieved",
+      {
+        onboardingContext: buildTrackerContext(onboardingDoc, null, true),
+        hasAccidentHistory: appFormDoc.page3?.hasAccidentHistory,
+        accidentHistory: appFormDoc.page3.accidentHistory,
+        hasTrafficConvictions: appFormDoc.page3?.hasTrafficConvictions,
+        trafficConvictions: appFormDoc.page3.trafficConvictions,
+        hasCriminalRecords: appFormDoc.page4?.hasCriminalRecords,
+        criminalRecords: appFormDoc.page4.criminalRecords,
+      },
+    );
   } catch (error) {
     return errorResponse(error);
   }

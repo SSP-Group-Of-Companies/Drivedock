@@ -16,13 +16,18 @@ import { isValidObjectId } from "mongoose";
 import { NextRequest } from "next/server";
 import { requireOnboardingSession } from "@/lib/utils/auth/onboardingSession";
 import { attachCookies } from "@/lib/utils/auth/attachCookie";
+import {
+  buildDriverActorForTracker,
+  recordOnboardingAuditLogSafe,
+} from "@/lib/services/onboardingAuditLog.service";
+import { EOnboardingAuditAction } from "@/types/onboardingAuditLog.types";
 
 // disabled updating prequalifications by driver according to business logic
 const disalbeUpdatingPrequalifications = true;
 
 export const PATCH = async (
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) => {
   try {
     if (disalbeUpdatingPrequalifications)
@@ -59,13 +64,13 @@ export const PATCH = async (
       if (typeof canCrossBorderUSA !== "boolean") {
         return errorResponse(
           400,
-          "Field 'canCrossBorderUSA' is required for Canadian applicants"
+          "Field 'canCrossBorderUSA' is required for Canadian applicants",
         );
       }
       if (!statusInCanada) {
         return errorResponse(
           400,
-          "Field 'statusInCanada' is required for Canadian applicants"
+          "Field 'statusInCanada' is required for Canadian applicants",
         );
       }
 
@@ -73,7 +78,7 @@ export const PATCH = async (
       if (hasFASTCard !== undefined && typeof hasFASTCard !== "boolean") {
         return errorResponse(
           400,
-          "'hasFASTCard' must be a boolean when provided"
+          "'hasFASTCard' must be a boolean when provided",
         );
       }
       if (
@@ -82,7 +87,7 @@ export const PATCH = async (
       ) {
         return errorResponse(
           400,
-          "'eligibleForFASTCard' must be a boolean when provided"
+          "'eligibleForFASTCard' must be a boolean when provided",
         );
       }
     }
@@ -91,7 +96,7 @@ export const PATCH = async (
     const preQualDoc = await PreQualifications.findByIdAndUpdate(
       preQualId,
       { $set: { ...body, completed: true } },
-      { new: true }
+      { new: true },
     );
 
     if (!preQualDoc) {
@@ -102,15 +107,24 @@ export const PATCH = async (
     onboardingDoc.needsFlatbedTraining = needsFlatbedTraining(
       companyId,
       onboardingDoc.applicationType,
-      preQualDoc.flatbedExperience
+      preQualDoc.flatbedExperience,
     );
     // Step 5: Update onboarding tracker status
     onboardingDoc.status = advanceProgress(
       onboardingDoc,
-      EStepPath.PRE_QUALIFICATIONS
+      EStepPath.PRE_QUALIFICATIONS,
     );
     onboardingDoc.resumeExpiresAt = nextResumeExpiry();
     await onboardingDoc.save();
+
+    const driverActor = await buildDriverActorForTracker(id);
+    await recordOnboardingAuditLogSafe({
+      onboardingId: id,
+      action: EOnboardingAuditAction.PREQUALIFICATIONS_UPDATED,
+      actor: driverActor,
+      message: "Driver updated prequalification responses.",
+      metadata: {},
+    });
 
     const res = successResponse(
       200,
@@ -118,10 +132,10 @@ export const PATCH = async (
       {
         onboardingContext: buildTrackerContext(
           onboardingDoc,
-          EStepPath.PRE_QUALIFICATIONS
+          EStepPath.PRE_QUALIFICATIONS,
         ),
         preQualifications: preQualDoc,
-      }
+      },
     );
 
     return attachCookies(res, refreshCookie);
@@ -132,7 +146,7 @@ export const PATCH = async (
 
 export const GET = async (
   _: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) => {
   try {
     await connectDB();
@@ -153,7 +167,7 @@ export const GET = async (
     const res = successResponse(200, "PreQualifications data retrieved", {
       onboardingContext: buildTrackerContext(
         onboardingDoc,
-        EStepPath.PRE_QUALIFICATIONS
+        EStepPath.PRE_QUALIFICATIONS,
       ),
       preQualifications: preQualDoc?.toObject() ?? {},
     });

@@ -1,5 +1,6 @@
 export const MONGO_URI = process.env.MONGO_URI!;
-export const FORM_RESUME_EXPIRES_AT_IN_MILSEC = process.env.FORM_RESUME_EXPIRES_AT_IN_MILSEC!;
+export const FORM_RESUME_EXPIRES_AT_IN_MILSEC =
+  process.env.FORM_RESUME_EXPIRES_AT_IN_MILSEC!;
 export const HASH_SECRET = process.env.HASH_SECRET!;
 export const ENC_KEY = process.env.ENC_KEY!;
 export const AWS_BUCKET_NAME = process.env.AWS_BUCKET_NAME!;
@@ -10,16 +11,23 @@ export const NEXT_IMAGE_DOMAINS = process.env.NEXT_IMAGE_DOMAINS!;
 export const CRON_SECRET = process.env.CRON_SECRET!;
 export const AUTH_COOKIE_NAME = process.env.AUTH_COOKIE_NAME! || "";
 export const NEXTAUTH_SECRET = process.env.NEXTAUTH_SECRET!;
-export const NEXT_PUBLIC_PORTAL_BASE_URL = process.env.NEXT_PUBLIC_PORTAL_BASE_URL!;
+export const NEXT_PUBLIC_PORTAL_BASE_URL =
+  process.env.NEXT_PUBLIC_PORTAL_BASE_URL!;
 export const isProd = process.env.NODE_ENV === "production";
 export const PORT = process.env.PORT! ?? 3000;
 export const DISABLE_AUTH = process.env.DISABLE_AUTH === "true";
-export const ONBOARDING_SESSION_COOKIE_NAME = process.env.ONBOARDING_SESSION_COOKIE_NAME || "SSP_ONBOARDING_SESSION";
-export const ONBOARDING_SESSION_TTL_SECONDS = parseInt(process.env.ONBOARDING_SESSION_TTL_SECONDS || "21600", 10); // default 6 hours
+export const ONBOARDING_SESSION_COOKIE_NAME =
+  process.env.ONBOARDING_SESSION_COOKIE_NAME || "SSP_ONBOARDING_SESSION";
+export const ONBOARDING_SESSION_TTL_SECONDS = parseInt(
+  process.env.ONBOARDING_SESSION_TTL_SECONDS || "21600",
+  10,
+); // default 6 hours
 export const AZURE_AD_CLIENT_ID = process.env.AZURE_AD_CLIENT_ID!;
 export const AZURE_AD_CLIENT_SECRET = process.env.AZURE_AD_CLIENT_SECRET!;
 export const AZURE_AD_TENANT_ID = process.env.AZURE_AD_TENANT_ID!;
 export const SAFETY_EMAIL = process.env.SAFETY_EMAIL!;
 export const NO_REPLY_EMAIL = process.env.NO_REPLY_EMAIL!;
-export const NEXT_PUBLIC_TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!;
+export const NEXT_PUBLIC_TURNSTILE_SITE_KEY =
+  process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!;
 export const TURNSTILE_SECRET_KEY = process.env.TURNSTILE_SECRET_KEY!;
+export const ADMIN_EMAILS = process.env.ADMIN_EMAILS?.split(",") || [];

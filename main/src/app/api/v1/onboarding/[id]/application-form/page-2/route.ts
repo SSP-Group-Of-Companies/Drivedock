@@ -3,13 +3,24 @@ import connectDB from "@/lib/utils/connectDB";
 import ApplicationForm from "@/mongoose/models/ApplicationForm";
 import { IApplicationFormPage2 } from "@/types/applicationForm.types";
 import { EStepPath } from "@/types/onboardingTracker.types";
-import { buildTrackerContext, hasReachedStep, advanceProgress, nextResumeExpiry, isInvitationApproved } from "@/lib/utils/onboardingUtils";
+import {
+  buildTrackerContext,
+  hasReachedStep,
+  advanceProgress,
+  nextResumeExpiry,
+  isInvitationApproved,
+} from "@/lib/utils/onboardingUtils";
 import { isValidObjectId } from "mongoose";
 import { NextRequest } from "next/server";
 import { validateEmploymentHistory } from "@/lib/utils/validationUtils";
 import { requireOnboardingSession } from "@/lib/utils/auth/onboardingSession";
 import { attachCookies } from "@/lib/utils/auth/attachCookie";
 import { sortEmploymentsDesc } from "@/lib/utils/sortUtils";
+import {
+  buildDriverActorForTracker,
+  recordOnboardingAuditLogSafe,
+} from "@/lib/services/onboardingAuditLog.service";
+import { EOnboardingAuditAction } from "@/types/onboardingAuditLog.types";
 
 /**
  * PATCH /page-2
@@ -17,7 +28,10 @@ import { sortEmploymentsDesc } from "@/lib/utils/sortUtils";
  * - Requires that the user can access Page 2 (i.e., has progressed to it)
  * - Advances progress to Page 2 (furthest) and refreshes resume expiry
  */
-export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+export const PATCH = async (
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) => {
   try {
     await connectDB();
 
@@ -32,10 +46,15 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
 
     // Sort employments to persist in canonical order (current → oldest)
     const sortedEmployments = sortEmploymentsDesc(body.employments);
-    const payload: IApplicationFormPage2 = { ...body, employments: sortedEmployments };
+    const payload: IApplicationFormPage2 = {
+      ...body,
+      employments: sortedEmployments,
+    };
 
-    const { tracker: onboardingDoc, refreshCookie } = await requireOnboardingSession(id);
-    if (!isInvitationApproved(onboardingDoc)) return errorResponse(401, "pending approval");
+    const { tracker: onboardingDoc, refreshCookie } =
+      await requireOnboardingSession(id);
+    if (!isInvitationApproved(onboardingDoc))
+      return errorResponse(401, "pending approval");
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) return errorResponse(404, "ApplicationForm not linked");
@@ -58,7 +77,10 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     // ---------------------------
     // Phase 2: tracker updates
     // ---------------------------
-    onboardingDoc.status = advanceProgress(onboardingDoc, EStepPath.APPLICATION_PAGE_2); // monotonic
+    onboardingDoc.status = advanceProgress(
+      onboardingDoc,
+      EStepPath.APPLICATION_PAGE_2,
+    ); // monotonic
     onboardingDoc.resumeExpiresAt = nextResumeExpiry(); // refresh resume window
     await onboardingDoc.save();
 
@@ -66,8 +88,21 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
     const freshLean = await ApplicationForm.findById(appFormId).lean();
     const page2Plain = (freshLean?.page2 ?? {}) as IApplicationFormPage2;
 
+    const driverActor = await buildDriverActorForTracker(id);
+    await recordOnboardingAuditLogSafe({
+      onboardingId: id,
+      action: EOnboardingAuditAction.APPLICATION_FORM_PAGE_UPDATED,
+      actor: driverActor,
+      message:
+        "Driver updated employment history entries (application form page 2).",
+      metadata: { page: "page-2", section: "employment-history" },
+    });
+
     const res = successResponse(200, "ApplicationForm Page 2 updated", {
-      onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_2),
+      onboardingContext: buildTrackerContext(
+        onboardingDoc,
+        EStepPath.APPLICATION_PAGE_2,
+      ),
       page2: page2Plain, // plain JSON, already sorted
     });
 
@@ -83,14 +118,19 @@ export const PATCH = async (req: NextRequest, { params }: { params: Promise<{ id
  * - Updates lastVisitedStep to Page 2 (resume UX)
  * - Returns page2 data + context (built from lastVisited for UX)
  */
-export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+export const GET = async (
+  _: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) => {
   try {
     await connectDB();
 
     const { id: onboardingId } = await params;
-    if (!isValidObjectId(onboardingId)) return errorResponse(400, "Not a valid onboarding tracker ID");
+    if (!isValidObjectId(onboardingId))
+      return errorResponse(400, "Not a valid onboarding tracker ID");
 
-    const { tracker: onboardingDoc, refreshCookie } = await requireOnboardingSession(onboardingId);
+    const { tracker: onboardingDoc, refreshCookie } =
+      await requireOnboardingSession(onboardingId);
 
     const appFormId = onboardingDoc.forms?.driverApplication;
     if (!appFormId) return errorResponse(404, "ApplicationForm not linked");
@@ -106,11 +146,16 @@ export const GET = async (_: NextRequest, { params }: { params: Promise<{ id: st
 
     // Ensure the array is served sorted even if legacy data is out of order
     const page2 = (appFormLean.page2 ?? {}) as IApplicationFormPage2;
-    const employments = Array.isArray(page2.employments) ? sortEmploymentsDesc(page2.employments) : [];
+    const employments = Array.isArray(page2.employments)
+      ? sortEmploymentsDesc(page2.employments)
+      : [];
     const normalizedPage2: IApplicationFormPage2 = { ...page2, employments };
 
     const res = successResponse(200, "Page 2 data retrieved", {
-      onboardingContext: buildTrackerContext(onboardingDoc, EStepPath.APPLICATION_PAGE_2),
+      onboardingContext: buildTrackerContext(
+        onboardingDoc,
+        EStepPath.APPLICATION_PAGE_2,
+      ),
       page2: normalizedPage2, // plain JSON
     });
 
