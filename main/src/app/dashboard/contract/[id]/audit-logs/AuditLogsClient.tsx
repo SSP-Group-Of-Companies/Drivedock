@@ -320,7 +320,7 @@ function AuditLogCard({ entry, isOpen, onToggle }: CardProps) {
             background: "var(--color-code-block)",
             color: "var(--color-on-surface)",
           }}
-          viewportClassName="max-h-96 p-3 pr-1 font-mono text-[11px] leading-relaxed"
+          viewportClassName="max-h-96 p-3 pr-3 font-mono text-[11px] leading-relaxed"
         >
           <pre className="m-0 whitespace-pre">
             {JSON.stringify(buildAuditLogDocument(entry), null, 2)}

@@ -212,7 +212,7 @@ export default function AdminSidebar({
     >
       <CosmeticScrollArea
         className="h-full min-h-0 w-full"
-        viewportClassName="h-full min-h-0 w-full overflow-x-hidden overflow-y-auto pt-4 pb-4 pr-1"
+        viewportClassName="h-full min-h-0 w-full overflow-x-hidden overflow-y-auto pt-4 pb-4 pr-3"
       >
         <SidebarNav
           variant={variant}
