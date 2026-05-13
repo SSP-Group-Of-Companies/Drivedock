@@ -14,6 +14,7 @@ import {
   recordOnboardingAuditLogSafe,
 } from "@/lib/services/onboardingAuditLog.service";
 import { EOnboardingAuditAction } from "@/types/onboardingAuditLog.types";
+import { NO_REPLY_EMAIL } from "@/config/env";
 
 const MAX_ATTEMPTS = 5;
 
@@ -146,7 +147,7 @@ export default async function sendCompletionEmailIfEligible(
     await recordOnboardingAuditLogSafe({
       onboardingId: String(id),
       action: EOnboardingAuditAction.COMPLETION_PDFS_EMAIL_SENT,
-      actor: actorSystem("DriveDock mailer", "mailer@drivedock"),
+      actor: actorSystem("DriveDock mailer", NO_REPLY_EMAIL),
       message: `Completion PDFs email was sent to the driver at ${recipientMasked}.`,
       metadata: {
         toEmailDomain: email.includes("@") ? email.split("@")[1] : undefined,
