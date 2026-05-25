@@ -335,7 +335,19 @@ type CardProps = Readonly<{
   onToggle: () => void;
 }>;
 
+function onboardingIdLinkTitle(entry: TOnboardingAuditLogDTO): string {
+  if (!entry.onboardingExists) return "Onboarding no longer exists";
+  if (!entry.onboardingInvitationApproved) {
+    return "Invitation not approved yet — contract pages are not available";
+  }
+  return "Open this onboarding's audit log";
+}
+
 function AuditLogCard({ entry, isOpen, onToggle }: CardProps) {
+  const canOpenOnboarding =
+    entry.onboardingExists === true &&
+    entry.onboardingInvitationApproved === true;
+
   return (
     <article
       className="rounded-xl border p-4 sm:p-5 shadow-sm dark:shadow-none"
@@ -353,7 +365,7 @@ function AuditLogCard({ entry, isOpen, onToggle }: CardProps) {
             >
               {getAuditLogActionLabel(entry.action)}
             </span>
-            {entry.onboardingExists ? (
+            {canOpenOnboarding ? (
               <Link
                 href={`/dashboard/contract/${entry.onboardingId}/audit-logs`}
                 className="rounded-md border px-2 py-0.5 font-mono text-xs font-medium hover:opacity-90"
@@ -361,7 +373,7 @@ function AuditLogCard({ entry, isOpen, onToggle }: CardProps) {
                   borderColor: "var(--color-outline)",
                   color: "var(--color-primary)",
                 }}
-                title="Open this onboarding's audit log"
+                title={onboardingIdLinkTitle(entry)}
               >
                 {entry.onboardingId}
               </Link>
@@ -373,7 +385,7 @@ function AuditLogCard({ entry, isOpen, onToggle }: CardProps) {
                   color: "var(--color-on-surface-variant)",
                   background: "var(--color-surface-variant)",
                 }}
-                title="Onboarding no longer exists"
+                title={onboardingIdLinkTitle(entry)}
               >
                 {entry.onboardingId}
               </span>

@@ -456,17 +456,26 @@ export async function searchOnboardingAuditLogs(
     ),
   );
   const existsSet = new Set<string>();
+  const invitationApprovedSet = new Set<string>();
   if (distinctOnboardingIds.length > 0) {
     const existing = await OnboardingTracker.find(
       { _id: { $in: distinctOnboardingIds } },
-      { _id: 1 },
-    ).lean<Array<{ _id: Types.ObjectId }>>();
-    for (const e of existing) existsSet.add(String(e._id));
+      { _id: 1, invitationApproved: 1 },
+    ).lean<Array<{ _id: Types.ObjectId; invitationApproved?: boolean }>>();
+    for (const e of existing) {
+      const id = String(e._id);
+      existsSet.add(id);
+      if (e.invitationApproved === true) invitationApprovedSet.add(id);
+    }
   }
 
   const items = rows.map((r) => {
     const dto = mapLeanToAuditLogDTO(r as unknown as Record<string, unknown>);
-    dto.onboardingExists = existsSet.has(dto.onboardingId);
+    const exists = existsSet.has(dto.onboardingId);
+    dto.onboardingExists = exists;
+    dto.onboardingInvitationApproved = exists
+      ? invitationApprovedSet.has(dto.onboardingId)
+      : undefined;
     return dto;
   });
 
