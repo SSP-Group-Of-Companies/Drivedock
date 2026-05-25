@@ -89,4 +89,10 @@ export type TOnboardingAuditLogDTO = {
    * onboardings that have since been permanently deleted.
    */
   onboardingExists?: boolean;
+  /**
+   * Whether the live onboarding tracker has `invitationApproved === true`.
+   * Only meaningful when `onboardingExists` is true. The global audit log UI
+   * uses this to avoid linking to contract pages admins cannot open yet.
+   */
+  onboardingInvitationApproved?: boolean;
 };
