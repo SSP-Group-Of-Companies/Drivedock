@@ -8,5 +8,8 @@
       "path": "/api/v1/cron/send-onboarding-completion-emails",
       "schedule": "0 0 * * *"
     }
-  ]
+  ],
+  "git": {
+    "deploymentEnabled": false
+  }
 }
