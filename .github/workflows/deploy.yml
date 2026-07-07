@@ -24,6 +24,7 @@ concurrency:
 env:
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
 jobs:
   deploy:
@@ -58,20 +59,20 @@ jobs:
 
       # Vercel CLI must run from the repo root (not main/). The dashboard Root Directory
       # is set to main/, and running inside main/ doubles that path and breaks the build
-      # subprocess (spawn npm/sh ENOENT). Use the project's vercel package, not npx's
-      # cached global copy.
+      # subprocess (spawn npm/sh ENOENT). Use the local CLI from node_modules — npm exec
+      # can swallow --token and fall back to an old cached global vercel.
       # ==========================================
       # PRODUCTION (main branch)
       # ==========================================
       - name: Pull Vercel environment (production)
         if: github.ref == 'refs/heads/main'
-        run: npm exec --prefix main vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        run: main/node_modules/.bin/vercel pull --yes --environment=production
 
       - name: Pull Vercel environment (preview)
         if: github.ref != 'refs/heads/main'
         # --git-branch resolves branch-scoped preview vars in addition to
         # "All Environments" vars for whatever branch was just pushed.
-        run: npm exec --prefix main vercel pull --yes --environment=preview --git-branch=${{ github.ref_name }} --token=${{ secrets.VERCEL_TOKEN }}
+        run: main/node_modules/.bin/vercel pull --yes --environment=preview --git-branch=${{ github.ref_name }}
 
       - name: Prepare Vercel project for CI build
         # Deps are installed above; skip Vercel's install subprocess, which hardcodes
@@ -96,12 +97,12 @@ jobs:
         # in the Vercel dashboard or it would pin every branch to one URL.
         env:
           NEXTAUTH_URL: https://build-placeholder.invalid
-        run: npm exec --prefix main vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        run: main/node_modules/.bin/vercel build --prod
 
       - name: Deploy prebuilt output (production)
         if: github.ref == 'refs/heads/main'
         # --archive=tgz uploads the output as a single tarball (fewer round-trips).
-        run: npm exec --prefix main vercel deploy --prebuilt --prod --archive=tgz --token=${{ secrets.VERCEL_TOKEN }}
+        run: main/node_modules/.bin/vercel deploy --prebuilt --prod --archive=tgz
 
       # ==========================================
       # PREVIEW (every other branch)
@@ -113,9 +114,9 @@ jobs:
         # auth on each preview branch still resolves its real URL from the request.
         env:
           NEXTAUTH_URL: https://build-placeholder.invalid
-        run: npm exec --prefix main vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        run: main/node_modules/.bin/vercel build
 
       - name: Deploy prebuilt output (preview)
         if: github.ref != 'refs/heads/main'
         # --archive=tgz uploads the output as a single tarball (fewer round-trips).
-        run: npm exec --prefix main vercel deploy --prebuilt --archive=tgz --token=${{ secrets.VERCEL_TOKEN }}
+        run: main/node_modules/.bin/vercel deploy --prebuilt --archive=tgz
