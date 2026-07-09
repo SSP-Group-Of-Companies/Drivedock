@@ -4,6 +4,13 @@ import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 import { AUTH_COOKIE_NAME, DISABLE_AUTH, NEXTAUTH_SECRET, NEXT_PUBLIC_PORTAL_BASE_URL } from "./config/env";
 import type { EStepPath } from "@/types/onboardingTracker.types";
+import {
+  PORTAL_ACCESS_COOKIE,
+  PORTAL_ACCESS_TTL_SECONDS,
+  checkPortalAccess,
+  mintPortalAccessCookie,
+  verifyPortalAccessCookie,
+} from "@/lib/utils/auth/portalAccess";
 
 /**
  * Middleware guidelines:
@@ -144,6 +151,43 @@ export async function middleware(req: NextRequest) {
       const callbackUrl = encodeURIComponent(`${origin}/dashboard/home`);
       return NextResponse.redirect(`${NEXT_PUBLIC_PORTAL_BASE_URL}/login?callbackUrl=${callbackUrl}`);
     }
+
+    // ------------------------------------------------------------
+    // Portal app-access enforcement.
+    // Being signed in is not enough: the SSP Portal (App Registry +
+    // grants + Entra groups) decides who may open DriveDock. A positive
+    // answer is cached in a short-lived signed cookie so we only call
+    // the portal once per user per TTL window.
+    // ------------------------------------------------------------
+    const azureId = (typeof token.userId === "string" && token.userId) || token.sub || "";
+    const cached = req.cookies.get(PORTAL_ACCESS_COOKIE)?.value;
+    if (await verifyPortalAccessCookie(cached, azureId)) {
+      return NextResponse.next();
+    }
+
+    const access = await checkPortalAccess(req.headers.get("cookie") ?? "");
+
+    if (access.ok) {
+      const res = NextResponse.next();
+      res.cookies.set(PORTAL_ACCESS_COOKIE, await mintPortalAccessCookie(azureId), {
+        httpOnly: true,
+        secure: true,
+        sameSite: "lax",
+        path: "/",
+        maxAge: PORTAL_ACCESS_TTL_SECONDS,
+      });
+      return res;
+    }
+
+    // Portal says the session is invalid/expired → re-authenticate at the portal.
+    if (access.status === 401) {
+      const callbackUrl = encodeURIComponent(`${origin}/dashboard/home`);
+      return NextResponse.redirect(`${NEXT_PUBLIC_PORTAL_BASE_URL}/login?callbackUrl=${callbackUrl}`);
+    }
+
+    // Signed in but not granted DriveDock (or portal unreachable → fail closed).
+    // Send them to the portal launcher, where they can request access.
+    return NextResponse.redirect(`${NEXT_PUBLIC_PORTAL_BASE_URL}/dashboard?denied=drivedock`);
   }
 
   return NextResponse.next();

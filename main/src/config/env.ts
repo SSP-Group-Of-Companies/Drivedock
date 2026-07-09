@@ -30,4 +30,3 @@ export const NO_REPLY_EMAIL = process.env.NO_REPLY_EMAIL!;
 export const NEXT_PUBLIC_TURNSTILE_SITE_KEY =
   process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!;
 export const TURNSTILE_SECRET_KEY = process.env.TURNSTILE_SECRET_KEY!;
-export const ADMIN_EMAILS = process.env.ADMIN_EMAILS?.split(",") || [];
