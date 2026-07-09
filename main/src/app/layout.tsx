@@ -1,4 +1,4 @@
-// src/app/layout.tsx, trigger redeploy
+// src/app/layout.tsx
 /**
  * Root Layout — DriveDock (SSP Portal)
  * (trimmed header for brevity)
