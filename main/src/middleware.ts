@@ -2,7 +2,13 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
-import { AUTH_COOKIE_NAME, DISABLE_AUTH, NEXTAUTH_SECRET, NEXT_PUBLIC_PORTAL_BASE_URL } from "./config/env";
+import {
+  AUTH_COOKIE_NAME,
+  DISABLE_AUTH,
+  isProd,
+  NEXTAUTH_SECRET,
+  NEXT_PUBLIC_PORTAL_BASE_URL,
+} from "./config/env";
 import type { EStepPath } from "@/types/onboardingTracker.types";
 import {
   PORTAL_ACCESS_COOKIE,
@@ -93,7 +99,9 @@ export async function middleware(req: NextRequest) {
           return NextResponse.next();
         }
         // Force canonical /completed when done
-        return NextResponse.redirect(new URL(`/onboarding/${trackerId}/completed`, req.url));
+        return NextResponse.redirect(
+          new URL(`/onboarding/${trackerId}/completed`, req.url),
+        );
       }
 
       // =========================
@@ -114,7 +122,9 @@ export async function middleware(req: NextRequest) {
       if (!invitationApproved) {
         // Has session (enforced above) → force [id]/pending-approval from ANY subpath
         if (subPath !== "pending-approval") {
-          return NextResponse.redirect(new URL(`/onboarding/${trackerId}/pending-approval`, req.url));
+          return NextResponse.redirect(
+            new URL(`/onboarding/${trackerId}/pending-approval`, req.url),
+          );
         }
         // Already on [id]/pending-approval with valid session → allow
         return NextResponse.next();
@@ -149,7 +159,9 @@ export async function middleware(req: NextRequest) {
 
     if (!token) {
       const callbackUrl = encodeURIComponent(`${origin}/dashboard/home`);
-      return NextResponse.redirect(`${NEXT_PUBLIC_PORTAL_BASE_URL}/login?callbackUrl=${callbackUrl}`);
+      return NextResponse.redirect(
+        `${NEXT_PUBLIC_PORTAL_BASE_URL}/login?callbackUrl=${callbackUrl}`,
+      );
     }
 
     // ------------------------------------------------------------
@@ -159,7 +171,8 @@ export async function middleware(req: NextRequest) {
     // answer is cached in a short-lived signed cookie so we only call
     // the portal once per user per TTL window.
     // ------------------------------------------------------------
-    const azureId = (typeof token.userId === "string" && token.userId) || token.sub || "";
+    const azureId =
+      (typeof token.userId === "string" && token.userId) || token.sub || "";
     const cached = req.cookies.get(PORTAL_ACCESS_COOKIE)?.value;
     if (await verifyPortalAccessCookie(cached, azureId)) {
       return NextResponse.next();
@@ -169,25 +182,33 @@ export async function middleware(req: NextRequest) {
 
     if (access.ok) {
       const res = NextResponse.next();
-      res.cookies.set(PORTAL_ACCESS_COOKIE, await mintPortalAccessCookie(azureId), {
-        httpOnly: true,
-        secure: true,
-        sameSite: "lax",
-        path: "/",
-        maxAge: PORTAL_ACCESS_TTL_SECONDS,
-      });
+      res.cookies.set(
+        PORTAL_ACCESS_COOKIE,
+        await mintPortalAccessCookie(azureId),
+        {
+          httpOnly: true,
+          secure: isProd,
+          sameSite: "lax",
+          path: "/",
+          maxAge: PORTAL_ACCESS_TTL_SECONDS,
+        },
+      );
       return res;
     }
 
     // Portal says the session is invalid/expired → re-authenticate at the portal.
     if (access.status === 401) {
       const callbackUrl = encodeURIComponent(`${origin}/dashboard/home`);
-      return NextResponse.redirect(`${NEXT_PUBLIC_PORTAL_BASE_URL}/login?callbackUrl=${callbackUrl}`);
+      return NextResponse.redirect(
+        `${NEXT_PUBLIC_PORTAL_BASE_URL}/login?callbackUrl=${callbackUrl}`,
+      );
     }
 
     // Signed in but not granted DriveDock (or portal unreachable → fail closed).
     // Send them to the portal launcher, where they can request access.
-    return NextResponse.redirect(`${NEXT_PUBLIC_PORTAL_BASE_URL}/dashboard?denied=drivedock`);
+    return NextResponse.redirect(
+      `${NEXT_PUBLIC_PORTAL_BASE_URL}/dashboard?denied=drivedock`,
+    );
   }
 
   return NextResponse.next();

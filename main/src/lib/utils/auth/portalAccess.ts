@@ -41,9 +41,13 @@ async function hmacSign(payload: string): Promise<string> {
     new TextEncoder().encode(NEXTAUTH_SECRET),
     { name: "HMAC", hash: "SHA-256" },
     false,
-    ["sign"]
+    ["sign"],
   );
-  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payload));
+  const sig = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    new TextEncoder().encode(payload),
+  );
   return base64url(new Uint8Array(sig));
 }
 
@@ -62,14 +66,18 @@ export async function mintPortalAccessCookie(azureId: string): Promise<string> {
 }
 
 /** Verify the cookie is unexpired, untampered, and bound to this user. */
-export async function verifyPortalAccessCookie(value: string | undefined, azureId: string): Promise<boolean> {
+export async function verifyPortalAccessCookie(
+  value: string | undefined,
+  azureId: string,
+): Promise<boolean> {
   if (!value || !azureId) return false;
   const dot = value.indexOf(".");
   if (dot <= 0) return false;
   const expStr = value.slice(0, dot);
   const sig = value.slice(dot + 1);
   const exp = Number(expStr);
-  if (!Number.isFinite(exp) || exp < Math.floor(Date.now() / 1000)) return false;
+  if (!Number.isFinite(exp) || exp < Math.floor(Date.now() / 1000))
+    return false;
   const expected = await hmacSign(`${expStr}.${azureId}`);
   return timingSafeEqual(sig, expected);
 }
@@ -89,7 +97,9 @@ export interface PortalAccessResult {
  * Ask the portal who this user is and whether DriveDock is in their access
  * list. `cookieHeader` must carry the shared SSP session cookie.
  */
-export async function checkPortalAccess(cookieHeader: string): Promise<PortalAccessResult> {
+export async function checkPortalAccess(
+  cookieHeader: string,
+): Promise<PortalAccessResult> {
   try {
     const res = await fetch(`${NEXT_PUBLIC_PORTAL_BASE_URL}/api/v1/auth/me`, {
       cache: "no-store",
@@ -98,7 +108,10 @@ export async function checkPortalAccess(cookieHeader: string): Promise<PortalAcc
     if (!res.ok) return { ok: false, status: res.status };
     const json = await res.json();
     const apps: unknown = json?.access?.apps;
-    return { ok: Array.isArray(apps) && apps.includes(PORTAL_APP_KEY), status: res.status };
+    return {
+      ok: Array.isArray(apps) && apps.includes(PORTAL_APP_KEY),
+      status: res.status,
+    };
   } catch (err) {
     console.error("[portalAccess] portal unreachable:", err);
     return { ok: false, status: 0 };

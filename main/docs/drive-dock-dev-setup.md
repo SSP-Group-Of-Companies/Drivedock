@@ -1,263 +1,127 @@
-# DriveDock – Local Development **Quick Start** (with SSP Portal Auth)
+# DriveDock – Local Development Setup
 
-> **Goal:** Get DriveDock running locally **with working SSO** via the SSP Portal. Follow the steps below **in order**. After that, you’ll find detailed context and FAQs.
+Local development runs over **plain HTTP on localhost**. There is no reverse proxy or HTTPS terminator (Caddy was removed). Auth and cookie sharing work the same way as in production conceptually: one shared session cookie on hostname `localhost`, readable by every app on that host regardless of port.
 
----
+DriveDock is a **dependent app** of the SSP Portal. The portal owns Azure sign-in and the shared cookie; DriveDock only consumes them.
 
-## ✅ 0) Prerequisites
+For portal-side details, see `SSPPortal/frontend/docs/ssp-portal-dev-setup.md`.
 
-- **Node.js 20+** (LTS recommended)
-- **npm** (or pnpm/yarn if you prefer — examples use npm)
-- **Git**
-- **Caddy** (local HTTPS reverse proxy). Download **the binary** for your OS from [https://caddyserver.com/download](https://caddyserver.com/download) and place it somewhere convenient. **No global install needed.**
+## Layout
 
-> **Note:** The downloaded Caddy file may not be named exactly `caddy` or `caddy.exe`. For convenience, **rename it to `caddy.exe` (Windows)** or `caddy` (macOS/Linux) so you can run the same commands shown below.
+| App            | Typical URL             |
+| -------------- | ----------------------- |
+| **SSP Portal** | `http://localhost:3000` |
+| **DriveDock**  | `http://localhost:3001` |
 
-> **Note:** We use `lvh.me` subdomains (they resolve to `127.0.0.1`) so cookies and redirects behave like prod.
+Browsers treat cookies by **hostname**, not port. A session cookie set for `localhost` on port 3000 is therefore available to DriveDock on port 3001.
 
----
-
-## 🚀 1) Clone the repos (side‑by‑side)
+## Auth flow
 
 ```
-<workspace>
-├─ drivedock/
-└─ ssp-portal/
+DriveDock (:3001)            Portal (:3000)              Microsoft Entra
+       |                           |                            |
+       |  no SSP_AUTH_TOKEN        |                            |
+       |  (open /dashboard)        |                            |
+       |-------------------------->|  /login?callbackUrl=…      |
+       |                           |--------------------------->|
+       |                           |<---------------------------|
+       |                           |  set SSP_AUTH_TOKEN        |
+       |                           |  (Domain=localhost,        |
+       |                           |   Secure off for HTTP)     |
+       |<--------------------------|  redirect to callbackUrl   |
+       |                           |                            |
+       |  GET /api/v1/auth/me      |                            |
+       |  (Cookie: SSP_AUTH_TOKEN) |                            |
+       |-------------------------->|                            |
+       |<--------------------------|  user + access.apps        |
+       |                           |  (must include "drivedock")|
 ```
 
-```bash
-# In <workspace>
-# (clone however you normally do; sample below)
+1. User opens DriveDock dashboard at `http://localhost:3001/dashboard/...`.
+2. If the shared cookie is missing, middleware redirects to the portal login with a `callbackUrl` back to DriveDock (e.g. `http://localhost:3001/dashboard/home`).
+3. User signs in with Microsoft on the portal.
+4. Portal sets `SSP_AUTH_TOKEN` for `localhost` (non-Secure so it works on HTTP).
+5. Portal redirects to the whitelisted `callbackUrl`.
+6. DriveDock reads the JWT from `SSP_AUTH_TOKEN`, then calls `http://localhost:3000/api/v1/auth/me` with that cookie. The response is the source of truth for identity and whether `"drivedock"` is in `access.apps`.
+7. A positive access answer is cached briefly in DriveDock’s own `SSP_DD_PORTAL_ACCESS` cookie so the portal is not hit on every navigation.
 
-git clone <DRIVEDOCK_REPO_URL> drivedock
-git clone <SSP_PORTAL_REPO_URL> ssp-portal
-```
+Driver onboarding routes (`/onboarding/...`) use a separate onboarding session cookie and do **not** go through portal SSO.
 
----
+## Prerequisites
 
-## 🔑 2) Get environment files
+- Node.js 20+ (LTS recommended)
+- npm
+- Git
+- Both repos cloned side-by-side (DriveDock + SSP Portal)
+- `.env.local` for each app (ask a teammate; do not invent secrets)
 
-Ask a teammate/lead for the **`.env.local`** for **both** projects and put them here:
-
-- `drivedock/.env.local`
-- `ssp-portal/.env.local`
-
-> These contain secrets (MongoDB, Azure AD, etc.). **Do not** guess or check in.
-
----
-
-## 📦 3) Install dependencies
-
-```bash
-# Terminal A – SSP Portal
-cd ssp-portal
-npm install
-
-# Terminal B – DriveDock
-cd ../drivedock
-npm install
-```
-
----
-
-## 🧰 4) Run Caddy (HTTPS + subdomains)
-
-We ship a **combined** CaddyFile in DriveDock that proxies both apps:
-
-**`drivedock/main/CaddyFile`**
-
-```caddyfile
-# SSP Portal (HTTPS) → localhost:3000
-sspportal.lvh.me:3443 {
-    tls internal
-    reverse_proxy 127.0.0.1:3000
-}
-
-# DriveDock (HTTPS) → localhost:3001
-drivedock.sspportal.lvh.me:4443 {
-    tls internal
-    reverse_proxy 127.0.0.1:3001
-}
-```
-
-**Run it from the folder where you downloaded Caddy:**
-
-- **Windows (PowerShell/CMD)**
-
-```powershell
-.\caddy.exe run --config "C:\\Users\\Ridoy\\projects\\Drivedock\\main\\CaddyFile"
-```
-
-- **macOS/Linux**
-
-```bash
-./caddy run --config ~/projects/Drivedock/main/CaddyFile
-```
-
-> Keep this terminal **open**. Caddy now serves HTTPS for **both** apps.
-
----
-
-## ▶️ 5) Start the apps
-
-Open two terminals:
+## Running locally
 
 ```bash
 # Terminal A – SSP Portal
-cd ssp-portal
-npm run dev  # runs on :3000
+cd SSPPortal/frontend
+npm install
+npm run dev          # http://localhost:3000
 
 # Terminal B – DriveDock
-cd drivedock
-npm run dev  # runs on :3001
+cd Drivedock/main
+npm install
+npm run dev          # http://localhost:3001
 ```
 
----
+Open DriveDock at [http://localhost:3001](http://localhost:3001). Unauthenticated dashboard visits redirect to the portal login; after sign-in you should land back on DriveDock authenticated.
 
-## 🔍 6) Sanity check (auth works)
+## DriveDock env (`.env.local`)
 
-1. Go to **Portal**: [https://sspportal.lvh.me:3443](https://sspportal.lvh.me:3443)
+Place at `Drivedock/main/.env.local`. Auth-related values that must match the portal:
 
-   - Log in. You should see the portal home and a cookie set.
+```env
+# Must match the portal cookie name
+AUTH_COOKIE_NAME=SSP_AUTH_TOKEN
 
-2. Go to **DriveDock**: [https://drivedock.sspportal.lvh.me:4443](https://drivedock.sspportal.lvh.me:4443)
+# Same secret the portal uses to sign the JWT
+NEXTAUTH_SECRET=...
 
-   - DriveDock should detect the Portal cookie. Logout in DriveDock should hit Portal logout.
-
-If DriveDock says “not authenticated”, re‑check you’re visiting the **HTTPS** subdomain URLs and that Caddy is running.
-
----
-
-# 📘 Details & Reference
-
-## ⚠️ Fixed Ports & URLs (Do **not** change)
-
-- **SSP Portal**
-
-  - Local dev: `http://localhost:3000`
-  - Public HTTPS: `https://sspportal.lvh.me:3443`
-
-- **DriveDock**
-
-  - Local dev: `http://localhost:3001`
-  - Public HTTPS: `https://drivedock.sspportal.lvh.me:4443`
-
-These values are hard‑wired into **Azure AD redirect URIs**, cookie domain/subdomain behavior, and example `.env` values. Changing ports breaks auth.
-
-**`package.json` scripts (verify but don’t change):**
-
-**Portal**
-
-```json
-{
-  "scripts": {
-    "dev": "next dev --turbopack -p 3000",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
-  }
-}
+# Portal origin (HTTP in local dev)
+NEXT_PUBLIC_PORTAL_BASE_URL=http://localhost:3000
 ```
 
-**DriveDock**
+Other keys (MongoDB, AWS, encryption, Turnstile, etc.) are app-specific — get a full `.env.local` from a teammate.
 
-```json
-{
-  "scripts": {
-    "dev": "next dev --turbopack -p 3001",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
-  }
-}
+### Portal env that DriveDock depends on
+
+On the portal side (`SSPPortal/frontend/.env.local`), these must allow localhost HTTP callbacks and a shared cookie:
+
+```env
+NEXT_PUBLIC_ORIGIN=http://localhost:3000
+NEXTAUTH_URL=http://localhost:3000
+
+AUTH_COOKIE_NAME=SSP_AUTH_TOKEN
+AUTH_COOKIE_DOMAIN=localhost
+
+# Must include localhost so DriveDock callbackUrls are accepted
+NEXT_PUBLIC_ALLOWED_CALLBACK_HOSTS=localhost,...
 ```
 
-## Why HTTPS + subdomains + Caddy?
+`AUTH_COOKIE_SECURE` is derived in portal code from `NEXT_PUBLIC_ORIGIN`: `http://` → cookies are not Secure; `https://` (production) → Secure.
 
-- Azure AD only allows **`http://localhost`** as insecure redirects; custom subdomains must be **HTTPS**.
-- We need **subdomains** so cookies can be shared across apps (Portal ↔ DriveDock) and to mirror production origin rules.
-- Caddy terminates TLS locally and maps:
+## What to expect
 
-  - `https://sspportal.lvh.me:3443` → `http://127.0.0.1:3000`
-  - `https://drivedock.sspportal.lvh.me:4443` → `http://127.0.0.1:3001`
-
-## Final URLs (what you should end up with)
-
-| App        | Public URL (HTTPS)                        | Proxied to local dev server |
-| ---------- | ----------------------------------------- | --------------------------- |
-| SSP Portal | `https://sspportal.lvh.me:3443`           | `http://127.0.0.1:3000`     |
-| DriveDock  | `https://drivedock.sspportal.lvh.me:4443` | `http://127.0.0.1:3001`     |
-
-## Example `.env.local` values
-
-### DriveDock (`drivedock/.env.local`)
-
-```ini
-# MongoDB
-MONGO_URI=
-
-# Session/Token
-FORM_RESUME_EXPIRES_AT_IN_MILSEC=
-HASH_SECRET=
-
-# Encryption & Cron
-ENC_KEY=
-CRON_SECRET=
-
-# AWS
-AWS_BUCKET_NAME=
-AWS_REGION=us-east-2
-AWS_ACCESS_KEY_ID=
-AWS_SECRET_ACCESS_KEY=
-
-# Auth
-AUTH_COOKIE_NAME=
-NEXTAUTH_SECRET=
-
-# Portal base (for auth routing)
-NEXT_PUBLIC_PORTAL_BASE_URL=https://sspportal.lvh.me:3443
-```
-
-### SSP Portal (`ssp-portal/.env.local`)
-
-```ini
-# Where Portal runs
-NEXT_PUBLIC_ORIGIN=
-
-# Cookie shared across sub-apps
-AUTH_COOKIE_NAME=
-COOKIE_DOMAIN=
-
-# NextAuth
-NEXTAUTH_URL=https://sspportal.lvh.me:3443
-NEXTAUTH_SECRET=
-
-# Azure AD
-AZURE_AD_CLIENT_ID=
-AZURE_AD_CLIENT_SECRET=
-AZURE_AD_TENANT_ID=
-
-# Allowed callback hosts (comma-separated)
-NEXT_PUBLIC_ALLOWED_CALLBACK_HOSTS=
-```
+| Action                                                | Expected result                                                                |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Open `http://localhost:3001/dashboard` with no cookie | Redirect to `http://localhost:3000/login?callbackUrl=…`                        |
+| Sign in on the portal                                 | Cookie `SSP_AUTH_TOKEN` set for `localhost`; redirect back to DriveDock        |
+| Return to DriveDock with access granted               | Dashboard loads; portal `/api/v1/auth/me` shows `"drivedock"` in `access.apps` |
+| Signed in but no DriveDock grant                      | Redirect to portal `…/dashboard?denied=drivedock`                              |
+| Logout from DriveDock                                 | Goes to portal `/api/auth/logout`, which clears the shared cookie for all apps |
 
 ## Troubleshooting
 
-- **TLS warning:** Caddy uses an internal CA. Trust its root (path shown on first run) or bypass once.
-- **Ports in use:** Free 3000/3001 and 3443/4443. Don’t change ports.
-- **AADSTS50011 (redirect URI mismatch):** Azure AD must list `https://sspportal.lvh.me:3443/api/auth/callback/azure-ad` exactly.
-- **No cookie in DriveDock:** Log in at Portal URL first (same browser/profile) and ensure Caddy is running with the combined config.
-- **Mixed content/origin:** Always use the **HTTPS** `lvh.me` URLs; **don’t** hit `http://localhost:*` directly.
+- **Redirect loop / not authenticated** — Confirm both apps are on `localhost` (not `127.0.0.1`), portal is running on `:3000`, and `AUTH_COOKIE_NAME` / `NEXTAUTH_SECRET` match across projects.
+- **Land on portal with `denied=drivedock`** — Your Entra user is signed in but not granted the DriveDock app in the portal App Registry. Request access or ask an admin to grant it.
+- **Cookie not sent to DriveDock** — Cookie domain must be `localhost` (not a subdomain). Do not mix `http://127.0.0.1` and `http://localhost`.
+- **Azure redirect mismatch** — Local Azure AD redirect URI is the **portal** callback (`http://localhost:3000/api/auth/callback/azure-ad`), not DriveDock. DriveDock never talks to Entra directly for dashboard SSO.
 
-## TL;DR Checklist
+## Production note
 
-- [ ] `npm install` in **both** repos
-- [ ] Place **`.env.local`** in `drivedock/` and `ssp-portal/`
-- [ ] Run **Caddy** with `drivedock/main/CaddyFile`
-- [ ] `npm run dev` in **both** apps
-- [ ] Login at **Portal** → cookie set
-- [ ] Open **DriveDock** → authenticated; logout redirects to Portal
-
----
-
-If the quick start works, you’re ready to build DriveDock with working SSO locally. The sections above explain _why_ this setup is required and where each value comes from.
+In production the portal and DriveDock sit on real HTTPS hosts. The same cookie-sharing idea applies via a shared parent domain (`AUTH_COOKIE_DOMAIN`) and Secure cookies. Locally, hostname `localhost` + HTTP replaces that setup.

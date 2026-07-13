@@ -8,7 +8,10 @@ import { trimTrailingSlash } from "./urlHelper";
 /** Resolve current request origin via proxy headers (Vercel/CDN safe). */
 export async function resolveBaseUrl(): Promise<string> {
   const hdrs = await headers();
-  const proto = hdrs.get("x-forwarded-proto") ?? hdrs.get("x-url-scheme") ?? "https";
+  const proto =
+    hdrs.get("x-forwarded-proto") ??
+    hdrs.get("x-url-scheme") ??
+    (isProd ? "https" : "http");
   const host = hdrs.get("x-forwarded-host") ?? hdrs.get("host") ?? "localhost";
   return trimTrailingSlash(`${proto}://${host}`);
 }

@@ -8,17 +8,35 @@ import connectDB from "@/lib/utils/connectDB";
 import { AppError } from "@/lib/utils/apiResponse";
 import { onboardingExpired } from "../onboardingUtils";
 import { EEApiErrorType } from "@/types/apiError.types";
-import { ONBOARDING_SESSION_COOKIE_NAME, ONBOARDING_SESSION_TTL_SECONDS } from "@/config/env";
+import {
+  isProd,
+  ONBOARDING_SESSION_COOKIE_NAME,
+  ONBOARDING_SESSION_TTL_SECONDS,
+} from "@/config/env";
 
 /** Build Set-Cookie string */
 function buildSessionCookie(value: string, maxAgeSeconds: number): string {
-  const attrs = [`${ONBOARDING_SESSION_COOKIE_NAME}=${encodeURIComponent(value)}`, `Path=/`, `HttpOnly`, `SameSite=Lax`, `Secure`, `Max-Age=${maxAgeSeconds}`];
+  const attrs = [
+    `${ONBOARDING_SESSION_COOKIE_NAME}=${encodeURIComponent(value)}`,
+    `Path=/`,
+    `HttpOnly`,
+    `SameSite=Lax`,
+    `Max-Age=${maxAgeSeconds}`,
+  ];
+  if (isProd) attrs.push("Secure");
   return attrs.join("; ");
 }
 
 /** Clear cookie helper */
 export function clearOnboardingCookieHeader(): string {
-  const attrs = [`${ONBOARDING_SESSION_COOKIE_NAME}=;`, `Path=/`, `HttpOnly`, `SameSite=Lax`, `Secure`, `Max-Age=0`];
+  const attrs = [
+    `${ONBOARDING_SESSION_COOKIE_NAME}=;`,
+    `Path=/`,
+    `HttpOnly`,
+    `SameSite=Lax`,
+    `Max-Age=0`,
+  ];
+  if (isProd) attrs.push("Secure");
   return attrs.join("; ");
 }
 
@@ -56,10 +74,13 @@ export async function createOnboardingSessionAndCookie(trackerId: string) {
       upsert: true,
       new: true, // return the updated/inserted doc
       sort: { lastUsedAt: -1 }, // prefer the most recently used one
-    }
+    },
   );
 
-  const setCookie = buildSessionCookie(String(session._id), ONBOARDING_SESSION_TTL_SECONDS);
+  const setCookie = buildSessionCookie(
+    String(session._id),
+    ONBOARDING_SESSION_TTL_SECONDS,
+  );
   return { session, setCookie };
 }
 
@@ -84,8 +105,17 @@ export async function requireOnboardingSession(trackerId: string) {
 
   const clearCookie = clearOnboardingCookieHeader();
 
-  if (!raw || !Types.ObjectId.isValid(trackerId) || !Types.ObjectId.isValid(raw)) {
-    throw new AppError(401, "session expired, resume required", EEApiErrorType.SESSION_REQUIRED, { reason: "MISSING_OR_INVALID_COOKIE", clearCookieHeader: clearCookie });
+  if (
+    !raw ||
+    !Types.ObjectId.isValid(trackerId) ||
+    !Types.ObjectId.isValid(raw)
+  ) {
+    throw new AppError(
+      401,
+      "session expired, resume required",
+      EEApiErrorType.SESSION_REQUIRED,
+      { reason: "MISSING_OR_INVALID_COOKIE", clearCookieHeader: clearCookie },
+    );
   }
 
   const now = new Date();
@@ -96,25 +126,51 @@ export async function requireOnboardingSession(trackerId: string) {
 
   if (!session) {
     // No such session for this tracker (mismatch / deleted).
-    throw new AppError(401, "session expired, resume required", EEApiErrorType.SESSION_REQUIRED, { reason: "SESSION_NOT_FOUND_OR_MISMATCH", clearCookieHeader: clearCookie });
+    throw new AppError(
+      401,
+      "session expired, resume required",
+      EEApiErrorType.SESSION_REQUIRED,
+      {
+        reason: "SESSION_NOT_FOUND_OR_MISMATCH",
+        clearCookieHeader: clearCookie,
+      },
+    );
   }
 
   // if revoked or expired, delete the session doc then throw ---
-  const deleteSessionAndThrow = async (status: number, message: string, code: EEApiErrorType, reason: string): Promise<never> => {
+  const deleteSessionAndThrow = async (
+    status: number,
+    message: string,
+    code: EEApiErrorType,
+    reason: string,
+  ): Promise<never> => {
     try {
       await OnboardingSession.deleteOne({ _id: session._id });
     } catch {
       // swallow cleanup errors
     }
-    throw new AppError(status, message, code, { reason, clearCookieHeader: clearCookie });
+    throw new AppError(status, message, code, {
+      reason,
+      clearCookieHeader: clearCookie,
+    });
   };
 
   if (session.revoked === true) {
-    await deleteSessionAndThrow(401, "session expired, resume required", EEApiErrorType.SESSION_REQUIRED, "SESSION_REVOKED");
+    await deleteSessionAndThrow(
+      401,
+      "session expired, resume required",
+      EEApiErrorType.SESSION_REQUIRED,
+      "SESSION_REVOKED",
+    );
   }
 
   if (session.expiresAt && session.expiresAt <= now) {
-    await deleteSessionAndThrow(401, "session expired, resume required", EEApiErrorType.SESSION_REQUIRED, "SESSION_EXPIRED");
+    await deleteSessionAndThrow(
+      401,
+      "session expired, resume required",
+      EEApiErrorType.SESSION_REQUIRED,
+      "SESSION_EXPIRED",
+    );
   }
   // --- END NEW ---
 
@@ -122,16 +178,36 @@ export async function requireOnboardingSession(trackerId: string) {
 
   // Keep your existing tracker-eligibility invalidation (delete session + throw)
   if (!tracker) {
-    return await deleteSessionAndThrow(404, "onboarding record not found", EEApiErrorType.NOT_FOUND, "TRACKER_NOT_FOUND");
+    return await deleteSessionAndThrow(
+      404,
+      "onboarding record not found",
+      EEApiErrorType.NOT_FOUND,
+      "TRACKER_NOT_FOUND",
+    );
   }
   if (tracker.terminated) {
-    await deleteSessionAndThrow(404, "onboarding record not found", EEApiErrorType.NOT_FOUND, "TERMINATED");
+    await deleteSessionAndThrow(
+      404,
+      "onboarding record not found",
+      EEApiErrorType.NOT_FOUND,
+      "TERMINATED",
+    );
   }
   if (onboardingExpired(tracker)) {
-    await deleteSessionAndThrow(401, "onboarding time expired", EEApiErrorType.UNAUTHORIZED, "ONBOARDING_EXPIRED");
+    await deleteSessionAndThrow(
+      401,
+      "onboarding time expired",
+      EEApiErrorType.UNAUTHORIZED,
+      "ONBOARDING_EXPIRED",
+    );
   }
   if (tracker.status.completed) {
-    await deleteSessionAndThrow(401, "onboarding already completed", EEApiErrorType.UNAUTHORIZED, "COMPLETED");
+    await deleteSessionAndThrow(
+      401,
+      "onboarding already completed",
+      EEApiErrorType.UNAUTHORIZED,
+      "COMPLETED",
+    );
   }
 
   // Slide expiry on success
@@ -139,12 +215,18 @@ export async function requireOnboardingSession(trackerId: string) {
   session.lastUsedAt = new Date();
   await session.save();
 
-  const refreshCookie = buildSessionCookie(String(session._id), ONBOARDING_SESSION_TTL_SECONDS);
+  const refreshCookie = buildSessionCookie(
+    String(session._id),
+    ONBOARDING_SESSION_TTL_SECONDS,
+  );
   return { tracker, refreshCookie };
 }
 
 /** Revoke sessions for a tracker (e.g., on completion/termination) */
 export async function revokeAllSessionsForTracker(trackerId: string) {
   await connectDB();
-  await OnboardingSession.updateMany({ trackerId: new Types.ObjectId(trackerId), revoked: { $ne: true } }, { $set: { revoked: true } });
+  await OnboardingSession.updateMany(
+    { trackerId: new Types.ObjectId(trackerId), revoked: { $ne: true } },
+    { $set: { revoked: true } },
+  );
 }
